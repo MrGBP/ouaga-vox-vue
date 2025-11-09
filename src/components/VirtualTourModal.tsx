@@ -1,3 +1,6 @@
+import { useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Bed, Bath, Maximize, Star } from 'lucide-react';
@@ -10,6 +13,8 @@ interface Property {
   price: number;
   quartier: string;
   address: string;
+  latitude: number;
+  longitude: number;
   bedrooms?: number;
   bathrooms?: number;
   surface_area?: number;
@@ -26,6 +31,51 @@ interface VirtualTourModalProps {
 }
 
 const VirtualTourModal = ({ property, open, onOpenChange }: VirtualTourModalProps) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || !property || !open) return;
+
+    // Clean up existing map
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+
+    // Initialize mini map
+    const map = L.map(mapRef.current, {
+      center: [property.latitude, property.longitude],
+      zoom: 15,
+      zoomControl: true,
+      scrollWheelZoom: false,
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
+
+    // Add property marker
+    const icon = L.divIcon({
+      className: 'custom-marker',
+      html: `<div style="background-color: hsl(20 85% 45%); width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">📍</div>`,
+      iconSize: [32, 32],
+    });
+
+    L.marker([property.latitude, property.longitude], { icon })
+      .addTo(map)
+      .bindPopup(`<b>${property.title}</b><br/>${property.quartier}`);
+
+    mapInstanceRef.current = map;
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [property, open]);
+
   if (!property) return null;
 
   const formatPrice = (price: number) => {
@@ -133,6 +183,12 @@ const VirtualTourModal = ({ property, open, onOpenChange }: VirtualTourModalProp
                 </div>
               </div>
             )}
+
+            {/* Mini Map */}
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg">Localisation</h3>
+              <div ref={mapRef} className="w-full h-64 rounded-lg overflow-hidden border border-border" />
+            </div>
 
             {/* Image Gallery */}
             {property.images && property.images.length > 1 && (

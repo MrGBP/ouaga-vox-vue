@@ -20,13 +20,21 @@ interface POI {
   longitude: number;
 }
 
+interface Quartier {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
 interface InteractiveMapProps {
   properties: Property[];
   pois: POI[];
+  quartiers?: Quartier[];
   onPropertyClick?: (propertyId: string) => void;
 }
 
-const InteractiveMap = ({ properties, pois, onPropertyClick }: InteractiveMapProps) => {
+const InteractiveMap = ({ properties, pois, quartiers = [], onPropertyClick }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
 
@@ -54,11 +62,29 @@ const InteractiveMap = ({ properties, pois, onPropertyClick }: InteractiveMapPro
 
     const map = mapInstanceRef.current;
 
-    // Clear existing markers
+    // Clear existing markers and circles
     map.eachLayer((layer) => {
-      if (layer instanceof L.Marker) {
+      if (layer instanceof L.Marker || layer instanceof L.Circle) {
         map.removeLayer(layer);
       }
+    });
+
+    // Add quartier polygons (represented as circles for visualization)
+    quartiers.forEach((quartier) => {
+      const circle = L.circle([quartier.latitude, quartier.longitude], {
+        color: 'hsl(20 85% 45%)',
+        fillColor: 'hsl(20 85% 45%)',
+        fillOpacity: 0.1,
+        radius: 2000, // 2km radius
+        weight: 2,
+      }).addTo(map);
+
+      circle.bindPopup(`
+        <div style="min-width: 150px;">
+          <h4 style="margin: 0 0 4px 0; font-weight: bold;">${quartier.name}</h4>
+          <p style="margin: 0; color: #666; font-size: 12px;">Quartier de Ouagadougou</p>
+        </div>
+      `);
     });
 
     // Add property markers
@@ -117,7 +143,7 @@ const InteractiveMap = ({ properties, pois, onPropertyClick }: InteractiveMapPro
           </div>
         `);
     });
-  }, [properties, pois, onPropertyClick]);
+  }, [properties, pois, quartiers, onPropertyClick]);
 
   return (
     <Card className="overflow-hidden shadow-soft">

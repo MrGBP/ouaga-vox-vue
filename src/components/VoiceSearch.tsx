@@ -22,11 +22,13 @@ const VoiceSearch = ({ onSearchQuery, searchQuery, onSearchQueryChange }: VoiceS
     if (transcript && !isListening) {
       onSearchQueryChange(transcript);
       
-      speak(`J'ai compris : ${transcript}. Je lance la recherche.`);
+      // TTS asks for confirmation
+      speak(`J'ai entendu : ${transcript}. Est-ce correct ? Je lance la recherche dans un instant.`);
       
+      // Give user time to hear confirmation before searching
       setTimeout(() => {
         onSearchQuery(transcript);
-      }, 2000);
+      }, 3000);
       
       resetTranscript();
     }
@@ -44,11 +46,12 @@ const VoiceSearch = ({ onSearchQuery, searchQuery, onSearchQueryChange }: VoiceS
 
     if (isListening) {
       stopListening();
+      speak("Recherche arrêtée.");
     } else {
-      speak("Je vous écoute. Dites-moi ce que vous cherchez.");
+      speak("Je vous écoute attentivement. Dites-moi le type de bien, le quartier ou votre budget.");
       setTimeout(() => {
         startListening();
-      }, 1500);
+      }, 2000);
     }
   };
 

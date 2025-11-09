@@ -3,10 +3,13 @@ import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
+import Header from '@/components/Header';
 import VoiceSearch from '@/components/VoiceSearch';
+import FilterBar, { FilterState } from '@/components/FilterBar';
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
 import VirtualTourModal from '@/components/VirtualTourModal';
+import QuartiersSection from '@/components/QuartiersSection';
 import { Loader2 } from 'lucide-react';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
@@ -39,12 +42,30 @@ interface POI {
   longitude: number;
 }
 
+interface Quartier {
+  id: string;
+  name: string;
+  description: string;
+  image_url?: string;
+  latitude: number;
+  longitude: number;
+}
+
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
+  const [quartiers, setQuartiers] = useState<Quartier[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<FilterState>({
+    type: 'all',
+    quartier: 'all',
+    minPrice: 0,
+    maxPrice: 1000000,
+    minComfort: 0,
+    minSecurity: 0,
+  });
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
@@ -58,17 +79,20 @@ const Index = () => {
     try {
       setLoading(true);
 
-      const [propertiesResponse, poisResponse] = await Promise.all([
+      const [propertiesResponse, poisResponse, quartiersResponse] = await Promise.all([
         supabase.from('properties').select('*').eq('available', true),
         supabase.from('pois').select('*'),
+        supabase.from('quartiers').select('*'),
       ]);
 
       if (propertiesResponse.error) throw propertiesResponse.error;
       if (poisResponse.error) throw poisResponse.error;
+      if (quartiersResponse.error) throw quartiersResponse.error;
 
       setProperties(propertiesResponse.data || []);
       setFilteredProperties(propertiesResponse.data || []);
       setPois(poisResponse.data || []);
+      setQuartiers(quartiersResponse.data || []);
     } catch (error: any) {
       toast({
         title: 'Erreur',
@@ -80,26 +104,58 @@ const Index = () => {
     }
   };
 
-  const handleSearch = (query: string) => {
-    if (!query.trim()) {
-      setFilteredProperties(properties);
-      return;
+  const applyFilters = (propsToFilter: Property[], searchTerm: string = '', currentFilters: FilterState = filters) => {
+    let filtered = propsToFilter;
+
+    // Apply search query
+    if (searchTerm.trim()) {
+      const lowerQuery = searchTerm.toLowerCase();
+      filtered = filtered.filter((prop) => {
+        return (
+          prop.title.toLowerCase().includes(lowerQuery) ||
+          prop.quartier.toLowerCase().includes(lowerQuery) ||
+          prop.type.toLowerCase().includes(lowerQuery) ||
+          prop.description.toLowerCase().includes(lowerQuery) ||
+          prop.price.toString().includes(lowerQuery)
+        );
+      });
     }
 
-    const lowerQuery = query.toLowerCase();
-    const filtered = properties.filter((prop) => {
-      return (
-        prop.title.toLowerCase().includes(lowerQuery) ||
-        prop.quartier.toLowerCase().includes(lowerQuery) ||
-        prop.type.toLowerCase().includes(lowerQuery) ||
-        prop.description.toLowerCase().includes(lowerQuery)
-      );
-    });
+    // Apply type filter
+    if (currentFilters.type !== 'all') {
+      filtered = filtered.filter((prop) => prop.type === currentFilters.type);
+    }
 
+    // Apply quartier filter
+    if (currentFilters.quartier !== 'all') {
+      filtered = filtered.filter((prop) => prop.quartier === currentFilters.quartier);
+    }
+
+    // Apply price range filter
+    filtered = filtered.filter(
+      (prop) => prop.price >= currentFilters.minPrice && prop.price <= currentFilters.maxPrice
+    );
+
+    // Apply comfort filter
+    if (currentFilters.minComfort > 0) {
+      filtered = filtered.filter((prop) => (prop.comfort_rating || 0) >= currentFilters.minComfort);
+    }
+
+    // Apply security filter
+    if (currentFilters.minSecurity > 0) {
+      filtered = filtered.filter((prop) => (prop.security_rating || 0) >= currentFilters.minSecurity);
+    }
+
+    return filtered;
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    const filtered = applyFilters(properties, query, filters);
     setFilteredProperties(filtered);
 
     if (filtered.length > 0) {
-      const resultText = `J'ai trouvé ${filtered.length} ${filtered.length > 1 ? 'résultats' : 'résultat'} pour votre recherche.`;
+      const resultText = `J'ai trouvé ${filtered.length} ${filtered.length > 1 ? 'résultats' : 'résultat'} correspondant à votre recherche.`;
       speak(resultText);
       
       toast({
@@ -107,13 +163,19 @@ const Index = () => {
         description: resultText,
       });
     } else {
-      speak("Désolé, je n'ai trouvé aucun résultat pour votre recherche.");
+      speak("Désolé, aucun bien ne correspond à vos critères. Essayez d'élargir votre recherche.");
       toast({
         title: 'Aucun résultat',
-        description: 'Essayez avec d\'autres mots-clés.',
+        description: 'Essayez avec d\'autres critères ou mots-clés.',
         variant: 'destructive',
       });
     }
+  };
+
+  const handleFilterChange = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    const filtered = applyFilters(properties, searchQuery, newFilters);
+    setFilteredProperties(filtered);
   };
 
   const handleViewDetails = (property: Property) => {
@@ -129,6 +191,13 @@ const Index = () => {
     }
   };
 
+  const handleQuartierClick = (quartier: Quartier) => {
+    setSearchQuery(quartier.name);
+    handleSearch(quartier.name);
+    speak(`Voici les biens disponibles dans le quartier ${quartier.name}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -139,6 +208,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
+      
       {/* Hero Section */}
       <section className="relative h-[60vh] min-h-[500px] overflow-hidden">
         <div className="absolute inset-0">
@@ -157,13 +228,13 @@ const Index = () => {
             transition={{ duration: 0.8 }}
             className="space-y-6 max-w-4xl"
           >
-            <h1 className="text-5xl md:text-7xl font-bold text-foreground">
+            <h1 className="text-4xl md:text-6xl font-bold text-foreground">
               Trouvez votre{' '}
-              <span className="text-primary">logement idéal</span>
-              <br />à Ouagadougou
+              <span className="text-primary">bien immobilier</span>
+              <br />en un clic
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground">
-              Recherche vocale · Carte interactive · Visites 360°
+            <p className="text-lg md:text-xl text-muted-foreground">
+              🎤 Recherche vocale · 🗺️ Carte interactive · 🎬 Visites 360°
             </p>
           </motion.div>
 
@@ -182,6 +253,17 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Quartiers Section */}
+      <QuartiersSection quartiers={quartiers} onQuartierClick={handleQuartierClick} />
+
+      {/* Filters Section */}
+      <section className="container mx-auto px-4 py-8">
+        <FilterBar
+          onFilterChange={handleFilterChange}
+          quartiers={[...new Set(properties.map((p) => p.quartier))]}
+        />
+      </section>
+
       {/* Map Section */}
       <section className="container mx-auto px-4 py-12">
         <motion.div
@@ -195,6 +277,7 @@ const Index = () => {
           <InteractiveMap
             properties={filteredProperties}
             pois={pois}
+            quartiers={quartiers}
             onPropertyClick={handlePropertyClick}
           />
         </motion.div>
