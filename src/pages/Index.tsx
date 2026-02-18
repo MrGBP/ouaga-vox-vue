@@ -10,7 +10,7 @@ import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
 import VirtualTourModal from '@/components/VirtualTourModal';
 import QuartiersSection from '@/components/QuartiersSection';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MapPin, Home, TrendingUp } from 'lucide-react';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
 interface Property {
@@ -51,6 +51,16 @@ interface Quartier {
   longitude: number;
 }
 
+const DEFAULT_FILTERS: FilterState = {
+  type: 'all',
+  quartier: 'all',
+  minPrice: 0,
+  maxPrice: 850000,
+  minBedrooms: 0,
+  hasVirtualTour: false,
+  onlyAvailable: false,
+};
+
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
@@ -58,14 +68,7 @@ const Index = () => {
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<FilterState>({
-    type: 'all',
-    quartier: 'all',
-    minPrice: 0,
-    maxPrice: 1000000,
-    minComfort: 0,
-    minSecurity: 0,
-  });
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
@@ -78,75 +81,55 @@ const Index = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-
-      const [propertiesResponse, poisResponse, quartiersResponse] = await Promise.all([
-        supabase.from('properties').select('*').eq('available', true),
+      const [propertiesRes, poisRes, quartiersRes] = await Promise.all([
+        supabase.from('properties').select('*').order('price', { ascending: false }),
         supabase.from('pois').select('*'),
         supabase.from('quartiers').select('*'),
       ]);
 
-      if (propertiesResponse.error) throw propertiesResponse.error;
-      if (poisResponse.error) throw poisResponse.error;
-      if (quartiersResponse.error) throw quartiersResponse.error;
+      if (propertiesRes.error) throw propertiesRes.error;
+      if (poisRes.error) throw poisRes.error;
+      if (quartiersRes.error) throw quartiersRes.error;
 
-      setProperties(propertiesResponse.data || []);
-      setFilteredProperties(propertiesResponse.data || []);
-      setPois(poisResponse.data || []);
-      setQuartiers(quartiersResponse.data || []);
+      const props = propertiesRes.data || [];
+      setProperties(props);
+      setFilteredProperties(props);
+      setPois(poisRes.data || []);
+      setQuartiers(quartiersRes.data || []);
     } catch (error: any) {
-      toast({
-        title: 'Erreur',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erreur de chargement', description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  const applyFilters = (propsToFilter: Property[], searchTerm: string = '', currentFilters: FilterState = filters) => {
-    let filtered = propsToFilter;
+  const applyFilters = (
+    source: Property[],
+    query: string = searchQuery,
+    f: FilterState = filters
+  ) => {
+    let result = [...source];
 
-    // Apply search query
-    if (searchTerm.trim()) {
-      const lowerQuery = searchTerm.toLowerCase();
-      filtered = filtered.filter((prop) => {
-        return (
-          prop.title.toLowerCase().includes(lowerQuery) ||
-          prop.quartier.toLowerCase().includes(lowerQuery) ||
-          prop.type.toLowerCase().includes(lowerQuery) ||
-          prop.description.toLowerCase().includes(lowerQuery) ||
-          prop.price.toString().includes(lowerQuery)
-        );
-      });
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.quartier.toLowerCase().includes(q) ||
+          p.type.toLowerCase().includes(q) ||
+          (p.description || '').toLowerCase().includes(q) ||
+          p.price.toString().includes(q)
+      );
     }
 
-    // Apply type filter
-    if (currentFilters.type !== 'all') {
-      filtered = filtered.filter((prop) => prop.type === currentFilters.type);
-    }
+    if (f.type !== 'all') result = result.filter((p) => p.type === f.type);
+    if (f.quartier !== 'all') result = result.filter((p) => p.quartier === f.quartier);
+    result = result.filter((p) => p.price >= f.minPrice && p.price <= f.maxPrice);
+    if (f.minBedrooms > 0) result = result.filter((p) => (p.bedrooms || 0) >= f.minBedrooms);
+    if (f.hasVirtualTour) result = result.filter((p) => !!p.virtual_tour_url);
+    if (f.onlyAvailable) result = result.filter((p) => p.available);
 
-    // Apply quartier filter
-    if (currentFilters.quartier !== 'all') {
-      filtered = filtered.filter((prop) => prop.quartier === currentFilters.quartier);
-    }
-
-    // Apply price range filter
-    filtered = filtered.filter(
-      (prop) => prop.price >= currentFilters.minPrice && prop.price <= currentFilters.maxPrice
-    );
-
-    // Apply comfort filter
-    if (currentFilters.minComfort > 0) {
-      filtered = filtered.filter((prop) => (prop.comfort_rating || 0) >= currentFilters.minComfort);
-    }
-
-    // Apply security filter
-    if (currentFilters.minSecurity > 0) {
-      filtered = filtered.filter((prop) => (prop.security_rating || 0) >= currentFilters.minSecurity);
-    }
-
-    return filtered;
+    return result;
   };
 
   const handleSearch = (query: string) => {
@@ -155,53 +138,50 @@ const Index = () => {
     setFilteredProperties(filtered);
 
     if (filtered.length > 0) {
-      const resultText = `J'ai trouvé ${filtered.length} ${filtered.length > 1 ? 'résultats' : 'résultat'} correspondant à votre recherche.`;
-      speak(resultText);
-      
-      toast({
-        title: 'Résultats trouvés',
-        description: resultText,
-      });
+      const msg = `J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''} pour "${query}".`;
+      speak(msg);
+      toast({ title: '🔍 Résultats', description: msg });
     } else {
-      speak("Désolé, aucun bien ne correspond à vos critères. Essayez d'élargir votre recherche.");
-      toast({
-        title: 'Aucun résultat',
-        description: 'Essayez avec d\'autres critères ou mots-clés.',
-        variant: 'destructive',
-      });
+      speak("Aucun bien ne correspond à votre recherche. Essayez d'autres critères.");
+      toast({ title: 'Aucun résultat', description: 'Élargissez votre recherche.', variant: 'destructive' });
     }
   };
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
-    const filtered = applyFilters(properties, searchQuery, newFilters);
-    setFilteredProperties(filtered);
+    setFilteredProperties(applyFilters(properties, searchQuery, newFilters));
   };
 
   const handleViewDetails = (property: Property) => {
     setSelectedProperty(property);
     setModalOpen(true);
-    speak(`Voici les détails de : ${property.title}`);
+    speak(`Voici les détails de : ${property.title}, situé à ${property.quartier}.`);
   };
 
-  const handlePropertyClick = (propertyId: string) => {
-    const property = properties.find((p) => p.id === propertyId);
-    if (property) {
-      handleViewDetails(property);
-    }
+  const handlePropertyClick = (id: string) => {
+    const p = properties.find((p) => p.id === id);
+    if (p && p.available) handleViewDetails(p);
   };
 
-  const handleQuartierClick = (quartier: Quartier) => {
-    setSearchQuery(quartier.name);
-    handleSearch(quartier.name);
-    speak(`Voici les biens disponibles dans le quartier ${quartier.name}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleQuartierClick = (q: Quartier) => {
+    setSearchQuery(q.name);
+    const filtered = applyFilters(properties, q.name, filters);
+    setFilteredProperties(filtered);
+    speak(`Voici les biens disponibles dans le quartier ${q.name}`);
+    document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const availableCount = filteredProperties.filter((p) => p.available).length;
+  const quartierNames = [...new Set(properties.map((p) => p.quartier))].sort();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background gap-4">
+        <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
+          <Home className="h-6 w-6 text-primary-foreground animate-pulse" />
+        </div>
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Chargement de SapSapHouse…</p>
       </div>
     );
   }
@@ -209,40 +189,57 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      {/* Hero Section */}
-      <section className="relative h-[60vh] min-h-[500px] overflow-hidden">
-        <div className="absolute inset-0">
-          <img
-            src={heroImage}
-            alt="Ouagadougou cityscape"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
-        </div>
-        
+
+      {/* Hero */}
+      <section className="relative h-[65vh] min-h-[520px] overflow-hidden">
+        <img
+          src={heroImage}
+          alt="Ouagadougou"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
+
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="space-y-6 max-w-4xl"
+            transition={{ duration: 0.7 }}
+            className="max-w-3xl space-y-4"
           >
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground">
+            <div className="inline-flex items-center gap-2 bg-card/90 backdrop-blur-sm border border-border rounded-full px-4 py-1.5 text-sm font-medium text-foreground mb-2">
+              <MapPin className="h-3.5 w-3.5 text-primary" />
+              Ouagadougou, Burkina Faso
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-card leading-tight">
               Trouvez votre{' '}
-              <span className="text-primary">bien immobilier</span>
+              <span className="text-primary bg-card px-2 rounded-lg">bien idéal</span>
               <br />en un clic
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground">
-              🎤 Recherche vocale · 🗺️ Carte interactive · 🎬 Visites 360°
+            <p className="text-base md:text-lg text-card/90 font-medium">
+              {properties.length}+ biens · 7 quartiers · Visites 360° · Carte interactive
             </p>
+
+            {/* Stats bar */}
+            <div className="flex items-center justify-center gap-6 mt-2">
+              {[
+                { icon: Home, label: `${availableCount} disponibles` },
+                { icon: MapPin, label: '7 quartiers' },
+                { icon: TrendingUp, label: 'Prix en FCFA' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-1.5 bg-card/80 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium text-foreground">
+                  <Icon className="h-3 w-3 text-primary" />
+                  {label}
+                </div>
+              ))}
+            </div>
           </motion.div>
 
+          {/* Voice search */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="mt-12 w-full"
+            transition={{ duration: 0.7, delay: 0.25 }}
+            className="mt-8 w-full max-w-2xl"
           >
             <VoiceSearch
               onSearchQuery={handleSearch}
@@ -253,27 +250,33 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Quartiers Section */}
-      <QuartiersSection quartiers={quartiers} onQuartierClick={handleQuartierClick} />
-
-      {/* Filters Section */}
-      <section className="container mx-auto px-4 py-8">
-        <FilterBar
-          onFilterChange={handleFilterChange}
-          quartiers={[...new Set(properties.map((p) => p.quartier))]}
-        />
+      {/* Quartiers */}
+      <section id="quartiers">
+        <QuartiersSection quartiers={quartiers} onQuartierClick={handleQuartierClick} />
       </section>
 
-      {/* Map Section */}
-      <section className="container mx-auto px-4 py-12">
+      {/* Map + Filters Layout */}
+      <section id="map" className="container mx-auto px-4 py-10">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-foreground">Carte interactive</h2>
+          <span className="text-sm text-muted-foreground">
+            {filteredProperties.length} bien{filteredProperties.length > 1 ? 's' : ''} affiché{filteredProperties.length > 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {/* Filters */}
+        <FilterBar
+          onFilterChange={handleFilterChange}
+          quartiers={quartierNames}
+          totalCount={properties.length}
+          filteredCount={filteredProperties.length}
+        />
+
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl font-bold mb-6 text-foreground">
-            Explorez sur la carte
-          </h2>
           <InteractiveMap
             properties={filteredProperties}
             pois={pois}
@@ -283,43 +286,44 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* Properties Grid */}
-      <section className="container mx-auto px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <h2 className="text-3xl font-bold mb-6 text-foreground">
-            {searchQuery ? 'Résultats de recherche' : 'Propriétés disponibles'}
-            <span className="text-primary ml-2">({filteredProperties.length})</span>
+      {/* Properties grid */}
+      <section id="properties" className="container mx-auto px-4 pb-16">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-foreground">
+            {searchQuery ? `Résultats pour "${searchQuery}"` : 'Tous les biens'}
           </h2>
-          
-          {filteredProperties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProperties.map((property) => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  onViewDetails={handleViewDetails}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-xl text-muted-foreground">
-                Aucune propriété ne correspond à votre recherche.
-              </p>
-            </div>
-          )}
-        </motion.div>
+          <span className="text-sm text-muted-foreground font-medium">
+            <span className="text-foreground font-bold">{filteredProperties.length}</span> résultat{filteredProperties.length > 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {filteredProperties.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filteredProperties.map((p, i) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.04 }}
+              >
+                <PropertyCard property={p} onViewDetails={handleViewDetails} />
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-card border border-border rounded-xl">
+            <div className="text-4xl mb-4">🏠</div>
+            <p className="text-lg font-semibold text-foreground mb-2">Aucun bien trouvé</p>
+            <p className="text-sm text-muted-foreground">Essayez de modifier vos filtres ou votre recherche.</p>
+          </div>
+        )}
       </section>
 
-      {/* Virtual Tour Modal */}
       <VirtualTourModal
         property={selectedProperty}
         open={modalOpen}
         onOpenChange={setModalOpen}
+        pois={pois}
       />
     </div>
   );

@@ -55,6 +55,7 @@ export default {
       boxShadow: {
         'warm': 'var(--shadow-warm)',
         'soft': 'var(--shadow-soft)',
+        'card': 'var(--shadow-card)',
       },
       transitionTimingFunction: {
         'smooth': 'var(--transition-smooth)',
