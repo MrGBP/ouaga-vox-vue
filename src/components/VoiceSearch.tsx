@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Mic, MicOff, Volume2, VolumeX, Search } from 'lucide-react';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
 import { useToast } from '@/hooks/use-toast';
@@ -21,121 +19,111 @@ const VoiceSearch = ({ onSearchQuery, searchQuery, onSearchQueryChange }: VoiceS
   useEffect(() => {
     if (transcript && !isListening) {
       onSearchQueryChange(transcript);
-      
-      // TTS asks for confirmation
-      speak(`J'ai entendu : ${transcript}. Est-ce correct ? Je lance la recherche dans un instant.`);
-      
-      // Give user time to hear confirmation before searching
-      setTimeout(() => {
-        onSearchQuery(transcript);
-      }, 3000);
-      
+      speak(`J'ai entendu : ${transcript}. Lancement de la recherche.`);
+      setTimeout(() => { onSearchQuery(transcript); }, 2500);
       resetTranscript();
     }
   }, [transcript, isListening]);
 
   const handleVoiceToggle = () => {
     if (!isSupported) {
-      toast({
-        title: "Fonction non disponible",
-        description: "La reconnaissance vocale n'est pas supportée par votre navigateur.",
-        variant: "destructive",
-      });
+      toast({ title: 'Non supporté', description: 'Reconnaissance vocale non disponible sur ce navigateur.', variant: 'destructive' });
       return;
     }
-
     if (isListening) {
       stopListening();
-      speak("Recherche arrêtée.");
     } else {
-      speak("Je vous écoute attentivement. Dites-moi le type de bien, le quartier ou votre budget.");
-      setTimeout(() => {
-        startListening();
-      }, 2000);
+      speak('Je vous écoute. Dites le type de bien, le quartier ou votre budget.');
+      setTimeout(() => startListening(), 1800);
     }
   };
 
-  const handleSpeakToggle = () => {
-    if (!isSpeechSupported) {
-      toast({
-        title: "Fonction non disponible",
-        description: "La synthèse vocale n'est pas supportée par votre navigateur.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isSpeaking) {
-      cancel();
-    } else if (searchQuery) {
-      speak(`Vous recherchez : ${searchQuery}`);
-    }
-  };
-
-  const handleManualSearch = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      onSearchQuery(searchQuery);
-    }
+    if (searchQuery.trim()) onSearchQuery(searchQuery);
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      <form onSubmit={handleManualSearch} className="flex flex-col gap-4">
-        <div className="relative">
-          <Input
-            type="text"
-            placeholder="Ex: Maison 3 pièces à Karpala..."
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-            className="pr-32 h-14 text-lg bg-card border-border shadow-soft"
-          />
-          <div className="absolute right-2 top-2 flex gap-2">
-            <Button
-              type="button"
-              size="icon"
-              variant={isSpeaking ? "destructive" : "secondary"}
-              onClick={handleSpeakToggle}
-              className="h-10 w-10"
-            >
-              {isSpeaking ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant={isListening ? "destructive" : "default"}
-              onClick={handleVoiceToggle}
-              className="h-10 w-10"
-            >
-              {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            </Button>
-          </div>
+    <form onSubmit={handleSubmit} className="w-full">
+      <div className="relative flex items-center bg-card rounded-2xl shadow-warm border border-border overflow-hidden">
+        {/* Search icon */}
+        <div className="pl-4 shrink-0">
+          <Search className="h-5 w-5 text-muted-foreground" />
         </div>
-        
-        <AnimatePresence>
-          {isListening && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex items-center justify-center gap-2 text-primary"
-            >
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-              >
-                <Mic className="h-5 w-5" />
-              </motion.div>
-              <span className="text-sm font-medium">En écoute... Parlez maintenant</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        <Button type="submit" className="w-full h-12 text-lg">
-          Rechercher
-        </Button>
-      </form>
-    </div>
+        {/* Input */}
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => onSearchQueryChange(e.target.value)}
+          placeholder="Maison 3 chambres à Ouaga 2000, 300 000 FCFA..."
+          className="flex-1 bg-transparent px-4 py-4 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
+        />
+
+        {/* Voice buttons */}
+        <div className="flex items-center gap-1 pr-2 shrink-0">
+          {isSpeechSupported && (
+            <button
+              type="button"
+              onClick={() => isSpeaking ? cancel() : searchQuery && speak(`Vous recherchez : ${searchQuery}`)}
+              className={`p-2.5 rounded-xl transition-all ${isSpeaking ? 'bg-destructive/10 text-destructive' : 'hover:bg-muted text-muted-foreground'}`}
+            >
+              {isSpeaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleVoiceToggle}
+            className={`p-2.5 rounded-xl transition-all relative ${isListening ? 'bg-destructive text-destructive-foreground' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
+          >
+            {isListening ? (
+              <>
+                <MicOff className="h-4 w-4" />
+                <motion.div
+                  className="absolute inset-0 rounded-xl border-2 border-destructive"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.2 }}
+                />
+              </>
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
+          </button>
+
+          <button
+            type="submit"
+            className="ml-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground text-sm font-semibold px-4 py-2.5 rounded-xl transition-all"
+          >
+            Chercher
+          </button>
+        </div>
+      </div>
+
+      {/* Listening indicator */}
+      <AnimatePresence>
+        {isListening && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="mt-2 flex items-center justify-center gap-2 text-card"
+          >
+            <div className="flex gap-1">
+              {[0, 1, 2, 3].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-1 bg-card rounded-full"
+                  animate={{ height: ['8px', '20px', '8px'] }}
+                  transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15 }}
+                />
+              ))}
+            </div>
+            <span className="text-sm font-medium">En écoute…</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </form>
   );
 };
 
