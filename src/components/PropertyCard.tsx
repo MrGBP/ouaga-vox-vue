@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MapPin, Bed, Maximize, Eye, Camera, Lock } from 'lucide-react';
+import { MapPin, Bed, Maximize, Eye, Camera, Lock, Heart, Crosshair } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -24,6 +24,9 @@ interface Property {
 interface PropertyCardProps {
   property: Property;
   onViewDetails: (property: Property) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: string) => void;
+  onFocusOnMap?: (id: string) => void;
 }
 
 const typeLabels: Record<string, string> = {
@@ -32,7 +35,7 @@ const typeLabels: Record<string, string> = {
   commerce: 'Commerce',
 };
 
-const PropertyCard = ({ property, onViewDetails }: PropertyCardProps) => {
+const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFavorite, onFocusOnMap }: PropertyCardProps) => {
   const isRented = !property.available;
 
   const formatPrice = (price: number) =>
@@ -82,21 +85,34 @@ const PropertyCard = ({ property, onViewDetails }: PropertyCardProps) => {
           )}
         </div>
 
-        {/* Badge loué coin */}
-        {isRented && (
-          <Badge className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs px-2 py-0.5 font-bold">
-            LOUÉ
-          </Badge>
-        )}
+        {/* Heart favorite button */}
+        <div className="absolute top-3 right-3 flex gap-1.5">
+          {isRented && (
+            <Badge className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 font-bold">
+              LOUÉ
+            </Badge>
+          )}
+          {onToggleFavorite && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(property.id); }}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
+                isFavorite
+                  ? 'bg-secondary text-secondary-foreground'
+                  : 'bg-card/80 backdrop-blur-sm text-muted-foreground hover:text-secondary'
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Content — 3 infos clés max */}
+      {/* Content */}
       <div className="p-4">
         <h3 className="font-semibold text-base text-foreground line-clamp-1 mb-2">
           {property.title}
         </h3>
 
-        {/* 3 infos clés : Prix | Chambres | Quartier */}
         <div className="flex items-center gap-3 mb-3">
           <div className="text-lg font-bold text-primary">
             {formatPrice(property.price)}
@@ -127,15 +143,26 @@ const PropertyCard = ({ property, onViewDetails }: PropertyCardProps) => {
       </div>
 
       {/* CTA */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 flex gap-2">
+        {onFocusOnMap && !isRented && (
+          <Button
+            onClick={() => onFocusOnMap(property.id)}
+            variant="outline"
+            size="icon"
+            className="shrink-0 h-9 w-9 border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
+            title="Voir sur la carte"
+          >
+            <Crosshair className="h-4 w-4" />
+          </Button>
+        )}
         <Button
           onClick={() => !isRented && onViewDetails(property)}
           disabled={isRented}
           variant={isRented ? 'outline' : 'default'}
-          className={`w-full text-sm gap-2 ${!isRented ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-muted-foreground cursor-not-allowed'}`}
+          className={`flex-1 text-sm gap-2 ${!isRented ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-muted-foreground cursor-not-allowed'}`}
         >
           <Eye className="h-4 w-4" />
-          {isRented ? 'Indisponible' : 'Voir la fiche complète'}
+          {isRented ? 'Indisponible' : 'Voir la fiche'}
         </Button>
       </div>
     </motion.article>

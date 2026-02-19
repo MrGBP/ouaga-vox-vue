@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { SlidersHorizontal, X, ChevronDown, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
@@ -23,6 +23,9 @@ interface FilterBarProps {
   quartiers: string[];
   totalCount: number;
   filteredCount: number;
+  favoritesCount?: number;
+  showFavoritesOnly?: boolean;
+  onToggleFavoritesView?: () => void;
 }
 
 const DEFAULT_FILTERS: FilterState = {
@@ -35,7 +38,7 @@ const DEFAULT_FILTERS: FilterState = {
   onlyAvailable: false,
 };
 
-const FilterBar = ({ onFilterChange, quartiers, totalCount, filteredCount }: FilterBarProps) => {
+const FilterBar = ({ onFilterChange, quartiers, totalCount, filteredCount, favoritesCount = 0, showFavoritesOnly = false, onToggleFavoritesView }: FilterBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
@@ -77,6 +80,28 @@ const FilterBar = ({ onFilterChange, quartiers, totalCount, filteredCount }: Fil
             )}
             <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
+
+          {/* Favorites view toggle */}
+          {onToggleFavoritesView && (
+            <button
+              onClick={onToggleFavoritesView}
+              className={`flex items-center gap-2 text-sm font-medium rounded-lg px-3.5 py-2 transition-colors border ${
+                showFavoritesOnly
+                  ? 'bg-secondary text-secondary-foreground border-secondary'
+                  : 'bg-card text-muted-foreground border-border hover:border-secondary/50'
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+              Favoris
+              {favoritesCount > 0 && (
+                <Badge className={`h-5 min-w-5 px-1.5 text-xs ${
+                  showFavoritesOnly ? 'bg-secondary-foreground/20 text-secondary-foreground' : 'bg-secondary/10 text-secondary'
+                }`}>
+                  {favoritesCount}
+                </Badge>
+              )}
+            </button>
+          )}
 
           {activeCount > 0 && (
             <button
@@ -166,14 +191,14 @@ const FilterBar = ({ onFilterChange, quartiers, totalCount, filteredCount }: Fil
                 />
               </div>
 
-              {/* Switches */}
+              {/* Switches row */}
               <div className="flex items-center gap-2">
                 <Switch
                   id="has360"
                   checked={filters.hasVirtualTour}
                   onCheckedChange={(v) => update({ hasVirtualTour: v })}
                 />
-                <Label htmlFor="has360" className="text-sm cursor-pointer">Visite 360° disponible</Label>
+                <Label htmlFor="has360" className="text-sm cursor-pointer">Visite 360°</Label>
               </div>
 
               <div className="flex items-center gap-2">
@@ -182,7 +207,7 @@ const FilterBar = ({ onFilterChange, quartiers, totalCount, filteredCount }: Fil
                   checked={filters.onlyAvailable}
                   onCheckedChange={(v) => update({ onlyAvailable: v })}
                 />
-                <Label htmlFor="available" className="text-sm cursor-pointer">Uniquement disponibles</Label>
+                <Label htmlFor="available" className="text-sm cursor-pointer">Disponibles uniquement</Label>
               </div>
             </div>
           </motion.div>

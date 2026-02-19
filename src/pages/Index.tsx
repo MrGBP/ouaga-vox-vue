@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +10,9 @@ import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
 import VirtualTourModal from '@/components/VirtualTourModal';
 import QuartiersSection from '@/components/QuartiersSection';
-import { Loader2, MapPin, Home, TrendingUp } from 'lucide-react';
+import AIComparator from '@/components/AIComparator';
+import AIProfileSection from '@/components/AIProfileSection';
+import { Loader2, MapPin, Home, TrendingUp, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
 interface Property {
@@ -61,6 +63,8 @@ const DEFAULT_FILTERS: FilterState = {
   onlyAvailable: false,
 };
 
+const FAVORITES_KEY = 'sapsap_favorites';
+
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
@@ -71,8 +75,21 @@ const Index = () => {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(FAVORITES_KEY);
+      return saved ? new Set(JSON.parse(saved)) : new Set<string>();
+    } catch { return new Set<string>(); }
+  });
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [focusedPropertyId, setFocusedPropertyId] = useState<string | null>(null);
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
+
+  // Persist favorites
+  useEffect(() => {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
+  }, [favorites]);
 
   useEffect(() => {
     fetchData();
@@ -103,12 +120,18 @@ const Index = () => {
     }
   };
 
-  const applyFilters = (
+  const applyFilters = useCallback((
     source: Property[],
-    query: string = searchQuery,
-    f: FilterState = filters
+    query: string,
+    f: FilterState,
+    favsOnly: boolean,
+    favSet: Set<string>
   ) => {
     let result = [...source];
+
+    if (favsOnly) {
+      result = result.filter(p => favSet.has(p.id));
+    }
 
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -130,11 +153,20 @@ const Index = () => {
     if (f.onlyAvailable) result = result.filter((p) => p.available);
 
     return result;
-  };
+  }, []);
+
+  const refilter = useCallback((
+    query = searchQuery,
+    f = filters,
+    favsOnly = showFavoritesOnly,
+    favSet = favorites
+  ) => {
+    setFilteredProperties(applyFilters(properties, query, f, favsOnly, favSet));
+  }, [properties, searchQuery, filters, showFavoritesOnly, favorites, applyFilters]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    const filtered = applyFilters(properties, query, filters);
+    const filtered = applyFilters(properties, query, filters, showFavoritesOnly, favorites);
     setFilteredProperties(filtered);
 
     if (filtered.length > 0) {
@@ -142,14 +174,14 @@ const Index = () => {
       speak(msg);
       toast({ title: '🔍 Résultats', description: msg });
     } else {
-      speak("Aucun bien ne correspond à votre recherche. Essayez d'autres critères.");
+      speak("Aucun bien ne correspond à votre recherche.");
       toast({ title: 'Aucun résultat', description: 'Élargissez votre recherche.', variant: 'destructive' });
     }
   };
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
-    setFilteredProperties(applyFilters(properties, searchQuery, newFilters));
+    setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites));
   };
 
   const handleViewDetails = (property: Property) => {
@@ -163,16 +195,53 @@ const Index = () => {
     if (p && p.available) handleViewDetails(p);
   };
 
+  const handleFocusOnMap = (id: string) => {
+    setFocusedPropertyId(id);
+    document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   const handleQuartierClick = (q: Quartier) => {
     setSearchQuery(q.name);
-    const filtered = applyFilters(properties, q.name, filters);
+    const filtered = applyFilters(properties, q.name, filters, showFavoritesOnly, favorites);
     setFilteredProperties(filtered);
     speak(`Voici les biens disponibles dans le quartier ${q.name}`);
     document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        toast({ title: '💔 Retiré des favoris' });
+      } else {
+        next.add(id);
+        toast({ title: '❤️ Ajouté aux favoris' });
+      }
+      // If we're in favorites view, refilter
+      if (showFavoritesOnly) {
+        setTimeout(() => {
+          setFilteredProperties(applyFilters(properties, searchQuery, filters, true, next));
+        }, 0);
+      }
+      return next;
+    });
+  };
+
+  const toggleFavoritesView = () => {
+    const next = !showFavoritesOnly;
+    setShowFavoritesOnly(next);
+    setFilteredProperties(applyFilters(properties, searchQuery, filters, next, favorites));
+  };
+
+  const favoriteProperties = properties.filter(p => favorites.has(p.id));
   const availableCount = filteredProperties.filter((p) => p.available).length;
   const quartierNames = [...new Set(properties.map((p) => p.quartier))].sort();
+
+  // Map properties: in favorites view, only show favorites
+  const mapProperties = showFavoritesOnly
+    ? filteredProperties
+    : filteredProperties;
 
   if (loading) {
     return (
@@ -270,6 +339,9 @@ const Index = () => {
           quartiers={quartierNames}
           totalCount={properties.length}
           filteredCount={filteredProperties.length}
+          favoritesCount={favorites.size}
+          showFavoritesOnly={showFavoritesOnly}
+          onToggleFavoritesView={toggleFavoritesView}
         />
 
         <motion.div
@@ -278,19 +350,21 @@ const Index = () => {
           transition={{ duration: 0.5 }}
         >
           <InteractiveMap
-            properties={filteredProperties}
+            properties={mapProperties}
             pois={pois}
             quartiers={quartiers}
             onPropertyClick={handlePropertyClick}
+            focusedPropertyId={focusedPropertyId}
+            onFocusClear={() => setFocusedPropertyId(null)}
           />
         </motion.div>
       </section>
 
       {/* Properties grid */}
-      <section id="properties" className="container mx-auto px-4 pb-16">
+      <section id="properties" className="container mx-auto px-4 pb-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground">
-            {searchQuery ? `Résultats pour "${searchQuery}"` : 'Tous les biens'}
+            {showFavoritesOnly ? '❤️ Mes favoris' : searchQuery ? `Résultats pour "${searchQuery}"` : 'Tous les biens'}
           </h2>
           <span className="text-sm text-muted-foreground font-medium">
             <span className="text-foreground font-bold">{filteredProperties.length}</span> résultat{filteredProperties.length > 1 ? 's' : ''}
@@ -306,17 +380,46 @@ const Index = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.04 }}
               >
-                <PropertyCard property={p} onViewDetails={handleViewDetails} />
+                <PropertyCard
+                  property={p}
+                  onViewDetails={handleViewDetails}
+                  isFavorite={favorites.has(p.id)}
+                  onToggleFavorite={toggleFavorite}
+                  onFocusOnMap={handleFocusOnMap}
+                />
               </motion.div>
             ))}
           </div>
         ) : (
           <div className="text-center py-20 bg-card border border-border rounded-xl">
-            <div className="text-4xl mb-4">🏠</div>
-            <p className="text-lg font-semibold text-foreground mb-2">Aucun bien trouvé</p>
-            <p className="text-sm text-muted-foreground">Essayez de modifier vos filtres ou votre recherche.</p>
+            <div className="text-4xl mb-4">{showFavoritesOnly ? '❤️' : '🏠'}</div>
+            <p className="text-lg font-semibold text-foreground mb-2">
+              {showFavoritesOnly ? 'Aucun favori' : 'Aucun bien trouvé'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {showFavoritesOnly ? 'Ajoutez des biens en favoris avec le bouton ❤️' : 'Essayez de modifier vos filtres ou votre recherche.'}
+            </p>
           </div>
         )}
+      </section>
+
+      {/* AI Section */}
+      <section id="ia" className="container mx-auto px-4 pb-16">
+        <div className="flex items-center gap-2 mb-6">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h2 className="text-2xl font-bold text-foreground">Intelligence IA</h2>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <AIComparator
+            favorites={favoriteProperties}
+            priorities={[]}
+          />
+          <AIProfileSection
+            properties={properties}
+            onHighlightProperty={handleFocusOnMap}
+          />
+        </div>
       </section>
 
       <VirtualTourModal
