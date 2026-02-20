@@ -191,8 +191,7 @@ const Index = () => {
   };
 
   const handlePropertyClick = (id: string) => {
-    const p = properties.find((p) => p.id === id);
-    if (p && p.available) handleViewDetails(p);
+    setFocusedPropertyId(id);
   };
 
   const handleFocusOnMap = (id: string) => {
