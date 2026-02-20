@@ -187,7 +187,7 @@ const Index = () => {
   const handleViewDetails = (property: Property) => {
     setSelectedProperty(property);
     setModalOpen(true);
-    speak(`Voici les détails de : ${property.title}, situé à ${property.quartier}.`);
+    // Voice disabled on property click
   };
 
   const handlePropertyClick = (id: string) => {

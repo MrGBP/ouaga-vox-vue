@@ -6,12 +6,21 @@ import 'leaflet/dist/leaflet.css';
 interface Property {
   id: string;
   title: string;
+  description?: string;
   latitude: number;
   longitude: number;
   price: number;
   type: string;
   quartier: string;
+  address?: string;
   available: boolean;
+  bedrooms?: number;
+  bathrooms?: number;
+  surface_area?: number;
+  comfort_rating?: number;
+  security_rating?: number;
+  images?: string[];
+  virtual_tour_url?: string;
 }
 
 interface POI {
@@ -288,6 +297,12 @@ const InteractiveMap = ({
     };
   }, [renderPins]);
 
+  // ── Invalidate map size when panel opens/closes ─────────────────────────────
+  useEffect(() => {
+    if (!mapInst.current) return;
+    setTimeout(() => mapInst.current?.invalidateSize(), 350);
+  }, [focusedPropertyId]);
+
   // ── Focus mode ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!focusLayer.current || !tentacleLayer.current || !overlayLayer.current || !mapInst.current) return;
@@ -445,13 +460,133 @@ const InteractiveMap = ({
 
   }, [focusedPropertyId, properties, pois, radius, onPropertyClick, renderPins]);
 
+  const focusedProp = focusedPropertyId ? properties.find(p => p.id === focusedPropertyId) : null;
+
+  const renderStars = (rating: number | undefined | null) => {
+    if (!rating) return <span className="text-muted-foreground text-xs">N/A</span>;
+    return (
+      <span className="text-xs">
+        {'★'.repeat(Math.round(rating))}{'☆'.repeat(5 - Math.round(rating))}
+        <span className="text-muted-foreground ml-1">{rating}/5</span>
+      </span>
+    );
+  };
+
   return (
-    <div className="relative w-full h-[580px] rounded-xl overflow-hidden border border-border shadow-card">
-      <div ref={mapRef} className="w-full h-full" />
+    <div className="relative w-full h-[580px] rounded-xl overflow-hidden border border-border shadow-card flex">
+      {/* Map */}
+      <div ref={mapRef} className={`h-full transition-all duration-300 ${focusedProp ? 'w-[60%]' : 'w-full'}`} />
+
+      {/* ── Detail Side Panel ─────────────────────────────────────────── */}
+      {focusedProp && (
+        <div className="w-[40%] h-full bg-card border-l border-border overflow-y-auto z-[700]">
+          {/* Image */}
+          {focusedProp.images && focusedProp.images.length > 0 ? (
+            <div className="relative h-40 overflow-hidden">
+              <img src={focusedProp.images[0]} alt={focusedProp.title} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
+              {focusedProp.images.length > 1 && (
+                <span className="absolute bottom-2 right-2 bg-card/80 backdrop-blur-sm text-xs px-2 py-0.5 rounded-full text-muted-foreground font-medium">
+                  +{focusedProp.images.length - 1} photos
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="h-28 bg-muted flex items-center justify-center text-3xl">🏠</div>
+          )}
+
+          <div className="p-4 space-y-4">
+            {/* Title & Price */}
+            <div>
+              <h3 className="text-base font-bold text-foreground leading-tight">{focusedProp.title}</h3>
+              <p className="text-lg font-extrabold text-primary mt-1">{fmt(focusedProp.price)} <span className="text-xs font-medium text-muted-foreground">FCFA/mois</span></p>
+            </div>
+
+            {/* Status */}
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${focusedProp.available ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${focusedProp.available ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                {focusedProp.available ? 'Disponible' : 'Loué'}
+              </span>
+              <span className="text-xs text-muted-foreground capitalize">{focusedProp.type}</span>
+            </div>
+
+            {/* Location */}
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              <div className="flex items-center gap-1.5">
+                <span>📍</span>
+                <span>{focusedProp.quartier}</span>
+              </div>
+              {focusedProp.address && (
+                <div className="flex items-center gap-1.5">
+                  <span>🏛️</span>
+                  <span>{focusedProp.address}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Key specs */}
+            <div className="grid grid-cols-2 gap-2">
+              {focusedProp.bedrooms != null && (
+                <div className="bg-muted/50 rounded-lg p-2 text-center">
+                  <div className="text-sm font-bold text-foreground">{focusedProp.bedrooms}</div>
+                  <div className="text-[10px] text-muted-foreground">Chambres</div>
+                </div>
+              )}
+              {focusedProp.bathrooms != null && (
+                <div className="bg-muted/50 rounded-lg p-2 text-center">
+                  <div className="text-sm font-bold text-foreground">{focusedProp.bathrooms}</div>
+                  <div className="text-[10px] text-muted-foreground">Salles de bain</div>
+                </div>
+              )}
+              {focusedProp.surface_area != null && (
+                <div className="bg-muted/50 rounded-lg p-2 text-center">
+                  <div className="text-sm font-bold text-foreground">{focusedProp.surface_area}</div>
+                  <div className="text-[10px] text-muted-foreground">m² surface</div>
+                </div>
+              )}
+              {focusedProp.virtual_tour_url && (
+                <div className="bg-muted/50 rounded-lg p-2 text-center">
+                  <div className="text-sm">🎥</div>
+                  <div className="text-[10px] text-muted-foreground">Visite 360°</div>
+                </div>
+              )}
+            </div>
+
+            {/* Ratings */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Confort</span>
+                {renderStars(focusedProp.comfort_rating)}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Sécurité</span>
+                {renderStars(focusedProp.security_rating)}
+              </div>
+            </div>
+
+            {/* Description */}
+            {focusedProp.description && (
+              <div>
+                <h4 className="text-xs font-semibold text-foreground mb-1">Description</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">{focusedProp.description}</p>
+              </div>
+            )}
+
+            {/* Close button */}
+            <button
+              onClick={onFocusClear}
+              className="w-full mt-2 py-2 rounded-lg bg-muted hover:bg-muted/80 text-xs font-semibold text-muted-foreground transition-colors"
+            >
+              ✕ Fermer le focus
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Focus mode control bar ───────────────────────────────────────── */}
       {focusedPropertyId && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[600] flex items-center gap-2">
+        <div className="absolute top-3 left-[30%] -translate-x-1/2 z-[600] flex items-center gap-2">
           <div className="bg-card/96 backdrop-blur-sm border border-border rounded-xl px-3 py-2 shadow-card flex items-center gap-2">
             <span className="text-xs font-semibold text-muted-foreground mr-1">Rayon</span>
             {RADIUS_OPTIONS.map(opt => (
@@ -468,13 +603,6 @@ const InteractiveMap = ({
               </button>
             ))}
           </div>
-          <button
-            onClick={onFocusClear}
-            className="bg-card/96 backdrop-blur-sm border border-border rounded-xl px-3 py-2 shadow-card text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-            Quitter le focus
-          </button>
         </div>
       )}
 
