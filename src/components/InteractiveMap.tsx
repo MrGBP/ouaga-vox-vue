@@ -1,10 +1,8 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import 'leaflet.markercluster';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface Property {
   id: string;
   title: string;
@@ -40,6 +38,16 @@ interface InteractiveMapProps {
   onFocusClear?: () => void;
 }
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+const OUAGA_CENTER: [number, number] = [12.3714, -1.5197];
+const OUAGA_BOUNDS = L.latLngBounds(L.latLng(12.25, -1.65), L.latLng(12.50, -1.40));
+
+const RADIUS_OPTIONS = [
+  { label: '300 m', value: 300 },
+  { label: '500 m', value: 500 },
+  { label: '1 km',  value: 1000 },
+];
+
 const POI_ICONS: Record<string, { emoji: string; color: string; label: string }> = {
   ecole:      { emoji: '🏫', color: '#3B82F6', label: 'École' },
   universite: { emoji: '🎓', color: '#8B5CF6', label: 'Université' },
@@ -53,43 +61,108 @@ const POI_ICONS: Record<string, { emoji: string; color: string; label: string }>
   parc:       { emoji: '🌳', color: '#22C55E', label: 'Parc' },
 };
 
-const TYPE_COLORS: Record<string, string> = {
-  maison:   '#1E40AF',
-  bureau:   '#7C3AED',
-  commerce: '#B45309',
-};
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const fmt = (n: number) =>
+  new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(price);
-
-// Ouagadougou bounds
-const OUAGA_BOUNDS = L.latLngBounds(
-  L.latLng(12.25, -1.65),
-  L.latLng(12.50, -1.40)
-);
-
-const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+const distanceM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
   const R = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
   return Math.round(2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
-const InteractiveMap = ({ properties, pois, quartiers = [], onPropertyClick, focusedPropertyId, onFocusClear }: InteractiveMapProps) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const clusterGroupRef = useRef<any>(null);
-  const poiLayerRef = useRef<L.LayerGroup | null>(null);
-  const tentacleLayerRef = useRef<L.LayerGroup | null>(null);
-  const focusLayerRef = useRef<L.LayerGroup | null>(null);
+const fmtDist = (d: number) => (d < 1000 ? `${d} m` : `${(d / 1000).toFixed(1)} km`);
 
-  // Init map once
+// Adaptive pin size: sqrt scale, min 48 max 88
+const pinSize = (count: number, zoom: number): number => {
+  const base = Math.round(48 + Math.sqrt(count) * 5);
+  const capped = Math.min(Math.max(base, 48), 88);
+  // Scale subtly with zoom (larger at zoom 13+)
+  const zoomFactor = zoom >= 13 ? 1.1 : zoom >= 12 ? 1 : 0.92;
+  return Math.round(capped * zoomFactor);
+};
+
+// Quartier pin HTML
+const quartierPinHTML = (name: string, count: number, size: number) => {
+  const fontSize = Math.max(11, Math.round(size * 0.22));
+  const countSize = Math.max(13, Math.round(size * 0.26));
+  return `
+    <div style="
+      position:relative;
+      width:${size}px;
+      height:${size}px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      background:white;
+      border:2.5px solid hsl(220,70%,32%);
+      border-radius:${size / 2}px;
+      box-shadow:0 4px 16px hsla(220,70%,32%,0.22), 0 1px 4px rgba(0,0,0,0.08);
+      cursor:pointer;
+      gap:1px;
+      transition:transform 0.15s;
+    ">
+      <span style="font-size:${countSize}px;font-weight:800;color:hsl(220,70%,32%);line-height:1;">${count}</span>
+      <span style="font-size:${fontSize}px;font-weight:600;color:hsl(220,25%,42%);line-height:1;text-align:center;max-width:${size - 10}px;overflow:hidden;white-space:nowrap;">${name}</span>
+    </div>
+  `;
+};
+
+// Individual property pin (focus or single)
+const propertyPinHTML = (p: Property, focused: boolean) => {
+  const typeEmoji = p.type === 'maison' ? '🏠' : p.type === 'bureau' ? '🏢' : '🏪';
+  const typeLabel = p.type === 'maison' ? 'Maison' : p.type === 'bureau' ? 'Bureau' : 'Commerce';
+  const color = !p.available ? '#9CA3AF' : 'hsl(220,70%,32%)';
+  const pulse = focused ? `box-shadow:0 0 0 6px hsla(220,70%,32%,0.18),0 4px 20px hsla(220,70%,32%,0.35);` : '';
+  return `
+    <div style="
+      background:${focused ? 'hsl(220,70%,32%)' : 'white'};
+      border:2.5px solid ${focused ? 'white' : color};
+      border-radius:12px;
+      padding:6px 10px;
+      font-family:system-ui,sans-serif;
+      min-width:130px;
+      text-align:center;
+      ${pulse}
+      cursor:pointer;
+    ">
+      <div style="font-size:13px;font-weight:800;color:${focused ? 'white' : color};line-height:1.2;">${fmt(p.price)} <span style="font-size:10px;font-weight:500;opacity:0.75">FCFA</span></div>
+      <div style="font-size:10px;color:${focused ? 'rgba(255,255,255,0.8)' : '#666'};margin-top:2px;">${typeEmoji} ${typeLabel} · ${p.quartier}</div>
+      ${!p.available ? `<div style="font-size:9px;color:${focused?'rgba(255,255,255,0.6)':'#9CA3AF'};margin-top:2px;font-weight:600;">LOUÉ</div>` : ''}
+    </div>
+  `;
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+const InteractiveMap = ({
+  properties,
+  pois,
+  quartiers = [],
+  onPropertyClick,
+  focusedPropertyId,
+  onFocusClear,
+}: InteractiveMapProps) => {
+  const mapRef       = useRef<HTMLDivElement>(null);
+  const mapInst      = useRef<L.Map | null>(null);
+  const quartierLayer= useRef<L.LayerGroup | null>(null);
+  const propertyLayer= useRef<L.LayerGroup | null>(null);
+  const focusLayer   = useRef<L.LayerGroup | null>(null);
+  const tentacleLayer= useRef<L.LayerGroup | null>(null);
+  const overlayLayer = useRef<L.LayerGroup | null>(null); // dark overlay polygons
+  const [radius, setRadius] = useState(500);
+  const [zoom, setZoom] = useState(12);
+
+  // ── Init map ───────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
+    if (!mapRef.current || mapInst.current) return;
 
     const map = L.map(mapRef.current, {
-      center: [12.3714, -1.5197],
+      center: OUAGA_CENTER,
       zoom: 12,
       zoomControl: false,
       maxBounds: OUAGA_BOUNDS,
@@ -100,293 +173,349 @@ const InteractiveMap = ({ properties, pois, quartiers = [], onPropertyClick, foc
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+    // Standard OSM tile — keeps streets/labels visible always
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://openstreetmap.org">OSM</a>',
       maxZoom: 18,
     }).addTo(map);
 
-    const cluster = (L as any).markerClusterGroup({
-      maxClusterRadius: 60,
-      iconCreateFunction: (c: any) => {
-        const count = c.getChildCount();
-        const size = count < 10 ? 40 : count < 30 ? 48 : 56;
-        return L.divIcon({
-          html: `<div style="
-            background: hsl(220, 70%, 32%);
-            border: 3px solid white;
-            border-radius: 50%;
-            width: ${size}px;
-            height: ${size}px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: ${count < 10 ? 14 : 13}px;
-            box-shadow: 0 3px 12px hsla(220,70%,32%,0.35);
-          ">${count}</div>`,
-          className: '',
-          iconSize: [size, size],
-        });
-      },
-    });
-    map.addLayer(cluster);
-    clusterGroupRef.current = cluster;
+    // Layer order: overlay > quartier > property > tentacle > focus
+    const oLayer = L.layerGroup().addTo(map);
+    const qLayer = L.layerGroup().addTo(map);
+    const pLayer = L.layerGroup().addTo(map);
+    const tLayer = L.layerGroup().addTo(map);
+    const fLayer = L.layerGroup().addTo(map);
 
-    const poiLayer = L.layerGroup();
-    poiLayerRef.current = poiLayer;
-    const tentacleLayer = L.layerGroup().addTo(map);
-    tentacleLayerRef.current = tentacleLayer;
-    const focusLayer = L.layerGroup().addTo(map);
-    focusLayerRef.current = focusLayer;
+    overlayLayer.current  = oLayer;
+    quartierLayer.current = qLayer;
+    propertyLayer.current = pLayer;
+    tentacleLayer.current = tLayer;
+    focusLayer.current    = fLayer;
 
-    map.on('zoomend', () => {
-      const zoom = map.getZoom();
-      if (zoom >= 14 && !focusedPropertyId) {
-        if (!map.hasLayer(poiLayer)) map.addLayer(poiLayer);
-      } else {
-        if (map.hasLayer(poiLayer)) map.removeLayer(poiLayer);
-      }
-    });
+    map.on('zoomend', () => setZoom(map.getZoom()));
 
-    mapInstanceRef.current = map;
+    mapInst.current = map;
 
     return () => {
       map.remove();
-      mapInstanceRef.current = null;
-      clusterGroupRef.current = null;
-      poiLayerRef.current = null;
-      tentacleLayerRef.current = null;
-      focusLayerRef.current = null;
+      mapInst.current = null;
+      quartierLayer.current = null;
+      propertyLayer.current = null;
+      focusLayer.current = null;
+      tentacleLayer.current = null;
+      overlayLayer.current = null;
     };
   }, []);
 
-  // Update property markers
+  // ── Quartier pins (default view) ──────────────────────────────────────────
   useEffect(() => {
-    if (!clusterGroupRef.current) return;
-    clusterGroupRef.current.clearLayers();
+    if (!quartierLayer.current || !mapInst.current) return;
+    quartierLayer.current.clearLayers();
+    if (!propertyLayer.current) return;
+    propertyLayer.current.clearLayers();
 
-    const isFocusMode = !!focusedPropertyId;
+    const map = mapInst.current;
+    const currentZoom = map.getZoom();
 
-    properties.forEach((p) => {
-      // In focus mode, only show the focused property in the cluster
-      if (isFocusMode && p.id !== focusedPropertyId) return;
+    if (focusedPropertyId) return; // handled by focus effect
 
-      const color = p.available ? (TYPE_COLORS[p.type] || '#1E40AF') : '#9CA3AF';
-      const emoji = p.type === 'maison' ? '🏠' : p.type === 'bureau' ? '🏢' : '🏪';
-
-      const icon = L.divIcon({
-        html: `<div style="
-          background: ${color};
-          border: 2.5px solid white;
-          border-radius: 50%;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 16px;
-          box-shadow: 0 2px 8px ${color}55;
-          ${!p.available ? 'opacity:0.6;' : ''}
-        ">${emoji}</div>`,
-        className: '',
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
-      });
-
-      const marker = L.marker([p.latitude, p.longitude], { icon });
-
-      // Popup with 2-3 key infos: price, type, quartier
-      marker.bindPopup(`
-        <div style="min-width:180px;font-family:system-ui,sans-serif;">
-          <div style="font-weight:700;font-size:15px;color:${color};margin-bottom:4px;">
-            ${formatPrice(p.price)} FCFA<span style="font-size:11px;color:#888;font-weight:400">/mois</span>
-          </div>
-          <div style="font-size:12px;color:#444;margin-bottom:2px;">${emoji} ${p.type === 'maison' ? 'Maison' : p.type === 'bureau' ? 'Bureau' : 'Commerce'}</div>
-          <div style="font-size:12px;color:#666;">📍 ${p.quartier}</div>
-          ${!p.available ? '<div style="color:#9CA3AF;font-size:11px;font-weight:600;margin-top:4px;">🔒 LOUÉ</div>' : ''}
-        </div>
-      `, { maxWidth: 200 });
-
-      marker.on('click', () => {
-        if (p.available && onPropertyClick) onPropertyClick(p.id);
-      });
-
-      clusterGroupRef.current.addLayer(marker);
+    // Build quartier → properties map
+    const byQuartier = new Map<string, Property[]>();
+    properties.forEach(p => {
+      const arr = byQuartier.get(p.quartier) || [];
+      arr.push(p);
+      byQuartier.set(p.quartier, arr);
     });
 
-    (window as any)._sapsap_click = (id: string) => {
-      if (onPropertyClick) onPropertyClick(id);
-    };
-  }, [properties, onPropertyClick, focusedPropertyId]);
+    // Match quartier objects to their data
+    quartiers.forEach(q => {
+      const qProps = byQuartier.get(q.name) || [];
+      if (qProps.length === 0) return;
 
-  // Focus mode: tentacles to nearby POIs
+      const count = qProps.length;
+      const sz = pinSize(count, currentZoom);
+
+      const icon = L.divIcon({
+        html: quartierPinHTML(q.name, count, sz),
+        className: '',
+        iconSize:   [sz, sz],
+        iconAnchor: [sz / 2, sz / 2],
+      });
+
+      const marker = L.marker([q.latitude, q.longitude], { icon, zIndexOffset: 100 });
+
+      // Tooltip on hover: shows per-type breakdown
+      const available = qProps.filter(p => p.available).length;
+      marker.bindTooltip(
+        `<div style="font-family:system-ui,sans-serif;min-width:130px;">
+          <strong style="color:hsl(220,70%,32%)">${q.name}</strong><br/>
+          <span style="font-size:11px;color:#555;">${count} biens · ${available} disponibles</span>
+        </div>`,
+        { direction: 'top', offset: [0, -(sz / 2 + 4)] }
+      );
+
+      // Click → zoom into quartier and show individual property pins
+      marker.on('click', () => {
+        map.flyTo([q.latitude, q.longitude], 15, { duration: 0.7 });
+      });
+
+      quartierLayer.current!.addLayer(marker);
+    });
+
+    // When zoom >= 15, replace quartier pins with individual property pins
+    const updateByZoom = () => {
+      const z = map.getZoom();
+      quartierLayer.current!.clearLayers();
+      propertyLayer.current!.clearLayers();
+
+      if (focusedPropertyId) return;
+
+      if (z < 14) {
+        // Show quartier aggregate pins
+        quartiers.forEach(q => {
+          const qProps = byQuartier.get(q.name) || [];
+          if (qProps.length === 0) return;
+          const sz = pinSize(qProps.length, z);
+          const icon = L.divIcon({
+            html: quartierPinHTML(q.name, qProps.length, sz),
+            className: '',
+            iconSize:   [sz, sz],
+            iconAnchor: [sz / 2, sz / 2],
+          });
+          const m = L.marker([q.latitude, q.longitude], { icon, zIndexOffset: 100 });
+          m.bindTooltip(
+            `<div style="font-family:system-ui,sans-serif;">
+              <strong style="color:hsl(220,70%,32%)">${q.name}</strong><br/>
+              <span style="font-size:11px;color:#555;">${qProps.length} biens</span>
+            </div>`,
+            { direction: 'top', offset: [0, -(sz / 2 + 4)] }
+          );
+          m.on('click', () => map.flyTo([q.latitude, q.longitude], 15, { duration: 0.7 }));
+          quartierLayer.current!.addLayer(m);
+        });
+      } else {
+        // Show individual property pins
+        properties.forEach(p => {
+          const icon = L.divIcon({
+            html: propertyPinHTML(p, false),
+            className: '',
+            iconSize: [140, 52],
+            iconAnchor: [70, 26],
+          });
+          const m = L.marker([p.latitude, p.longitude], { icon });
+          m.on('click', () => {
+            if (p.available && onPropertyClick) onPropertyClick(p.id);
+          });
+          propertyLayer.current!.addLayer(m);
+        });
+      }
+    };
+
+    map.off('zoomend', updateByZoom);
+    map.on('zoomend', updateByZoom);
+    updateByZoom();
+
+    return () => {
+      map.off('zoomend', updateByZoom);
+    };
+  }, [properties, quartiers, focusedPropertyId, onPropertyClick]);
+
+  // ── Focus mode ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!tentacleLayerRef.current || !focusLayerRef.current || !mapInstanceRef.current) return;
-    tentacleLayerRef.current.clearLayers();
-    focusLayerRef.current.clearLayers();
+    if (!focusLayer.current || !tentacleLayer.current || !overlayLayer.current || !mapInst.current) return;
+
+    focusLayer.current.clearLayers();
+    tentacleLayer.current.clearLayers();
+    overlayLayer.current.clearLayers();
+    quartierLayer.current?.clearLayers();
+    propertyLayer.current?.clearLayers();
 
     if (!focusedPropertyId) return;
 
     const prop = properties.find(p => p.id === focusedPropertyId);
     if (!prop) return;
 
-    const map = mapInstanceRef.current;
-
-    // Fly to focused property
+    const map = mapInst.current;
     map.flyTo([prop.latitude, prop.longitude], 15, { duration: 0.8 });
 
-    // Subtle radius circle
-    L.circle([prop.latitude, prop.longitude], {
-      radius: 1200,
-      color: 'hsl(220, 70%, 32%)',
-      fillColor: 'hsl(220, 70%, 32%)',
-      fillOpacity: 0.04,
-      weight: 1,
-      dashArray: '8 4',
-    }).addTo(focusLayerRef.current);
+    // ── Dark overlay: semi-transparent rectangle covering full map minus a small transparent center
+    // We use a large bounding rect with a "hole" to dim surroundings
+    const bigBounds: L.LatLngTuple[] = [
+      [11.0, -3.5], [11.0,  0.5],
+      [13.8,  0.5], [13.8, -3.5],
+    ];
+    // Inner transparent hole = just the full big polygon with low opacity
+    L.polygon(bigBounds, {
+      color: 'transparent',
+      fillColor: '#1a2540',
+      fillOpacity: 0.32,
+      interactive: false,
+    }).addTo(overlayLayer.current);
 
-    // Find nearby POIs and group by type (closest per type)
-    const nearbyPois = pois
-      .map(poi => ({
-        ...poi,
-        distance: getDistance(prop.latitude, prop.longitude, poi.latitude, poi.longitude),
-      }))
-      .filter(poi => poi.distance < 2000)
-      .sort((a, b) => a.distance - b.distance);
+    // ── Focused property pin (highlighted)
+    const focusIcon = L.divIcon({
+      html: propertyPinHTML(prop, true),
+      className: '',
+      iconSize: [150, 60],
+      iconAnchor: [75, 30],
+    });
+    L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 })
+      .on('click', () => { if (onPropertyClick && prop.available) onPropertyClick(prop.id); })
+      .addTo(focusLayer.current);
 
-    // Group by type, keep closest per type
-    const byType = new Map<string, typeof nearbyPois[0]>();
-    nearbyPois.forEach(poi => {
-      if (!byType.has(poi.type)) byType.set(poi.type, poi);
+    // ── Radius circles (3 levels, configurable)
+    const radiusConfig = [
+      { r: 300,  opacity: 0.10, dash: '8 4', weight: 1.5 },
+      { r: 500,  opacity: 0.08, dash: '10 5', weight: 1.5 },
+      { r: 1000, opacity: 0.06, dash: '12 6', weight: 1 },
+    ];
+    radiusConfig.forEach(({ r, opacity, dash, weight }) => {
+      if (r > radius) return;
+      L.circle([prop.latitude, prop.longitude], {
+        radius: r,
+        color: 'hsl(220,70%,32%)',
+        fillColor: 'hsl(220,70%,52%)',
+        fillOpacity: opacity,
+        weight,
+        dashArray: dash,
+        interactive: false,
+      }).addTo(focusLayer.current!);
     });
 
-    const closestPerType = Array.from(byType.values());
+    // ── POI tentacles: group by type, keep closest, filter by selected radius
+    const grouped = new Map<string, (POI & { distance: number })>();
+    pois.forEach(poi => {
+      const d = distanceM(prop.latitude, prop.longitude, poi.latitude, poi.longitude);
+      if (d > radius) return;
+      const existing = grouped.get(poi.type);
+      if (!existing || d < existing.distance) {
+        grouped.set(poi.type, { ...poi, distance: d });
+      }
+    });
 
-    // Draw tentacle lines + POI markers
-    closestPerType.forEach(poi => {
+    const nearbyPois = Array.from(grouped.values()).sort((a, b) => a.distance - b.distance);
+
+    nearbyPois.forEach(poi => {
       const info = POI_ICONS[poi.type] || { emoji: '📍', color: '#6B7280', label: poi.type };
-      const distLabel = poi.distance < 1000 ? `${poi.distance}m` : `${(poi.distance / 1000).toFixed(1)}km`;
+      const distLabel = fmtDist(poi.distance);
+
+      // Smooth curved-ish polyline (slight offset for visual interest)
+      const midLat = (prop.latitude + poi.latitude) / 2;
+      const midLng = (prop.longitude + poi.longitude) / 2;
 
       // Tentacle line
-      const line = L.polyline(
+      L.polyline(
         [[prop.latitude, prop.longitude], [poi.latitude, poi.longitude]],
         {
           color: info.color,
-          weight: 1.5,
-          opacity: 0.5,
-          dashArray: '6 4',
+          weight: 1.2,
+          opacity: 0.55,
+          dashArray: '5 4',
+          interactive: false,
         }
-      );
-      line.addTo(tentacleLayerRef.current!);
+      ).addTo(tentacleLayer.current!);
 
-      // Midpoint label
-      const midLat = (prop.latitude + poi.latitude) / 2;
-      const midLng = (prop.longitude + poi.longitude) / 2;
-      const midLabel = L.divIcon({
-        html: `<div style="
-          background: white;
-          border: 1px solid ${info.color}44;
-          border-radius: 8px;
-          padding: 2px 6px;
-          font-size: 10px;
-          color: ${info.color};
-          font-weight: 600;
-          white-space: nowrap;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        ">${info.label} · ${distLabel}</div>`,
-        className: '',
-        iconAnchor: [40, 8],
-      });
-      L.marker([midLat, midLng], { icon: midLabel, interactive: false }).addTo(tentacleLayerRef.current!);
+      // Midpoint distance label
+      L.marker([midLat, midLng], {
+        icon: L.divIcon({
+          html: `<div style="
+            background:white;
+            border:1px solid ${info.color}50;
+            border-radius:20px;
+            padding:2px 7px;
+            font-family:system-ui,sans-serif;
+            font-size:9px;
+            color:${info.color};
+            font-weight:700;
+            white-space:nowrap;
+            box-shadow:0 1px 4px rgba(0,0,0,0.1);
+            pointer-events:none;
+          ">${info.label} · ${distLabel}</div>`,
+          className: '',
+          iconAnchor: [38, 8],
+        }),
+        interactive: false,
+      }).addTo(tentacleLayer.current!);
 
-      // POI marker
-      const poiIcon = L.divIcon({
-        html: `<div style="
-          background: white;
-          border: 2px solid ${info.color};
-          border-radius: 50%;
-          width: 26px;
-          height: 26px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          box-shadow: 0 1px 4px ${info.color}33;
-        ">${info.emoji}</div>`,
-        className: '',
-        iconSize: [26, 26],
-        iconAnchor: [13, 13],
-      });
-      L.marker([poi.latitude, poi.longitude], { icon: poiIcon })
-        .bindTooltip(`<strong>${poi.name}</strong><br/><span style="color:#666;font-size:11px;">${info.label} · ${distLabel}</span>`, {
-          direction: 'top',
-        })
-        .addTo(tentacleLayerRef.current!);
+      // POI icon dot
+      L.marker([poi.latitude, poi.longitude], {
+        icon: L.divIcon({
+          html: `<div style="
+            background:white;
+            border:2px solid ${info.color};
+            border-radius:50%;
+            width:28px;
+            height:28px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:13px;
+            box-shadow:0 2px 8px ${info.color}30;
+          ">${info.emoji}</div>`,
+          className: '',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        }),
+        zIndexOffset: 500,
+      })
+        .bindTooltip(
+          `<strong style="color:${info.color}">${poi.name}</strong><br/><span style="font-size:11px;color:#666">${info.label} · ${distLabel}</span>`,
+          { direction: 'top' }
+        )
+        .addTo(tentacleLayer.current!);
     });
-  }, [focusedPropertyId, properties, pois]);
 
-  // Update POI markers (non-focus mode only)
-  useEffect(() => {
-    if (!poiLayerRef.current) return;
-    poiLayerRef.current.clearLayers();
-    if (focusedPropertyId) return; // Don't show generic POIs in focus mode
+  }, [focusedPropertyId, properties, pois, radius, onPropertyClick]);
 
-    pois.forEach((poi) => {
-      const info = POI_ICONS[poi.type] || { emoji: '📍', color: '#6B7280', label: poi.type };
-      const icon = L.divIcon({
-        html: `<div style="
-          background: white;
-          border: 2px solid ${info.color};
-          border-radius: 50%;
-          width: 26px;
-          height: 26px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          box-shadow: 0 1px 4px ${info.color}33;
-        ">${info.emoji}</div>`,
-        className: '',
-        iconSize: [26, 26],
-        iconAnchor: [13, 13],
-      });
-
-      L.marker([poi.latitude, poi.longitude], { icon })
-        .bindTooltip(`<strong>${poi.name}</strong><br/><span style="color:#666;font-size:11px;">${info.label}</span>`, {
-          direction: 'top',
-        })
-        .addTo(poiLayerRef.current!);
-    });
-  }, [pois, focusedPropertyId]);
+  // ── Sync radius change while focused ──────────────────────────────────────
+  // (radius change re-triggers the focus useEffect via deps)
 
   return (
-    <div className="relative w-full h-[560px] rounded-xl overflow-hidden border border-border shadow-card">
+    <div className="relative w-full h-[580px] rounded-xl overflow-hidden border border-border shadow-card">
       <div ref={mapRef} className="w-full h-full" />
 
-      {/* Focus mode indicator */}
+      {/* ── Focus mode control bar ──────────────────────────────────────────── */}
       {focusedPropertyId && (
-        <button
-          onClick={onFocusClear}
-          className="absolute top-4 left-4 z-[500] bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-card text-xs font-medium text-foreground hover:bg-muted transition-colors flex items-center gap-2"
-        >
-          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          Mode Focus actif
-          <span className="text-muted-foreground ml-1">✕ Quitter</span>
-        </button>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[600] flex items-center gap-2">
+          {/* Radius selector */}
+          <div className="bg-card/96 backdrop-blur-sm border border-border rounded-xl px-3 py-2 shadow-card flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground mr-1">Rayon</span>
+            {RADIUS_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setRadius(opt.value)}
+                className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+                  radius === opt.value
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Exit focus */}
+          <button
+            onClick={onFocusClear}
+            className="bg-card/96 backdrop-blur-sm border border-border rounded-xl px-3 py-2 shadow-card text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+            Quitter le focus
+          </button>
+        </div>
       )}
 
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur-sm border border-border rounded-xl p-3 shadow-card text-xs space-y-1.5 z-[500]">
-        <p className="font-semibold text-foreground mb-2">Légende</p>
-        <div className="flex items-center gap-2 text-muted-foreground"><span style={{color:'#1E40AF'}}>🏠</span> Maison</div>
-        <div className="flex items-center gap-2 text-muted-foreground"><span style={{color:'#7C3AED'}}>🏢</span> Bureau</div>
-        <div className="flex items-center gap-2 text-muted-foreground"><span style={{color:'#B45309'}}>🏪</span> Commerce</div>
-        {!focusedPropertyId && (
-          <div className="border-t border-border mt-2 pt-2 text-muted-foreground/70 text-[10px]">
-            Cliquez un bien pour le mode Focus
-          </div>
-        )}
+      {/* ── No-focus hint ──────────────────────────────────────────────────── */}
+      {!focusedPropertyId && (
+        <div className="absolute top-3 left-3 z-[500] bg-card/90 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 text-xs text-muted-foreground shadow-card">
+          Zoom ou cliquez un quartier · Sélectionnez un bien pour le focus
+        </div>
+      )}
+
+      {/* ── Zoom level badge ───────────────────────────────────────────────── */}
+      <div className="absolute bottom-12 right-3 z-[500] bg-card/90 backdrop-blur-sm border border-border rounded-lg px-2.5 py-1 text-[10px] font-mono text-muted-foreground shadow-card">
+        zoom {zoom}
       </div>
     </div>
   );
