@@ -191,7 +191,10 @@ const Index = () => {
   };
 
   const handlePropertyClick = (id: string) => {
-    setFocusedPropertyId(id);
+    const prop = properties.find(p => p.id === id);
+    if (prop) {
+      setFocusedPropertyId(id);
+    }
   };
 
   const handleFocusOnMap = (id: string) => {
