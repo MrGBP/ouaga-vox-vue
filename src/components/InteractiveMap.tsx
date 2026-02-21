@@ -119,22 +119,36 @@ const quartierPinHTML = (name: string, count: number, size: number, isActive = f
   `;
 };
 
-// Property pin HTML
+// Property pin HTML — compact dot style for quartier view, detailed for focus
 const propertyPinHTML = (p: Property, focused: boolean) => {
   const typeEmoji = p.type === 'maison' ? '🏠' : p.type === 'bureau' ? '🏢' : '🏪';
-  const typeLabel = p.type === 'maison' ? 'Maison' : p.type === 'bureau' ? 'Bureau' : 'Commerce';
   const color = !p.available ? '#9CA3AF' : 'hsl(220,70%,32%)';
-  const pulse = focused ? 'box-shadow:0 0 0 8px hsla(220,70%,50%,0.2),0 0 0 16px hsla(220,70%,50%,0.08),0 4px 20px hsla(220,70%,32%,0.35);' : '';
+  
+  if (focused) {
+    // Focus mode: slightly larger, highlighted pin with pulse
+    return `
+      <div style="
+        display:flex;align-items:center;gap:4px;
+        background:hsl(220,70%,32%);border:2px solid hsl(220,70%,50%);border-radius:20px;
+        padding:4px 10px 4px 6px;font-family:system-ui,sans-serif;white-space:nowrap;
+        box-shadow:0 0 0 6px hsla(220,70%,50%,0.15),0 0 0 12px hsla(220,70%,50%,0.06),0 4px 16px hsla(220,70%,32%,0.3);
+      ">
+        <span style="font-size:12px;">${typeEmoji}</span>
+        <span style="font-size:11px;font-weight:700;color:white;">${fmt(p.price)} FCFA</span>
+      </div>
+    `;
+  }
+
+  // Quartier view: compact pill
   return `
     <div style="
-      background:${focused ? 'hsl(220,70%,32%)' : 'white'};
-      border:2.5px solid ${focused ? 'hsl(220,70%,50%)' : color};
-      border-radius:12px;padding:6px 10px;font-family:system-ui,sans-serif;min-width:130px;text-align:center;
-      ${pulse}cursor:pointer;transition:all 0.2s;
+      display:flex;align-items:center;gap:3px;
+      background:white;border:1.5px solid ${color};border-radius:16px;
+      padding:3px 8px 3px 5px;font-family:system-ui,sans-serif;white-space:nowrap;
+      box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;transition:transform 0.15s;
     ">
-      <div style="font-size:13px;font-weight:800;color:${focused ? 'white' : color};line-height:1.2;">${fmt(p.price)} <span style="font-size:10px;font-weight:500;opacity:0.75">FCFA</span></div>
-      <div style="font-size:10px;color:${focused ? 'rgba(255,255,255,0.8)' : '#666'};margin-top:2px;">${typeEmoji} ${typeLabel} · ${p.quartier}</div>
-      ${!p.available ? `<div style="font-size:9px;color:${focused ? 'rgba(255,255,255,0.6)' : '#9CA3AF'};margin-top:2px;font-weight:600;">LOUÉ</div>` : ''}
+      <span style="font-size:11px;">${typeEmoji}</span>
+      <span style="font-size:10px;font-weight:700;color:${color};">${fmt(p.price)}</span>
     </div>
   `;
 };
@@ -307,14 +321,20 @@ const InteractiveMap = ({
     const qProps = properties.filter(p => p.quartier === selectedQuartier);
     if (qProps.length === 0) return;
 
-    // Compute bounding box and fit
+    const map = mapInst.current;
+
+    // Compute bounding box and lock map to it
     const lats = qProps.map(p => p.latitude);
     const lngs = qProps.map(p => p.longitude);
-    const bounds = L.latLngBounds(
-      L.latLng(Math.min(...lats) - 0.003, Math.min(...lngs) - 0.005),
-      L.latLng(Math.max(...lats) + 0.003, Math.max(...lngs) + 0.005)
+    const pad = 0.006;
+    const qBounds = L.latLngBounds(
+      L.latLng(Math.min(...lats) - pad, Math.min(...lngs) - pad * 1.5),
+      L.latLng(Math.max(...lats) + pad, Math.max(...lngs) + pad * 1.5)
     );
-    mapInst.current.flyToBounds(bounds, { duration: 0.8, padding: [40, 40] });
+    map.flyToBounds(qBounds, { duration: 0.8, padding: [50, 50] });
+    // Lock to quartier bounds
+    map.setMaxBounds(qBounds.pad(0.3));
+    map.setMinZoom(14);
 
     // Smart offset to avoid overlap
     const positioned = offsetProperties(qProps);
@@ -323,10 +343,19 @@ const InteractiveMap = ({
       const icon = L.divIcon({
         html: propertyPinHTML(prop, false),
         className: '',
-        iconSize: [140, 52],
-        iconAnchor: [70, 26],
+        iconSize: [100, 28],
+        iconAnchor: [50, 14],
       });
       const m = L.marker([lat, lng], { icon });
+      // Tooltip with full details on hover
+      m.bindTooltip(
+        `<div style="font-family:system-ui,sans-serif;min-width:140px;">
+          <strong style="color:hsl(220,70%,32%);font-size:12px;">${prop.title}</strong><br/>
+          <span style="font-size:11px;font-weight:700;color:hsl(220,70%,32%);">${fmt(prop.price)} FCFA/mois</span><br/>
+          <span style="font-size:10px;color:#666;">${prop.bedrooms || '–'} ch. · ${prop.surface_area || '–'} m² · ${prop.available ? '✅ Dispo' : '🔒 Loué'}</span>
+        </div>`,
+        { direction: 'top', offset: [0, -8] }
+      );
       m.on('click', () => {
         if (onPropertyClick) onPropertyClick(prop.id);
       });
@@ -365,8 +394,8 @@ const InteractiveMap = ({
     const focusIcon = L.divIcon({
       html: propertyPinHTML(prop, true),
       className: '',
-      iconSize: [150, 60],
-      iconAnchor: [75, 30],
+      iconSize: [140, 32],
+      iconAnchor: [70, 16],
     });
     L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 })
       .addTo(focusLayer.current);
@@ -510,12 +539,21 @@ const InteractiveMap = ({
   const goBackToGlobal = () => {
     setSelectedQuartier(null);
     if (onFocusClear) onFocusClear();
-    mapInst.current?.flyTo(OUAGA_CENTER, 12, { duration: 0.7 });
+    // Unlock map bounds back to Ouagadougou
+    if (mapInst.current) {
+      mapInst.current.setMaxBounds(OUAGA_BOUNDS);
+      mapInst.current.setMinZoom(11);
+      mapInst.current.flyTo(OUAGA_CENTER, 12, { duration: 0.7 });
+    }
   };
 
   const goBackToQuartier = () => {
     if (onFocusClear) onFocusClear();
-    // Stay in quartier view, re-render will happen via effect
+    // Unlock focus tile, re-lock to quartier will happen via renderQuartier
+    if (mapInst.current) {
+      mapInst.current.setMaxBounds(OUAGA_BOUNDS);
+      mapInst.current.setMinZoom(11);
+    }
   };
 
   const focusedProp = focusedPropertyId ? properties.find(p => p.id === focusedPropertyId) : null;
