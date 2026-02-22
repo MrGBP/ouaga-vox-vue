@@ -119,36 +119,50 @@ const quartierPinHTML = (name: string, count: number, size: number, isActive = f
   `;
 };
 
-// Property pin HTML — compact dot style for quartier view, detailed for focus
+// Type-based color palette for property pins
+const TYPE_COLORS: Record<string, { bg: string; border: string; text: string; emoji: string }> = {
+  maison:    { bg: '#1E40AF', border: '#3B82F6', text: '#FFFFFF', emoji: '🏠' },
+  villa:     { bg: '#7C3AED', border: '#A78BFA', text: '#FFFFFF', emoji: '🏡' },
+  appartement: { bg: '#0891B2', border: '#22D3EE', text: '#FFFFFF', emoji: '🏬' },
+  bureau:    { bg: '#B45309', border: '#F59E0B', text: '#FFFFFF', emoji: '🏢' },
+  boutique:  { bg: '#059669', border: '#34D399', text: '#FFFFFF', emoji: '🏪' },
+  terrain:   { bg: '#65A30D', border: '#A3E635', text: '#FFFFFF', emoji: '🌿' },
+  entrepot:  { bg: '#6B7280', border: '#9CA3AF', text: '#FFFFFF', emoji: '🏭' },
+};
+
+const getTypeStyle = (type: string) =>
+  TYPE_COLORS[type.toLowerCase()] || { bg: '#475569', border: '#94A3B8', text: '#FFFFFF', emoji: '📍' };
+
+// Property pin HTML — compact dot style for quartier view, minimal for focus
 const propertyPinHTML = (p: Property, focused: boolean) => {
-  const typeEmoji = p.type === 'maison' ? '🏠' : p.type === 'bureau' ? '🏢' : '🏪';
-  const color = !p.available ? '#9CA3AF' : 'hsl(220,70%,32%)';
-  
+  const ts = getTypeStyle(p.type);
+  const unavailableOpacity = !p.available ? 'opacity:0.5;' : '';
+
   if (focused) {
-    // Focus mode: slightly larger, highlighted pin with pulse
+    // Focus mode: just a clean pin marker, no text
     return `
       <div style="
-        display:flex;align-items:center;gap:4px;
-        background:hsl(220,70%,32%);border:2px solid hsl(220,70%,50%);border-radius:20px;
-        padding:4px 10px 4px 6px;font-family:system-ui,sans-serif;white-space:nowrap;
-        box-shadow:0 0 0 6px hsla(220,70%,50%,0.15),0 0 0 12px hsla(220,70%,50%,0.06),0 4px 16px hsla(220,70%,32%,0.3);
+        width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+        background:${ts.bg};border:3px solid ${ts.border};border-radius:50%;
+        box-shadow:0 0 0 6px ${ts.border}30,0 0 0 12px ${ts.border}12,0 4px 16px rgba(0,0,0,0.25);
+        ${unavailableOpacity}
       ">
-        <span style="font-size:12px;">${typeEmoji}</span>
-        <span style="font-size:11px;font-weight:700;color:white;">${fmt(p.price)} FCFA</span>
+        <span style="font-size:14px;">${ts.emoji}</span>
       </div>
     `;
   }
 
-  // Quartier view: compact pill
+  // Quartier view: compact pill with color by type
   return `
     <div style="
       display:flex;align-items:center;gap:3px;
-      background:white;border:1.5px solid ${color};border-radius:16px;
+      background:${ts.bg};border:1.5px solid ${ts.border};border-radius:16px;
       padding:3px 8px 3px 5px;font-family:system-ui,sans-serif;white-space:nowrap;
-      box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;transition:transform 0.15s;
+      box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:transform 0.15s;
+      ${unavailableOpacity}
     ">
-      <span style="font-size:11px;">${typeEmoji}</span>
-      <span style="font-size:10px;font-weight:700;color:${color};">${fmt(p.price)}</span>
+      <span style="font-size:11px;">${ts.emoji}</span>
+      <span style="font-size:10px;font-weight:700;color:${ts.text};">${fmt(p.price)}</span>
     </div>
   `;
 };
@@ -390,12 +404,12 @@ const InteractiveMap = ({
       interactive: false,
     }).addTo(overlayLayer.current);
 
-    // Focused property pin with pulsing ring
+    // Focused property pin — clean circular marker, no text
     const focusIcon = L.divIcon({
       html: propertyPinHTML(prop, true),
       className: '',
-      iconSize: [140, 32],
-      iconAnchor: [70, 16],
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
     });
     L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 })
       .addTo(focusLayer.current);
@@ -556,17 +570,6 @@ const InteractiveMap = ({
     }
   };
 
-  const focusedProp = focusedPropertyId ? properties.find(p => p.id === focusedPropertyId) : null;
-
-  const renderStars = (rating: number | undefined | null) => {
-    if (!rating) return <span className="text-muted-foreground text-xs">N/A</span>;
-    return (
-      <span className="text-xs">
-        {'★'.repeat(Math.round(rating))}{'☆'.repeat(5 - Math.round(rating))}
-        <span className="text-muted-foreground ml-1">{rating}/5</span>
-      </span>
-    );
-  };
 
   return (
     <div className="relative w-full h-[620px] rounded-xl overflow-hidden border border-border shadow-card">
@@ -603,11 +606,11 @@ const InteractiveMap = ({
           </>
         )}
 
-        {viewLevel === 'focus' && focusedProp && (
+        {viewLevel === 'focus' && (
           <>
             <span className="text-muted-foreground text-xs">›</span>
-            <span className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-primary text-primary-foreground border border-primary shadow-sm truncate max-w-[140px]">
-              🏠 {focusedProp.title}
+            <span className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-primary text-primary-foreground border border-primary shadow-sm">
+              🔍 Focus
             </span>
           </>
         )}
@@ -635,87 +638,16 @@ const InteractiveMap = ({
         </div>
       )}
 
-      {/* ── Floating Detail Panel (focus mode) — discrete bottom-left ── */}
-      {viewLevel === 'focus' && focusedProp && (
-        <div className="absolute bottom-4 left-4 z-[600] w-[320px] max-h-[380px] overflow-y-auto bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-lg">
-          {/* Compact image */}
-          {focusedProp.images && focusedProp.images.length > 0 ? (
-            <div className="relative h-28 overflow-hidden rounded-t-2xl">
-              <img src={focusedProp.images[0]} alt={focusedProp.title} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-card/70 to-transparent" />
-              {focusedProp.images.length > 1 && (
-                <span className="absolute bottom-1.5 right-2 bg-card/80 backdrop-blur-sm text-[10px] px-1.5 py-0.5 rounded-full text-muted-foreground font-medium">
-                  +{focusedProp.images.length - 1}
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="h-16 bg-muted rounded-t-2xl flex items-center justify-center text-2xl">🏠</div>
-          )}
-
-          <div className="p-3 space-y-2.5">
-            {/* Title & Price */}
-            <div>
-              <h3 className="text-sm font-bold text-foreground leading-tight truncate">{focusedProp.title}</h3>
-              <p className="text-base font-extrabold text-primary mt-0.5">
-                {fmt(focusedProp.price)} <span className="text-[10px] font-medium text-muted-foreground">FCFA/mois</span>
-              </p>
-            </div>
-
-            {/* Status & Type */}
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                focusedProp.available ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${focusedProp.available ? 'bg-accent' : 'bg-muted-foreground'}`} />
-                {focusedProp.available ? 'Disponible' : 'Loué'}
+      {/* ── Type legend (quartier view) ─────────────────────────────── */}
+      {viewLevel === 'quartier' && (
+        <div className="absolute bottom-4 left-4 z-[600] bg-card/92 backdrop-blur-sm border border-border rounded-xl px-3 py-2 shadow-card">
+          <span className="text-[10px] font-semibold text-muted-foreground block mb-1">Types de biens</span>
+          <div className="flex flex-wrap gap-1.5">
+            {Object.entries(TYPE_COLORS).map(([type, style]) => (
+              <span key={type} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: style.bg, color: style.text }}>
+                {style.emoji} {type}
               </span>
-              <span className="text-[10px] text-muted-foreground capitalize">{focusedProp.type}</span>
-              {focusedProp.address && (
-                <span className="text-[10px] text-muted-foreground truncate">· {focusedProp.address}</span>
-              )}
-            </div>
-
-            {/* Key specs — compact grid */}
-            <div className="grid grid-cols-3 gap-1.5">
-              {focusedProp.bedrooms != null && (
-                <div className="bg-muted/40 rounded-lg p-1.5 text-center">
-                  <div className="text-xs font-bold text-foreground">{focusedProp.bedrooms}</div>
-                  <div className="text-[9px] text-muted-foreground">Ch.</div>
-                </div>
-              )}
-              {focusedProp.bathrooms != null && (
-                <div className="bg-muted/40 rounded-lg p-1.5 text-center">
-                  <div className="text-xs font-bold text-foreground">{focusedProp.bathrooms}</div>
-                  <div className="text-[9px] text-muted-foreground">SdB</div>
-                </div>
-              )}
-              {focusedProp.surface_area != null && (
-                <div className="bg-muted/40 rounded-lg p-1.5 text-center">
-                  <div className="text-xs font-bold text-foreground">{focusedProp.surface_area}</div>
-                  <div className="text-[9px] text-muted-foreground">m²</div>
-                </div>
-              )}
-            </div>
-
-            {/* Ratings */}
-            <div className="flex items-center gap-4 text-[10px]">
-              <span className="text-muted-foreground">Confort {renderStars(focusedProp.comfort_rating)}</span>
-              <span className="text-muted-foreground">Sécurité {renderStars(focusedProp.security_rating)}</span>
-            </div>
-
-            {/* Description — truncated */}
-            {focusedProp.description && (
-              <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-3">{focusedProp.description}</p>
-            )}
-
-            {/* Close */}
-            <button
-              onClick={goBackToQuartier}
-              className="w-full py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-[10px] font-semibold text-muted-foreground transition-colors"
-            >
-              ✕ Fermer le focus
-            </button>
+            ))}
           </div>
         </div>
       )}
