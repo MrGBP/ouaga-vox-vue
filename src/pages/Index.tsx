@@ -240,10 +240,10 @@ const Index = () => {
   const availableCount = filteredProperties.filter((p) => p.available).length;
   const quartierNames = [...new Set(properties.map((p) => p.quartier))].sort();
 
-  // Map properties: in favorites view, only show favorites
+  // Map always gets ALL properties so pins are always visible; filtering is handled inside the map via quartier selection
   const mapProperties = showFavoritesOnly
     ? filteredProperties
-    : filteredProperties;
+    : properties;
 
   if (loading) {
     return (
