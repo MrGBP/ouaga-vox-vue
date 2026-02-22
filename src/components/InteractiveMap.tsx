@@ -121,13 +121,14 @@ const quartierPinHTML = (name: string, count: number, size: number, isActive = f
 
 // Type-based color palette for property pins
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string; emoji: string }> = {
-  maison:    { bg: '#1E40AF', border: '#3B82F6', text: '#FFFFFF', emoji: '🏠' },
-  villa:     { bg: '#7C3AED', border: '#A78BFA', text: '#FFFFFF', emoji: '🏡' },
+  maison:      { bg: '#1E40AF', border: '#3B82F6', text: '#FFFFFF', emoji: '🏠' },
+  villa:       { bg: '#7C3AED', border: '#A78BFA', text: '#FFFFFF', emoji: '🏡' },
   appartement: { bg: '#0891B2', border: '#22D3EE', text: '#FFFFFF', emoji: '🏬' },
-  bureau:    { bg: '#B45309', border: '#F59E0B', text: '#FFFFFF', emoji: '🏢' },
-  boutique:  { bg: '#059669', border: '#34D399', text: '#FFFFFF', emoji: '🏪' },
-  terrain:   { bg: '#65A30D', border: '#A3E635', text: '#FFFFFF', emoji: '🌿' },
-  entrepot:  { bg: '#6B7280', border: '#9CA3AF', text: '#FFFFFF', emoji: '🏭' },
+  bureau:      { bg: '#B45309', border: '#F59E0B', text: '#FFFFFF', emoji: '🏢' },
+  commerce:    { bg: '#059669', border: '#34D399', text: '#FFFFFF', emoji: '🏪' },
+  boutique:    { bg: '#047857', border: '#10B981', text: '#FFFFFF', emoji: '🛍️' },
+  terrain:     { bg: '#65A30D', border: '#A3E635', text: '#FFFFFF', emoji: '🌿' },
+  entrepot:    { bg: '#6B7280', border: '#9CA3AF', text: '#FFFFFF', emoji: '🏭' },
 };
 
 const getTypeStyle = (type: string) =>
