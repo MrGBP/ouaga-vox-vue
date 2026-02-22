@@ -338,18 +338,28 @@ const InteractiveMap = ({
 
     const map = mapInst.current;
 
-    // Compute bounding box and lock map to it
+    // Compute tight bounding box from actual property positions
     const lats = qProps.map(p => p.latitude);
     const lngs = qProps.map(p => p.longitude);
-    const pad = 0.006;
+    const latCenter = (Math.min(...lats) + Math.max(...lats)) / 2;
+    const lngCenter = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+    const latSpread = Math.max(Math.max(...lats) - Math.min(...lats), 0.008);
+    const lngSpread = Math.max(Math.max(...lngs) - Math.min(...lngs), 0.010);
+    const pad = 0.4; // 40% padding around the property cluster
     const qBounds = L.latLngBounds(
-      L.latLng(Math.min(...lats) - pad, Math.min(...lngs) - pad * 1.5),
-      L.latLng(Math.max(...lats) + pad, Math.max(...lngs) + pad * 1.5)
+      L.latLng(latCenter - latSpread * (0.5 + pad), lngCenter - lngSpread * (0.5 + pad)),
+      L.latLng(latCenter + latSpread * (0.5 + pad), lngCenter + lngSpread * (0.5 + pad))
     );
-    map.flyToBounds(qBounds, { duration: 0.8, padding: [50, 50] });
-    // Lock to quartier bounds
-    map.setMaxBounds(qBounds.pad(0.3));
-    map.setMinZoom(14);
+
+    // Fly to bounds first, then lock hard
+    map.flyToBounds(qBounds, { duration: 0.8, padding: [30, 30], maxZoom: 17 });
+
+    // Apply strict lock after fly animation completes
+    setTimeout(() => {
+      if (!mapInst.current) return;
+      mapInst.current.setMaxBounds(qBounds);
+      mapInst.current.setMinZoom(mapInst.current.getZoom() - 1);
+    }, 900);
 
     // Smart offset to avoid overlap
     const positioned = offsetProperties(qProps);
@@ -362,7 +372,6 @@ const InteractiveMap = ({
         iconAnchor: [50, 14],
       });
       const m = L.marker([lat, lng], { icon });
-      // Tooltip with full details on hover
       m.bindTooltip(
         `<div style="font-family:system-ui,sans-serif;min-width:140px;">
           <strong style="color:hsl(220,70%,32%);font-size:12px;">${prop.title}</strong><br/>
@@ -554,20 +563,20 @@ const InteractiveMap = ({
   const goBackToGlobal = () => {
     setSelectedQuartier(null);
     if (onFocusClear) onFocusClear();
-    // Unlock map bounds back to Ouagadougou
     if (mapInst.current) {
-      mapInst.current.setMaxBounds(OUAGA_BOUNDS);
+      // Fully unlock map bounds
       mapInst.current.setMinZoom(11);
+      mapInst.current.setMaxBounds(OUAGA_BOUNDS);
       mapInst.current.flyTo(OUAGA_CENTER, 12, { duration: 0.7 });
     }
   };
 
   const goBackToQuartier = () => {
     if (onFocusClear) onFocusClear();
-    // Unlock focus tile, re-lock to quartier will happen via renderQuartier
+    // Unlock temporarily — renderQuartier will re-lock to the quartier
     if (mapInst.current) {
-      mapInst.current.setMaxBounds(OUAGA_BOUNDS);
       mapInst.current.setMinZoom(11);
+      mapInst.current.setMaxBounds(OUAGA_BOUNDS);
     }
   };
 
