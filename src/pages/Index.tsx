@@ -12,7 +12,7 @@ import VirtualTourModal from '@/components/VirtualTourModal';
 import QuartiersSection from '@/components/QuartiersSection';
 import AIComparator from '@/components/AIComparator';
 import AIProfileSection from '@/components/AIProfileSection';
-import { Loader2, MapPin, Home, TrendingUp, Sparkles } from 'lucide-react';
+import { Loader2, MapPin, Home, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
 interface Property {
@@ -202,12 +202,18 @@ const Index = () => {
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const [mapQuartierTrigger, setMapQuartierTrigger] = useState<string | null>(null);
+
   const handleQuartierClick = (q: Quartier) => {
-    setSearchQuery(q.name);
-    const filtered = applyFilters(properties, q.name, filters, showFavoritesOnly, favorites);
-    setFilteredProperties(filtered);
+    // Update filters to select this quartier
+    const newFilters = { ...filters, quartier: q.name };
+    setFilters(newFilters);
+    setSearchQuery('');
+    setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
+    // Trigger map to navigate to this quartier
+    setMapQuartierTrigger(q.name);
     speak(`Voici les biens disponibles dans le quartier ${q.name}`);
-    document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const toggleFavorite = (id: string) => {
@@ -282,27 +288,13 @@ const Index = () => {
               Ouagadougou, Burkina Faso
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-card leading-tight">
-              Trouvez votre{' '}
-              <span className="text-primary bg-card px-2 rounded-lg">bien idéal</span>
+              Mon{' '}
+              <span className="text-primary bg-card px-2 rounded-lg">bien Immo</span>
               <br />en un clic
             </h1>
             <p className="text-base md:text-lg text-card/90 font-medium">
-              {properties.length}+ biens · 7 quartiers · Visites 360° · Carte interactive
+              {properties.length} biens · Ouagadougou · {quartierNames.length} quartiers
             </p>
-
-            {/* Stats bar */}
-            <div className="flex items-center justify-center gap-6 mt-2">
-              {[
-                { icon: Home, label: `${availableCount} disponibles` },
-                { icon: MapPin, label: '7 quartiers' },
-                { icon: TrendingUp, label: 'Prix en FCFA' },
-              ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-1.5 bg-card/80 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium text-foreground">
-                  <Icon className="h-3 w-3 text-primary" />
-                  {label}
-                </div>
-              ))}
-            </div>
           </motion.div>
 
           {/* Voice search */}
@@ -358,6 +350,9 @@ const Index = () => {
             onPropertyClick={handlePropertyClick}
             focusedPropertyId={focusedPropertyId}
             onFocusClear={() => setFocusedPropertyId(null)}
+            activeFilters={filters}
+            externalQuartierSelect={mapQuartierTrigger}
+            onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
           />
         </motion.div>
       </section>

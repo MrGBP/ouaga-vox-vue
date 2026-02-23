@@ -38,6 +38,16 @@ interface Quartier {
   longitude: number;
 }
 
+interface ActiveFilters {
+  type: string;
+  quartier: string;
+  minPrice: number;
+  maxPrice: number;
+  minBedrooms: number;
+  hasVirtualTour: boolean;
+  onlyAvailable: boolean;
+}
+
 interface InteractiveMapProps {
   properties: Property[];
   pois: POI[];
@@ -45,6 +55,9 @@ interface InteractiveMapProps {
   onPropertyClick?: (propertyId: string) => void;
   focusedPropertyId?: string | null;
   onFocusClear?: () => void;
+  activeFilters?: ActiveFilters;
+  externalQuartierSelect?: string | null;
+  onExternalQuartierHandled?: () => void;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -204,6 +217,9 @@ const InteractiveMap = ({
   onPropertyClick,
   focusedPropertyId,
   onFocusClear,
+  activeFilters,
+  externalQuartierSelect,
+  onExternalQuartierHandled,
 }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map | null>(null);
@@ -218,6 +234,18 @@ const InteractiveMap = ({
   const [radius, setRadius] = useState(500);
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
+
+  // Helper: apply active filters to a property list
+  const applyMapFilters = useCallback((props: Property[]) => {
+    if (!activeFilters) return props;
+    let result = props;
+    if (activeFilters.type !== 'all') result = result.filter(p => p.type === activeFilters.type);
+    result = result.filter(p => p.price >= activeFilters.minPrice && p.price <= activeFilters.maxPrice);
+    if (activeFilters.minBedrooms > 0) result = result.filter(p => (p.bedrooms || 0) >= activeFilters.minBedrooms);
+    if (activeFilters.hasVirtualTour) result = result.filter(p => !!p.virtual_tour_url);
+    if (activeFilters.onlyAvailable) result = result.filter(p => p.available);
+    return result;
+  }, [activeFilters]);
 
   // Determine current view level
   const viewLevel = focusedPropertyId ? 'focus' : selectedQuartier ? 'quartier' : 'global';
@@ -293,14 +321,20 @@ const InteractiveMap = ({
     propertyLayer.current.clearLayers();
 
     const z = mapInst.current.getZoom();
+    const filtered = applyMapFilters(properties);
     const byQ = new Map<string, Property[]>();
-    properties.forEach(p => {
+    filtered.forEach(p => {
       const arr = byQ.get(p.quartier) || [];
       arr.push(p);
       byQ.set(p.quartier, arr);
     });
 
-    quartiers.forEach(q => {
+    // If quartier filter is active, only show that quartier
+    const quartiersToShow = activeFilters?.quartier && activeFilters.quartier !== 'all'
+      ? quartiers.filter(q => q.name === activeFilters.quartier)
+      : quartiers;
+
+    quartiersToShow.forEach(q => {
       const qProps = byQ.get(q.name) || [];
       if (qProps.length === 0) return;
       const count = qProps.length;
@@ -325,7 +359,7 @@ const InteractiveMap = ({
       });
       quartierLayer.current!.addLayer(m);
     });
-  }, [properties, quartiers]);
+  }, [properties, quartiers, applyMapFilters, activeFilters]);
 
   // ── LEVEL 2: Quartier view — only that quartier's properties ──────────────
   const renderQuartier = useCallback(() => {
@@ -333,19 +367,21 @@ const InteractiveMap = ({
     quartierLayer.current.clearLayers();
     propertyLayer.current.clearLayers();
 
-    const qProps = properties.filter(p => p.quartier === selectedQuartier);
+    const allQProps = properties.filter(p => p.quartier === selectedQuartier);
+    const qProps = applyMapFilters(allQProps);
     if (qProps.length === 0) return;
 
     const map = mapInst.current;
 
-    // Compute tight bounding box from actual property positions
-    const lats = qProps.map(p => p.latitude);
-    const lngs = qProps.map(p => p.longitude);
+    // Use ALL quartier properties for bounding box (not filtered), so the view stays consistent
+    const boundsSource = allQProps.length > 0 ? allQProps : qProps;
+    const lats = boundsSource.map(p => p.latitude);
+    const lngs = boundsSource.map(p => p.longitude);
     const latCenter = (Math.min(...lats) + Math.max(...lats)) / 2;
     const lngCenter = (Math.min(...lngs) + Math.max(...lngs)) / 2;
     const latSpread = Math.max(Math.max(...lats) - Math.min(...lats), 0.008);
     const lngSpread = Math.max(Math.max(...lngs) - Math.min(...lngs), 0.010);
-    const pad = 0.4; // 40% padding around the property cluster
+    const pad = 0.4;
     const qBounds = L.latLngBounds(
       L.latLng(latCenter - latSpread * (0.5 + pad), lngCenter - lngSpread * (0.5 + pad)),
       L.latLng(latCenter + latSpread * (0.5 + pad), lngCenter + lngSpread * (0.5 + pad))
@@ -385,7 +421,7 @@ const InteractiveMap = ({
       });
       propertyLayer.current!.addLayer(m);
     });
-  }, [properties, selectedQuartier, onPropertyClick]);
+  }, [properties, selectedQuartier, onPropertyClick, applyMapFilters]);
 
   // ── LEVEL 3: Focus mode — single property, desaturated, POI tentacles ─────
   const renderFocus = useCallback(() => {
@@ -525,6 +561,16 @@ const InteractiveMap = ({
     });
   }, [focusedPropertyId, properties, pois, radius]);
 
+  // ── External quartier selection (from QuartiersSection) ───────────────────
+  useEffect(() => {
+    if (!externalQuartierSelect || !mapInst.current) return;
+    // Unlock bounds first
+    mapInst.current.setMinZoom(11);
+    mapInst.current.setMaxBounds(OUAGA_BOUNDS);
+    setSelectedQuartier(externalQuartierSelect);
+    if (onExternalQuartierHandled) onExternalQuartierHandled();
+  }, [externalQuartierSelect, onExternalQuartierHandled]);
+
   // ── Master render dispatcher ──────────────────────────────────────────────
   useEffect(() => {
     if (!mapInst.current) return;
@@ -542,9 +588,8 @@ const InteractiveMap = ({
       renderQuartier();
     } else {
       renderGlobal();
-      // Re-render on zoom for global view
     }
-  }, [viewLevel, renderGlobal, renderQuartier, renderFocus]);
+  }, [viewLevel, renderGlobal, renderQuartier, renderFocus, activeFilters]);
 
   // Re-render global on zoom changes
   useEffect(() => {
