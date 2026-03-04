@@ -1,73 +1,50 @@
-# Welcome to your Lovable project
+# Mon Bien Immo 🏠
 
-## Project info
+Plateforme immobilière intelligente pour Ouagadougou, Burkina Faso.
 
-**URL**: https://lovable.dev/projects/2e44563b-3bfb-4360-8050-50bec092d760
+## Fonctionnalités
 
-## How can I edit this code?
+- 🗺️ **Carte interactive** — Visualisez les biens sur une carte Leaflet avec clustering et navigation par quartier
+- 🔍 **Filtres avancés** — Filtrez par type (villa, maison, bureau, commerce, boutique), prix, chambres et disponibilité
+- 🏘️ **Exploration par quartier** — Ouaga 2000, Zone du Bois, Koulouba, Tampouy, Patte d'Oie, Dassasgho, Zogona
+- 🎙️ **Recherche vocale** — Trouvez un bien par la voix
+- 🤖 **Comparateur IA** — Comparez des biens avec l'aide de l'intelligence artificielle
+- 🏠 **Visites virtuelles 360°** — Explorez les biens en immersion
+- 📱 **Responsive** — Optimisé mobile, tablette et desktop
 
-There are several ways of editing your application.
+## Stack technique
 
-**Use Lovable**
+- **Frontend** : React 18 · TypeScript · Vite · Tailwind CSS
+- **UI** : shadcn/ui · Framer Motion · Recharts
+- **Carte** : Leaflet · React-Leaflet · MarkerCluster
+- **Backend** : Lovable Cloud (base de données, edge functions, authentification)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2e44563b-3bfb-4360-8050-50bec092d760) and start prompting.
+## Démarrage rapide
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# Cloner le dépôt
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Installer les dépendances
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Lancer le serveur de développement
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Structure du projet
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+src/
+├── components/       # Composants React (Header, FilterBar, InteractiveMap, etc.)
+├── hooks/            # Hooks personnalisés (voix, mobile)
+├── integrations/     # Client Supabase auto-généré
+├── lib/              # Données de simulation (mockData)
+├── pages/            # Pages (Index, NotFound)
+└── assets/           # Images et ressources
+```
 
-**Use GitHub Codespaces**
+## Licence
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/2e44563b-3bfb-4360-8050-50bec092d760) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Projet privé — Tous droits réservés.
