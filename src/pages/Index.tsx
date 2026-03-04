@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { mockProperties, mockPois, mockQuartiers } from '@/lib/mockData';
 import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
 import Header from '@/components/Header';
 import VoiceSearch from '@/components/VoiceSearch';
@@ -104,17 +105,31 @@ const Index = () => {
         supabase.from('quartiers').select('*'),
       ]);
 
-      if (propertiesRes.error) throw propertiesRes.error;
-      if (poisRes.error) throw poisRes.error;
-      if (quartiersRes.error) throw quartiersRes.error;
+      const hasError = propertiesRes.error || poisRes.error || quartiersRes.error;
+      const props = (propertiesRes.data && propertiesRes.data.length > 0) ? propertiesRes.data : null;
+      const poisData = (poisRes.data && poisRes.data.length > 0) ? poisRes.data : null;
+      const quartiersData = (quartiersRes.data && quartiersRes.data.length > 0) ? quartiersRes.data : null;
 
-      const props = propertiesRes.data || [];
-      setProperties(props);
-      setFilteredProperties(props);
-      setPois(poisRes.data || []);
-      setQuartiers(quartiersRes.data || []);
+      // Use DB data if available, otherwise fallback to mock data
+      const finalProps = props || mockProperties;
+      const finalPois = poisData || mockPois;
+      const finalQuartiers = quartiersData || mockQuartiers;
+
+      setProperties(finalProps);
+      setFilteredProperties(finalProps);
+      setPois(finalPois);
+      setQuartiers(finalQuartiers);
+
+      if (hasError && !props) {
+        console.warn('DB unavailable, using mock data');
+      }
     } catch (error: any) {
-      toast({ title: 'Erreur de chargement', description: error.message, variant: 'destructive' });
+      // Full fallback to mock data
+      console.warn('DB error, using mock data:', error.message);
+      setProperties(mockProperties);
+      setFilteredProperties(mockProperties);
+      setPois(mockPois);
+      setQuartiers(mockQuartiers);
     } finally {
       setLoading(false);
     }
