@@ -1,12 +1,10 @@
-import { useState } from 'react';
-import { SlidersHorizontal, X, ChevronDown, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+import { useState, useEffect } from 'react';
+import { SlidersHorizontal, X, Heart, RotateCcw, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export interface FilterState {
   type: string;
@@ -16,6 +14,7 @@ export interface FilterState {
   minBedrooms: number;
   hasVirtualTour: boolean;
   onlyAvailable: boolean;
+  surfaceRange: string;
 }
 
 interface FilterBarProps {
@@ -28,189 +27,304 @@ interface FilterBarProps {
   onToggleFavoritesView?: () => void;
 }
 
-const DEFAULT_FILTERS: FilterState = {
+export const DEFAULT_FILTERS: FilterState = {
   type: 'all',
   quartier: 'all',
-  minPrice: 0,
-  maxPrice: 850000,
+  minPrice: 20000,
+  maxPrice: 1000000,
   minBedrooms: 0,
   hasVirtualTour: false,
   onlyAvailable: false,
+  surfaceRange: 'all',
 };
 
-const FilterBar = ({ onFilterChange, quartiers, totalCount, filteredCount, favoritesCount = 0, showFavoritesOnly = false, onToggleFavoritesView }: FilterBarProps) => {
+const TYPES = [
+  { value: 'maison', label: 'Maison meublée', emoji: '🏠' },
+  { value: 'bureau', label: 'Bureau', emoji: '🏢' },
+  { value: 'commerce', label: 'Commerce', emoji: '🏪' },
+  { value: 'terrain', label: 'Terrain', emoji: '🏗️' },
+  { value: 'villa', label: 'Villa', emoji: '🏡' },
+  { value: 'boutique', label: 'Boutique', emoji: '🛍️' },
+];
+
+const SURFACE_RANGES = [
+  { value: 'all', label: 'Toutes' },
+  { value: '<50', label: '< 50m²' },
+  { value: '50-150', label: '50–150m²' },
+  { value: '150-300', label: '150–300m²' },
+  { value: '>300', label: '> 300m²' },
+];
+
+const BEDROOMS = [1, 2, 3, 4];
+
+const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
+
+const FilterBar = ({
+  onFilterChange,
+  quartiers,
+  totalCount,
+  filteredCount,
+  favoritesCount = 0,
+  showFavoritesOnly = false,
+  onToggleFavoritesView,
+}: FilterBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-
-  const update = (patch: Partial<FilterState>) => {
-    const next = { ...filters, ...patch };
-    setFilters(next);
-    onFilterChange(next);
-  };
-
-  const reset = () => {
-    setFilters(DEFAULT_FILTERS);
-    onFilterChange(DEFAULT_FILTERS);
-  };
+  // Draft filters (not applied yet)
+  const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
+  // Applied filters
+  const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
+  const isMobile = useIsMobile();
 
   const activeCount = [
-    filters.type !== 'all',
-    filters.quartier !== 'all',
-    filters.minPrice > 0 || filters.maxPrice < 850000,
-    filters.minBedrooms > 0,
-    filters.hasVirtualTour,
-    filters.onlyAvailable,
+    applied.type !== 'all',
+    applied.quartier !== 'all',
+    applied.minPrice > 20000 || applied.maxPrice < 1000000,
+    applied.minBedrooms > 0,
+    applied.hasVirtualTour,
+    applied.onlyAvailable,
+    applied.surfaceRange !== 'all',
   ].filter(Boolean).length;
 
+  // Build summary text
+  const summaryParts: string[] = [];
+  if (applied.type !== 'all') {
+    const t = TYPES.find(t => t.value === applied.type);
+    if (t) summaryParts.push(t.label);
+  }
+  if (applied.quartier !== 'all') summaryParts.push(applied.quartier);
+  const summary = summaryParts.length > 0
+    ? `${summaryParts.join(' · ')} · ${fmt(applied.minPrice)} – ${fmt(applied.maxPrice)} FCFA`
+    : null;
+
+  // Active dots indicator
+  const dots = Array.from({ length: 3 }, (_, i) => i < activeCount);
+
+  const handleApply = () => {
+    setApplied(draft);
+    onFilterChange(draft);
+    setIsOpen(false);
+  };
+
+  const handleReset = () => {
+    setDraft(DEFAULT_FILTERS);
+    setApplied(DEFAULT_FILTERS);
+    onFilterChange(DEFAULT_FILTERS);
+    setIsOpen(false);
+  };
+
+  const handleClose = () => {
+    // Close without applying — keep draft in memory for next open
+    setIsOpen(false);
+  };
+
+  const toggleType = (type: string) => {
+    setDraft(d => ({ ...d, type: d.type === type ? 'all' : type }));
+  };
+
   return (
-    <div className="w-full">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <div className="flex items-center gap-3">
+    <div className="w-full mb-4">
+      {/* ── Pill Bar ── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="inline-flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-sm"
+          style={{ maxHeight: 36 }}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+          {summary ? (
+            <span className="truncate max-w-[260px]">⚙️ {summary}</span>
+          ) : (
+            <>
+              Filtres
+              <span className="flex gap-0.5 ml-1">
+                {dots.map((active, i) => (
+                  <span
+                    key={i}
+                    className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+                  />
+                ))}
+              </span>
+            </>
+          )}
+        </button>
+
+        {/* Favorites */}
+        {onToggleFavoritesView && (
           <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2 text-sm font-medium text-foreground bg-card border border-border rounded-lg px-3.5 py-2 hover:bg-muted transition-colors shadow-card"
+            onClick={onToggleFavoritesView}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors border ${
+              showFavoritesOnly
+                ? 'bg-secondary text-secondary-foreground border-secondary'
+                : 'bg-card text-muted-foreground border-border hover:border-secondary/50'
+            }`}
+            style={{ maxHeight: 36 }}
           >
-            <SlidersHorizontal className="h-4 w-4 text-primary" />
-            Filtres
-            {activeCount > 0 && (
-              <Badge className="bg-primary text-primary-foreground h-5 min-w-5 px-1.5 text-xs">
-                {activeCount}
+            <Heart className={`h-3.5 w-3.5 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+            {favoritesCount > 0 && (
+              <Badge className="h-4 min-w-4 px-1 text-[10px] bg-secondary/20 text-secondary">
+                {favoritesCount}
               </Badge>
             )}
-            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
+        )}
 
-          {/* Favorites view toggle */}
-          {onToggleFavoritesView && (
-            <button
-              onClick={onToggleFavoritesView}
-              className={`flex items-center gap-2 text-sm font-medium rounded-lg px-3.5 py-2 transition-colors border ${
-                showFavoritesOnly
-                  ? 'bg-secondary text-secondary-foreground border-secondary'
-                  : 'bg-card text-muted-foreground border-border hover:border-secondary/50'
-              }`}
-            >
-              <Heart className={`h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-              Favoris
-              {favoritesCount > 0 && (
-                <Badge className={`h-5 min-w-5 px-1.5 text-xs ${
-                  showFavoritesOnly ? 'bg-secondary-foreground/20 text-secondary-foreground' : 'bg-secondary/10 text-secondary'
-                }`}>
-                  {favoritesCount}
-                </Badge>
-              )}
-            </button>
-          )}
-
-          {activeCount > 0 && (
-            <button
-              onClick={reset}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="h-3.5 w-3.5" />
-              Réinitialiser
-            </button>
-          )}
-        </div>
-
-        <div className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{filteredCount}</span> bien{filteredCount > 1 ? 's' : ''} sur {totalCount}
-        </div>
+        {/* Result count */}
+        <span className="text-xs text-muted-foreground ml-auto">
+          <span className="font-bold text-foreground">{filteredCount}</span> bien{filteredCount > 1 ? 's' : ''}
+        </span>
       </div>
 
-      {/* Filter panel */}
+      {/* ── Drawer/Dropdown ── */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="mb-6"
-          >
-            <div className="bg-card border border-border rounded-xl p-5 shadow-card grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {/* Type */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type de bien</label>
-                <Select value={filters.type} onValueChange={(v) => update({ type: v })}>
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Tous" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les types</SelectItem>
-                    <SelectItem value="maison">🏠 Maison</SelectItem>
-                    <SelectItem value="bureau">🏢 Bureau</SelectItem>
-                    <SelectItem value="commerce">🏪 Commerce</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-foreground/20 z-40"
+              onClick={handleClose}
+            />
 
-              {/* Quartier */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Quartier</label>
-                <Select value={filters.quartier} onValueChange={(v) => update({ quartier: v })}>
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Tous" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les quartiers</SelectItem>
-                    {quartiers.map((q) => (
-                      <SelectItem key={q} value={q}>{q}</SelectItem>
+            {/* Panel */}
+            <motion.div
+              initial={isMobile ? { y: '100%' } : { opacity: 0, y: -8 }}
+              animate={isMobile ? { y: 0 } : { opacity: 1, y: 0 }}
+              exit={isMobile ? { y: '100%' } : { opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              className={`z-50 bg-card border border-border shadow-lg ${
+                isMobile
+                  ? 'fixed inset-x-0 bottom-0 rounded-t-2xl max-h-[85vh] overflow-y-auto'
+                  : 'absolute left-0 right-0 mt-2 rounded-xl max-h-[70vh] overflow-y-auto'
+              }`}
+              style={{ position: isMobile ? 'fixed' : 'relative' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Drag handle (mobile) */}
+              {isMobile && (
+                <div className="flex justify-center pt-3 pb-1">
+                  <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+                </div>
+              )}
+
+              <div className="p-5 space-y-6">
+                {/* TYPE DE BIEN */}
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Type de bien</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {TYPES.map(t => (
+                      <button
+                        key={t.value}
+                        onClick={() => toggleType(t.value)}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+                          draft.type === t.value
+                            ? 'bg-primary/10 border-primary text-primary'
+                            : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <span>{t.emoji}</span>
+                        <span>{t.label}</span>
+                        {draft.type === t.value && <Check className="h-3.5 w-3.5 ml-auto" />}
+                      </button>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  </div>
+                </div>
 
-              {/* Chambres */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Chambres minimum : {filters.minBedrooms === 0 ? 'Toutes' : `${filters.minBedrooms}+`}
-                </label>
-                <Slider
-                  value={[filters.minBedrooms]}
-                  onValueChange={([v]) => update({ minBedrooms: v })}
-                  min={0} max={6} step={1}
-                  className="mt-3"
-                />
-              </div>
+                {/* PRIX */}
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Prix (FCFA/mois)</h4>
+                  <p className="text-sm font-semibold text-foreground mb-3">
+                    {fmt(draft.minPrice)} — {fmt(draft.maxPrice)}
+                  </p>
+                  <Slider
+                    value={[draft.minPrice, draft.maxPrice]}
+                    onValueChange={([min, max]) => setDraft(d => ({ ...d, minPrice: min, maxPrice: max }))}
+                    min={20000}
+                    max={1000000}
+                    step={10000}
+                  />
+                </div>
 
-              {/* Budget */}
-              <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Budget (FCFA/mois) :{' '}
-                  <span className="text-foreground font-bold">
-                    {filters.minPrice.toLocaleString('fr-FR')} → {filters.maxPrice.toLocaleString('fr-FR')}
-                  </span>
-                </label>
-                <Slider
-                  value={[filters.minPrice, filters.maxPrice]}
-                  onValueChange={([min, max]) => update({ minPrice: min, maxPrice: max })}
-                  min={0} max={850000} step={10000}
-                  className="mt-3"
-                />
-              </div>
+                {/* SURFACE */}
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Surface</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {SURFACE_RANGES.map(s => (
+                      <button
+                        key={s.value}
+                        onClick={() => setDraft(d => ({ ...d, surfaceRange: d.surfaceRange === s.value ? 'all' : s.value }))}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                          draft.surfaceRange === s.value
+                            ? 'bg-primary/10 border-primary text-primary'
+                            : 'bg-muted/50 border-transparent text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              {/* Switches row */}
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="has360"
-                  checked={filters.hasVirtualTour}
-                  onCheckedChange={(v) => update({ hasVirtualTour: v })}
-                />
-                <Label htmlFor="has360" className="text-sm cursor-pointer">Visite 360°</Label>
-              </div>
+                {/* CHAMBRES */}
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Chambres</h4>
+                  <div className="flex gap-2">
+                    {BEDROOMS.map(n => (
+                      <button
+                        key={n}
+                        onClick={() => setDraft(d => ({ ...d, minBedrooms: d.minBedrooms === n ? 0 : n }))}
+                        className={`w-10 h-10 rounded-lg text-sm font-bold border transition-colors ${
+                          draft.minBedrooms === n
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {n === 4 ? '4+' : n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="available"
-                  checked={filters.onlyAvailable}
-                  onCheckedChange={(v) => update({ onlyAvailable: v })}
-                />
-                <Label htmlFor="available" className="text-sm cursor-pointer">Disponibles uniquement</Label>
+                {/* OPTIONS */}
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Options</h4>
+                  <button
+                    onClick={() => setDraft(d => ({ ...d, hasVirtualTour: !d.hasVirtualTour }))}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+                      draft.hasVirtualTour
+                        ? 'bg-primary/10 border-primary text-primary'
+                        : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <span>🔭</span>
+                    <span>Visite 360° disponible</span>
+                    {draft.hasVirtualTour && <Check className="h-3.5 w-3.5 ml-auto" />}
+                  </button>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleReset}
+                    className="flex-1 gap-2"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Réinitialiser
+                  </Button>
+                  <Button
+                    onClick={handleApply}
+                    className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Appliquer
+                  </Button>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

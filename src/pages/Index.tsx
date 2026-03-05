@@ -6,24 +6,25 @@ import { mockProperties, mockPois, mockQuartiers } from '@/lib/mockData';
 import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
 import Header from '@/components/Header';
 import VoiceSearch from '@/components/VoiceSearch';
-import FilterBar, { FilterState } from '@/components/FilterBar';
+import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
 import VirtualTourModal from '@/components/VirtualTourModal';
 import QuartiersSection from '@/components/QuartiersSection';
 import AIComparator from '@/components/AIComparator';
 import AIProfileSection from '@/components/AIProfileSection';
+import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import { Loader2, MapPin, Home, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
 interface Property {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   type: string;
   price: number;
   quartier: string;
-  address: string;
+  address?: string;
   latitude: number;
   longitude: number;
   bedrooms?: number;
@@ -34,6 +35,17 @@ interface Property {
   images?: string[];
   available: boolean;
   virtual_tour_url?: string;
+  status?: string;
+  agent_name?: string;
+  agent_phone?: string;
+  agent_photo?: string;
+  year_built?: number;
+  has_ac?: boolean;
+  has_guardian?: boolean;
+  has_generator?: boolean;
+  has_garden?: boolean;
+  has_water?: boolean;
+  has_internet?: boolean;
 }
 
 interface POI {
@@ -54,16 +66,6 @@ interface Quartier {
   longitude: number;
 }
 
-const DEFAULT_FILTERS: FilterState = {
-  type: 'all',
-  quartier: 'all',
-  minPrice: 0,
-  maxPrice: 850000,
-  minBedrooms: 0,
-  hasVirtualTour: false,
-  onlyAvailable: false,
-};
-
 const FAVORITES_KEY = 'sapsap_favorites';
 
 const Index = () => {
@@ -76,6 +78,7 @@ const Index = () => {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [detailProperty, setDetailProperty] = useState<Property | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem(FAVORITES_KEY);
@@ -87,14 +90,11 @@ const Index = () => {
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
-  // Persist favorites
   useEffect(() => {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
   }, [favorites]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
@@ -105,12 +105,10 @@ const Index = () => {
         supabase.from('quartiers').select('*'),
       ]);
 
-      const hasError = propertiesRes.error || poisRes.error || quartiersRes.error;
       const props = (propertiesRes.data && propertiesRes.data.length > 0) ? propertiesRes.data : null;
       const poisData = (poisRes.data && poisRes.data.length > 0) ? poisRes.data : null;
       const quartiersData = (quartiersRes.data && quartiersRes.data.length > 0) ? quartiersRes.data : null;
 
-      // Use DB data if available, otherwise fallback to mock data
       const finalProps = props || mockProperties;
       const finalPois = poisData || mockPois;
       const finalQuartiers = quartiersData || mockQuartiers;
@@ -119,12 +117,7 @@ const Index = () => {
       setFilteredProperties(finalProps);
       setPois(finalPois);
       setQuartiers(finalQuartiers);
-
-      if (hasError && !props) {
-        console.warn('DB unavailable, using mock data');
-      }
     } catch (error: any) {
-      // Full fallback to mock data
       console.warn('DB error, using mock data:', error.message);
       setProperties(mockProperties);
       setFilteredProperties(mockProperties);
@@ -144,40 +137,35 @@ const Index = () => {
   ) => {
     let result = [...source];
 
-    if (favsOnly) {
-      result = result.filter(p => favSet.has(p.id));
-    }
+    if (favsOnly) result = result.filter(p => favSet.has(p.id));
 
     if (query.trim()) {
       const q = query.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.quartier.toLowerCase().includes(q) ||
-          p.type.toLowerCase().includes(q) ||
-          (p.description || '').toLowerCase().includes(q) ||
-          p.price.toString().includes(q)
+      result = result.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        p.quartier.toLowerCase().includes(q) ||
+        p.type.toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q) ||
+        p.price.toString().includes(q)
       );
     }
 
-    if (f.type !== 'all') result = result.filter((p) => p.type === f.type);
-    if (f.quartier !== 'all') result = result.filter((p) => p.quartier === f.quartier);
-    result = result.filter((p) => p.price >= f.minPrice && p.price <= f.maxPrice);
-    if (f.minBedrooms > 0) result = result.filter((p) => (p.bedrooms || 0) >= f.minBedrooms);
-    if (f.hasVirtualTour) result = result.filter((p) => !!p.virtual_tour_url);
-    if (f.onlyAvailable) result = result.filter((p) => p.available);
+    if (f.type !== 'all') result = result.filter(p => p.type === f.type);
+    if (f.quartier !== 'all') result = result.filter(p => p.quartier === f.quartier);
+    result = result.filter(p => p.price >= f.minPrice && p.price <= f.maxPrice);
+    if (f.minBedrooms > 0) result = result.filter(p => (p.bedrooms || 0) >= f.minBedrooms);
+    if (f.hasVirtualTour) result = result.filter(p => !!p.virtual_tour_url);
+    if (f.onlyAvailable) result = result.filter(p => p.available);
+    if (f.surfaceRange && f.surfaceRange !== 'all') {
+      const sr = f.surfaceRange;
+      if (sr === '<50') result = result.filter(p => (p.surface_area || 0) < 50);
+      else if (sr === '50-150') result = result.filter(p => (p.surface_area || 0) >= 50 && (p.surface_area || 0) <= 150);
+      else if (sr === '150-300') result = result.filter(p => (p.surface_area || 0) >= 150 && (p.surface_area || 0) <= 300);
+      else if (sr === '>300') result = result.filter(p => (p.surface_area || 0) > 300);
+    }
 
     return result;
   }, []);
-
-  const refilter = useCallback((
-    query = searchQuery,
-    f = filters,
-    favsOnly = showFavoritesOnly,
-    favSet = favorites
-  ) => {
-    setFilteredProperties(applyFilters(properties, query, f, favsOnly, favSet));
-  }, [properties, searchQuery, filters, showFavoritesOnly, favorites, applyFilters]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -202,30 +190,30 @@ const Index = () => {
   const handleViewDetails = (property: Property) => {
     setSelectedProperty(property);
     setModalOpen(true);
-    // Voice disabled on property click
   };
 
   const handlePropertyClick = (id: string) => {
     const prop = properties.find(p => p.id === id);
     if (prop) {
       setFocusedPropertyId(id);
+      setDetailProperty(prop);
     }
   };
 
   const handleFocusOnMap = (id: string) => {
     setFocusedPropertyId(id);
+    const prop = properties.find(p => p.id === id);
+    if (prop) setDetailProperty(prop);
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const [mapQuartierTrigger, setMapQuartierTrigger] = useState<string | null>(null);
 
   const handleQuartierClick = (q: Quartier) => {
-    // Update filters to select this quartier
     const newFilters = { ...filters, quartier: q.name };
     setFilters(newFilters);
     setSearchQuery('');
     setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
-    // Trigger map to navigate to this quartier
     setMapQuartierTrigger(q.name);
     speak(`Voici les biens disponibles dans le quartier ${q.name}`);
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
@@ -241,7 +229,6 @@ const Index = () => {
         next.add(id);
         toast({ title: '❤️ Ajouté aux favoris' });
       }
-      // If we're in favorites view, refilter
       if (showFavoritesOnly) {
         setTimeout(() => {
           setFilteredProperties(applyFilters(properties, searchQuery, filters, true, next));
@@ -258,13 +245,14 @@ const Index = () => {
   };
 
   const favoriteProperties = properties.filter(p => favorites.has(p.id));
-  const availableCount = filteredProperties.filter((p) => p.available).length;
-  const quartierNames = [...new Set(properties.map((p) => p.quartier))].sort();
+  const quartierNames = [...new Set(properties.map(p => p.quartier))].sort();
 
-  // Map always gets ALL properties so pins are always visible; filtering is handled inside the map via quartier selection
-  const mapProperties = showFavoritesOnly
-    ? filteredProperties
-    : properties;
+  // Similar properties for detail panel
+  const similarProperties = detailProperty
+    ? properties.filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
+    : [];
+
+  const mapProperties = showFavoritesOnly ? filteredProperties : properties;
 
   if (loading) {
     return (
@@ -284,13 +272,8 @@ const Index = () => {
 
       {/* Hero */}
       <section className="relative h-[65vh] min-h-[520px] overflow-hidden">
-        <img
-          src={heroImage}
-          alt="Ouagadougou"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={heroImage} alt="Ouagadougou" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
-
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -312,7 +295,6 @@ const Index = () => {
             </p>
           </motion.div>
 
-          {/* Voice search */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -333,16 +315,12 @@ const Index = () => {
         <QuartiersSection quartiers={quartiers} onQuartierClick={handleQuartierClick} />
       </section>
 
-      {/* Map + Filters Layout */}
+      {/* Map + Filters */}
       <section id="map" className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground">Carte interactive</h2>
-          <span className="text-sm text-muted-foreground">
-            {filteredProperties.length} bien{filteredProperties.length > 1 ? 's' : ''} affiché{filteredProperties.length > 1 ? 's' : ''}
-          </span>
         </div>
 
-        {/* Filters */}
         <FilterBar
           onFilterChange={handleFilterChange}
           quartiers={quartierNames}
@@ -353,23 +331,28 @@ const Index = () => {
           onToggleFavoritesView={toggleFavoritesView}
         />
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <InteractiveMap
-            properties={mapProperties}
-            pois={pois}
-            quartiers={quartiers}
-            onPropertyClick={handlePropertyClick}
-            focusedPropertyId={focusedPropertyId}
-            onFocusClear={() => setFocusedPropertyId(null)}
-            activeFilters={filters}
-            externalQuartierSelect={mapQuartierTrigger}
-            onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
-          />
-        </motion.div>
+        <div className="relative">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <InteractiveMap
+              properties={mapProperties}
+              pois={pois}
+              quartiers={quartiers}
+              onPropertyClick={handlePropertyClick}
+              focusedPropertyId={focusedPropertyId}
+              onFocusClear={() => {
+                setFocusedPropertyId(null);
+                setDetailProperty(null);
+              }}
+              activeFilters={filters}
+              externalQuartierSelect={mapQuartierTrigger}
+              onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
+            />
+          </motion.div>
+        </div>
       </section>
 
       {/* Properties grid */}
@@ -406,11 +389,22 @@ const Index = () => {
           <div className="text-center py-20 bg-card border border-border rounded-xl">
             <div className="text-4xl mb-4">{showFavoritesOnly ? '❤️' : '🏠'}</div>
             <p className="text-lg font-semibold text-foreground mb-2">
-              {showFavoritesOnly ? 'Aucun favori' : 'Aucun bien trouvé'}
+              {showFavoritesOnly ? 'Aucun favori' : 'Aucun bien correspond'}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {showFavoritesOnly ? 'Ajoutez des biens en favoris avec le bouton ❤️' : 'Essayez de modifier vos filtres ou votre recherche.'}
+            <p className="text-sm text-muted-foreground mb-4">
+              {showFavoritesOnly ? 'Ajoutez des biens en favoris avec le bouton ❤️' : 'Essayez de modifier vos filtres.'}
             </p>
+            {!showFavoritesOnly && (
+              <button
+                onClick={() => {
+                  setFilters(DEFAULT_FILTERS);
+                  setFilteredProperties(applyFilters(properties, searchQuery, DEFAULT_FILTERS, false, favorites));
+                }}
+                className="text-sm text-primary font-semibold hover:underline"
+              >
+                Réinitialiser tout ×
+              </button>
+            )}
           </div>
         )}
       </section>
@@ -421,16 +415,9 @@ const Index = () => {
           <Sparkles className="h-5 w-5 text-primary" />
           <h2 className="text-2xl font-bold text-foreground">Intelligence IA</h2>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <AIComparator
-            favorites={favoriteProperties}
-            priorities={[]}
-          />
-          <AIProfileSection
-            properties={properties}
-            onHighlightProperty={handleFocusOnMap}
-          />
+          <AIComparator favorites={favoriteProperties} priorities={[]} />
+          <AIProfileSection properties={properties} onHighlightProperty={handleFocusOnMap} />
         </div>
       </section>
 
@@ -440,6 +427,32 @@ const Index = () => {
         onOpenChange={setModalOpen}
         pois={pois}
       />
+
+      {/* Property Detail Panel */}
+      {detailProperty && (
+        <PropertyDetailPanel
+          property={detailProperty}
+          onClose={() => {
+            setDetailProperty(null);
+            setFocusedPropertyId(null);
+          }}
+          pois={pois}
+          isFavorite={favorites.has(detailProperty.id)}
+          onToggleFavorite={toggleFavorite}
+          onViewTour={(p) => {
+            setSelectedProperty(p);
+            setModalOpen(true);
+          }}
+          similarProperties={similarProperties}
+          onSelectProperty={(id) => {
+            const p = properties.find(pr => pr.id === id);
+            if (p) {
+              setDetailProperty(p);
+              setFocusedPropertyId(id);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

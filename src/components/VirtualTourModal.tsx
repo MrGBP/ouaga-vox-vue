@@ -14,11 +14,11 @@ import { useToast } from '@/hooks/use-toast';
 interface Property {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   type: string;
   price: number;
   quartier: string;
-  address: string;
+  address?: string;
   latitude: number;
   longitude: number;
   bedrooms?: number;
