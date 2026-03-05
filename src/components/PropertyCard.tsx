@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 interface Property {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   type: string;
   price: number;
   quartier: string;
-  address: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
   bedrooms?: number;
   bathrooms?: number;
   surface_area?: number;

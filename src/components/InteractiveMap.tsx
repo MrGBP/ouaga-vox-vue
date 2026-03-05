@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { quartierPolygons } from '@/lib/ouagaGeoJSON';
+import { POI_CATALOG } from '@/lib/mockData';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Property {
@@ -21,6 +23,7 @@ interface Property {
   security_rating?: number;
   images?: string[];
   virtual_tour_url?: string;
+  status?: string;
 }
 
 interface POI {
@@ -46,6 +49,7 @@ interface ActiveFilters {
   minBedrooms: number;
   hasVirtualTour: boolean;
   onlyAvailable: boolean;
+  surfaceRange?: string;
 }
 
 interface InteractiveMapProps {
@@ -70,27 +74,12 @@ const RADIUS_OPTIONS = [
   { label: '1 km', value: 1000 },
 ];
 
-// Harmonious muted POI palette for focus mode
-const POI_ICONS: Record<string, { emoji: string; color: string; label: string }> = {
-  ecole:      { emoji: '🏫', color: '#64748B', label: 'École' },
-  universite: { emoji: '🎓', color: '#7C8DB0', label: 'Université' },
-  hopital:    { emoji: '🏥', color: '#94A3B8', label: 'Santé' },
-  marche:     { emoji: '🛒', color: '#78909C', label: 'Marché' },
-  maquis:     { emoji: '🍽️', color: '#6B8E84', label: 'Restaurant' },
-  restaurant: { emoji: '🍽️', color: '#6B8E84', label: 'Restaurant' },
-  banque:     { emoji: '🏦', color: '#7986CB', label: 'Banque' },
-  transport:  { emoji: '🚌', color: '#5C97A5', label: 'Transport' },
-  gym:        { emoji: '💪', color: '#8D7B6A', label: 'Sport' },
-  parc:       { emoji: '🌳', color: '#6D9B7A', label: 'Parc' },
-};
-
 const TILE_DEFAULT = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-// Desaturated tile for focus mode — CartoDB Positron (light, clean, muted)
 const TILE_FOCUS = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (n: number) =>
-  new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
+  n >= 1000000 ? `${(n / 1000000).toFixed(1)}M` : new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 
 const distanceM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
   const R = 6371000;
@@ -104,87 +93,90 @@ const distanceM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
 
 const fmtDist = (d: number) => (d < 1000 ? `${d} m` : `${(d / 1000).toFixed(1)} km`);
 
-// Adaptive pin size
-const pinSize = (count: number, zoom: number): number => {
-  const base = Math.round(48 + Math.sqrt(count) * 5);
-  const capped = Math.min(Math.max(base, 48), 88);
-  const zoomFactor = zoom >= 13 ? 1.1 : zoom >= 12 ? 1 : 0.92;
-  return Math.round(capped * zoomFactor);
-};
-
-// Quartier pin HTML
-const quartierPinHTML = (name: string, count: number, size: number, isActive = false) => {
-  const fontSize = Math.max(11, Math.round(size * 0.22));
-  const countSize = Math.max(13, Math.round(size * 0.26));
-  const borderColor = isActive ? 'hsl(220,70%,42%)' : 'hsl(220,70%,32%)';
-  const bg = isActive ? 'hsl(220,70%,32%)' : 'white';
-  const textColor = isActive ? 'white' : 'hsl(220,70%,32%)';
-  const subColor = isActive ? 'rgba(255,255,255,0.8)' : 'hsl(220,25%,42%)';
-  return `
-    <div style="
-      width:${size}px;height:${size}px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      background:${bg};border:2.5px solid ${borderColor};border-radius:${size / 2}px;
-      box-shadow:0 4px 16px hsla(220,70%,32%,0.22);cursor:pointer;gap:1px;transition:transform 0.15s;
-    ">
-      <span style="font-size:${countSize}px;font-weight:800;color:${textColor};line-height:1;">${count}</span>
-      <span style="font-size:${fontSize}px;font-weight:600;color:${subColor};line-height:1;text-align:center;max-width:${size - 10}px;overflow:hidden;white-space:nowrap;">${name}</span>
-    </div>
-  `;
+// Quartier cluster colors — harmonious navy palette
+const QUARTIER_CLUSTER_COLORS: Record<string, string> = {
+  'Ouaga 2000': '#1B3A5C',
+  'Zone du Bois': '#2D5A4E',
+  'Koulouba': '#4C3A6A',
+  'Tampouy': '#6A4520',
+  "Patte d'Oie": '#2A5D7C',
+  'Dassasgho': '#5A3030',
+  'Zogona': '#2A5A5A',
+  'Wemtenga': '#3A4A60',
+  'Pissy': '#4A5A3A',
+  'Gounghin': '#5A3A4A',
+  'Somgandé': '#3A4A4A',
+  'Tanghin': '#5A5A3A',
 };
 
 // Type-based color palette for property pins
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string; emoji: string }> = {
-  maison:      { bg: '#1E40AF', border: '#3B82F6', text: '#FFFFFF', emoji: '🏠' },
-  villa:       { bg: '#7C3AED', border: '#A78BFA', text: '#FFFFFF', emoji: '🏡' },
-  appartement: { bg: '#0891B2', border: '#22D3EE', text: '#FFFFFF', emoji: '🏬' },
-  bureau:      { bg: '#B45309', border: '#F59E0B', text: '#FFFFFF', emoji: '🏢' },
-  commerce:    { bg: '#059669', border: '#34D399', text: '#FFFFFF', emoji: '🏪' },
-  boutique:    { bg: '#047857', border: '#10B981', text: '#FFFFFF', emoji: '🛍️' },
-  terrain:     { bg: '#65A30D', border: '#A3E635', text: '#FFFFFF', emoji: '🌿' },
-  entrepot:    { bg: '#6B7280', border: '#9CA3AF', text: '#FFFFFF', emoji: '🏭' },
+  maison:      { bg: '#1B3A5C', border: '#3B6A9C', text: '#FFFFFF', emoji: '🏠' },
+  villa:       { bg: '#4C3A6A', border: '#7C6A9A', text: '#FFFFFF', emoji: '🏡' },
+  appartement: { bg: '#2A5D7C', border: '#4A8DAC', text: '#FFFFFF', emoji: '🏬' },
+  bureau:      { bg: '#1B3A5C', border: '#4A7AAC', text: '#FFFFFF', emoji: '🏢' },
+  commerce:    { bg: '#6A4520', border: '#9A7550', text: '#FFFFFF', emoji: '🏪' },
+  boutique:    { bg: '#5A3030', border: '#8A6060', text: '#FFFFFF', emoji: '🛍️' },
+  terrain:     { bg: '#4A5A3A', border: '#7A8A6A', text: '#FFFFFF', emoji: '🏗️' },
 };
 
 const getTypeStyle = (type: string) =>
   TYPE_COLORS[type.toLowerCase()] || { bg: '#475569', border: '#94A3B8', text: '#FFFFFF', emoji: '📍' };
 
-// Property pin HTML — compact dot style for quartier view, minimal for focus
+// ─── Pin HTML helpers ────────────────────────────────────────────────────────
+
+const quartierClusterHTML = (name: string, count: number, color: string) => {
+  return `
+    <div style="
+      min-width:70px;height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      background:${color};border:3px solid ${color}80;border-radius:50%;
+      box-shadow:0 4px 20px ${color}40;cursor:pointer;gap:2px;transition:transform 0.15s;
+      padding:4px;
+    ">
+      <span style="font-size:18px;font-weight:800;color:white;line-height:1;">${count}</span>
+      <span style="font-size:9px;font-weight:600;color:rgba(255,255,255,0.9);line-height:1;text-align:center;max-width:65px;word-wrap:break-word;">${name}</span>
+    </div>
+  `;
+};
+
 const propertyPinHTML = (p: Property, focused: boolean) => {
   const ts = getTypeStyle(p.type);
   const unavailableOpacity = !p.available ? 'opacity:0.5;' : '';
 
   if (focused) {
-    // Focus mode: just a clean pin marker, no text
     return `
       <div style="
         width:32px;height:32px;display:flex;align-items:center;justify-content:center;
         background:${ts.bg};border:3px solid ${ts.border};border-radius:50%;
         box-shadow:0 0 0 6px ${ts.border}30,0 0 0 12px ${ts.border}12,0 4px 16px rgba(0,0,0,0.25);
         ${unavailableOpacity}
+        animation:pulse 2s infinite;
       ">
         <span style="font-size:14px;">${ts.emoji}</span>
       </div>
     `;
   }
 
-  // Quartier view: compact pill with color by type
+  // Quartier view: compact pill with emoji + price
+  const priceText = p.price >= 1000000 ? `${(p.price/1000000).toFixed(1)}M` : `${Math.round(p.price/1000)}k`;
   return `
     <div style="
       display:flex;align-items:center;gap:3px;
       background:${ts.bg};border:1.5px solid ${ts.border};border-radius:16px;
-      padding:3px 8px 3px 5px;font-family:system-ui,sans-serif;white-space:nowrap;
+      padding:4px 8px 4px 6px;font-family:system-ui,sans-serif;white-space:nowrap;
       box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:transform 0.15s;
       ${unavailableOpacity}
     ">
       <span style="font-size:11px;">${ts.emoji}</span>
-      <span style="font-size:10px;font-weight:700;color:${ts.text};">${fmt(p.price)}</span>
+      <span style="font-size:10px;font-weight:700;color:${ts.text};">${priceText}</span>
     </div>
   `;
 };
 
-// Smart offset to avoid overlapping markers in quartier view
+// Smart offset to avoid overlapping markers
 const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng: number }[] => {
   const placed: { lat: number; lng: number }[] = [];
-  const MIN_GAP = 0.0008; // ~80m
+  const MIN_GAP = 0.0008;
 
   return props.map(p => {
     let lat = p.latitude;
@@ -196,7 +188,6 @@ const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng
         Math.abs(pl.lat - lat) < MIN_GAP && Math.abs(pl.lng - lng) < MIN_GAP
       );
       if (!overlap) break;
-      // Spiral offset
       const angle = (attempts * 137.5 * Math.PI) / 180;
       const r = MIN_GAP * (1 + attempts * 0.3);
       lat = p.latitude + r * Math.cos(angle);
@@ -224,6 +215,7 @@ const InteractiveMap = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const geoJsonLayer = useRef<L.LayerGroup | null>(null);
   const quartierLayer = useRef<L.LayerGroup | null>(null);
   const propertyLayer = useRef<L.LayerGroup | null>(null);
   const focusLayer = useRef<L.LayerGroup | null>(null);
@@ -235,7 +227,7 @@ const InteractiveMap = ({
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
 
-  // Helper: apply active filters to a property list
+  // Apply active filters
   const applyMapFilters = useCallback((props: Property[]) => {
     if (!activeFilters) return props;
     let result = props;
@@ -244,10 +236,16 @@ const InteractiveMap = ({
     if (activeFilters.minBedrooms > 0) result = result.filter(p => (p.bedrooms || 0) >= activeFilters.minBedrooms);
     if (activeFilters.hasVirtualTour) result = result.filter(p => !!p.virtual_tour_url);
     if (activeFilters.onlyAvailable) result = result.filter(p => p.available);
+    if (activeFilters.surfaceRange && activeFilters.surfaceRange !== 'all') {
+      const sr = activeFilters.surfaceRange;
+      if (sr === '<50') result = result.filter(p => (p.surface_area || 0) < 50);
+      else if (sr === '50-150') result = result.filter(p => (p.surface_area || 0) >= 50 && (p.surface_area || 0) <= 150);
+      else if (sr === '150-300') result = result.filter(p => (p.surface_area || 0) >= 150 && (p.surface_area || 0) <= 300);
+      else if (sr === '>300') result = result.filter(p => (p.surface_area || 0) > 300);
+    }
     return result;
   }, [activeFilters]);
 
-  // Determine current view level
   const viewLevel = focusedPropertyId ? 'focus' : selectedQuartier ? 'quartier' : 'global';
 
   // ── Init map ───────────────────────────────────────────────────────────────
@@ -267,17 +265,19 @@ const InteractiveMap = ({
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     const tile = L.tileLayer(TILE_DEFAULT, {
-      attribution: '© <a href="https://openstreetmap.org">OSM</a> · © <a href="https://carto.com">CARTO</a>',
+      attribution: '© <a href="https://openstreetmap.org">OSM</a>',
       maxZoom: 18,
     }).addTo(map);
     tileLayerRef.current = tile;
 
+    const gjLayer = L.layerGroup().addTo(map);
     const oLayer = L.layerGroup().addTo(map);
     const qLayer = L.layerGroup().addTo(map);
     const pLayer = L.layerGroup().addTo(map);
     const tLayer = L.layerGroup().addTo(map);
     const fLayer = L.layerGroup().addTo(map);
 
+    geoJsonLayer.current = gjLayer;
     overlayLayer.current = oLayer;
     quartierLayer.current = qLayer;
     propertyLayer.current = pLayer;
@@ -287,23 +287,36 @@ const InteractiveMap = ({
     map.on('zoomend', () => setZoom(map.getZoom()));
     mapInst.current = map;
 
+    // Add CSS for pulse animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 6px rgba(27,58,92,0.3), 0 0 0 12px rgba(27,58,92,0.1); }
+        50% { box-shadow: 0 0 0 10px rgba(27,58,92,0.2), 0 0 0 20px rgba(27,58,92,0.05); }
+      }
+    `;
+    document.head.appendChild(style);
+
     return () => {
       map.remove();
       mapInst.current = null;
-      tileLayerRef.current = null;
-      quartierLayer.current = null;
-      propertyLayer.current = null;
-      focusLayer.current = null;
-      tentacleLayer.current = null;
-      overlayLayer.current = null;
+      style.remove();
     };
   }, []);
 
-  // ── Switch tile layer based on view level ─────────────────────────────────
+  // ── Switch tile layer ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!tileLayerRef.current || !mapInst.current) return;
     const newUrl = viewLevel === 'focus' ? TILE_FOCUS : TILE_DEFAULT;
     tileLayerRef.current.setUrl(newUrl);
+
+    // Apply CSS filter for focus mode
+    const tilePane = mapInst.current.getPane('tilePane');
+    if (tilePane) {
+      tilePane.style.filter = viewLevel === 'focus'
+        ? 'grayscale(60%) brightness(0.88) saturate(0.4)'
+        : 'none';
+    }
   }, [viewLevel]);
 
   // ── Build quartier → properties map ────────────────────────────────────────
@@ -314,13 +327,13 @@ const InteractiveMap = ({
     byQuartier.set(p.quartier, arr);
   });
 
-  // ── LEVEL 1: Global view — quartier pins ──────────────────────────────────
+  // ── LEVEL 1: Global view — GeoJSON polygons + clusters ─────────────────────
   const renderGlobal = useCallback(() => {
-    if (!quartierLayer.current || !propertyLayer.current || !mapInst.current) return;
+    if (!quartierLayer.current || !propertyLayer.current || !geoJsonLayer.current || !mapInst.current) return;
     quartierLayer.current.clearLayers();
     propertyLayer.current.clearLayers();
+    geoJsonLayer.current.clearLayers();
 
-    const z = mapInst.current.getZoom();
     const filtered = applyMapFilters(properties);
     const byQ = new Map<string, Property[]>();
     filtered.forEach(p => {
@@ -329,7 +342,38 @@ const InteractiveMap = ({
       byQ.set(p.quartier, arr);
     });
 
-    // If quartier filter is active, only show that quartier
+    // Render GeoJSON polygons
+    quartierPolygons.forEach(qg => {
+      const qProps = byQ.get(qg.name) || [];
+      const hasProps = qProps.length > 0;
+
+      // Draw polygon
+      const polygon = L.polygon(
+        qg.polygon.map(([lat, lng]) => [lat, lng] as [number, number]),
+        {
+          color: '#1B3A5C',
+          weight: 1.5,
+          fillColor: qg.color,
+          fillOpacity: hasProps ? 0.08 : 0.03,
+          dashArray: '4 3',
+          interactive: true,
+        }
+      );
+
+      polygon.on('mouseover', () => {
+        polygon.setStyle({ weight: 2.5, color: '#1B3A5C', fillOpacity: 0.15 });
+      });
+      polygon.on('mouseout', () => {
+        polygon.setStyle({ weight: 1.5, color: '#1B3A5C', fillOpacity: hasProps ? 0.08 : 0.03 });
+      });
+      polygon.on('click', () => {
+        if (hasProps) setSelectedQuartier(qg.name);
+      });
+
+      geoJsonLayer.current!.addLayer(polygon);
+    });
+
+    // Render cluster markers for quartiers with properties
     const quartiersToShow = activeFilters?.quartier && activeFilters.quartier !== 'all'
       ? quartiers.filter(q => q.name === activeFilters.quartier)
       : quartiers;
@@ -337,44 +381,44 @@ const InteractiveMap = ({
     quartiersToShow.forEach(q => {
       const qProps = byQ.get(q.name) || [];
       if (qProps.length === 0) return;
-      const count = qProps.length;
-      const sz = pinSize(count, z);
+
+      const color = QUARTIER_CLUSTER_COLORS[q.name] || '#1B3A5C';
       const icon = L.divIcon({
-        html: quartierPinHTML(q.name, count, sz),
+        html: quartierClusterHTML(q.name, qProps.length, color),
         className: '',
-        iconSize: [sz, sz],
-        iconAnchor: [sz / 2, sz / 2],
+        iconSize: [70, 70],
+        iconAnchor: [35, 35],
       });
+
       const available = qProps.filter(p => p.available).length;
       const m = L.marker([q.latitude, q.longitude], { icon, zIndexOffset: 100 });
       m.bindTooltip(
         `<div style="font-family:system-ui,sans-serif;min-width:130px;">
-          <strong style="color:hsl(220,70%,32%)">${q.name}</strong><br/>
-          <span style="font-size:11px;color:#555;">${count} biens · ${available} disponibles</span>
+          <strong style="color:#1B3A5C">${q.name}</strong><br/>
+          <span style="font-size:11px;color:#555;">${qProps.length} biens · ${available} disponibles</span>
         </div>`,
-        { direction: 'top', offset: [0, -(sz / 2 + 4)] }
+        { direction: 'top', offset: [0, -40] }
       );
-      m.on('click', () => {
-        setSelectedQuartier(q.name);
-      });
+      m.on('click', () => setSelectedQuartier(q.name));
       quartierLayer.current!.addLayer(m);
     });
   }, [properties, quartiers, applyMapFilters, activeFilters]);
 
-  // ── LEVEL 2: Quartier view — only that quartier's properties ──────────────
+  // ── LEVEL 2: Quartier view ────────────────────────────────────────────────
   const renderQuartier = useCallback(() => {
-    if (!quartierLayer.current || !propertyLayer.current || !mapInst.current) return;
+    if (!quartierLayer.current || !propertyLayer.current || !geoJsonLayer.current || !mapInst.current) return;
     quartierLayer.current.clearLayers();
     propertyLayer.current.clearLayers();
+    geoJsonLayer.current.clearLayers();
 
     const allQProps = properties.filter(p => p.quartier === selectedQuartier);
     const qProps = applyMapFilters(allQProps);
-    if (qProps.length === 0) return;
-
     const map = mapInst.current;
 
-    // Use ALL quartier properties for bounding box (not filtered), so the view stays consistent
+    // Compute bounds
     const boundsSource = allQProps.length > 0 ? allQProps : qProps;
+    if (boundsSource.length === 0) return;
+
     const lats = boundsSource.map(p => p.latitude);
     const lngs = boundsSource.map(p => p.longitude);
     const latCenter = (Math.min(...lats) + Math.max(...lats)) / 2;
@@ -387,17 +431,15 @@ const InteractiveMap = ({
       L.latLng(latCenter + latSpread * (0.5 + pad), lngCenter + lngSpread * (0.5 + pad))
     );
 
-    // Fly to bounds first, then lock hard
     map.flyToBounds(qBounds, { duration: 0.8, padding: [30, 30], maxZoom: 17 });
-
-    // Apply strict lock after fly animation completes
     setTimeout(() => {
       if (!mapInst.current) return;
       mapInst.current.setMaxBounds(qBounds);
       mapInst.current.setMinZoom(mapInst.current.getZoom() - 1);
     }, 900);
 
-    // Smart offset to avoid overlap
+    if (qProps.length === 0) return;
+
     const positioned = offsetProperties(qProps);
 
     positioned.forEach(({ prop, lat, lng }) => {
@@ -410,8 +452,8 @@ const InteractiveMap = ({
       const m = L.marker([lat, lng], { icon });
       m.bindTooltip(
         `<div style="font-family:system-ui,sans-serif;min-width:140px;">
-          <strong style="color:hsl(220,70%,32%);font-size:12px;">${prop.title}</strong><br/>
-          <span style="font-size:11px;font-weight:700;color:hsl(220,70%,32%);">${fmt(prop.price)} FCFA/mois</span><br/>
+          <strong style="color:#1B3A5C;font-size:12px;">${prop.title}</strong><br/>
+          <span style="font-size:11px;font-weight:700;color:#1B3A5C;">${new Intl.NumberFormat('fr-FR').format(prop.price)} FCFA/mois</span><br/>
           <span style="font-size:10px;color:#666;">${prop.bedrooms || '–'} ch. · ${prop.surface_area || '–'} m² · ${prop.available ? '✅ Dispo' : '🔒 Loué'}</span>
         </div>`,
         { direction: 'top', offset: [0, -8] }
@@ -423,7 +465,7 @@ const InteractiveMap = ({
     });
   }, [properties, selectedQuartier, onPropertyClick, applyMapFilters]);
 
-  // ── LEVEL 3: Focus mode — single property, desaturated, POI tentacles ─────
+  // ── LEVEL 3: Focus mode ───────────────────────────────────────────────────
   const renderFocus = useCallback(() => {
     if (!focusLayer.current || !tentacleLayer.current || !overlayLayer.current || !mapInst.current) return;
     focusLayer.current.clearLayers();
@@ -431,26 +473,15 @@ const InteractiveMap = ({
     overlayLayer.current.clearLayers();
     quartierLayer.current?.clearLayers();
     propertyLayer.current?.clearLayers();
+    geoJsonLayer.current?.clearLayers();
 
     const prop = properties.find(p => p.id === focusedPropertyId);
     if (!prop) return;
 
     const map = mapInst.current;
-    // Offset center to leave room for floating panel (shift right slightly)
     map.flyTo([prop.latitude, prop.longitude], 16, { duration: 0.8 });
 
-    // Subtle desaturation overlay (very light, preserving readability)
-    const bigBounds: L.LatLngTuple[] = [
-      [11.0, -3.5], [11.0, 0.5], [13.8, 0.5], [13.8, -3.5],
-    ];
-    L.polygon(bigBounds, {
-      color: 'transparent',
-      fillColor: '#0F1729',
-      fillOpacity: 0.12,
-      interactive: false,
-    }).addTo(overlayLayer.current);
-
-    // Focused property pin — clean circular marker, no text
+    // Focused property pin with pulse
     const focusIcon = L.divIcon({
       html: propertyPinHTML(prop, true),
       className: '',
@@ -460,19 +491,19 @@ const InteractiveMap = ({
     L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 })
       .addTo(focusLayer.current);
 
-    // Radius circles — harmonious, proportionate
+    // Radius circles
     const radiusConfig = [
-      { r: 300, opacity: 0.06, dash: '6 4', weight: 1.5, color: 'hsl(220,50%,55%)' },
-      { r: 500, opacity: 0.04, dash: '8 5', weight: 1.2, color: 'hsl(220,40%,60%)' },
-      { r: 1000, opacity: 0.025, dash: '10 6', weight: 1, color: 'hsl(220,30%,65%)' },
+      { r: 300, fillOpacity: 0.15, dash: '', weight: 2, color: 'rgba(30,80,160,1)' },
+      { r: 500, fillOpacity: 0.10, dash: '6 4', weight: 1.5, color: 'rgba(30,80,160,0.8)' },
+      { r: 1000, fillOpacity: 0.07, dash: '4 4', weight: 1, color: 'rgba(30,80,160,0.6)' },
     ];
-    radiusConfig.forEach(({ r, opacity, dash, weight, color }) => {
+    radiusConfig.forEach(({ r, fillOpacity, dash, weight, color }) => {
       if (r > radius) return;
       L.circle([prop.latitude, prop.longitude], {
         radius: r,
         color,
-        fillColor: 'hsl(220,50%,60%)',
-        fillOpacity: opacity,
+        fillColor: 'rgba(30,80,160,0.1)',
+        fillOpacity,
         weight,
         dashArray: dash,
         interactive: false,
@@ -484,7 +515,7 @@ const InteractiveMap = ({
       const labelLng = prop.longitude + (r / (111320 * Math.cos(prop.latitude * Math.PI / 180))) * Math.sin(labelAngle);
       L.marker([labelLat, labelLng], {
         icon: L.divIcon({
-          html: `<div style="font-size:9px;color:hsl(220,40%,55%);font-weight:600;font-family:system-ui;background:rgba(255,255,255,0.85);padding:1px 5px;border-radius:8px;white-space:nowrap;">${fmtDist(r)}</div>`,
+          html: `<div style="font-size:9px;color:rgba(30,80,160,0.8);font-weight:600;font-family:system-ui;background:rgba(255,255,255,0.9);padding:1px 6px;border-radius:8px;white-space:nowrap;">${fmtDist(r)}</div>`,
           className: '',
           iconAnchor: [16, 8],
         }),
@@ -492,26 +523,25 @@ const InteractiveMap = ({
       }).addTo(focusLayer.current!);
     });
 
-    // POI tentacles — grouped by type, harmonious colors
-    const groupedByType = new Map<string, POI[]>();
-    pois.forEach(poi => {
-      const d = distanceM(prop.latitude, prop.longitude, poi.latitude, poi.longitude);
-      if (d > radius) return;
+    // POI — grouped by type, max 12 total, opacity by distance
+    const allPoisInRange = pois
+      .map(poi => ({ ...poi, distance: distanceM(prop.latitude, prop.longitude, poi.latitude, poi.longitude) }))
+      .filter(p => p.distance <= radius)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 12);
+
+    // Group by type for tentacle lines
+    const groupedByType = new Map<string, typeof allPoisInRange>();
+    allPoisInRange.forEach(poi => {
       const arr = groupedByType.get(poi.type) || [];
       arr.push(poi);
       groupedByType.set(poi.type, arr);
     });
 
     groupedByType.forEach((groupPois, type) => {
-      const info = POI_ICONS[type] || { emoji: '📍', color: '#78909C', label: type };
-
-      const withDist = groupPois.map(poi => ({
-        ...poi,
-        distance: distanceM(prop.latitude, prop.longitude, poi.latitude, poi.longitude),
-      })).sort((a, b) => a.distance - b.distance);
-
-      const closest = withDist[0];
-      const count = withDist.length;
+      const info = POI_CATALOG[type] || { emoji: '📍', color: '#78909C', label: type, bg: '#ECEFF1' };
+      const closest = groupPois[0];
+      const count = groupPois.length;
 
       // Tentacle line
       L.polyline(
@@ -538,33 +568,39 @@ const InteractiveMap = ({
         }),
         interactive: false,
       }).addTo(tentacleLayer.current!);
+    });
 
-      // POI marker — muted, harmonious
-      L.marker([closest.latitude, closest.longitude], {
+    // Individual POI markers with opacity by distance
+    allPoisInRange.forEach(poi => {
+      const info = POI_CATALOG[poi.type] || { emoji: '📍', color: '#78909C', label: poi.type, bg: '#ECEFF1' };
+      let opacity = 1;
+      if (poi.distance > 500) opacity = 0.5;
+      else if (poi.distance > 300) opacity = 0.75;
+
+      L.marker([poi.latitude, poi.longitude], {
         icon: L.divIcon({
           html: `<div style="
-            background:rgba(255,255,255,0.92);border:1.5px solid ${info.color}80;border-radius:50%;
-            width:26px;height:26px;display:flex;align-items:center;justify-content:center;
-            font-size:12px;box-shadow:0 1px 6px ${info.color}18;
+            background:${info.bg};border:1.5px solid ${info.color}80;border-radius:50%;
+            width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+            font-size:12px;box-shadow:0 1px 6px ${info.color}18;opacity:${opacity};
           ">${info.emoji}</div>`,
           className: '',
-          iconSize: [26, 26],
-          iconAnchor: [13, 13],
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
         }),
         zIndexOffset: 500,
       })
         .bindTooltip(
-          `<strong style="color:${info.color}">${info.label}</strong>${count > 1 ? ` <span style="opacity:0.6">(${count})</span>` : ''}<br/><span style="font-size:11px;color:#666">${closest.name} · ${fmtDist(closest.distance)}</span>`,
+          `<strong style="color:${info.color}">${info.label}</strong><br/><span style="font-size:11px;color:#666">${poi.name} · ${fmtDist(poi.distance)}</span>`,
           { direction: 'top' }
         )
         .addTo(tentacleLayer.current!);
     });
   }, [focusedPropertyId, properties, pois, radius]);
 
-  // ── External quartier selection (from QuartiersSection) ───────────────────
+  // ── External quartier selection ───────────────────────────────────────────
   useEffect(() => {
     if (!externalQuartierSelect || !mapInst.current) return;
-    // Unlock bounds first
     mapInst.current.setMinZoom(11);
     mapInst.current.setMaxBounds(OUAGA_BOUNDS);
     setSelectedQuartier(externalQuartierSelect);
@@ -575,12 +611,12 @@ const InteractiveMap = ({
   useEffect(() => {
     if (!mapInst.current) return;
 
-    // Clear all layers first
     focusLayer.current?.clearLayers();
     tentacleLayer.current?.clearLayers();
     overlayLayer.current?.clearLayers();
     quartierLayer.current?.clearLayers();
     propertyLayer.current?.clearLayers();
+    geoJsonLayer.current?.clearLayers();
 
     if (viewLevel === 'focus') {
       renderFocus();
@@ -591,16 +627,14 @@ const InteractiveMap = ({
     }
   }, [viewLevel, renderGlobal, renderQuartier, renderFocus, activeFilters]);
 
-  // Re-render global on zoom changes
+  // Re-render global on zoom
   useEffect(() => {
     if (!mapInst.current || viewLevel !== 'global') return;
     const map = mapInst.current;
-
     if (zoomHandlerRef.current) map.off('zoomend', zoomHandlerRef.current);
     const handler = () => renderGlobal();
     zoomHandlerRef.current = handler;
     map.on('zoomend', handler);
-
     return () => { map.off('zoomend', handler); };
   }, [renderGlobal, viewLevel]);
 
@@ -609,7 +643,6 @@ const InteractiveMap = ({
     setSelectedQuartier(null);
     if (onFocusClear) onFocusClear();
     if (mapInst.current) {
-      // Fully unlock map bounds
       mapInst.current.setMinZoom(11);
       mapInst.current.setMaxBounds(OUAGA_BOUNDS);
       mapInst.current.flyTo(OUAGA_CENTER, 12, { duration: 0.7 });
@@ -618,22 +651,20 @@ const InteractiveMap = ({
 
   const goBackToQuartier = () => {
     if (onFocusClear) onFocusClear();
-    // Unlock temporarily — renderQuartier will re-lock to the quartier
     if (mapInst.current) {
       mapInst.current.setMinZoom(11);
       mapInst.current.setMaxBounds(OUAGA_BOUNDS);
     }
   };
 
+  const filteredCount = applyMapFilters(properties).length;
 
   return (
     <div className="relative w-full h-[620px] rounded-xl overflow-hidden border border-border shadow-card">
-      {/* Map fills full width always */}
       <div ref={mapRef} className="absolute inset-0 z-0" />
 
-      {/* ── Breadcrumb Navigation ─────────────────────────────────────── */}
+      {/* ── Badge top-left ── */}
       <div className="absolute top-3 left-3 z-[600] flex items-center gap-1.5">
-        {/* Global button always visible */}
         <button
           onClick={goBackToGlobal}
           className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm ${
@@ -642,7 +673,7 @@ const InteractiveMap = ({
               : 'bg-card/90 text-muted-foreground border-border hover:text-foreground'
           }`}
         >
-          🏘️ Ouagadougou
+          🏠 Ouagadougou — {filteredCount} biens
         </button>
 
         {(viewLevel === 'quartier' || viewLevel === 'focus') && selectedQuartier && (
@@ -671,7 +702,7 @@ const InteractiveMap = ({
         )}
       </div>
 
-      {/* ── Radius controls (focus mode) ────────────────────────────── */}
+      {/* ── Radius controls (focus mode) ── */}
       {viewLevel === 'focus' && (
         <div className="absolute top-3 right-3 z-[600]">
           <div className="bg-card/92 backdrop-blur-sm border border-border rounded-xl px-3 py-2 shadow-card flex items-center gap-2">
@@ -693,24 +724,35 @@ const InteractiveMap = ({
         </div>
       )}
 
-      {/* ── Type legend (quartier view) ─────────────────────────────── */}
-      {viewLevel === 'quartier' && (
-        <div className="absolute bottom-4 left-4 z-[600] bg-card/92 backdrop-blur-sm border border-border rounded-xl px-3 py-2 shadow-card">
-          <span className="text-[10px] font-semibold text-muted-foreground block mb-1">Types de biens</span>
-          <div className="flex flex-wrap gap-1.5">
-            {Object.entries(TYPE_COLORS).map(([type, style]) => (
-              <span key={type} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: style.bg, color: style.text }}>
-                {style.emoji} {type}
+      {/* ── Quartier info bar (level 2) ── */}
+      {viewLevel === 'quartier' && selectedQuartier && (
+        <div className="absolute bottom-4 left-4 right-4 z-[600]">
+          <div className="bg-card/95 backdrop-blur-sm border border-border rounded-xl px-4 py-2.5 shadow-card flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">📍</span>
+              <span className="text-sm font-semibold text-foreground">{selectedQuartier}</span>
+              <span className="text-xs text-muted-foreground">
+                — {applyMapFilters(properties.filter(p => p.quartier === selectedQuartier)).length} biens disponibles · Zone verrouillée
               </span>
-            ))}
+            </div>
+            <button
+              onClick={goBackToGlobal}
+              className="text-xs text-primary font-semibold hover:underline"
+            >
+              ← Retour à Ouagadougou
+            </button>
           </div>
         </div>
       )}
 
-      {/* ── Zoom badge ──────────────────────────────────────────────── */}
-      <div className="absolute bottom-12 right-3 z-[500] bg-card/90 backdrop-blur-sm border border-border rounded-lg px-2.5 py-1 text-[10px] font-mono text-muted-foreground shadow-card">
-        zoom {zoom}
-      </div>
+      {/* ── Instruction (level 1) ── */}
+      {viewLevel === 'global' && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500]">
+          <span className="text-xs text-muted-foreground bg-card/90 backdrop-blur-sm border border-border rounded-full px-4 py-1.5 shadow-sm">
+            Touchez un quartier pour entrer
+          </span>
+        </div>
+      )}
     </div>
   );
 };
