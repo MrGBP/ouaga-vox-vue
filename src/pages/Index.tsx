@@ -14,7 +14,8 @@ import QuartiersSection from '@/components/QuartiersSection';
 import AIComparator from '@/components/AIComparator';
 import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
-import { Loader2, MapPin, Home, Sparkles } from 'lucide-react';
+import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
 interface Property {
@@ -46,6 +47,8 @@ interface Property {
   has_garden?: boolean;
   has_water?: boolean;
   has_internet?: boolean;
+  furnished?: boolean;
+  has_video?: boolean;
 }
 
 interface POI {
@@ -67,6 +70,7 @@ interface Quartier {
 }
 
 const FAVORITES_KEY = 'sapsap_favorites';
+const ITEMS_PER_PAGE = 12;
 
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -87,6 +91,7 @@ const Index = () => {
   });
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [focusedPropertyId, setFocusedPropertyId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
@@ -128,6 +133,11 @@ const Index = () => {
     }
   };
 
+  // Filter out rented properties for display
+  const availableProperties = useCallback((props: Property[]) => {
+    return props.filter(p => p.status !== 'rented' && p.available !== false);
+  }, []);
+
   const applyFilters = useCallback((
     source: Property[],
     query: string,
@@ -135,7 +145,8 @@ const Index = () => {
     favsOnly: boolean,
     favSet: Set<string>
   ) => {
-    let result = [...source];
+    // Always exclude rented properties
+    let result = source.filter(p => p.status !== 'rented' && p.available !== false);
 
     if (favsOnly) result = result.filter(p => favSet.has(p.id));
 
@@ -155,7 +166,6 @@ const Index = () => {
     result = result.filter(p => p.price >= f.minPrice && p.price <= f.maxPrice);
     if (f.minBedrooms > 0) result = result.filter(p => (p.bedrooms || 0) >= f.minBedrooms);
     if (f.hasVirtualTour) result = result.filter(p => !!p.virtual_tour_url);
-    if (f.onlyAvailable) result = result.filter(p => p.available);
     if (f.surfaceRange && f.surfaceRange !== 'all') {
       const sr = f.surfaceRange;
       if (sr === '<50') result = result.filter(p => (p.surface_area || 0) < 50);
@@ -169,6 +179,10 @@ const Index = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    // Auto-close: close detail panel and filters
+    setDetailProperty(null);
+    setFocusedPropertyId(null);
+    setCurrentPage(1);
     const filtered = applyFilters(properties, query, filters, showFavoritesOnly, favorites);
     setFilteredProperties(filtered);
 
@@ -184,35 +198,46 @@ const Index = () => {
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
+    setDetailProperty(null);
+    setFocusedPropertyId(null);
+    setCurrentPage(1);
     setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites));
   };
 
   const handleViewDetails = (property: Property) => {
-    setSelectedProperty(property);
-    setModalOpen(true);
+    // Single state: close any previous, open this one
+    setDetailProperty(property);
+    setFocusedPropertyId(property.id);
   };
 
   const handlePropertyClick = (id: string) => {
     const prop = properties.find(p => p.id === id);
     if (prop) {
-      setFocusedPropertyId(id);
       setDetailProperty(prop);
+      setFocusedPropertyId(id);
     }
   };
 
   const handleFocusOnMap = (id: string) => {
+    setDetailProperty(null); // close any open panel first
     setFocusedPropertyId(id);
     const prop = properties.find(p => p.id === id);
-    if (prop) setDetailProperty(prop);
+    if (prop) {
+      setTimeout(() => setDetailProperty(prop), 100);
+    }
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const [mapQuartierTrigger, setMapQuartierTrigger] = useState<string | null>(null);
 
   const handleQuartierClick = (q: Quartier) => {
+    // Auto-close: close detail panel
+    setDetailProperty(null);
+    setFocusedPropertyId(null);
     const newFilters = { ...filters, quartier: q.name };
     setFilters(newFilters);
     setSearchQuery('');
+    setCurrentPage(1);
     setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
     setMapQuartierTrigger(q.name);
     speak(`Voici les biens disponibles dans le quartier ${q.name}`);
@@ -241,6 +266,7 @@ const Index = () => {
   const toggleFavoritesView = () => {
     const next = !showFavoritesOnly;
     setShowFavoritesOnly(next);
+    setCurrentPage(1);
     setFilteredProperties(applyFilters(properties, searchQuery, filters, next, favorites));
   };
 
@@ -249,10 +275,15 @@ const Index = () => {
 
   // Similar properties for detail panel
   const similarProperties = detailProperty
-    ? properties.filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
+    ? availableProperties(properties).filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
     : [];
 
-  const mapProperties = showFavoritesOnly ? filteredProperties : properties;
+  // Map shows available properties only
+  const mapProperties = availableProperties(showFavoritesOnly ? filteredProperties : properties);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProperties.length / ITEMS_PER_PAGE);
+  const paginatedProperties = filteredProperties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -291,7 +322,7 @@ const Index = () => {
               <br />en un clic
             </h1>
             <p className="text-base md:text-lg text-card/90 font-medium">
-              {properties.length} biens · Ouagadougou · {quartierNames.length} quartiers
+              {availableProperties(properties).length} biens · Ouagadougou · {quartierNames.length} quartiers
             </p>
           </motion.div>
 
@@ -315,7 +346,7 @@ const Index = () => {
         <QuartiersSection quartiers={quartiers} onQuartierClick={handleQuartierClick} />
       </section>
 
-      {/* Map + Filters */}
+      {/* Map + Filters + Detail Panel side by side */}
       <section id="map" className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground">Carte interactive</h2>
@@ -324,18 +355,20 @@ const Index = () => {
         <FilterBar
           onFilterChange={handleFilterChange}
           quartiers={quartierNames}
-          totalCount={properties.length}
+          totalCount={availableProperties(properties).length}
           filteredCount={filteredProperties.length}
           favoritesCount={favorites.size}
           showFavoritesOnly={showFavoritesOnly}
           onToggleFavoritesView={toggleFavoritesView}
         />
 
-        <div className="relative">
+        <div className="flex gap-0 relative">
+          {/* Map */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className={`transition-all duration-300 ${detailProperty ? 'w-[calc(100%-420px)]' : 'w-full'}`}
           >
             <InteractiveMap
               properties={mapProperties}
@@ -352,10 +385,69 @@ const Index = () => {
               onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
             />
           </motion.div>
+
+          {/* Detail Panel — beside map, separated by border */}
+          {detailProperty && (
+            <div className="w-[420px] shrink-0 border-l border-border hidden lg:block">
+              <div className="h-[620px] overflow-y-auto">
+                <PropertyDetailPanel
+                  property={detailProperty}
+                  onClose={() => {
+                    setDetailProperty(null);
+                    setFocusedPropertyId(null);
+                  }}
+                  pois={pois}
+                  isFavorite={favorites.has(detailProperty.id)}
+                  onToggleFavorite={toggleFavorite}
+                  onViewTour={(p) => {
+                    setSelectedProperty(p);
+                    setModalOpen(true);
+                  }}
+                  similarProperties={similarProperties}
+                  onSelectProperty={(id) => {
+                    const p = properties.find(pr => pr.id === id);
+                    if (p) {
+                      setDetailProperty(p);
+                      setFocusedPropertyId(id);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Properties grid */}
+      {/* Mobile detail panel (drawer from bottom) */}
+      {detailProperty && (
+        <div className="lg:hidden">
+          <PropertyDetailPanel
+            property={detailProperty}
+            onClose={() => {
+              setDetailProperty(null);
+              setFocusedPropertyId(null);
+            }}
+            pois={pois}
+            isFavorite={favorites.has(detailProperty.id)}
+            onToggleFavorite={toggleFavorite}
+            onViewTour={(p) => {
+              setSelectedProperty(p);
+              setModalOpen(true);
+            }}
+            similarProperties={similarProperties}
+            onSelectProperty={(id) => {
+              const p = properties.find(pr => pr.id === id);
+              if (p) {
+                setDetailProperty(p);
+                setFocusedPropertyId(id);
+              }
+            }}
+            isMobileOverride={true}
+          />
+        </div>
+      )}
+
+      {/* Properties grid — 12 max per page */}
       <section id="properties" className="container mx-auto px-4 pb-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground">
@@ -366,25 +458,54 @@ const Index = () => {
           </span>
         </div>
 
-        {filteredProperties.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filteredProperties.map((p, i) => (
-              <motion.div
-                key={p.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.04 }}
-              >
-                <PropertyCard
-                  property={p}
-                  onViewDetails={handleViewDetails}
-                  isFavorite={favorites.has(p.id)}
-                  onToggleFavorite={toggleFavorite}
-                  onFocusOnMap={handleFocusOnMap}
-                />
-              </motion.div>
-            ))}
-          </div>
+        {paginatedProperties.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {paginatedProperties.map((p, i) => (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.04 }}
+                >
+                  <PropertyCard
+                    property={p}
+                    onViewDetails={handleViewDetails}
+                    isFavorite={favorites.has(p.id)}
+                    onToggleFavorite={toggleFavorite}
+                    onFocusOnMap={handleFocusOnMap}
+                  />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Précédent
+                </Button>
+                <span className="text-sm text-muted-foreground px-3">
+                  Page {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => p + 1)}
+                >
+                  Suivant
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20 bg-card border border-border rounded-xl">
             <div className="text-4xl mb-4">{showFavoritesOnly ? '❤️' : '🏠'}</div>
@@ -398,6 +519,7 @@ const Index = () => {
               <button
                 onClick={() => {
                   setFilters(DEFAULT_FILTERS);
+                  setCurrentPage(1);
                   setFilteredProperties(applyFilters(properties, searchQuery, DEFAULT_FILTERS, false, favorites));
                 }}
                 className="text-sm text-primary font-semibold hover:underline"
@@ -427,32 +549,6 @@ const Index = () => {
         onOpenChange={setModalOpen}
         pois={pois}
       />
-
-      {/* Property Detail Panel */}
-      {detailProperty && (
-        <PropertyDetailPanel
-          property={detailProperty}
-          onClose={() => {
-            setDetailProperty(null);
-            setFocusedPropertyId(null);
-          }}
-          pois={pois}
-          isFavorite={favorites.has(detailProperty.id)}
-          onToggleFavorite={toggleFavorite}
-          onViewTour={(p) => {
-            setSelectedProperty(p);
-            setModalOpen(true);
-          }}
-          similarProperties={similarProperties}
-          onSelectProperty={(id) => {
-            const p = properties.find(pr => pr.id === id);
-            if (p) {
-              setDetailProperty(p);
-              setFocusedPropertyId(id);
-            }
-          }}
-        />
-      )}
     </div>
   );
 };

@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Heart, ChevronLeft, ChevronRight, MapPin, Bed, Bath,
   Maximize, Calendar, Phone, MessageCircle, Mail, Camera,
-  Thermometer, Shield, Zap, TreePine, Droplets, Wifi, Eye,
+  Thermometer, Shield, Zap, TreePine, Droplets, Wifi, Star,
+  BarChart3,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { POI_CATALOG } from '@/lib/mockData';
 
 interface Property {
@@ -39,6 +39,8 @@ interface Property {
   agent_name?: string;
   agent_phone?: string;
   agent_photo?: string;
+  furnished?: boolean;
+  has_video?: boolean;
 }
 
 interface POI {
@@ -59,6 +61,7 @@ interface PropertyDetailPanelProps {
   similarProperties?: Property[];
   onSelectProperty?: (id: string) => void;
   onHighlightPoi?: (poiId: string) => void;
+  isMobileOverride?: boolean;
 }
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
@@ -78,12 +81,7 @@ const fmtDist = (d: number) => (d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km
 const TYPE_LABELS: Record<string, string> = {
   maison: 'Maison meublée', villa: 'Villa', bureau: 'Bureau',
   commerce: 'Commerce', boutique: 'Boutique', terrain: 'Terrain',
-};
-
-const STATUS_BADGES: Record<string, { label: string; emoji: string; className: string }> = {
-  available: { label: 'Disponible', emoji: '✅', className: 'bg-accent text-accent-foreground' },
-  reserved: { label: 'Réservé', emoji: '🟡', className: 'bg-yellow-500 text-white' },
-  rented: { label: 'Loué', emoji: '🔴', className: 'bg-destructive text-destructive-foreground' },
+  appartement: 'Appartement',
 };
 
 const PropertyDetailPanel = ({
@@ -96,15 +94,15 @@ const PropertyDetailPanel = ({
   similarProperties = [],
   onSelectProperty,
   onHighlightPoi,
+  isMobileOverride,
 }: PropertyDetailPanelProps) => {
   const [photoIdx, setPhotoIdx] = useState(0);
   const [descExpanded, setDescExpanded] = useState(false);
-  const isMobile = useIsMobile();
+  const isMobile = isMobileOverride ?? false;
 
   if (!property) return null;
 
   const images = property.images?.length ? property.images : ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'];
-  const status = STATUS_BADGES[property.status || (property.available ? 'available' : 'rented')];
 
   // Nearby POIs
   const nearbyPois = pois
@@ -112,8 +110,6 @@ const PropertyDetailPanel = ({
     .filter(p => p.distance < 1500)
     .sort((a, b) => a.distance - b.distance)
     .slice(0, 5);
-
-  const closestPoi = nearbyPois[0];
 
   // Features grid
   const features = [
@@ -129,124 +125,112 @@ const PropertyDetailPanel = ({
     property.has_internet && { icon: Wifi, label: 'Internet', value: '✓' },
   ].filter(Boolean) as { icon: any; label: string; value: any }[];
 
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={isMobile ? { y: '100%' } : { x: '100%' }}
-        animate={isMobile ? { y: 0 } : { x: 0 }}
-        exit={isMobile ? { y: '100%' } : { x: '100%' }}
-        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className={`bg-card border-border overflow-y-auto z-[700] ${
-          isMobile
-            ? 'fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl border-t shadow-lg'
-            : 'fixed top-0 right-0 h-full w-[420px] border-l shadow-lg'
-        }`}
-      >
-        {/* Mobile drag handle */}
-        {isMobile && (
-          <div className="flex justify-center pt-2 pb-1">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+  // Ratings
+  const ratings = [
+    property.comfort_rating && { label: 'Confort', value: property.comfort_rating },
+    property.security_rating && { label: 'Sécurité', value: property.security_rating },
+  ].filter(Boolean) as { label: string; value: number }[];
+
+  const panelContent = (
+    <>
+      {/* Mobile drag handle */}
+      {isMobile && (
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        </div>
+      )}
+
+      {/* ① Galerie photos */}
+      <div className="relative h-56 bg-muted">
+        <img
+          src={images[photoIdx]}
+          alt={property.title}
+          className="w-full h-full object-cover"
+        />
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={() => setPhotoIdx(i => (i - 1 + images.length) % images.length)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setPhotoIdx(i => (i + 1) % images.length)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+              {images.map((_, i) => (
+                <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === photoIdx ? 'bg-card w-3' : 'bg-card/60'}`} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Close + Favorite */}
+        <div className="absolute top-3 right-3 flex gap-1.5">
+          {onToggleFavorite && (
+            <button
+              onClick={() => onToggleFavorite(property.id)}
+              className={`w-8 h-8 rounded-full flex items-center justify-center shadow ${
+                isFavorite ? 'bg-secondary text-secondary-foreground' : 'bg-card/80 text-muted-foreground'
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-card/80 flex items-center justify-center shadow"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="p-5 space-y-5">
+        {/* ② Visite 360° / Vidéo */}
+        {(property.virtual_tour_url || property.has_video) && (
+          <div className="flex gap-2">
+            {property.virtual_tour_url && (
+              <Badge
+                className="bg-accent text-accent-foreground cursor-pointer gap-1 px-3 py-1.5"
+                onClick={() => onViewTour?.(property)}
+              >
+                <Camera className="h-3.5 w-3.5" /> Visite 360°
+              </Badge>
+            )}
+            {property.has_video && (
+              <Badge className="bg-muted text-foreground gap-1 px-3 py-1.5">
+                🎬 Vidéo HD
+              </Badge>
+            )}
           </div>
         )}
 
-        {/* BLOC 1 — Carousel */}
-        <div className="relative h-56 bg-muted">
-          <img
-            src={images[photoIdx]}
-            alt={property.title}
-            className="w-full h-full object-cover"
-          />
-
-          {/* Photo nav */}
-          {images.length > 1 && (
-            <>
-              <button
-                onClick={() => setPhotoIdx(i => (i - 1 + images.length) % images.length)}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setPhotoIdx(i => (i + 1) % images.length)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-              {/* Dots */}
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                {images.map((_, i) => (
-                  <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === photoIdx ? 'bg-card w-3' : 'bg-card/60'}`} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Badges top */}
-          <div className="absolute top-3 left-3 flex gap-2">
-            {property.virtual_tour_url && (
-              <Badge
-                className="bg-accent text-accent-foreground cursor-pointer gap-1"
-                onClick={() => onViewTour?.(property)}
-              >
-                <Camera className="h-3 w-3" /> 360°
-              </Badge>
-            )}
-            <Badge className={status.className}>
-              {status.emoji} {status.label}
-            </Badge>
+        {/* Identity — Title + Price + Type */}
+        <div>
+          <h3 className="text-lg font-bold text-foreground">{property.title}</h3>
+          <div className="text-2xl font-bold text-primary mt-1">
+            {fmt(property.price)} FCFA <span className="text-sm font-medium text-muted-foreground">/mois</span>
           </div>
-
-          {/* Close + Favorite */}
-          <div className="absolute top-3 right-3 flex gap-1.5">
-            {onToggleFavorite && (
-              <button
-                onClick={() => onToggleFavorite(property.id)}
-                className={`w-8 h-8 rounded-full flex items-center justify-center shadow ${
-                  isFavorite ? 'bg-secondary text-secondary-foreground' : 'bg-card/80 text-muted-foreground'
-                }`}
-              >
-                <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
-              </button>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-muted-foreground">Location mensuelle</span>
+            <Badge className="bg-primary/10 text-primary text-xs">
+              {TYPE_LABELS[property.type] || property.type}
+            </Badge>
+            {property.furnished && (
+              <Badge className="bg-accent/20 text-accent-foreground text-xs">Meublé</Badge>
             )}
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-card/80 flex items-center justify-center shadow"
-            >
-              <X className="h-4 w-4" />
-            </button>
           </div>
         </div>
 
-        <div className="p-5 space-y-5">
-          {/* BLOC 2 — Identity */}
+        {/* ③ Caractéristiques principales */}
+        {features.length > 0 && (
           <div>
-            <h3 className="text-lg font-bold text-foreground">{property.title}</h3>
-            <div className="text-2xl font-bold text-primary mt-1">
-              {fmt(property.price)} FCFA <span className="text-sm font-medium text-muted-foreground">/mois</span>
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-muted-foreground">Location mensuelle</span>
-              <Badge className="bg-primary/10 text-primary text-xs">
-                {TYPE_LABELS[property.type] || property.type}
-              </Badge>
-            </div>
-          </div>
-
-          {/* BLOC 3 — Location */}
-          <div className="bg-muted/50 rounded-xl p-3 space-y-1">
-            <div className="flex items-center gap-1.5 text-sm text-foreground">
-              <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="font-medium">{property.address || property.quartier}</span>
-            </div>
-            {closestPoi && (
-              <p className="text-xs text-muted-foreground pl-5">
-                À {fmtDist(closestPoi.distance)} de {closestPoi.name}
-              </p>
-            )}
-          </div>
-
-          {/* BLOC 4 — Features grid */}
-          {features.length > 0 && (
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Caractéristiques</h4>
             <div className="grid grid-cols-5 gap-2">
               {features.map((f, i) => (
                 <div key={i} className="flex flex-col items-center bg-muted/50 rounded-lg p-2 text-center">
@@ -256,126 +240,170 @@ const PropertyDetailPanel = ({
                 </div>
               ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* BLOC 5 — Description */}
-          {property.description && (
-            <div>
-              <p className={`text-sm text-muted-foreground leading-relaxed ${!descExpanded ? 'line-clamp-3' : ''}`}>
-                {property.description}
-              </p>
-              {property.description.length > 150 && (
-                <button
-                  onClick={() => setDescExpanded(!descExpanded)}
-                  className="text-xs text-primary font-medium mt-1"
-                >
-                  {descExpanded ? 'Voir moins' : 'Lire plus'}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* BLOC 6 — Nearby POIs */}
-          {nearbyPois.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Proches du bien</h4>
-              <div className="space-y-1.5">
-                {nearbyPois.map(poi => {
-                  const cat = POI_CATALOG[poi.type] || { emoji: '📍', color: '#666', label: poi.type, bg: '#f5f5f5' };
-                  return (
-                    <button
-                      key={poi.id}
-                      onClick={() => onHighlightPoi?.(poi.id)}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 transition-colors text-left"
-                    >
-                      <span
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0"
-                        style={{ background: cat.bg, color: cat.color }}
-                      >
-                        {cat.emoji}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-foreground truncate">{poi.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{cat.label}</p>
-                      </div>
-                      <span className="text-xs font-semibold text-muted-foreground">{fmtDist(poi.distance)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* BLOC 7 — CTA */}
+        {/* ④ Description détaillée */}
+        {property.description && (
           <div>
-            {property.type === 'bureau' || property.type === 'commerce' ? (
-              <Button className="w-full bg-primary text-primary-foreground gap-2">
-                <Phone className="h-4 w-4" />
-                Contacter l'agent
-              </Button>
-            ) : (
-              <Button className="w-full bg-primary text-primary-foreground gap-2">
-                <Calendar className="h-4 w-4" />
-                Réserver ce bien
-              </Button>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Description</h4>
+            <p className={`text-sm text-muted-foreground leading-relaxed ${!descExpanded ? 'line-clamp-3' : ''}`}>
+              {property.description}
+            </p>
+            {property.description.length > 150 && (
+              <button
+                onClick={() => setDescExpanded(!descExpanded)}
+                className="text-xs text-primary font-medium mt-1"
+              >
+                {descExpanded ? 'Voir moins' : 'Lire plus'}
+              </button>
             )}
           </div>
+        )}
 
-          {/* BLOC 8 — Agent */}
-          {property.agent_name && (
-            <div className="bg-muted/50 rounded-xl p-3">
-              <div className="flex items-center gap-3">
-                {property.agent_photo && (
-                  <img src={property.agent_photo} alt={property.agent_name} className="w-10 h-10 rounded-full object-cover" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{property.agent_name}</p>
-                  <p className="text-[10px] text-muted-foreground">Répond en général en moins de 2h</p>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-2.5">
-                <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs">
-                  <Phone className="h-3 w-3" /> Appeler
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs">
-                  <MessageCircle className="h-3 w-3" /> WhatsApp
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs">
-                  <Mail className="h-3 w-3" /> Email
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* BLOC 9 — Similar properties */}
-          {similarProperties.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Biens similaires</h4>
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {similarProperties.slice(0, 3).map(sp => (
+        {/* ⑤ POI proches */}
+        {nearbyPois.length > 0 && (
+          <div>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Proches du bien</h4>
+            <div className="space-y-1.5">
+              {nearbyPois.map(poi => {
+                const cat = POI_CATALOG[poi.type] || { emoji: '📍', color: '#666', label: poi.type, bg: '#f5f5f5' };
+                return (
                   <button
-                    key={sp.id}
-                    onClick={() => onSelectProperty?.(sp.id)}
-                    className="shrink-0 w-36 bg-muted/50 rounded-lg overflow-hidden hover:ring-1 hover:ring-primary/30 transition-all"
+                    key={poi.id}
+                    onClick={() => onHighlightPoi?.(poi.id)}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 transition-colors text-left"
                   >
-                    <img
-                      src={sp.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300'}
-                      alt={sp.title}
-                      className="w-full h-20 object-cover"
-                    />
-                    <div className="p-2">
-                      <p className="text-[10px] font-medium text-foreground truncate">{sp.title}</p>
-                      <p className="text-xs font-bold text-primary">{fmt(sp.price)} FCFA</p>
+                    <span
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0"
+                      style={{ background: cat.bg, color: cat.color }}
+                    >
+                      {cat.emoji}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-foreground truncate">{poi.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{cat.label}</p>
                     </div>
+                    <span className="text-xs font-semibold text-muted-foreground">{fmtDist(poi.distance)}</span>
                   </button>
-                ))}
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ⑥ Notes et évaluations */}
+        {ratings.length > 0 && (
+          <div>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Évaluations</h4>
+            <div className="flex gap-3">
+              {ratings.map((r, i) => (
+                <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                  <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-medium text-foreground">{r.label}</span>
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: 5 }, (_, j) => (
+                      <Star key={j} className={`h-3 w-3 ${j < r.value ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ⑦ Actions */}
+        <div className="flex gap-2">
+          {property.type === 'bureau' || property.type === 'commerce' ? (
+            <Button className="flex-1 bg-primary text-primary-foreground gap-2">
+              <Phone className="h-4 w-4" />
+              Contacter l'agent
+            </Button>
+          ) : (
+            <Button className="flex-1 bg-primary text-primary-foreground gap-2">
+              <Calendar className="h-4 w-4" />
+              Réserver
+            </Button>
+          )}
+          <Button variant="outline" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Comparer
+          </Button>
+        </div>
+
+        {/* Agent */}
+        {property.agent_name && (
+          <div className="bg-muted/50 rounded-xl p-3">
+            <div className="flex items-center gap-3">
+              {property.agent_photo && (
+                <img src={property.agent_photo} alt={property.agent_name} className="w-10 h-10 rounded-full object-cover" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">{property.agent_name}</p>
+                <p className="text-[10px] text-muted-foreground">Répond en général en moins de 2h</p>
               </div>
             </div>
-          )}
-        </div>
-      </motion.div>
-    </AnimatePresence>
+            <div className="flex gap-2 mt-2.5">
+              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs">
+                <Phone className="h-3 w-3" /> Appeler
+              </Button>
+              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs">
+                <MessageCircle className="h-3 w-3" /> WhatsApp
+              </Button>
+              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs">
+                <Mail className="h-3 w-3" /> Email
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Similar properties */}
+        {similarProperties.length > 0 && (
+          <div>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Biens similaires</h4>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {similarProperties.slice(0, 3).map(sp => (
+                <button
+                  key={sp.id}
+                  onClick={() => onSelectProperty?.(sp.id)}
+                  className="shrink-0 w-36 bg-muted/50 rounded-lg overflow-hidden hover:ring-1 hover:ring-primary/30 transition-all"
+                >
+                  <img
+                    src={sp.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300'}
+                    alt={sp.title}
+                    className="w-full h-20 object-cover"
+                  />
+                  <div className="p-2">
+                    <p className="text-[10px] font-medium text-foreground truncate">{sp.title}</p>
+                    <p className="text-xs font-bold text-primary">{fmt(sp.price)} FCFA</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
+
+  if (isMobile) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          className="fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl border-t border-border shadow-lg bg-card overflow-y-auto z-[700]"
+        >
+          {panelContent}
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  // Desktop: inline panel (not fixed), rendered inside flex container
+  return <div className="bg-card">{panelContent}</div>;
 };
 
 export default PropertyDetailPanel;
