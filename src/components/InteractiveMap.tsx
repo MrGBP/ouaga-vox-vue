@@ -48,7 +48,7 @@ interface ActiveFilters {
   maxPrice: number;
   minBedrooms: number;
   hasVirtualTour: boolean;
-  onlyAvailable: boolean;
+  onlyAvailable?: boolean;
   surfaceRange?: string;
 }
 
@@ -93,7 +93,7 @@ const distanceM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
 
 const fmtDist = (d: number) => (d < 1000 ? `${d} m` : `${(d / 1000).toFixed(1)} km`);
 
-// Quartier cluster colors — harmonious navy palette
+// Quartier cluster colors
 const QUARTIER_CLUSTER_COLORS: Record<string, string> = {
   'Ouaga 2000': '#1B3A5C',
   'Zone du Bois': '#2D5A4E',
@@ -141,7 +141,6 @@ const quartierClusterHTML = (name: string, count: number, color: string) => {
 
 const propertyPinHTML = (p: Property, focused: boolean) => {
   const ts = getTypeStyle(p.type);
-  const unavailableOpacity = !p.available ? 'opacity:0.5;' : '';
 
   if (focused) {
     return `
@@ -149,7 +148,6 @@ const propertyPinHTML = (p: Property, focused: boolean) => {
         width:32px;height:32px;display:flex;align-items:center;justify-content:center;
         background:${ts.bg};border:3px solid ${ts.border};border-radius:50%;
         box-shadow:0 0 0 6px ${ts.border}30,0 0 0 12px ${ts.border}12,0 4px 16px rgba(0,0,0,0.25);
-        ${unavailableOpacity}
         animation:pulse 2s infinite;
       ">
         <span style="font-size:14px;">${ts.emoji}</span>
@@ -157,7 +155,6 @@ const propertyPinHTML = (p: Property, focused: boolean) => {
     `;
   }
 
-  // Quartier view: compact pill with emoji + price
   const priceText = p.price >= 1000000 ? `${(p.price/1000000).toFixed(1)}M` : `${Math.round(p.price/1000)}k`;
   return `
     <div style="
@@ -165,7 +162,6 @@ const propertyPinHTML = (p: Property, focused: boolean) => {
       background:${ts.bg};border:1.5px solid ${ts.border};border-radius:16px;
       padding:4px 8px 4px 6px;font-family:system-ui,sans-serif;white-space:nowrap;
       box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:transform 0.15s;
-      ${unavailableOpacity}
     ">
       <span style="font-size:11px;">${ts.emoji}</span>
       <span style="font-size:10px;font-weight:700;color:${ts.text};">${priceText}</span>
@@ -235,7 +231,6 @@ const InteractiveMap = ({
     result = result.filter(p => p.price >= activeFilters.minPrice && p.price <= activeFilters.maxPrice);
     if (activeFilters.minBedrooms > 0) result = result.filter(p => (p.bedrooms || 0) >= activeFilters.minBedrooms);
     if (activeFilters.hasVirtualTour) result = result.filter(p => !!p.virtual_tour_url);
-    if (activeFilters.onlyAvailable) result = result.filter(p => p.available);
     if (activeFilters.surfaceRange && activeFilters.surfaceRange !== 'all') {
       const sr = activeFilters.surfaceRange;
       if (sr === '<50') result = result.filter(p => (p.surface_area || 0) < 50);
@@ -285,9 +280,14 @@ const InteractiveMap = ({
     focusLayer.current = fLayer;
 
     map.on('zoomend', () => setZoom(map.getZoom()));
+    
+    // Click on empty map area → close detail panel
+    map.on('click', () => {
+      if (onFocusClear) onFocusClear();
+    });
+    
     mapInst.current = map;
 
-    // Add CSS for pulse animation
     const style = document.createElement('style');
     style.textContent = `
       @keyframes pulse {
@@ -310,7 +310,6 @@ const InteractiveMap = ({
     const newUrl = viewLevel === 'focus' ? TILE_FOCUS : TILE_DEFAULT;
     tileLayerRef.current.setUrl(newUrl);
 
-    // Apply CSS filter for focus mode
     const tilePane = mapInst.current.getPane('tilePane');
     if (tilePane) {
       tilePane.style.filter = viewLevel === 'focus'
@@ -319,15 +318,7 @@ const InteractiveMap = ({
     }
   }, [viewLevel]);
 
-  // ── Build quartier → properties map ────────────────────────────────────────
-  const byQuartier = new Map<string, Property[]>();
-  properties.forEach(p => {
-    const arr = byQuartier.get(p.quartier) || [];
-    arr.push(p);
-    byQuartier.set(p.quartier, arr);
-  });
-
-  // ── LEVEL 1: Global view — GeoJSON polygons + clusters ─────────────────────
+  // ── LEVEL 1: Global view ─────────────────────────────────────────
   const renderGlobal = useCallback(() => {
     if (!quartierLayer.current || !propertyLayer.current || !geoJsonLayer.current || !mapInst.current) return;
     quartierLayer.current.clearLayers();
@@ -347,7 +338,6 @@ const InteractiveMap = ({
       const qProps = byQ.get(qg.name) || [];
       const hasProps = qProps.length > 0;
 
-      // Draw polygon
       const polygon = L.polygon(
         qg.polygon.map(([lat, lng]) => [lat, lng] as [number, number]),
         {
@@ -366,14 +356,15 @@ const InteractiveMap = ({
       polygon.on('mouseout', () => {
         polygon.setStyle({ weight: 1.5, color: '#1B3A5C', fillOpacity: hasProps ? 0.08 : 0.03 });
       });
-      polygon.on('click', () => {
+      polygon.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
         if (hasProps) setSelectedQuartier(qg.name);
       });
 
       geoJsonLayer.current!.addLayer(polygon);
     });
 
-    // Render cluster markers for quartiers with properties
+    // Clusters
     const quartiersToShow = activeFilters?.quartier && activeFilters.quartier !== 'all'
       ? quartiers.filter(q => q.name === activeFilters.quartier)
       : quartiers;
@@ -390,16 +381,18 @@ const InteractiveMap = ({
         iconAnchor: [35, 35],
       });
 
-      const available = qProps.filter(p => p.available).length;
       const m = L.marker([q.latitude, q.longitude], { icon, zIndexOffset: 100 });
       m.bindTooltip(
         `<div style="font-family:system-ui,sans-serif;min-width:130px;">
           <strong style="color:#1B3A5C">${q.name}</strong><br/>
-          <span style="font-size:11px;color:#555;">${qProps.length} biens · ${available} disponibles</span>
+          <span style="font-size:11px;color:#555;">${qProps.length} biens disponibles</span>
         </div>`,
         { direction: 'top', offset: [0, -40] }
       );
-      m.on('click', () => setSelectedQuartier(q.name));
+      m.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        setSelectedQuartier(q.name);
+      });
       quartierLayer.current!.addLayer(m);
     });
   }, [properties, quartiers, applyMapFilters, activeFilters]);
@@ -415,7 +408,6 @@ const InteractiveMap = ({
     const qProps = applyMapFilters(allQProps);
     const map = mapInst.current;
 
-    // Compute bounds
     const boundsSource = allQProps.length > 0 ? allQProps : qProps;
     if (boundsSource.length === 0) return;
 
@@ -454,11 +446,12 @@ const InteractiveMap = ({
         `<div style="font-family:system-ui,sans-serif;min-width:140px;">
           <strong style="color:#1B3A5C;font-size:12px;">${prop.title}</strong><br/>
           <span style="font-size:11px;font-weight:700;color:#1B3A5C;">${new Intl.NumberFormat('fr-FR').format(prop.price)} FCFA/mois</span><br/>
-          <span style="font-size:10px;color:#666;">${prop.bedrooms || '–'} ch. · ${prop.surface_area || '–'} m² · ${prop.available ? '✅ Dispo' : '🔒 Loué'}</span>
+          <span style="font-size:10px;color:#666;">${prop.bedrooms || '–'} ch. · ${prop.surface_area || '–'} m²</span>
         </div>`,
         { direction: 'top', offset: [0, -8] }
       );
-      m.on('click', () => {
+      m.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
         if (onPropertyClick) onPropertyClick(prop.id);
       });
       propertyLayer.current!.addLayer(m);
@@ -481,7 +474,7 @@ const InteractiveMap = ({
     const map = mapInst.current;
     map.flyTo([prop.latitude, prop.longitude], 16, { duration: 0.8 });
 
-    // Focused property pin with pulse
+    // Focused pin with pulse
     const focusIcon = L.divIcon({
       html: propertyPinHTML(prop, true),
       className: '',
@@ -509,7 +502,6 @@ const InteractiveMap = ({
         interactive: false,
       }).addTo(focusLayer.current!);
 
-      // Radius label
       const labelAngle = -45 * (Math.PI / 180);
       const labelLat = prop.latitude + (r / 111320) * Math.cos(labelAngle);
       const labelLng = prop.longitude + (r / (111320 * Math.cos(prop.latitude * Math.PI / 180))) * Math.sin(labelAngle);
@@ -523,14 +515,13 @@ const InteractiveMap = ({
       }).addTo(focusLayer.current!);
     });
 
-    // POI — grouped by type, max 12 total, opacity by distance
+    // POI
     const allPoisInRange = pois
       .map(poi => ({ ...poi, distance: distanceM(prop.latitude, prop.longitude, poi.latitude, poi.longitude) }))
       .filter(p => p.distance <= radius)
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 12);
 
-    // Group by type for tentacle lines
     const groupedByType = new Map<string, typeof allPoisInRange>();
     allPoisInRange.forEach(poi => {
       const arr = groupedByType.get(poi.type) || [];
@@ -543,13 +534,11 @@ const InteractiveMap = ({
       const closest = groupPois[0];
       const count = groupPois.length;
 
-      // Tentacle line
       L.polyline(
         [[prop.latitude, prop.longitude], [closest.latitude, closest.longitude]],
         { color: info.color, weight: 1.2, opacity: 0.4, dashArray: '5 4', interactive: false }
       ).addTo(tentacleLayer.current!);
 
-      // Midpoint label
       const midLat = (prop.latitude + closest.latitude) / 2;
       const midLng = (prop.longitude + closest.longitude) / 2;
       const labelText = count > 1
@@ -570,7 +559,6 @@ const InteractiveMap = ({
       }).addTo(tentacleLayer.current!);
     });
 
-    // Individual POI markers with opacity by distance
     allPoisInRange.forEach(poi => {
       const info = POI_CATALOG[poi.type] || { emoji: '📍', color: '#78909C', label: poi.type, bg: '#ECEFF1' };
       let opacity = 1;
@@ -657,48 +645,28 @@ const InteractiveMap = ({
     }
   };
 
-  const filteredCount = applyMapFilters(properties).length;
-
   return (
     <div className="relative w-full h-[620px] rounded-xl overflow-hidden border border-border shadow-card">
       <div ref={mapRef} className="absolute inset-0 z-0" />
 
-      {/* ── Badge top-left ── */}
+      {/* ── Breadcrumb navigation ── */}
       <div className="absolute top-3 left-3 z-[600] flex items-center gap-1.5">
-        <button
-          onClick={goBackToGlobal}
-          className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm ${
-            viewLevel === 'global'
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-card/90 text-muted-foreground border-border hover:text-foreground'
-          }`}
-        >
-          🏠 Ouagadougou — {filteredCount} biens
-        </button>
-
-        {(viewLevel === 'quartier' || viewLevel === 'focus') && selectedQuartier && (
-          <>
-            <span className="text-muted-foreground text-xs">›</span>
-            <button
-              onClick={goBackToQuartier}
-              className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm ${
-                viewLevel === 'quartier'
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-card/90 text-muted-foreground border-border hover:text-foreground'
-              }`}
-            >
-              📍 {selectedQuartier}
-            </button>
-          </>
+        {viewLevel !== 'global' && (
+          <button
+            onClick={goBackToGlobal}
+            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-muted-foreground border-border hover:text-foreground"
+          >
+            ← Ouagadougou
+          </button>
         )}
 
-        {viewLevel === 'focus' && (
-          <>
-            <span className="text-muted-foreground text-xs">›</span>
-            <span className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-primary text-primary-foreground border border-primary shadow-sm">
-              🔍 Focus
-            </span>
-          </>
+        {viewLevel === 'focus' && selectedQuartier && (
+          <button
+            onClick={goBackToQuartier}
+            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-muted-foreground border-border hover:text-foreground"
+          >
+            ← {selectedQuartier}
+          </button>
         )}
       </div>
 
@@ -724,7 +692,7 @@ const InteractiveMap = ({
         </div>
       )}
 
-      {/* ── Quartier info bar (level 2) ── */}
+      {/* ── Quartier bar (level 2) — clean, no "Zone verrouillée" ── */}
       {viewLevel === 'quartier' && selectedQuartier && (
         <div className="absolute bottom-4 left-4 right-4 z-[600]">
           <div className="bg-card/95 backdrop-blur-sm border border-border rounded-xl px-4 py-2.5 shadow-card flex items-center justify-between">
@@ -732,14 +700,14 @@ const InteractiveMap = ({
               <span className="text-sm">📍</span>
               <span className="text-sm font-semibold text-foreground">{selectedQuartier}</span>
               <span className="text-xs text-muted-foreground">
-                — {applyMapFilters(properties.filter(p => p.quartier === selectedQuartier)).length} biens disponibles · Zone verrouillée
+                — {applyMapFilters(properties.filter(p => p.quartier === selectedQuartier)).length} biens
               </span>
             </div>
             <button
               onClick={goBackToGlobal}
               className="text-xs text-primary font-semibold hover:underline"
             >
-              ← Retour à Ouagadougou
+              ← Retour
             </button>
           </div>
         </div>
