@@ -4,11 +4,12 @@ import {
   X, Heart, ChevronLeft, ChevronRight, MapPin, Bed, Bath,
   Maximize, Calendar, Phone, MessageCircle, Mail, Camera,
   Thermometer, Shield, Zap, TreePine, Droplets, Wifi, Star,
-  BarChart3,
+  BarChart3, Map, Accessibility,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { POI_CATALOG } from '@/lib/mockData';
+import ReservationFlow from './ReservationFlow';
 
 interface Property {
   id: string;
@@ -25,6 +26,7 @@ interface Property {
   surface_area?: number;
   comfort_rating?: number;
   security_rating?: number;
+  accessibility_rating?: number;
   images?: string[];
   available: boolean;
   virtual_tour_url?: string;
@@ -61,6 +63,7 @@ interface PropertyDetailPanelProps {
   similarProperties?: Property[];
   onSelectProperty?: (id: string) => void;
   onHighlightPoi?: (poiId: string) => void;
+  onExploreOnMap?: (id: string) => void;
   isMobileOverride?: boolean;
 }
 
@@ -94,10 +97,12 @@ const PropertyDetailPanel = ({
   similarProperties = [],
   onSelectProperty,
   onHighlightPoi,
+  onExploreOnMap,
   isMobileOverride,
 }: PropertyDetailPanelProps) => {
   const [photoIdx, setPhotoIdx] = useState(0);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [showReservation, setShowReservation] = useState(false);
   const isMobile = isMobileOverride ?? false;
 
   if (!property) return null;
@@ -125,11 +130,14 @@ const PropertyDetailPanel = ({
     property.has_internet && { icon: Wifi, label: 'Internet', value: '✓' },
   ].filter(Boolean) as { icon: any; label: string; value: any }[];
 
-  // Ratings
+  // Ratings — includes Accessibilité
   const ratings = [
-    property.comfort_rating && { label: 'Confort', value: property.comfort_rating },
-    property.security_rating && { label: 'Sécurité', value: property.security_rating },
-  ].filter(Boolean) as { label: string; value: number }[];
+    property.comfort_rating && { label: 'Confort', value: property.comfort_rating, icon: '🛋️' },
+    property.security_rating && { label: 'Sécurité', value: property.security_rating, icon: '🔒' },
+    property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating, icon: '♿' },
+  ].filter(Boolean) as { label: string; value: number; icon: string }[];
+
+  const isFurnished = property.furnished || property.type === 'maison' || property.type === 'villa' || property.type === 'appartement';
 
   const panelContent = (
     <>
@@ -151,13 +159,13 @@ const PropertyDetailPanel = ({
           <>
             <button
               onClick={() => setPhotoIdx(i => (i - 1 + images.length) % images.length)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow hover:bg-card active:scale-95 transition-all"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => setPhotoIdx(i => (i + 1) % images.length)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow hover:bg-card active:scale-95 transition-all"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -174,8 +182,8 @@ const PropertyDetailPanel = ({
           {onToggleFavorite && (
             <button
               onClick={() => onToggleFavorite(property.id)}
-              className={`w-8 h-8 rounded-full flex items-center justify-center shadow ${
-                isFavorite ? 'bg-secondary text-secondary-foreground' : 'bg-card/80 text-muted-foreground'
+              className={`w-8 h-8 rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${
+                isFavorite ? 'bg-secondary text-secondary-foreground' : 'bg-card/80 text-muted-foreground hover:text-secondary'
               }`}
             >
               <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
@@ -183,7 +191,7 @@ const PropertyDetailPanel = ({
           )}
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-card/80 flex items-center justify-center shadow"
+            className="w-8 h-8 rounded-full bg-card/80 flex items-center justify-center shadow hover:bg-card active:scale-95 transition-all"
           >
             <X className="h-4 w-4" />
           </button>
@@ -196,7 +204,7 @@ const PropertyDetailPanel = ({
           <div className="flex gap-2">
             {property.virtual_tour_url && (
               <Badge
-                className="bg-accent text-accent-foreground cursor-pointer gap-1 px-3 py-1.5"
+                className="bg-accent text-accent-foreground cursor-pointer gap-1 px-3 py-1.5 hover:bg-accent/80 active:scale-95 transition-all"
                 onClick={() => onViewTour?.(property)}
               >
                 <Camera className="h-3.5 w-3.5" /> Visite 360°
@@ -216,7 +224,7 @@ const PropertyDetailPanel = ({
           <div className="text-2xl font-bold text-primary mt-1">
             {fmt(property.price)} FCFA <span className="text-sm font-medium text-muted-foreground">/mois</span>
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="text-xs text-muted-foreground">Location mensuelle</span>
             <Badge className="bg-primary/10 text-primary text-xs">
               {TYPE_LABELS[property.type] || property.type}
@@ -253,7 +261,7 @@ const PropertyDetailPanel = ({
             {property.description.length > 150 && (
               <button
                 onClick={() => setDescExpanded(!descExpanded)}
-                className="text-xs text-primary font-medium mt-1"
+                className="text-xs text-primary font-medium mt-1 hover:underline"
               >
                 {descExpanded ? 'Voir moins' : 'Lire plus'}
               </button>
@@ -272,7 +280,7 @@ const PropertyDetailPanel = ({
                   <button
                     key={poi.id}
                     onClick={() => onHighlightPoi?.(poi.id)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 active:bg-muted transition-colors text-left"
                   >
                     <span
                       className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0"
@@ -292,14 +300,14 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* ⑥ Notes et évaluations */}
+        {/* ⑥ Notes et évaluations — includes Accessibility */}
         {ratings.length > 0 && (
           <div>
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Évaluations</h4>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2">
               {ratings.map((r, i) => (
                 <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
-                  <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm">{r.icon}</span>
                   <span className="text-xs font-medium text-foreground">{r.label}</span>
                   <div className="flex gap-0.5">
                     {Array.from({ length: 5 }, (_, j) => (
@@ -315,20 +323,34 @@ const PropertyDetailPanel = ({
         {/* ⑦ Actions */}
         <div className="flex gap-2">
           {property.type === 'bureau' || property.type === 'commerce' ? (
-            <Button className="flex-1 bg-primary text-primary-foreground gap-2">
+            <Button className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
               <Phone className="h-4 w-4" />
               Contacter l'agent
             </Button>
           ) : (
-            <Button className="flex-1 bg-primary text-primary-foreground gap-2">
+            <Button
+              onClick={() => setShowReservation(true)}
+              className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all"
+            >
               <Calendar className="h-4 w-4" />
               Réserver
             </Button>
           )}
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2 hover:bg-muted active:scale-[0.98] transition-all">
             <BarChart3 className="h-4 w-4" />
             Comparer
           </Button>
+          {onExploreOnMap && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onExploreOnMap(property.id)}
+              className="shrink-0 hover:bg-muted active:scale-[0.98] transition-all"
+              title="Explorer sur la carte"
+            >
+              <Map className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Agent */}
@@ -344,13 +366,13 @@ const PropertyDetailPanel = ({
               </div>
             </div>
             <div className="flex gap-2 mt-2.5">
-              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs">
+              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs hover:bg-muted active:scale-[0.98]">
                 <Phone className="h-3 w-3" /> Appeler
               </Button>
-              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs">
+              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs hover:bg-muted active:scale-[0.98]">
                 <MessageCircle className="h-3 w-3" /> WhatsApp
               </Button>
-              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs">
+              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs hover:bg-muted active:scale-[0.98]">
                 <Mail className="h-3 w-3" /> Email
               </Button>
             </div>
@@ -366,7 +388,7 @@ const PropertyDetailPanel = ({
                 <button
                   key={sp.id}
                   onClick={() => onSelectProperty?.(sp.id)}
-                  className="shrink-0 w-36 bg-muted/50 rounded-lg overflow-hidden hover:ring-1 hover:ring-primary/30 transition-all"
+                  className="shrink-0 w-36 bg-muted/50 rounded-lg overflow-hidden hover:ring-1 hover:ring-primary/30 active:scale-[0.98] transition-all"
                 >
                   <img
                     src={sp.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300'}
@@ -383,6 +405,16 @@ const PropertyDetailPanel = ({
           </div>
         )}
       </div>
+
+      {/* Reservation Flow Modal */}
+      <AnimatePresence>
+        {showReservation && (
+          <ReservationFlow
+            property={property}
+            onClose={() => setShowReservation(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 

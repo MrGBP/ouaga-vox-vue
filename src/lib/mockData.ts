@@ -15,6 +15,7 @@ export interface Property {
   surface_area?: number;
   comfort_rating?: number;
   security_rating?: number;
+  accessibility_rating?: number;
   images?: string[];
   available: boolean;
   virtual_tour_url?: string;

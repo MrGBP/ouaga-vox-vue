@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { mockProperties, mockPois, mockQuartiers } from '@/lib/mockData';
@@ -10,7 +10,6 @@ import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar'
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
 import VirtualTourModal from '@/components/VirtualTourModal';
-import QuartiersSection from '@/components/QuartiersSection';
 import AIComparator from '@/components/AIComparator';
 import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
@@ -33,6 +32,7 @@ interface Property {
   surface_area?: number;
   comfort_rating?: number;
   security_rating?: number;
+  accessibility_rating?: number;
   images?: string[];
   available: boolean;
   virtual_tour_url?: string;
@@ -92,8 +92,20 @@ const Index = () => {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [focusedPropertyId, setFocusedPropertyId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [mapQuartierTrigger, setMapQuartierTrigger] = useState<string | null>(null);
+  const [activeQuartier, setActiveQuartier] = useState<string | null>(null);
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
+
+  // ── Body scroll lock when panel is open ──
+  useEffect(() => {
+    if (detailProperty) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [detailProperty]);
 
   useEffect(() => {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
@@ -145,7 +157,6 @@ const Index = () => {
     favsOnly: boolean,
     favSet: Set<string>
   ) => {
-    // Always exclude rented properties
     let result = source.filter(p => p.status !== 'rented' && p.available !== false);
 
     if (favsOnly) result = result.filter(p => favSet.has(p.id));
@@ -179,7 +190,6 @@ const Index = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    // Auto-close: close detail panel and filters
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
@@ -204,8 +214,21 @@ const Index = () => {
     setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites));
   };
 
+  // Full reset: clears EVERYTHING
+  const handleFullReset = () => {
+    setFilters(DEFAULT_FILTERS);
+    setSearchQuery('');
+    setDetailProperty(null);
+    setFocusedPropertyId(null);
+    setCurrentPage(1);
+    setShowFavoritesOnly(false);
+    setMapQuartierTrigger(null);
+    setActiveQuartier(null);
+    const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites);
+    setFilteredProperties(all);
+  };
+
   const handleViewDetails = (property: Property) => {
-    // Single state: close any previous, open this one
     setDetailProperty(property);
     setFocusedPropertyId(property.id);
   };
@@ -219,7 +242,7 @@ const Index = () => {
   };
 
   const handleFocusOnMap = (id: string) => {
-    setDetailProperty(null); // close any open panel first
+    setDetailProperty(null);
     setFocusedPropertyId(id);
     const prop = properties.find(p => p.id === id);
     if (prop) {
@@ -228,10 +251,14 @@ const Index = () => {
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const [mapQuartierTrigger, setMapQuartierTrigger] = useState<string | null>(null);
+  // "Explorer sur la carte" — shows map focus WITHOUT panel
+  const handleExploreOnMap = (id: string) => {
+    setDetailProperty(null);
+    setFocusedPropertyId(id);
+    document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const handleQuartierClick = (q: Quartier) => {
-    // Auto-close: close detail panel
     setDetailProperty(null);
     setFocusedPropertyId(null);
     const newFilters = { ...filters, quartier: q.name };
@@ -273,17 +300,16 @@ const Index = () => {
   const favoriteProperties = properties.filter(p => favorites.has(p.id));
   const quartierNames = [...new Set(properties.map(p => p.quartier))].sort();
 
-  // Similar properties for detail panel
   const similarProperties = detailProperty
     ? availableProperties(properties).filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
     : [];
 
-  // Map shows available properties only
   const mapProperties = availableProperties(showFavoritesOnly ? filteredProperties : properties);
 
   // Pagination
-  const totalPages = Math.ceil(filteredProperties.length / ITEMS_PER_PAGE);
-  const paginatedProperties = filteredProperties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const displayProperties = availableProperties(filteredProperties);
+  const totalPages = Math.ceil(displayProperties.length / ITEMS_PER_PAGE);
+  const paginatedProperties = displayProperties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -301,7 +327,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Hero */}
+      {/* ① Hero + IDX */}
       <section className="relative h-[65vh] min-h-[520px] overflow-hidden">
         <img src={heroImage} alt="Ouagadougou" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
@@ -326,11 +352,13 @@ const Index = () => {
             </p>
           </motion.div>
 
+          {/* IDX — reduced width 10%, italic placeholder */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.25 }}
-            className="mt-8 w-full max-w-2xl"
+            className="mt-8 w-full"
+            style={{ maxWidth: '605px' }}
           >
             <VoiceSearch
               onSearchQuery={handleSearch}
@@ -341,12 +369,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Quartiers */}
-      <section id="quartiers">
-        <QuartiersSection quartiers={quartiers} onQuartierClick={handleQuartierClick} />
-      </section>
-
-      {/* Map + Filters + Detail Panel side by side */}
+      {/* ② Carte interactive + Filters + Detail Panel */}
       <section id="map" className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground">Carte interactive</h2>
@@ -354,9 +377,10 @@ const Index = () => {
 
         <FilterBar
           onFilterChange={handleFilterChange}
+          onReset={handleFullReset}
           quartiers={quartierNames}
           totalCount={availableProperties(properties).length}
-          filteredCount={filteredProperties.length}
+          filteredCount={displayProperties.length}
           favoritesCount={favorites.size}
           showFavoritesOnly={showFavoritesOnly}
           onToggleFavoritesView={toggleFavoritesView}
@@ -383,10 +407,12 @@ const Index = () => {
               activeFilters={filters}
               externalQuartierSelect={mapQuartierTrigger}
               onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
+              panelOpen={!!detailProperty}
+              onQuartierChange={setActiveQuartier}
             />
           </motion.div>
 
-          {/* Detail Panel — beside map, separated by border */}
+          {/* Detail Panel — beside map */}
           {detailProperty && (
             <div className="w-[420px] shrink-0 border-l border-border hidden lg:block">
               <div className="h-[620px] overflow-y-auto">
@@ -411,6 +437,7 @@ const Index = () => {
                       setFocusedPropertyId(id);
                     }
                   }}
+                  onExploreOnMap={handleExploreOnMap}
                 />
               </div>
             </div>
@@ -442,19 +469,56 @@ const Index = () => {
                 setFocusedPropertyId(id);
               }
             }}
+            onExploreOnMap={handleExploreOnMap}
             isMobileOverride={true}
           />
         </div>
       )}
 
-      {/* Properties grid — 12 max per page */}
+      {/* ③ Slogan + Featured Carousel */}
+      <section className="container mx-auto px-4 py-10">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+            Trouvez votre <span className="text-primary">chez-vous</span> à Ouagadougou
+          </h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Location meublée · Bureau · Commerce · Découvrez nos biens mis en avant
+          </p>
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory">
+          {availableProperties(properties).slice(0, 8).map((p) => (
+            <motion.button
+              key={p.id}
+              whileHover={{ y: -4 }}
+              onClick={() => handleViewDetails(p)}
+              className="shrink-0 w-64 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-warm transition-all text-left"
+            >
+              <img
+                src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'}
+                alt={p.title}
+                className="w-full h-36 object-cover"
+                loading="lazy"
+              />
+              <div className="p-3">
+                <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
+                <p className="text-xs text-muted-foreground">{p.quartier}</p>
+                <p className="text-sm font-bold text-primary mt-1">
+                  {new Intl.NumberFormat('fr-FR').format(p.price)} FCFA <span className="text-xs font-normal text-muted-foreground">/mois</span>
+                </p>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </section>
+
+      {/* ④ Properties grid — 12 max per page */}
       <section id="properties" className="container mx-auto px-4 pb-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground">
             {showFavoritesOnly ? '❤️ Mes favoris' : searchQuery ? `Résultats pour "${searchQuery}"` : 'Tous les biens'}
           </h2>
           <span className="text-sm text-muted-foreground font-medium">
-            <span className="text-foreground font-bold">{filteredProperties.length}</span> résultat{filteredProperties.length > 1 ? 's' : ''}
+            <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
           </span>
         </div>
 
@@ -479,29 +543,26 @@ const Index = () => {
               ))}
             </div>
 
-            {/* Pagination */}
+            {/* Pagination — icons only */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
+              <div className="flex items-center justify-center gap-4 mt-8">
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(p => p - 1)}
+                  onClick={() => { setCurrentPage(p => p - 1); document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' }); }}
+                  className="h-10 w-10 disabled:opacity-30"
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                  Précédent
+                  <ChevronLeft className="h-5 w-5" />
                 </Button>
-                <span className="text-sm text-muted-foreground px-3">
-                  Page {currentPage} / {totalPages}
-                </span>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(p => p + 1)}
+                  onClick={() => { setCurrentPage(p => p + 1); document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' }); }}
+                  className="h-10 w-10 disabled:opacity-30"
                 >
-                  Suivant
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-5 w-5" />
                 </Button>
               </div>
             )}
@@ -517,11 +578,7 @@ const Index = () => {
             </p>
             {!showFavoritesOnly && (
               <button
-                onClick={() => {
-                  setFilters(DEFAULT_FILTERS);
-                  setCurrentPage(1);
-                  setFilteredProperties(applyFilters(properties, searchQuery, DEFAULT_FILTERS, false, favorites));
-                }}
+                onClick={handleFullReset}
                 className="text-sm text-primary font-semibold hover:underline"
               >
                 Réinitialiser tout ×
@@ -531,7 +588,7 @@ const Index = () => {
         )}
       </section>
 
-      {/* AI Section */}
+      {/* ⑤ ⑥ AI Sections */}
       <section id="ia" className="container mx-auto px-4 pb-16">
         <div className="flex items-center gap-2 mb-6">
           <Sparkles className="h-5 w-5 text-primary" />
