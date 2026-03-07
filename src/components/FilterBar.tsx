@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SlidersHorizontal, X, Heart, RotateCcw, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
@@ -19,6 +19,7 @@ export interface FilterState {
 
 interface FilterBarProps {
   onFilterChange: (filters: FilterState) => void;
+  onReset?: () => void;
   quartiers: string[];
   totalCount: number;
   filteredCount: number;
@@ -61,6 +62,7 @@ const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigit
 
 const FilterBar = ({
   onFilterChange,
+  onReset,
   quartiers,
   totalCount,
   filteredCount,
@@ -69,9 +71,7 @@ const FilterBar = ({
   onToggleFavoritesView,
 }: FilterBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  // Draft filters (not applied yet)
   const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
-  // Applied filters
   const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
   const isMobile = useIsMobile();
 
@@ -85,7 +85,6 @@ const FilterBar = ({
     applied.surfaceRange !== 'all',
   ].filter(Boolean).length;
 
-  // Build summary text
   const summaryParts: string[] = [];
   if (applied.type !== 'all') {
     const t = TYPES.find(t => t.value === applied.type);
@@ -96,7 +95,6 @@ const FilterBar = ({
     ? `${summaryParts.join(' · ')} · ${fmt(applied.minPrice)} – ${fmt(applied.maxPrice)} FCFA`
     : null;
 
-  // Active dots indicator
   const dots = Array.from({ length: 3 }, (_, i) => i < activeCount);
 
   const handleApply = () => {
@@ -108,12 +106,16 @@ const FilterBar = ({
   const handleReset = () => {
     setDraft(DEFAULT_FILTERS);
     setApplied(DEFAULT_FILTERS);
-    onFilterChange(DEFAULT_FILTERS);
     setIsOpen(false);
+    // Call full reset if provided, otherwise just reset filters
+    if (onReset) {
+      onReset();
+    } else {
+      onFilterChange(DEFAULT_FILTERS);
+    }
   };
 
   const handleClose = () => {
-    // Close without applying — keep draft in memory for next open
     setIsOpen(false);
   };
 
@@ -127,7 +129,7 @@ const FilterBar = ({
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="inline-flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2 text-sm font-medium text-foreground hover:bg-muted active:scale-[0.98] transition-all shadow-sm"
           style={{ maxHeight: 36 }}
         >
           <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
@@ -152,7 +154,7 @@ const FilterBar = ({
         {onToggleFavoritesView && (
           <button
             onClick={onToggleFavoritesView}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors border ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-all border active:scale-[0.98] ${
               showFavoritesOnly
                 ? 'bg-secondary text-secondary-foreground border-secondary'
                 : 'bg-card text-muted-foreground border-border hover:border-secondary/50'
@@ -178,7 +180,6 @@ const FilterBar = ({
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -188,7 +189,6 @@ const FilterBar = ({
               onClick={handleClose}
             />
 
-            {/* Panel */}
             <motion.div
               initial={isMobile ? { y: '100%' } : { opacity: 0, y: -8 }}
               animate={isMobile ? { y: 0 } : { opacity: 1, y: 0 }}
@@ -202,7 +202,6 @@ const FilterBar = ({
               style={{ position: isMobile ? 'fixed' : 'relative' }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Drag handle (mobile) */}
               {isMobile && (
                 <div className="flex justify-center pt-3 pb-1">
                   <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
@@ -218,7 +217,7 @@ const FilterBar = ({
                       <button
                         key={t.value}
                         onClick={() => toggleType(t.value)}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all active:scale-[0.98] ${
                           draft.type === t.value
                             ? 'bg-primary/10 border-primary text-primary'
                             : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
@@ -255,7 +254,7 @@ const FilterBar = ({
                       <button
                         key={s.value}
                         onClick={() => setDraft(d => ({ ...d, surfaceRange: d.surfaceRange === s.value ? 'all' : s.value }))}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all active:scale-[0.98] ${
                           draft.surfaceRange === s.value
                             ? 'bg-primary/10 border-primary text-primary'
                             : 'bg-muted/50 border-transparent text-muted-foreground hover:bg-muted'
@@ -275,7 +274,7 @@ const FilterBar = ({
                       <button
                         key={n}
                         onClick={() => setDraft(d => ({ ...d, minBedrooms: d.minBedrooms === n ? 0 : n }))}
-                        className={`w-10 h-10 rounded-lg text-sm font-bold border transition-colors ${
+                        className={`w-10 h-10 rounded-lg text-sm font-bold border transition-all active:scale-[0.98] ${
                           draft.minBedrooms === n
                             ? 'bg-primary text-primary-foreground border-primary'
                             : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
@@ -292,7 +291,7 @@ const FilterBar = ({
                   <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Options</h4>
                   <button
                     onClick={() => setDraft(d => ({ ...d, hasVirtualTour: !d.hasVirtualTour }))}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all active:scale-[0.98] ${
                       draft.hasVirtualTour
                         ? 'bg-primary/10 border-primary text-primary'
                         : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
@@ -309,14 +308,14 @@ const FilterBar = ({
                   <Button
                     variant="outline"
                     onClick={handleReset}
-                    className="flex-1 gap-2"
+                    className="flex-1 gap-2 hover:bg-muted active:scale-[0.98]"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                     Réinitialiser
                   </Button>
                   <Button
                     onClick={handleApply}
-                    className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
                   >
                     <Check className="h-3.5 w-3.5" />
                     Appliquer

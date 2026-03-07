@@ -56,8 +56,8 @@ const VoiceSearch = ({ onSearchQuery, searchQuery, onSearchQueryChange }: VoiceS
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
-          placeholder="Maison 3 chambres à Ouaga 2000, 300 000 FCFA..."
-          className="flex-1 bg-transparent px-4 py-4 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
+          placeholder="Quoi, Où et à quel prix pour votre bien ?"
+          className="flex-1 bg-transparent px-4 py-4 text-sm md:text-base text-foreground placeholder:text-muted-foreground placeholder:italic focus:outline-none"
         />
 
         {/* Voice buttons */}
