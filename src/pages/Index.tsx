@@ -97,14 +97,15 @@ const Index = () => {
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
-  // ── Body scroll lock when panel is open ──
+  // ── Body scroll lock ONLY on mobile when detail drawer is open ──
   useEffect(() => {
-    if (detailProperty) {
+    const isMobile = window.innerWidth < 1024;
+    if (detailProperty && isMobile) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = 'auto'; };
+    return () => { document.body.style.overflow = ''; };
   }, [detailProperty]);
 
   useEffect(() => {
