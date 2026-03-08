@@ -130,12 +130,12 @@ const PropertyDetailPanel = ({
     property.has_internet && { icon: Wifi, label: 'Internet', value: '✓' },
   ].filter(Boolean) as { icon: any; label: string; value: any }[];
 
-  // Ratings — includes Accessibilité
+  // Ratings — includes Accessibilité with Lucide icon
   const ratings = [
-    property.comfort_rating && { label: 'Confort', value: property.comfort_rating, icon: '🛋️' },
-    property.security_rating && { label: 'Sécurité', value: property.security_rating, icon: '🔒' },
-    property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating, icon: '♿' },
-  ].filter(Boolean) as { label: string; value: number; icon: string }[];
+    property.comfort_rating && { label: 'Confort', value: property.comfort_rating, emoji: '🛋️', LucideIcon: null },
+    property.security_rating && { label: 'Sécurité', value: property.security_rating, emoji: '🔒', LucideIcon: null },
+    property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating, emoji: null, LucideIcon: Accessibility },
+  ].filter(Boolean) as { label: string; value: number; emoji: string | null; LucideIcon: any }[];
 
   const isFurnished = property.furnished || property.type === 'maison' || property.type === 'villa' || property.type === 'appartement';
 
