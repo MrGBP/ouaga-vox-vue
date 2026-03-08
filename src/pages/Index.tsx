@@ -97,14 +97,15 @@ const Index = () => {
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
-  // ── Body scroll lock when panel is open ──
+  // ── Body scroll lock ONLY on mobile when detail drawer is open ──
   useEffect(() => {
-    if (detailProperty) {
+    const isMobile = window.innerWidth < 1024;
+    if (detailProperty && isMobile) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = 'auto'; };
+    return () => { document.body.style.overflow = ''; };
   }, [detailProperty]);
 
   useEffect(() => {
@@ -228,28 +229,23 @@ const Index = () => {
     setFilteredProperties(all);
   };
 
-  const handleViewDetails = (property: Property) => {
+  // Unified property view handler — same behavior everywhere
+  const handleViewDetails = useCallback((property: Property) => {
     setDetailProperty(property);
     setFocusedPropertyId(property.id);
-  };
-
-  const handlePropertyClick = (id: string) => {
-    const prop = properties.find(p => p.id === id);
-    if (prop) {
-      setDetailProperty(prop);
-      setFocusedPropertyId(id);
-    }
-  };
-
-  const handleFocusOnMap = (id: string) => {
-    setDetailProperty(null);
-    setFocusedPropertyId(id);
-    const prop = properties.find(p => p.id === id);
-    if (prop) {
-      setTimeout(() => setDetailProperty(prop), 100);
-    }
+    // Always scroll to map so the user sees the property on the map
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
+
+  const handlePropertyClick = useCallback((id: string) => {
+    const prop = properties.find(p => p.id === id);
+    if (prop) handleViewDetails(prop);
+  }, [properties, handleViewDetails]);
+
+  const handleFocusOnMap = useCallback((id: string) => {
+    const prop = properties.find(p => p.id === id);
+    if (prop) handleViewDetails(prop);
+  }, [properties, handleViewDetails]);
 
   // "Explorer sur la carte" — shows map focus WITHOUT panel
   const handleExploreOnMap = (id: string) => {
