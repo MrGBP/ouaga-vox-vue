@@ -94,15 +94,13 @@ const distanceM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
 
 const fmtDist = (d: number) => (d < 1000 ? `${d} m` : `${(d / 1000).toFixed(1)} km`);
 
-// Type-based color palette for property pins
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string; emoji: string }> = {
   maison:      { bg: '#1B3A5C', border: '#3B6A9C', text: '#FFFFFF', emoji: '🏠' },
   villa:       { bg: '#4C3A6A', border: '#7C6A9A', text: '#FFFFFF', emoji: '🏡' },
   appartement: { bg: '#2A5D7C', border: '#4A8DAC', text: '#FFFFFF', emoji: '🏬' },
+  studio:      { bg: '#2A6A5C', border: '#4A9A8C', text: '#FFFFFF', emoji: '🛏️' },
   bureau:      { bg: '#1B3A5C', border: '#4A7AAC', text: '#FFFFFF', emoji: '🏢' },
   commerce:    { bg: '#6A4520', border: '#9A7550', text: '#FFFFFF', emoji: '🏪' },
-  boutique:    { bg: '#5A3030', border: '#8A6060', text: '#FFFFFF', emoji: '🛍️' },
-  terrain:     { bg: '#4A5A3A', border: '#7A8A6A', text: '#FFFFFF', emoji: '🏗️' },
 };
 
 const getTypeStyle = (type: string) =>
@@ -110,7 +108,6 @@ const getTypeStyle = (type: string) =>
 
 // ─── Pin HTML helpers ────────────────────────────────────────────────────────
 
-// White bg + navy border clusters
 const quartierClusterHTML = (name: string, count: number) => {
   return `
     <div style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
@@ -156,7 +153,6 @@ const propertyPinHTML = (p: Property, focused: boolean) => {
   `;
 };
 
-// Smart offset to avoid overlapping markers
 const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng: number }[] => {
   const placed: { lat: number; lng: number }[] = [];
   const MIN_GAP = 0.0008;
@@ -211,7 +207,6 @@ const InteractiveMap = ({
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
 
-  // Apply active filters
   const applyMapFilters = useCallback((props: Property[]) => {
     if (!activeFilters) return props;
     let result = props;
@@ -232,7 +227,6 @@ const InteractiveMap = ({
   const viewLevel = focusedPropertyId ? 'focus' : selectedQuartier ? 'quartier' : 'global';
   viewLevelRef.current = viewLevel;
 
-  // Notify parent of quartier changes
   useEffect(() => {
     onQuartierChange?.(selectedQuartier);
   }, [selectedQuartier, onQuartierChange]);
@@ -271,7 +265,6 @@ const InteractiveMap = ({
 
     map.on('zoomend', () => setZoom(map.getZoom()));
     
-    // Click on empty map area — ONLY close at global/quartier level, NOT at focus level
     map.on('click', () => {
       if (viewLevelRef.current !== 'focus' && onFocusClear) {
         onFocusClear();
@@ -310,7 +303,7 @@ const InteractiveMap = ({
     }
   }, [viewLevel]);
 
-  // ── LEVEL 1: Global view — NO polygons, just white/navy clusters ─────────
+  // ── LEVEL 1: Global view — clusters only ─────────────────────────────────
   const renderGlobal = useCallback(() => {
     if (!quartierLayer.current || !propertyLayer.current || !mapInst.current) return;
     quartierLayer.current.clearLayers();
@@ -324,7 +317,6 @@ const InteractiveMap = ({
       byQ.set(p.quartier, arr);
     });
 
-    // Only clusters — no polygons
     const quartiersToShow = activeFilters?.quartier && activeFilters.quartier !== 'all'
       ? quartiers.filter(q => q.name === activeFilters.quartier)
       : quartiers;
@@ -390,9 +382,7 @@ const InteractiveMap = ({
 
     if (qProps.length === 0) return;
 
-    // If more than 12, sub-cluster; otherwise show individual pins
     if (qProps.length > 12) {
-      // Simple grid-based sub-clustering
       const gridSize = 0.003;
       const subClusters = new Map<string, Property[]>();
       qProps.forEach(p => {
@@ -429,7 +419,6 @@ const InteractiveMap = ({
           const m = L.marker([avgLat, avgLng], { icon });
           m.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
-            // Zoom in further
             const cBounds = L.latLngBounds(cluster.map(p => L.latLng(p.latitude, p.longitude)));
             mapInst.current?.flyToBounds(cBounds.pad(0.3), { duration: 0.5, maxZoom: 18 });
           });
@@ -475,12 +464,9 @@ const InteractiveMap = ({
     if (!prop) return;
 
     const map = mapInst.current;
-
-    // Calculate zoom to fit 1km radius — always center the property
     const zoomLevel = 15;
     map.flyTo([prop.latitude, prop.longitude], zoomLevel, { duration: 0.8 });
 
-    // Invalidate size after panel open/close to recalculate center
     setTimeout(() => {
       mapInst.current?.invalidateSize({ animate: false });
     }, 350);
@@ -495,7 +481,7 @@ const InteractiveMap = ({
     L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 })
       .addTo(focusLayer.current);
 
-    // Radius circles — keep existing style
+    // Radius circles
     const radiusConfig = [
       { r: 300, fillOpacity: 0.15, dash: '', weight: 2, color: 'rgba(30,80,160,1)' },
       { r: 500, fillOpacity: 0.10, dash: '6 4', weight: 1.5, color: 'rgba(30,80,160,0.8)' },
@@ -525,7 +511,7 @@ const InteractiveMap = ({
       }).addTo(focusLayer.current!);
     });
 
-    // POI — all within 1km, max 12, cross-quartier allowed
+    // POI
     const allPoisInRange = pois
       .map(poi => ({ ...poi, distance: distanceM(prop.latitude, prop.longitude, poi.latitude, poi.longitude) }))
       .filter(p => p.distance <= 1000)
@@ -596,7 +582,7 @@ const InteractiveMap = ({
     });
   }, [focusedPropertyId, properties, pois, panelOpen]);
 
-  // Invalidate map size when panel opens/closes so centering recalculates
+  // Invalidate map size when panel opens/closes
   useEffect(() => {
     if (!mapInst.current) return;
     setTimeout(() => mapInst.current?.invalidateSize({ animate: true }), 350);
@@ -653,7 +639,6 @@ const InteractiveMap = ({
 
   const goBackToQuartier = () => {
     if (onFocusClear) onFocusClear();
-    // Re-render quartier will happen via viewLevel change
   };
 
   return (

@@ -41,11 +41,11 @@ export const DEFAULT_FILTERS: FilterState = {
 
 const TYPES = [
   { value: 'maison', label: 'Maison meublée', emoji: '🏠' },
+  { value: 'villa', label: 'Villa meublée', emoji: '🏡' },
+  { value: 'appartement', label: 'Appartement meublé', emoji: '🏬' },
+  { value: 'studio', label: 'Studio meublé', emoji: '🛏️' },
   { value: 'bureau', label: 'Bureau', emoji: '🏢' },
-  { value: 'commerce', label: 'Commerce', emoji: '🏪' },
-  { value: 'terrain', label: 'Terrain', emoji: '🏗️' },
-  { value: 'villa', label: 'Villa', emoji: '🏡' },
-  { value: 'boutique', label: 'Boutique', emoji: '🛍️' },
+  { value: 'commerce', label: 'Local commercial', emoji: '🏪' },
 ];
 
 const SURFACE_RANGES = [
@@ -107,7 +107,6 @@ const FilterBar = ({
     setDraft(DEFAULT_FILTERS);
     setApplied(DEFAULT_FILTERS);
     setIsOpen(false);
-    // Call full reset if provided, otherwise just reset filters
     if (onReset) {
       onReset();
     } else {
