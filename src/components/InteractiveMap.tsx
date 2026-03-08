@@ -596,6 +596,12 @@ const InteractiveMap = ({
     });
   }, [focusedPropertyId, properties, pois, panelOpen]);
 
+  // Invalidate map size when panel opens/closes so centering recalculates
+  useEffect(() => {
+    if (!mapInst.current) return;
+    setTimeout(() => mapInst.current?.invalidateSize({ animate: true }), 350);
+  }, [panelOpen]);
+
   // ── External quartier selection ───────────────────────────────────────────
   useEffect(() => {
     if (!externalQuartierSelect || !mapInst.current) return;
