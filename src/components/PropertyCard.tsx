@@ -38,8 +38,7 @@ const typeLabels: Record<string, string> = {
   commerce: 'Commerce',
   villa: 'Villa',
   appartement: 'Appartement',
-  boutique: 'Boutique',
-  terrain: 'Terrain',
+  studio: 'Studio',
 };
 
 const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFavorite, onFocusOnMap }: PropertyCardProps) => {
@@ -48,7 +47,6 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
 
   const imgSrc = property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&auto=format&fit=crop';
 
-  // Clicking anywhere on the card opens the detail
   const handleCardClick = () => {
     onViewDetails(property);
   };

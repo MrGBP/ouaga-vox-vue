@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Heart, ChevronLeft, ChevronRight, MapPin, Bed, Bath,
   Maximize, Calendar, Phone, MessageCircle, Mail, Camera,
-  Thermometer, Shield, Zap, TreePine, Droplets, Wifi, Star,
+  Thermometer, Shield, Zap, TreePine, Droplets, Wifi,
   BarChart3, Map, Accessibility,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -82,9 +82,8 @@ const distanceM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
 const fmtDist = (d: number) => (d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`);
 
 const TYPE_LABELS: Record<string, string> = {
-  maison: 'Maison meublée', villa: 'Villa', bureau: 'Bureau',
-  commerce: 'Commerce', boutique: 'Boutique', terrain: 'Terrain',
-  appartement: 'Appartement',
+  maison: 'Maison meublée', villa: 'Villa meublée', bureau: 'Bureau',
+  commerce: 'Local commercial', studio: 'Studio meublé', appartement: 'Appartement meublé',
 };
 
 const PropertyDetailPanel = ({
@@ -130,14 +129,14 @@ const PropertyDetailPanel = ({
     property.has_internet && { icon: Wifi, label: 'Internet', value: '✓' },
   ].filter(Boolean) as { icon: any; label: string; value: any }[];
 
-  // Ratings — includes Accessibilité with Lucide icon
+  // Ratings — simple note /5, no stars
   const ratings = [
-    property.comfort_rating && { label: 'Confort', value: property.comfort_rating, emoji: '🛋️', LucideIcon: null },
-    property.security_rating && { label: 'Sécurité', value: property.security_rating, emoji: '🔒', LucideIcon: null },
-    property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating, emoji: null, LucideIcon: Accessibility },
-  ].filter(Boolean) as { label: string; value: number; emoji: string | null; LucideIcon: any }[];
+    property.comfort_rating && { label: 'Confort', value: property.comfort_rating, emoji: '🛋️' },
+    property.security_rating && { label: 'Sécurité', value: property.security_rating, emoji: '🔒' },
+    property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating, emoji: '♿' },
+  ].filter(Boolean) as { label: string; value: number; emoji: string }[];
 
-  const isFurnished = property.furnished || property.type === 'maison' || property.type === 'villa' || property.type === 'appartement';
+  const isFurnished = property.furnished || property.type === 'maison' || property.type === 'villa' || property.type === 'appartement' || property.type === 'studio';
 
   const panelContent = (
     <>
@@ -300,20 +299,16 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* ⑥ Notes et évaluations — includes Accessibility */}
+        {/* ⑥ Notes et évaluations — simple note /5, no stars */}
         {ratings.length > 0 && (
           <div>
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Évaluations</h4>
             <div className="flex flex-wrap gap-2">
               {ratings.map((r, i) => (
                 <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
-                  {r.LucideIcon ? <r.LucideIcon className="h-4 w-4 text-primary" /> : <span className="text-sm">{r.emoji}</span>}
+                  <span className="text-sm">{r.emoji}</span>
                   <span className="text-xs font-medium text-foreground">{r.label}</span>
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }, (_, j) => (
-                      <Star key={j} className={`h-3 w-3 ${j < r.value ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
-                    ))}
-                  </div>
+                  <span className="text-sm font-bold text-primary">{r.value}/5</span>
                 </div>
               ))}
             </div>
@@ -434,8 +429,7 @@ const PropertyDetailPanel = ({
     );
   }
 
-  // Desktop: inline panel (not fixed), rendered inside flex container
-  return <div className="bg-card">{panelContent}</div>;
+  return panelContent;
 };
 
 export default PropertyDetailPanel;
