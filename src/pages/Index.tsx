@@ -229,28 +229,23 @@ const Index = () => {
     setFilteredProperties(all);
   };
 
-  const handleViewDetails = (property: Property) => {
+  // Unified property view handler — same behavior everywhere
+  const handleViewDetails = useCallback((property: Property) => {
     setDetailProperty(property);
     setFocusedPropertyId(property.id);
-  };
-
-  const handlePropertyClick = (id: string) => {
-    const prop = properties.find(p => p.id === id);
-    if (prop) {
-      setDetailProperty(prop);
-      setFocusedPropertyId(id);
-    }
-  };
-
-  const handleFocusOnMap = (id: string) => {
-    setDetailProperty(null);
-    setFocusedPropertyId(id);
-    const prop = properties.find(p => p.id === id);
-    if (prop) {
-      setTimeout(() => setDetailProperty(prop), 100);
-    }
+    // Always scroll to map so the user sees the property on the map
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
+
+  const handlePropertyClick = useCallback((id: string) => {
+    const prop = properties.find(p => p.id === id);
+    if (prop) handleViewDetails(prop);
+  }, [properties, handleViewDetails]);
+
+  const handleFocusOnMap = useCallback((id: string) => {
+    const prop = properties.find(p => p.id === id);
+    if (prop) handleViewDetails(prop);
+  }, [properties, handleViewDetails]);
 
   // "Explorer sur la carte" — shows map focus WITHOUT panel
   const handleExploreOnMap = (id: string) => {

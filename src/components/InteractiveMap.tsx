@@ -476,20 +476,14 @@ const InteractiveMap = ({
 
     const map = mapInst.current;
 
-    // Calculate zoom to fit 1km radius
+    // Calculate zoom to fit 1km radius — always center the property
     const zoomLevel = 15;
-    
-    // Center with offset if panel is open (panel takes ~420px on right)
-    if (panelOpen) {
-      map.flyTo([prop.latitude, prop.longitude], zoomLevel, { duration: 0.8 });
-      setTimeout(() => {
-        if (!mapInst.current) return;
-        // Pan left by half the panel width to keep pin centered in visible area
-        mapInst.current.panBy([180, 0], { animate: true, duration: 0.3 });
-      }, 900);
-    } else {
-      map.flyTo([prop.latitude, prop.longitude], zoomLevel, { duration: 0.8 });
-    }
+    map.flyTo([prop.latitude, prop.longitude], zoomLevel, { duration: 0.8 });
+
+    // Invalidate size after panel open/close to recalculate center
+    setTimeout(() => {
+      mapInst.current?.invalidateSize({ animate: false });
+    }, 350);
 
     // Focused pin with pulse
     const focusIcon = L.divIcon({

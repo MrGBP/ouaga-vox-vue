@@ -307,7 +307,7 @@ const PropertyDetailPanel = ({
             <div className="flex flex-wrap gap-2">
               {ratings.map((r, i) => (
                 <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
-                  <span className="text-sm">{r.icon}</span>
+                  {r.LucideIcon ? <r.LucideIcon className="h-4 w-4 text-primary" /> : <span className="text-sm">{r.emoji}</span>}
                   <span className="text-xs font-medium text-foreground">{r.label}</span>
                   <div className="flex gap-0.5">
                     {Array.from({ length: 5 }, (_, j) => (
