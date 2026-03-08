@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { mockProperties, mockPois, mockQuartiers } from '@/lib/mockData';
 import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
 import Header from '@/components/Header';
-import VoiceSearch, { parseSearchQuery, ParsedTag } from '@/components/VoiceSearch';
+import VoiceSearch from '@/components/VoiceSearch';
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
@@ -72,38 +72,6 @@ interface Quartier {
 const FAVORITES_KEY = 'sapsap_favorites';
 const ITEMS_PER_PAGE = 12;
 
-/** Simple Levenshtein for fuzzy filtering */
-const levenshtein = (a: string, b: string): number => {
-  const m = a.length, n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, (_, i) => {
-    const row = new Array(n + 1).fill(0);
-    row[0] = i;
-    return row;
-  });
-  for (let j = 1; j <= n; j++) dp[0][j] = j;
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      dp[i][j] = a[i - 1] === b[j - 1]
-        ? dp[i - 1][j - 1]
-        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-    }
-  }
-  return dp[m][n];
-};
-
-const fuzzyIncludes = (haystack: string, needle: string): boolean => {
-  const h = haystack.toLowerCase();
-  const n = needle.toLowerCase();
-  if (h.includes(n)) return true;
-  // Check each word
-  const words = h.split(/\s+/);
-  for (const w of words) {
-    const maxDist = n.length <= 3 ? 1 : n.length <= 6 ? 2 : 3;
-    if (levenshtein(w, n) <= maxDist) return true;
-  }
-  return false;
-};
-
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
@@ -126,11 +94,10 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [mapQuartierTrigger, setMapQuartierTrigger] = useState<string | null>(null);
   const [activeQuartier, setActiveQuartier] = useState<string | null>(null);
-  const [detectedTags, setDetectedTags] = useState<ParsedTag[]>([]);
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
-  // ── Body scroll lock on mobile when detail drawer is open ──
+  // ── Body scroll lock ONLY on mobile when detail drawer is open ──
   useEffect(() => {
     const isMobile = window.innerWidth < 1024;
     if (detailProperty && isMobile) {
@@ -179,6 +146,7 @@ const Index = () => {
     }
   };
 
+  // Filter out rented properties for display
   const availableProperties = useCallback((props: Property[]) => {
     return props.filter(p => p.status !== 'rented' && p.available !== false);
   }, []);
@@ -188,36 +156,21 @@ const Index = () => {
     query: string,
     f: FilterState,
     favsOnly: boolean,
-    favSet: Set<string>,
-    tags?: ParsedTag[]
+    favSet: Set<string>
   ) => {
     let result = source.filter(p => p.status !== 'rented' && p.available !== false);
 
     if (favsOnly) result = result.filter(p => favSet.has(p.id));
 
-    // Apply parsed tags first
-    if (tags && tags.length > 0) {
-      for (const tag of tags) {
-        if (tag.kind === 'type') {
-          result = result.filter(p => p.type === tag.value);
-        } else if (tag.kind === 'quartier') {
-          result = result.filter(p => p.quartier === tag.value);
-        } else if (tag.kind === 'prix') {
-          const maxPrice = parseInt(tag.value);
-          result = result.filter(p => p.price <= maxPrice);
-        }
-      }
-    }
-
-    // Fuzzy text search on remaining query words
     if (query.trim()) {
-      const words = query.toLowerCase().split(/\s+/).filter(w => w.length >= 2);
-      if (words.length > 0) {
-        result = result.filter(p => {
-          const searchable = `${p.title} ${p.quartier} ${p.type} ${p.description || ''} ${p.price}`.toLowerCase();
-          return words.some(w => fuzzyIncludes(searchable, w));
-        });
-      }
+      const q = query.toLowerCase();
+      result = result.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        p.quartier.toLowerCase().includes(q) ||
+        p.type.toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q) ||
+        p.price.toString().includes(q)
+      );
     }
 
     if (f.type !== 'all') result = result.filter(p => p.type === f.type);
@@ -241,33 +194,11 @@ const Index = () => {
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
-
-    // Parse query for tags
-    const { tags, remaining } = parseSearchQuery(query);
-    setDetectedTags(tags);
-
-    const filtered = applyFilters(properties, remaining, filters, showFavoritesOnly, favorites, tags);
+    const filtered = applyFilters(properties, query, filters, showFavoritesOnly, favorites);
     setFilteredProperties(filtered);
 
-    // Sync filters from tags
-    if (tags.length > 0) {
-      const typeTag = tags.find(t => t.kind === 'type');
-      const quartierTag = tags.find(t => t.kind === 'quartier');
-      if (typeTag || quartierTag) {
-        const newFilters = {
-          ...filters,
-          ...(typeTag ? { type: typeTag.value } : {}),
-          ...(quartierTag ? { quartier: quartierTag.value } : {}),
-        };
-        setFilters(newFilters);
-        if (quartierTag) {
-          setMapQuartierTrigger(quartierTag.value);
-        }
-      }
-    }
-
     if (filtered.length > 0) {
-      const msg = `J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''}.`;
+      const msg = `J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''} pour "${query}".`;
       speak(msg);
       toast({ title: '🔍 Résultats', description: msg });
     } else {
@@ -276,47 +207,33 @@ const Index = () => {
     }
   };
 
-  const handleRemoveTag = (tag: ParsedTag) => {
-    const newTags = detectedTags.filter(t => !(t.kind === tag.kind && t.value === tag.value));
-    setDetectedTags(newTags);
-    // Reset corresponding filter
-    const newFilters = { ...filters };
-    if (tag.kind === 'type') newFilters.type = 'all';
-    if (tag.kind === 'quartier') {
-      newFilters.quartier = 'all';
-      setMapQuartierTrigger(null);
-    }
-    setFilters(newFilters);
-    setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites, newTags));
-  };
-
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
-    setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites, detectedTags));
+    setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites));
   };
 
   // Full reset: clears EVERYTHING
   const handleFullReset = () => {
     setFilters(DEFAULT_FILTERS);
     setSearchQuery('');
-    setDetectedTags([]);
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
     setShowFavoritesOnly(false);
     setMapQuartierTrigger(null);
     setActiveQuartier(null);
-    const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites, []);
+    const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites);
     setFilteredProperties(all);
   };
 
-  // Unified property view handler
+  // Unified property view handler — same behavior everywhere
   const handleViewDetails = useCallback((property: Property) => {
     setDetailProperty(property);
     setFocusedPropertyId(property.id);
+    // Always scroll to map so the user sees the property on the map
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
@@ -330,6 +247,7 @@ const Index = () => {
     if (prop) handleViewDetails(prop);
   }, [properties, handleViewDetails]);
 
+  // "Explorer sur la carte" — shows map focus WITHOUT panel
   const handleExploreOnMap = (id: string) => {
     setDetailProperty(null);
     setFocusedPropertyId(id);
@@ -342,9 +260,8 @@ const Index = () => {
     const newFilters = { ...filters, quartier: q.name };
     setFilters(newFilters);
     setSearchQuery('');
-    setDetectedTags([]);
     setCurrentPage(1);
-    setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites, []));
+    setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
     setMapQuartierTrigger(q.name);
     speak(`Voici les biens disponibles dans le quartier ${q.name}`);
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
@@ -362,7 +279,7 @@ const Index = () => {
       }
       if (showFavoritesOnly) {
         setTimeout(() => {
-          setFilteredProperties(applyFilters(properties, searchQuery, filters, true, next, detectedTags));
+          setFilteredProperties(applyFilters(properties, searchQuery, filters, true, next));
         }, 0);
       }
       return next;
@@ -373,7 +290,7 @@ const Index = () => {
     const next = !showFavoritesOnly;
     setShowFavoritesOnly(next);
     setCurrentPage(1);
-    setFilteredProperties(applyFilters(properties, searchQuery, filters, next, favorites, detectedTags));
+    setFilteredProperties(applyFilters(properties, searchQuery, filters, next, favorites));
   };
 
   const favoriteProperties = properties.filter(p => favorites.has(p.id));
@@ -431,7 +348,7 @@ const Index = () => {
             </p>
           </motion.div>
 
-          {/* IDX — reduced width 10%, no voice */}
+          {/* IDX — reduced width 10%, italic placeholder */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -443,8 +360,6 @@ const Index = () => {
               onSearchQuery={handleSearch}
               searchQuery={searchQuery}
               onSearchQueryChange={setSearchQuery}
-              detectedTags={detectedTags}
-              onRemoveTag={handleRemoveTag}
             />
           </motion.div>
         </div>
