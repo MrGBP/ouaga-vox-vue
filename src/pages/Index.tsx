@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { mockProperties, mockPois, mockQuartiers } from '@/lib/mockData';
+import { mockProperties, mockPois, mockQuartiers, isTypeFurnished, pricePerNight, getTypeLabel } from '@/lib/mockData';
 import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
+import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import Header from '@/components/Header';
 import VoiceSearch from '@/components/VoiceSearch';
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
@@ -13,6 +14,8 @@ import VirtualTourModal from '@/components/VirtualTourModal';
 import AIComparator from '@/components/AIComparator';
 import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
+import TestimonialsSection from '@/components/TestimonialsSection';
+import RecentlyViewed from '@/components/RecentlyViewed';
 import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
@@ -49,6 +52,7 @@ interface Property {
   has_internet?: boolean;
   furnished?: boolean;
   has_video?: boolean;
+  created_at?: string;
 }
 
 interface POI {
@@ -70,7 +74,7 @@ interface Quartier {
 }
 
 const FAVORITES_KEY = 'sapsap_favorites';
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 25;
 
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -84,23 +88,21 @@ const Index = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [detailProperty, setDetailProperty] = useState<Property | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem(FAVORITES_KEY);
-      return saved ? new Set(JSON.parse(saved)) : new Set<string>();
-    } catch { return new Set<string>(); }
+    try { const saved = localStorage.getItem(FAVORITES_KEY); return saved ? new Set(JSON.parse(saved)) : new Set<string>(); } catch { return new Set<string>(); }
   });
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [focusedPropertyId, setFocusedPropertyId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageTransition, setPageTransition] = useState(false);
   const [mapQuartierTrigger, setMapQuartierTrigger] = useState<string | null>(null);
   const [activeQuartier, setActiveQuartier] = useState<string | null>(null);
   const [mapResetTrigger, setMapResetTrigger] = useState(0);
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
-  // ── Body scroll lock when detail panel is open ──
+  // Body scroll lock on mobile when detail panel open
   useEffect(() => {
-    if (detailProperty) {
+    if (detailProperty && window.innerWidth < 1024) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -108,10 +110,7 @@ const Index = () => {
     return () => { document.body.style.overflow = ''; };
   }, [detailProperty]);
 
-  useEffect(() => {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
-  }, [favorites]);
-
+  useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
@@ -122,7 +121,6 @@ const Index = () => {
         supabase.from('pois').select('*'),
         supabase.from('quartiers').select('*'),
       ]);
-
       const props = (propertiesRes.data && propertiesRes.data.length > 0) ? propertiesRes.data : null;
       const poisData = (poisRes.data && poisRes.data.length > 0) ? poisRes.data : null;
       const quartiersData = (quartiersRes.data && quartiersRes.data.length > 0) ? quartiersRes.data : null;
@@ -150,13 +148,7 @@ const Index = () => {
     return props.filter(p => p.status !== 'rented' && p.available !== false);
   }, []);
 
-  const applyFilters = useCallback((
-    source: Property[],
-    query: string,
-    f: FilterState,
-    favsOnly: boolean,
-    favSet: Set<string>
-  ) => {
+  const applyFilters = useCallback((source: Property[], query: string, f: FilterState, favsOnly: boolean, favSet: Set<string>) => {
     let result = source.filter(p => p.status !== 'rented' && p.available !== false);
     if (favsOnly) result = result.filter(p => favSet.has(p.id));
     if (query.trim()) {
@@ -165,6 +157,7 @@ const Index = () => {
         p.title.toLowerCase().includes(q) ||
         p.quartier.toLowerCase().includes(q) ||
         p.type.toLowerCase().includes(q) ||
+        getTypeLabel(p.type).toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q) ||
         p.price.toString().includes(q)
       );
@@ -192,9 +185,8 @@ const Index = () => {
     const filtered = applyFilters(properties, query, filters, showFavoritesOnly, favorites);
     setFilteredProperties(filtered);
     if (filtered.length > 0) {
-      const msg = `J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''} pour "${query}".`;
-      speak(msg);
-      toast({ title: '🔍 Résultats', description: msg });
+      speak(`J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''} pour "${query}".`);
+      toast({ title: '🔍 Résultats', description: `${filtered.length} bien(s) trouvé(s)` });
     } else {
       speak("Aucun bien ne correspond à votre recherche.");
       toast({ title: 'Aucun résultat', description: 'Élargissez votre recherche.', variant: 'destructive' });
@@ -209,7 +201,6 @@ const Index = () => {
     setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites));
   };
 
-  // Full reset: clears EVERYTHING — map goes to zoom 13 Ouagadougou
   const handleFullReset = () => {
     setFilters(DEFAULT_FILTERS);
     setSearchQuery('');
@@ -220,14 +211,13 @@ const Index = () => {
     setMapQuartierTrigger(null);
     setActiveQuartier(null);
     setMapResetTrigger(prev => prev + 1);
-    const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites);
-    setFilteredProperties(all);
+    setFilteredProperties(applyFilters(properties, '', DEFAULT_FILTERS, false, favorites));
   };
 
-  // Unified property view handler — same behavior everywhere
   const handleViewDetails = useCallback((property: Property) => {
     setDetailProperty(property);
     setFocusedPropertyId(property.id);
+    addToRecentlyViewed(property);
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
@@ -241,14 +231,13 @@ const Index = () => {
     if (prop) handleViewDetails(prop);
   }, [properties, handleViewDetails]);
 
-  // "Explorer sur la carte" — shows map focus WITHOUT panel
   const handleExploreOnMap = (id: string) => {
     setDetailProperty(null);
     setFocusedPropertyId(id);
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleQuartierClick = (q: Quartier) => {
+  const handleQuartierClick = (q: any) => {
     setDetailProperty(null);
     setFocusedPropertyId(null);
     const newFilters = { ...filters, quartier: q.name };
@@ -264,18 +253,9 @@ const Index = () => {
   const toggleFavorite = (id: string) => {
     setFavorites(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-        toast({ title: '💔 Retiré des favoris' });
-      } else {
-        next.add(id);
-        toast({ title: '❤️ Ajouté aux favoris' });
-      }
-      if (showFavoritesOnly) {
-        setTimeout(() => {
-          setFilteredProperties(applyFilters(properties, searchQuery, filters, true, next));
-        }, 0);
-      }
+      if (next.has(id)) { next.delete(id); toast({ title: '💔 Retiré des favoris' }); }
+      else { next.add(id); toast({ title: '❤️ Ajouté aux favoris' }); }
+      if (showFavoritesOnly) setTimeout(() => setFilteredProperties(applyFilters(properties, searchQuery, filters, true, next)), 0);
       return next;
     });
   };
@@ -289,11 +269,9 @@ const Index = () => {
 
   const favoriteProperties = properties.filter(p => favorites.has(p.id));
   const quartierNames = [...new Set(properties.map(p => p.quartier))].sort();
-
   const similarProperties = detailProperty
     ? availableProperties(properties).filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
     : [];
-
   const mapProperties = availableProperties(showFavoritesOnly ? filteredProperties : properties);
 
   // Pagination
@@ -301,14 +279,31 @@ const Index = () => {
   const totalPages = Math.ceil(displayProperties.length / ITEMS_PER_PAGE);
   const paginatedProperties = displayProperties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  // Helper: format price for display (furnished → per night)
+  // Page transition
+  const handlePageChange = (dir: 1 | -1) => {
+    setPageTransition(true);
+    setTimeout(() => {
+      setCurrentPage(p => p + dir);
+      document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => setPageTransition(false), 50);
+    }, 200);
+  };
+
+  // Format price for carousel
   const formatDisplayPrice = (p: Property) => {
-    const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
-    if (p.furnished) {
-      const nightPrice = Math.round(p.price / 26);
-      return { price: fmt(nightPrice), suffix: '/nuit' };
+    const fmtN = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
+    const isFurnished = isTypeFurnished(p.type) || p.furnished;
+    if (isFurnished) {
+      const night = pricePerNight(p.price);
+      return { price: fmtN(p.price), suffix: '/mois', nightPrice: fmtN(night), nightSuffix: '/nuit' };
     }
-    return { price: fmt(p.price), suffix: '/mois' };
+    return { price: fmtN(p.price), suffix: '/mois', nightPrice: null, nightSuffix: null };
+  };
+
+  // Recently viewed handler
+  const handleRecentlyViewedClick = (id: string) => {
+    const prop = properties.find(p => p.id === id);
+    if (prop) handleViewDetails(prop);
   };
 
   if (loading) {
@@ -327,39 +322,21 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* ① Hero + IDX — cleaned up */}
+      {/* ① Hero + IDX */}
       <section className="relative h-[65vh] min-h-[520px] overflow-hidden">
         <img src={heroImage} alt="Ouagadougou" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="max-w-3xl space-y-4"
-          >
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-3xl space-y-4">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-card leading-tight">
-              Mon bien Immo
-              <br />en un clic
+              Mon bien Immo<br />en un clic
             </h1>
             <p className="text-sm text-card/70" style={{ fontSize: '14px' }}>
               + 100 biens · Maisons · Villas · Studios · Bureaux · Locaux · Plusieurs quartiers et régions du Burkina
             </p>
           </motion.div>
-
-          {/* IDX — reduced width 10%, italic placeholder */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.25 }}
-            className="mt-8 w-full"
-            style={{ maxWidth: '605px' }}
-          >
-            <VoiceSearch
-              onSearchQuery={handleSearch}
-              searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
-            />
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25 }} className="mt-8 w-full" style={{ maxWidth: '605px' }}>
+            <VoiceSearch onSearchQuery={handleSearch} searchQuery={searchQuery} onSearchQueryChange={setSearchQuery} />
           </motion.div>
         </div>
       </section>
@@ -382,57 +359,27 @@ const Index = () => {
         />
 
         <div className="flex gap-0 relative">
-          {/* Map */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className={`transition-all duration-300 ${detailProperty ? 'w-[calc(100%-420px)]' : 'w-full'}`}
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`transition-all duration-300 ${detailProperty ? 'w-[calc(100%-420px)]' : 'w-full'}`}>
             <InteractiveMap
-              properties={mapProperties}
-              pois={pois}
-              quartiers={quartiers}
-              onPropertyClick={handlePropertyClick}
-              focusedPropertyId={focusedPropertyId}
-              onFocusClear={() => {
-                setFocusedPropertyId(null);
-                setDetailProperty(null);
-              }}
-              activeFilters={filters}
-              externalQuartierSelect={mapQuartierTrigger}
+              properties={mapProperties} pois={pois} quartiers={quartiers}
+              onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
+              onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); }}
+              activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
               onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
-              panelOpen={!!detailProperty}
-              onQuartierChange={setActiveQuartier}
-              resetTrigger={mapResetTrigger}
+              panelOpen={!!detailProperty} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
             />
           </motion.div>
 
-          {/* Detail Panel — beside map on desktop */}
+          {/* Detail Panel beside map (desktop) */}
           {detailProperty && (
             <div className="w-[420px] shrink-0 border-l border-border hidden lg:block">
               <div className="h-[620px] overflow-y-auto">
                 <PropertyDetailPanel
-                  property={detailProperty}
-                  onClose={() => {
-                    setDetailProperty(null);
-                    setFocusedPropertyId(null);
-                  }}
-                  pois={pois}
-                  isFavorite={favorites.has(detailProperty.id)}
-                  onToggleFavorite={toggleFavorite}
-                  onViewTour={(p) => {
-                    setSelectedProperty(p);
-                    setModalOpen(true);
-                  }}
+                  property={detailProperty} onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
+                  pois={pois} isFavorite={favorites.has(detailProperty.id)} onToggleFavorite={toggleFavorite}
+                  onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
                   similarProperties={similarProperties}
-                  onSelectProperty={(id) => {
-                    const p = properties.find(pr => pr.id === id);
-                    if (p) {
-                      setDetailProperty(p);
-                      setFocusedPropertyId(id);
-                    }
-                  }}
+                  onSelectProperty={(id) => { const p = properties.find(pr => pr.id === id); if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); } }}
                   onExploreOnMap={handleExploreOnMap}
                 />
               </div>
@@ -441,32 +388,16 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Mobile detail panel (drawer from bottom) */}
+      {/* Mobile detail panel */}
       {detailProperty && (
         <div className="lg:hidden">
           <PropertyDetailPanel
-            property={detailProperty}
-            onClose={() => {
-              setDetailProperty(null);
-              setFocusedPropertyId(null);
-            }}
-            pois={pois}
-            isFavorite={favorites.has(detailProperty.id)}
-            onToggleFavorite={toggleFavorite}
-            onViewTour={(p) => {
-              setSelectedProperty(p);
-              setModalOpen(true);
-            }}
+            property={detailProperty} onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
+            pois={pois} isFavorite={favorites.has(detailProperty.id)} onToggleFavorite={toggleFavorite}
+            onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
             similarProperties={similarProperties}
-            onSelectProperty={(id) => {
-              const p = properties.find(pr => pr.id === id);
-              if (p) {
-                setDetailProperty(p);
-                setFocusedPropertyId(id);
-              }
-            }}
-            onExploreOnMap={handleExploreOnMap}
-            isMobileOverride={true}
+            onSelectProperty={(id) => { const p = properties.find(pr => pr.id === id); if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); } }}
+            onExploreOnMap={handleExploreOnMap} isMobileOverride={true}
           />
         </div>
       )}
@@ -477,32 +408,21 @@ const Index = () => {
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
             Trouvez votre <span className="text-primary">chez vous</span> partout au Burkina Faso
           </h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            Location meublée · Bureau · Commerce · Découvrez nos biens mis en avant
-          </p>
+          <p className="text-sm text-muted-foreground mt-2">Location meublée · Bureau · Commerce · Découvrez nos biens mis en avant</p>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory">
           {availableProperties(properties).slice(0, 8).map((p) => {
             const dp = formatDisplayPrice(p);
             return (
-              <motion.button
-                key={p.id}
-                whileHover={{ y: -4 }}
-                onClick={() => handleViewDetails(p)}
+              <motion.button key={p.id} whileHover={{ y: -4 }} onClick={() => handleViewDetails(p)}
                 className="shrink-0 w-64 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-warm transition-all text-left"
               >
-                <img
-                  src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'}
-                  alt={p.title}
-                  className="w-full h-36 object-cover"
-                  loading="lazy"
-                />
+                <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'} alt={p.title} className="w-full h-36 object-cover" loading="lazy" />
                 <div className="p-3">
                   <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
                   <p className="text-xs text-muted-foreground">{p.quartier}</p>
-                  <p className="text-sm font-bold text-primary mt-1">
-                    {dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">{dp.suffix}</span>
-                  </p>
+                  <p className="text-sm font-bold text-primary mt-1">{dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">{dp.suffix}</span></p>
+                  {dp.nightPrice && <p className="text-xs text-muted-foreground">soit {dp.nightPrice} FCFA{dp.nightSuffix}</p>}
                 </div>
               </motion.button>
             );
@@ -510,7 +430,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ④ Properties grid — 12 max per page */}
+      {/* ④ Properties grid — 25 per page */}
       <section id="properties" className="container mx-auto px-4 pb-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground">
@@ -523,44 +443,29 @@ const Index = () => {
 
         {paginatedProperties.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <motion.div
+              key={currentPage}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: pageTransition ? 0 : 1 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+            >
               {paginatedProperties.map((p, i) => (
-                <motion.div
-                  key={p.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.04 }}
-                >
-                  <PropertyCard
-                    property={p}
-                    onViewDetails={handleViewDetails}
-                    isFavorite={favorites.has(p.id)}
-                    onToggleFavorite={toggleFavorite}
-                    onFocusOnMap={handleFocusOnMap}
-                  />
+                <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.02 }}>
+                  <PropertyCard property={p} onViewDetails={handleViewDetails} isFavorite={favorites.has(p.id)} onToggleFavorite={toggleFavorite} onFocusOnMap={handleFocusOnMap} />
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             {/* Pagination — icons only */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-4 mt-8">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={currentPage === 1}
-                  onClick={() => { setCurrentPage(p => p - 1); document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' }); }}
-                  className="h-10 w-10 disabled:opacity-30"
-                >
+                <Button variant="outline" size="icon" disabled={currentPage === 1}
+                  onClick={() => handlePageChange(-1)} className="h-10 w-10 disabled:opacity-30">
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={currentPage === totalPages}
-                  onClick={() => { setCurrentPage(p => p + 1); document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' }); }}
-                  className="h-10 w-10 disabled:opacity-30"
-                >
+                <Button variant="outline" size="icon" disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(1)} className="h-10 w-10 disabled:opacity-30">
                   <ChevronRight className="h-5 w-5" />
                 </Button>
               </div>
@@ -569,25 +474,20 @@ const Index = () => {
         ) : (
           <div className="text-center py-20 bg-card border border-border rounded-xl">
             <div className="text-4xl mb-4">{showFavoritesOnly ? '❤️' : '🏠'}</div>
-            <p className="text-lg font-semibold text-foreground mb-2">
-              {showFavoritesOnly ? 'Aucun favori' : 'Aucun bien correspond'}
-            </p>
-            <p className="text-sm text-muted-foreground mb-4">
-              {showFavoritesOnly ? 'Ajoutez des biens en favoris avec le bouton ❤️' : 'Essayez de modifier vos filtres.'}
-            </p>
-            {!showFavoritesOnly && (
-              <button
-                onClick={handleFullReset}
-                className="text-sm text-primary font-semibold hover:underline"
-              >
-                Réinitialiser tout ×
-              </button>
-            )}
+            <p className="text-lg font-semibold text-foreground mb-2">{showFavoritesOnly ? 'Aucun favori' : 'Aucun bien trouvé'}</p>
+            <p className="text-sm text-muted-foreground mb-4">{showFavoritesOnly ? 'Ajoutez des biens en favoris avec le bouton ❤️' : 'Essayez de modifier vos filtres.'}</p>
+            {!showFavoritesOnly && <button onClick={handleFullReset} className="text-sm text-primary font-semibold hover:underline">Réinitialiser tout ×</button>}
           </div>
         )}
       </section>
 
-      {/* ⑤ ⑥ AI Sections */}
+      {/* ⑤ Testimonials */}
+      <TestimonialsSection />
+
+      {/* ⑥ Recently viewed */}
+      <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
+
+      {/* ⑦ AI Sections */}
       <section id="ia" className="container mx-auto px-4 pb-16">
         <div className="flex items-center gap-2 mb-6">
           <Sparkles className="h-5 w-5 text-primary" />
@@ -599,12 +499,7 @@ const Index = () => {
         </div>
       </section>
 
-      <VirtualTourModal
-        property={selectedProperty}
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        pois={pois}
-      />
+      <VirtualTourModal property={selectedProperty} open={modalOpen} onOpenChange={setModalOpen} pois={pois} />
     </div>
   );
 };
