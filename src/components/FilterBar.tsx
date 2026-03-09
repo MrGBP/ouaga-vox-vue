@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { PROPERTY_TYPES } from '@/lib/mockData';
 
 export interface FilterState {
   type: string;
@@ -32,21 +33,12 @@ export const DEFAULT_FILTERS: FilterState = {
   type: 'all',
   quartier: 'all',
   minPrice: 20000,
-  maxPrice: 1000000,
+  maxPrice: 2000000,
   minBedrooms: 0,
   hasVirtualTour: false,
   onlyAvailable: false,
   surfaceRange: 'all',
 };
-
-const TYPES = [
-  { value: 'maison', label: 'Maison meublée', emoji: '🏠' },
-  { value: 'bureau', label: 'Bureau', emoji: '🏢' },
-  { value: 'commerce', label: 'Commerce', emoji: '🏪' },
-  { value: 'terrain', label: 'Terrain', emoji: '🏗️' },
-  { value: 'villa', label: 'Villa', emoji: '🏡' },
-  { value: 'boutique', label: 'Boutique', emoji: '🛍️' },
-];
 
 const SURFACE_RANGES = [
   { value: 'all', label: 'Toutes' },
@@ -78,7 +70,7 @@ const FilterBar = ({
   const activeCount = [
     applied.type !== 'all',
     applied.quartier !== 'all',
-    applied.minPrice > 20000 || applied.maxPrice < 1000000,
+    applied.minPrice > 20000 || applied.maxPrice < 2000000,
     applied.minBedrooms > 0,
     applied.hasVirtualTour,
     applied.onlyAvailable,
@@ -87,7 +79,7 @@ const FilterBar = ({
 
   const summaryParts: string[] = [];
   if (applied.type !== 'all') {
-    const t = TYPES.find(t => t.value === applied.type);
+    const t = PROPERTY_TYPES.find(t => t.value === applied.type);
     if (t) summaryParts.push(t.label);
   }
   if (applied.quartier !== 'all') summaryParts.push(applied.quartier);
@@ -107,17 +99,11 @@ const FilterBar = ({
     setDraft(DEFAULT_FILTERS);
     setApplied(DEFAULT_FILTERS);
     setIsOpen(false);
-    // Call full reset if provided, otherwise just reset filters
-    if (onReset) {
-      onReset();
-    } else {
-      onFilterChange(DEFAULT_FILTERS);
-    }
+    if (onReset) onReset();
+    else onFilterChange(DEFAULT_FILTERS);
   };
 
-  const handleClose = () => {
-    setIsOpen(false);
-  };
+  const handleClose = () => setIsOpen(false);
 
   const toggleType = (type: string) => {
     setDraft(d => ({ ...d, type: d.type === type ? 'all' : type }));
@@ -125,7 +111,7 @@ const FilterBar = ({
 
   return (
     <div className="w-full mb-4">
-      {/* ── Pill Bar ── */}
+      {/* Pill Bar */}
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -140,17 +126,13 @@ const FilterBar = ({
               Filtres
               <span className="flex gap-0.5 ml-1">
                 {dots.map((active, i) => (
-                  <span
-                    key={i}
-                    className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-primary' : 'bg-muted-foreground/30'}`}
-                  />
+                  <span key={i} className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
                 ))}
               </span>
             </>
           )}
         </button>
 
-        {/* Favorites */}
         {onToggleFavoritesView && (
           <button
             onClick={onToggleFavoritesView}
@@ -170,13 +152,12 @@ const FilterBar = ({
           </button>
         )}
 
-        {/* Result count */}
         <span className="text-xs text-muted-foreground ml-auto">
           <span className="font-bold text-foreground">{filteredCount}</span> bien{filteredCount > 1 ? 's' : ''}
         </span>
       </div>
 
-      {/* ── Drawer/Dropdown ── */}
+      {/* Drawer/Dropdown */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -209,11 +190,11 @@ const FilterBar = ({
               )}
 
               <div className="p-5 space-y-6">
-                {/* TYPE DE BIEN */}
+                {/* 7 TYPES OFFICIELS */}
                 <div>
                   <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Type de bien</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    {TYPES.map(t => (
+                    {PROPERTY_TYPES.map(t => (
                       <button
                         key={t.value}
                         onClick={() => toggleType(t.value)}
@@ -224,7 +205,7 @@ const FilterBar = ({
                         }`}
                       >
                         <span>{t.emoji}</span>
-                        <span>{t.label}</span>
+                        <span className="text-xs">{t.label}</span>
                         {draft.type === t.value && <Check className="h-3.5 w-3.5 ml-auto" />}
                       </button>
                     ))}
@@ -241,7 +222,7 @@ const FilterBar = ({
                     value={[draft.minPrice, draft.maxPrice]}
                     onValueChange={([min, max]) => setDraft(d => ({ ...d, minPrice: min, maxPrice: max }))}
                     min={20000}
-                    max={1000000}
+                    max={2000000}
                     step={10000}
                   />
                 </div>
@@ -305,18 +286,11 @@ const FilterBar = ({
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleReset}
-                    className="flex-1 gap-2 hover:bg-muted active:scale-[0.98]"
-                  >
+                  <Button variant="outline" onClick={handleReset} className="flex-1 gap-2 hover:bg-muted active:scale-[0.98]">
                     <RotateCcw className="h-3.5 w-3.5" />
                     Réinitialiser
                   </Button>
-                  <Button
-                    onClick={handleApply}
-                    className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
-                  >
+                  <Button onClick={handleApply} className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]">
                     <Check className="h-3.5 w-3.5" />
                     Appliquer
                   </Button>

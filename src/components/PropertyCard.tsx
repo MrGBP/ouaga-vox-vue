@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Bed, Maximize, Eye, Camera, Heart, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 
 interface Property {
   id: string;
@@ -22,6 +23,7 @@ interface Property {
   available: boolean;
   virtual_tour_url?: string;
   furnished?: boolean;
+  created_at?: string;
 }
 
 interface PropertyCardProps {
@@ -32,29 +34,17 @@ interface PropertyCardProps {
   onFocusOnMap?: (id: string) => void;
 }
 
-const typeLabels: Record<string, string> = {
-  maison: 'Maison',
-  bureau: 'Bureau',
-  commerce: 'Commerce',
-  villa: 'Villa',
-  appartement: 'Appartement',
-  boutique: 'Boutique',
-  terrain: 'Terrain',
-};
+const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 
 const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFavorite, onFocusOnMap }: PropertyCardProps) => {
-  const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
-
-  // Furnished → daily price (price / 26)
-  const isFurnished = property.furnished || false;
-  const displayPrice = isFurnished ? Math.round(property.price / 26) : property.price;
-  const priceSuffix = isFurnished ? '/nuit' : '/mois';
-
+  const isFurnished = isTypeFurnished(property.type) || property.furnished || false;
+  const nightPrice = isFurnished ? pricePerNight(property.price) : 0;
   const imgSrc = property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&auto=format&fit=crop';
 
-  const handleCardClick = () => {
-    onViewDetails(property);
-  };
+  // Badge "Nouveau" — créé il y a moins de 7 jours
+  const isNew = property.created_at
+    ? (Date.now() - new Date(property.created_at).getTime()) < 7 * 86400000
+    : false;
 
   return (
     <motion.article
@@ -63,44 +53,36 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
       whileHover={{ y: -4 }}
       transition={{ duration: 0.25 }}
       className="group relative bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-warm transition-all duration-300 cursor-pointer"
-      onClick={handleCardClick}
+      onClick={() => onViewDetails(property)}
     >
       {/* Image */}
       <div className="relative h-52 overflow-hidden">
-        <img
-          src={imgSrc}
-          alt={property.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+        <img src={imgSrc} alt={property.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
 
-        {/* Badges top */}
-        <div className="absolute top-3 left-3 flex gap-2">
+        {/* Badges top-left */}
+        <div className="absolute top-3 left-3 flex gap-2 flex-wrap">
           <Badge className="bg-primary text-primary-foreground text-xs px-2 py-0.5 font-semibold">
-            {typeLabels[property.type] || property.type}
+            {getTypeEmoji(property.type)} {getTypeLabel(property.type)}
           </Badge>
           {property.virtual_tour_url && (
             <Badge className="bg-foreground/80 text-card text-xs px-2 py-0.5 gap-1">
-              <Camera className="h-3 w-3" />
-              360°
+              <Camera className="h-3 w-3" /> 360°
             </Badge>
           )}
-          {isFurnished && (
-            <Badge className="bg-accent text-accent-foreground text-xs px-2 py-0.5">
-              Meublé
+          {isNew && (
+            <Badge className="text-xs px-2 py-0.5 font-semibold" style={{ background: '#1a3560', color: '#fff', borderRadius: 6, fontSize: 10 }}>
+              Nouveau
             </Badge>
           )}
         </div>
 
-        {/* Heart favorite button */}
+        {/* Heart */}
         <div className="absolute top-3 right-3">
           {onToggleFavorite && (
             <button
               onClick={(e) => { e.stopPropagation(); onToggleFavorite(property.id); }}
               className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
-                isFavorite
-                  ? 'bg-secondary text-secondary-foreground'
-                  : 'bg-card/80 backdrop-blur-sm text-muted-foreground hover:text-secondary'
+                isFavorite ? 'bg-secondary text-secondary-foreground' : 'bg-card/80 backdrop-blur-sm text-muted-foreground hover:text-secondary'
               }`}
             >
               <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
@@ -111,15 +93,18 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="font-semibold text-base text-foreground line-clamp-1 mb-2">
-          {property.title}
-        </h3>
+        <h3 className="font-semibold text-base text-foreground line-clamp-1 mb-2">{property.title}</h3>
 
-        <div className="flex items-center gap-3 mb-3">
+        {/* Dual pricing for furnished */}
+        <div className="mb-3">
           <div className="text-lg font-bold text-primary">
-            {fmt(displayPrice)} FCFA
+            {fmt(property.price)} FCFA <span className="text-sm font-normal text-muted-foreground">/mois</span>
           </div>
-          <span className="text-muted-foreground text-sm">{priceSuffix}</span>
+          {isFurnished && nightPrice > 0 && (
+            <div className="text-xs text-muted-foreground">
+              soit <span className="font-semibold text-foreground">{fmt(nightPrice)} FCFA</span> /nuit
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -149,20 +134,15 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
         {onFocusOnMap && (
           <Button
             onClick={(e) => { e.stopPropagation(); onFocusOnMap(property.id); }}
-            variant="outline"
-            size="icon"
+            variant="outline" size="icon"
             className="shrink-0 h-9 w-9 border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
             title="Voir sur la carte"
           >
             <Map className="h-4 w-4" />
           </Button>
         )}
-        <Button
-          onClick={(e) => { e.stopPropagation(); onViewDetails(property); }}
-          className="flex-1 text-sm gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-        >
-          <Eye className="h-4 w-4" />
-          Voir la fiche
+        <Button onClick={(e) => { e.stopPropagation(); onViewDetails(property); }} className="flex-1 text-sm gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Eye className="h-4 w-4" /> Voir la fiche
         </Button>
       </div>
     </motion.article>
