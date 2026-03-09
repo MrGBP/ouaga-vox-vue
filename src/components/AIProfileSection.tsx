@@ -91,8 +91,8 @@ const AIProfileSection = ({ properties, onHighlightProperty }: AIProfileSectionP
             <Brain className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Recommandation IA</h3>
-            <p className="text-xs text-muted-foreground">Décrivez votre besoin, l'IA vous guide</p>
+            <h3 className="text-sm font-semibold text-foreground">Votre assistant immobilier personnel</h3>
+            <p className="text-xs text-muted-foreground">Décrivez ce que vous cherchez. L'IA trouve les biens qui correspondent — sans formulaires.</p>
           </div>
         </div>
       </div>
@@ -135,8 +135,8 @@ const AIProfileSection = ({ properties, onHighlightProperty }: AIProfileSectionP
           <Textarea
             value={freeText}
             onChange={(e) => setFreeText(e.target.value)}
-            placeholder="Ex : Je cherche une maison 3 chambres à Ouaga 2000, budget max 350 000 FCFA, proche d'une école…"
-            className="text-sm resize-none h-20"
+            placeholder="Ex : Studio meublé calme à moins de 150 000 FCFA près d'une école à Tampouy"
+            className="text-sm resize-none h-20 italic"
           />
         )}
 
@@ -164,7 +164,6 @@ const AIProfileSection = ({ properties, onHighlightProperty }: AIProfileSectionP
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             className="px-5 pb-5 space-y-4">
 
-            {/* Understanding */}
             {result.understanding && (
               <div className="p-3 bg-muted/50 rounded-lg">
                 <p className="text-xs font-medium text-muted-foreground mb-1">J'ai compris :</p>
@@ -172,7 +171,6 @@ const AIProfileSection = ({ properties, onHighlightProperty }: AIProfileSectionP
               </div>
             )}
 
-            {/* Criteria */}
             {result.criteria?.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {result.criteria.map((c, i) => (
@@ -183,7 +181,6 @@ const AIProfileSection = ({ properties, onHighlightProperty }: AIProfileSectionP
               </div>
             )}
 
-            {/* Recommendations */}
             {result.recommendations?.map((rec, i) => (
               <button
                 key={rec.id || i}
@@ -213,7 +210,6 @@ const AIProfileSection = ({ properties, onHighlightProperty }: AIProfileSectionP
               </button>
             ))}
 
-            {/* Tip */}
             {result.tip && (
               <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
                 <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
