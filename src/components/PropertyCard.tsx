@@ -43,12 +43,15 @@ const typeLabels: Record<string, string> = {
 };
 
 const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFavorite, onFocusOnMap }: PropertyCardProps) => {
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(price) + ' FCFA';
+  const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
+
+  // Furnished → daily price (price / 26)
+  const isFurnished = property.furnished || false;
+  const displayPrice = isFurnished ? Math.round(property.price / 26) : property.price;
+  const priceSuffix = isFurnished ? '/nuit' : '/mois';
 
   const imgSrc = property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&auto=format&fit=crop';
 
-  // Clicking anywhere on the card opens the detail
   const handleCardClick = () => {
     onViewDetails(property);
   };
@@ -82,7 +85,7 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
               360°
             </Badge>
           )}
-          {property.furnished && (
+          {isFurnished && (
             <Badge className="bg-accent text-accent-foreground text-xs px-2 py-0.5">
               Meublé
             </Badge>
@@ -114,9 +117,9 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
 
         <div className="flex items-center gap-3 mb-3">
           <div className="text-lg font-bold text-primary">
-            {formatPrice(property.price)}
+            {fmt(displayPrice)} FCFA
           </div>
-          <span className="text-muted-foreground text-sm">/mois</span>
+          <span className="text-muted-foreground text-sm">{priceSuffix}</span>
         </div>
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">

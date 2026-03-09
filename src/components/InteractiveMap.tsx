@@ -23,6 +23,7 @@ interface Property {
   images?: string[];
   virtual_tour_url?: string;
   status?: string;
+  furnished?: boolean;
 }
 
 interface POI {
@@ -63,6 +64,7 @@ interface InteractiveMapProps {
   onExternalQuartierHandled?: () => void;
   panelOpen?: boolean;
   onQuartierChange?: (quartier: string | null) => void;
+  resetTrigger?: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -94,7 +96,6 @@ const distanceM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
 
 const fmtDist = (d: number) => (d < 1000 ? `${d} m` : `${(d / 1000).toFixed(1)} km`);
 
-// Type-based color palette for property pins
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string; emoji: string }> = {
   maison:      { bg: '#1B3A5C', border: '#3B6A9C', text: '#FFFFFF', emoji: '🏠' },
   villa:       { bg: '#4C3A6A', border: '#7C6A9A', text: '#FFFFFF', emoji: '🏡' },
@@ -109,26 +110,21 @@ const getTypeStyle = (type: string) =>
   TYPE_COLORS[type.toLowerCase()] || { bg: '#475569', border: '#94A3B8', text: '#FFFFFF', emoji: '📍' };
 
 // ─── Pin HTML helpers ────────────────────────────────────────────────────────
-
-// White bg + navy border clusters
-const quartierClusterHTML = (name: string, count: number) => {
-  return `
-    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
-      <div style="
-        width:56px;height:56px;display:flex;align-items:center;justify-content:center;
-        background:#FFFFFF;border:2.5px solid #1a3560;border-radius:50%;
-        box-shadow:0 2px 12px rgba(26,53,96,0.18);transition:transform 0.15s;
-      ">
-        <span style="font-size:18px;font-weight:800;color:#1a3560;line-height:1;">${count}</span>
-      </div>
-      <span style="font-size:10px;font-weight:600;color:#1a3560;line-height:1.2;text-align:center;max-width:85px;word-wrap:break-word;">${name}</span>
+const quartierClusterHTML = (name: string, count: number) => `
+  <div style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+    <div style="
+      width:56px;height:56px;display:flex;align-items:center;justify-content:center;
+      background:#FFFFFF;border:2.5px solid #1a3560;border-radius:50%;
+      box-shadow:0 2px 12px rgba(26,53,96,0.18);transition:transform 0.15s;
+    ">
+      <span style="font-size:18px;font-weight:800;color:#1a3560;line-height:1;">${count}</span>
     </div>
-  `;
-};
+    <span style="font-size:10px;font-weight:600;color:#1a3560;line-height:1.2;text-align:center;max-width:85px;word-wrap:break-word;">${name}</span>
+  </div>
+`;
 
 const propertyPinHTML = (p: Property, focused: boolean) => {
   const ts = getTypeStyle(p.type);
-
   if (focused) {
     return `
       <div style="
@@ -141,8 +137,10 @@ const propertyPinHTML = (p: Property, focused: boolean) => {
       </div>
     `;
   }
-
-  const priceText = p.price >= 1000000 ? `${(p.price/1000000).toFixed(1)}M` : `${Math.round(p.price/1000)}k`;
+  // Furnished → show per-night price
+  const effectivePrice = p.furnished ? Math.round(p.price / 26) : p.price;
+  const priceText = effectivePrice >= 1000000 ? `${(effectivePrice/1000000).toFixed(1)}M` : `${Math.round(effectivePrice/1000)}k`;
+  const suffix = p.furnished ? '/n' : '';
   return `
     <div style="
       display:flex;align-items:center;gap:3px;
@@ -151,21 +149,18 @@ const propertyPinHTML = (p: Property, focused: boolean) => {
       box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:transform 0.15s;
     ">
       <span style="font-size:11px;">${ts.emoji}</span>
-      <span style="font-size:10px;font-weight:700;color:${ts.text};">${priceText}</span>
+      <span style="font-size:10px;font-weight:700;color:${ts.text};">${priceText}${suffix}</span>
     </div>
   `;
 };
 
-// Smart offset to avoid overlapping markers
 const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng: number }[] => {
   const placed: { lat: number; lng: number }[] = [];
   const MIN_GAP = 0.0008;
-
   return props.map(p => {
     let lat = p.latitude;
     let lng = p.longitude;
     let attempts = 0;
-
     while (attempts < 20) {
       const overlap = placed.some(pl =>
         Math.abs(pl.lat - lat) < MIN_GAP && Math.abs(pl.lng - lng) < MIN_GAP
@@ -177,7 +172,6 @@ const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng
       lng = p.longitude + r * Math.sin(angle);
       attempts++;
     }
-
     placed.push({ lat, lng });
     return { prop: p, lat, lng };
   });
@@ -196,6 +190,7 @@ const InteractiveMap = ({
   onExternalQuartierHandled,
   panelOpen = false,
   onQuartierChange,
+  resetTrigger,
 }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map | null>(null);
@@ -207,11 +202,10 @@ const InteractiveMap = ({
   const zoomHandlerRef = useRef<(() => void) | null>(null);
   const viewLevelRef = useRef<string>('global');
 
-  const [radius, setRadius] = useState(1000);
+  const [activeRadius, setActiveRadius] = useState<number | null>(null);
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
 
-  // Apply active filters
   const applyMapFilters = useCallback((props: Property[]) => {
     if (!activeFilters) return props;
     let result = props;
@@ -232,10 +226,19 @@ const InteractiveMap = ({
   const viewLevel = focusedPropertyId ? 'focus' : selectedQuartier ? 'quartier' : 'global';
   viewLevelRef.current = viewLevel;
 
-  // Notify parent of quartier changes
   useEffect(() => {
     onQuartierChange?.(selectedQuartier);
   }, [selectedQuartier, onQuartierChange]);
+
+  // ── Reset trigger — go back to global zoom 13 ──
+  useEffect(() => {
+    if (!resetTrigger || !mapInst.current) return;
+    setSelectedQuartier(null);
+    setActiveRadius(null);
+    mapInst.current.setMinZoom(11);
+    mapInst.current.setMaxBounds(OUAGA_BOUNDS);
+    mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
+  }, [resetTrigger]);
 
   // ── Init map ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -243,7 +246,7 @@ const InteractiveMap = ({
 
     const map = L.map(mapRef.current, {
       center: OUAGA_CENTER,
-      zoom: 12,
+      zoom: 13,
       zoomControl: false,
       maxBounds: OUAGA_BOUNDS,
       maxBoundsViscosity: 1.0,
@@ -271,7 +274,6 @@ const InteractiveMap = ({
 
     map.on('zoomend', () => setZoom(map.getZoom()));
     
-    // Click on empty map area — ONLY close at global/quartier level, NOT at focus level
     map.on('click', () => {
       if (viewLevelRef.current !== 'focus' && onFocusClear) {
         onFocusClear();
@@ -301,7 +303,6 @@ const InteractiveMap = ({
     if (!tileLayerRef.current || !mapInst.current) return;
     const newUrl = viewLevel === 'focus' ? TILE_FOCUS : TILE_DEFAULT;
     tileLayerRef.current.setUrl(newUrl);
-
     const tilePane = mapInst.current.getPane('tilePane');
     if (tilePane) {
       tilePane.style.filter = viewLevel === 'focus'
@@ -310,7 +311,7 @@ const InteractiveMap = ({
     }
   }, [viewLevel]);
 
-  // ── LEVEL 1: Global view — NO polygons, just white/navy clusters ─────────
+  // ── LEVEL 1: Global view ─────────────────────────────────────────────────
   const renderGlobal = useCallback(() => {
     if (!quartierLayer.current || !propertyLayer.current || !mapInst.current) return;
     quartierLayer.current.clearLayers();
@@ -324,7 +325,6 @@ const InteractiveMap = ({
       byQ.set(p.quartier, arr);
     });
 
-    // Only clusters — no polygons
     const quartiersToShow = activeFilters?.quartier && activeFilters.quartier !== 'all'
       ? quartiers.filter(q => q.name === activeFilters.quartier)
       : quartiers;
@@ -390,9 +390,7 @@ const InteractiveMap = ({
 
     if (qProps.length === 0) return;
 
-    // If more than 12, sub-cluster; otherwise show individual pins
     if (qProps.length > 12) {
-      // Simple grid-based sub-clustering
       const gridSize = 0.003;
       const subClusters = new Map<string, Property[]>();
       qProps.forEach(p => {
@@ -429,7 +427,6 @@ const InteractiveMap = ({
           const m = L.marker([avgLat, avgLng], { icon });
           m.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
-            // Zoom in further
             const cBounds = L.latLngBounds(cluster.map(p => L.latLng(p.latitude, p.longitude)));
             mapInst.current?.flyToBounds(cBounds.pad(0.3), { duration: 0.5, maxZoom: 18 });
           });
@@ -475,12 +472,9 @@ const InteractiveMap = ({
     if (!prop) return;
 
     const map = mapInst.current;
-
-    // Calculate zoom to fit 1km radius — always center the property
     const zoomLevel = 15;
     map.flyTo([prop.latitude, prop.longitude], zoomLevel, { duration: 0.8 });
 
-    // Invalidate size after panel open/close to recalculate center
     setTimeout(() => {
       mapInst.current?.invalidateSize({ animate: false });
     }, 350);
@@ -495,40 +489,52 @@ const InteractiveMap = ({
     L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 })
       .addTo(focusLayer.current);
 
-    // Radius circles — keep existing style
+    // Radius circles — clickable to filter POIs
     const radiusConfig = [
       { r: 300, fillOpacity: 0.15, dash: '', weight: 2, color: 'rgba(30,80,160,1)' },
       { r: 500, fillOpacity: 0.10, dash: '6 4', weight: 1.5, color: 'rgba(30,80,160,0.8)' },
       { r: 1000, fillOpacity: 0.07, dash: '4 4', weight: 1, color: 'rgba(30,80,160,0.6)' },
     ];
     radiusConfig.forEach(({ r, fillOpacity, dash, weight, color }) => {
-      L.circle([prop.latitude, prop.longitude], {
+      const isActive = activeRadius === r;
+      const circle = L.circle([prop.latitude, prop.longitude], {
         radius: r,
         color,
         fillColor: 'rgba(30,80,160,0.1)',
         fillOpacity,
-        weight,
+        weight: isActive ? weight + 2 : weight,
         dashArray: dash,
-        interactive: false,
-      }).addTo(focusLayer.current!);
+        interactive: true,
+      });
+      circle.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        setActiveRadius(prev => prev === r ? null : r);
+      });
+      circle.addTo(focusLayer.current!);
 
       const labelAngle = -45 * (Math.PI / 180);
       const labelLat = prop.latitude + (r / 111320) * Math.cos(labelAngle);
       const labelLng = prop.longitude + (r / (111320 * Math.cos(prop.latitude * Math.PI / 180))) * Math.sin(labelAngle);
       L.marker([labelLat, labelLng], {
         icon: L.divIcon({
-          html: `<div style="font-size:9px;color:rgba(30,80,160,0.8);font-weight:600;font-family:system-ui;background:rgba(255,255,255,0.9);padding:1px 6px;border-radius:8px;white-space:nowrap;">${fmtDist(r)}</div>`,
+          html: `<div style="font-size:9px;color:rgba(30,80,160,0.8);font-weight:600;font-family:system-ui;background:rgba(255,255,255,0.9);padding:1px 6px;border-radius:8px;white-space:nowrap;cursor:pointer;${isActive ? 'border:1.5px solid rgba(30,80,160,0.6);' : ''}">${fmtDist(r)}</div>`,
           className: '',
           iconAnchor: [16, 8],
         }),
-        interactive: false,
-      }).addTo(focusLayer.current!);
+        interactive: true,
+      })
+        .on('click', (e) => {
+          L.DomEvent.stopPropagation(e);
+          setActiveRadius(prev => prev === r ? null : r);
+        })
+        .addTo(focusLayer.current!);
     });
 
-    // POI — all within 1km, max 12, cross-quartier allowed
+    // POI — filter by activeRadius if set, otherwise show all within 1km
+    const maxDist = activeRadius || 1000;
     const allPoisInRange = pois
       .map(poi => ({ ...poi, distance: distanceM(prop.latitude, prop.longitude, poi.latitude, poi.longitude) }))
-      .filter(p => p.distance <= 1000)
+      .filter(p => p.distance <= maxDist)
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 12);
 
@@ -594,9 +600,9 @@ const InteractiveMap = ({
         )
         .addTo(tentacleLayer.current!);
     });
-  }, [focusedPropertyId, properties, pois, panelOpen]);
+  }, [focusedPropertyId, properties, pois, panelOpen, activeRadius]);
 
-  // Invalidate map size when panel opens/closes so centering recalculates
+  // Invalidate map size when panel opens/closes
   useEffect(() => {
     if (!mapInst.current) return;
     setTimeout(() => mapInst.current?.invalidateSize({ animate: true }), 350);
@@ -614,7 +620,6 @@ const InteractiveMap = ({
   // ── Master render dispatcher ──────────────────────────────────────────────
   useEffect(() => {
     if (!mapInst.current) return;
-
     focusLayer.current?.clearLayers();
     tentacleLayer.current?.clearLayers();
     quartierLayer.current?.clearLayers();
@@ -643,45 +648,50 @@ const InteractiveMap = ({
   // ── Navigation helpers ────────────────────────────────────────────────────
   const goBackToGlobal = () => {
     setSelectedQuartier(null);
+    setActiveRadius(null);
     if (onFocusClear) onFocusClear();
     if (mapInst.current) {
       mapInst.current.setMinZoom(11);
       mapInst.current.setMaxBounds(OUAGA_BOUNDS);
-      mapInst.current.flyTo(OUAGA_CENTER, 12, { duration: 0.7 });
+      mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
     }
   };
 
   const goBackToQuartier = () => {
+    setActiveRadius(null);
     if (onFocusClear) onFocusClear();
-    // Re-render quartier will happen via viewLevel change
+  };
+
+  // Handle radius button clicks from UI
+  const handleRadiusClick = (r: number) => {
+    setActiveRadius(prev => prev === r ? null : r);
   };
 
   return (
     <div className="relative w-full h-[620px] rounded-xl overflow-hidden border border-border shadow-card">
       <div ref={mapRef} className="absolute inset-0 z-0" />
 
-      {/* ── Breadcrumb navigation ── */}
+      {/* ── Breadcrumb navigation — absolute inside map ── */}
       <div className="absolute top-3 left-3 z-[600] flex items-center gap-1.5">
         {viewLevel !== 'global' && (
           <button
             onClick={goBackToGlobal}
-            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-foreground border-border hover:bg-muted"
+            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-foreground border-border hover:bg-muted active:scale-95"
           >
             ← Ouagadougou
           </button>
         )}
-
         {viewLevel === 'focus' && selectedQuartier && (
           <button
             onClick={goBackToQuartier}
-            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-foreground border-border hover:bg-muted"
+            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-foreground border-border hover:bg-muted active:scale-95"
           >
             ← {selectedQuartier}
           </button>
         )}
       </div>
 
-      {/* ── Radius controls (focus mode) ── */}
+      {/* ── Radius controls (focus mode) — absolute inside map ── */}
       {viewLevel === 'focus' && (
         <div className="absolute top-3 right-3 z-[600]">
           <div className="bg-card/92 backdrop-blur-sm border border-border rounded-xl px-3 py-2 shadow-card flex items-center gap-2">
@@ -689,9 +699,9 @@ const InteractiveMap = ({
             {RADIUS_OPTIONS.map(opt => (
               <button
                 key={opt.value}
-                onClick={() => setRadius(opt.value)}
-                className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-colors ${
-                  radius === opt.value
+                onClick={() => handleRadiusClick(opt.value)}
+                className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-colors active:scale-95 ${
+                  activeRadius === opt.value
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}

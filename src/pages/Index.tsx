@@ -94,13 +94,13 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [mapQuartierTrigger, setMapQuartierTrigger] = useState<string | null>(null);
   const [activeQuartier, setActiveQuartier] = useState<string | null>(null);
+  const [mapResetTrigger, setMapResetTrigger] = useState(0);
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
-  // ── Body scroll lock ONLY on mobile when detail drawer is open ──
+  // ── Body scroll lock when detail panel is open ──
   useEffect(() => {
-    const isMobile = window.innerWidth < 1024;
-    if (detailProperty && isMobile) {
+    if (detailProperty) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -146,7 +146,6 @@ const Index = () => {
     }
   };
 
-  // Filter out rented properties for display
   const availableProperties = useCallback((props: Property[]) => {
     return props.filter(p => p.status !== 'rented' && p.available !== false);
   }, []);
@@ -159,9 +158,7 @@ const Index = () => {
     favSet: Set<string>
   ) => {
     let result = source.filter(p => p.status !== 'rented' && p.available !== false);
-
     if (favsOnly) result = result.filter(p => favSet.has(p.id));
-
     if (query.trim()) {
       const q = query.toLowerCase();
       result = result.filter(p =>
@@ -172,7 +169,6 @@ const Index = () => {
         p.price.toString().includes(q)
       );
     }
-
     if (f.type !== 'all') result = result.filter(p => p.type === f.type);
     if (f.quartier !== 'all') result = result.filter(p => p.quartier === f.quartier);
     result = result.filter(p => p.price >= f.minPrice && p.price <= f.maxPrice);
@@ -185,7 +181,6 @@ const Index = () => {
       else if (sr === '150-300') result = result.filter(p => (p.surface_area || 0) >= 150 && (p.surface_area || 0) <= 300);
       else if (sr === '>300') result = result.filter(p => (p.surface_area || 0) > 300);
     }
-
     return result;
   }, []);
 
@@ -196,7 +191,6 @@ const Index = () => {
     setCurrentPage(1);
     const filtered = applyFilters(properties, query, filters, showFavoritesOnly, favorites);
     setFilteredProperties(filtered);
-
     if (filtered.length > 0) {
       const msg = `J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''} pour "${query}".`;
       speak(msg);
@@ -215,7 +209,7 @@ const Index = () => {
     setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites));
   };
 
-  // Full reset: clears EVERYTHING
+  // Full reset: clears EVERYTHING — map goes to zoom 13 Ouagadougou
   const handleFullReset = () => {
     setFilters(DEFAULT_FILTERS);
     setSearchQuery('');
@@ -225,6 +219,7 @@ const Index = () => {
     setShowFavoritesOnly(false);
     setMapQuartierTrigger(null);
     setActiveQuartier(null);
+    setMapResetTrigger(prev => prev + 1);
     const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites);
     setFilteredProperties(all);
   };
@@ -233,7 +228,6 @@ const Index = () => {
   const handleViewDetails = useCallback((property: Property) => {
     setDetailProperty(property);
     setFocusedPropertyId(property.id);
-    // Always scroll to map so the user sees the property on the map
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
@@ -307,6 +301,16 @@ const Index = () => {
   const totalPages = Math.ceil(displayProperties.length / ITEMS_PER_PAGE);
   const paginatedProperties = displayProperties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
+  // Helper: format price for display (furnished → per night)
+  const formatDisplayPrice = (p: Property) => {
+    const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
+    if (p.furnished) {
+      const nightPrice = Math.round(p.price / 26);
+      return { price: fmt(nightPrice), suffix: '/nuit' };
+    }
+    return { price: fmt(p.price), suffix: '/mois' };
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background gap-4">
@@ -323,7 +327,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* ① Hero + IDX */}
+      {/* ① Hero + IDX — cleaned up */}
       <section className="relative h-[65vh] min-h-[520px] overflow-hidden">
         <img src={heroImage} alt="Ouagadougou" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
@@ -334,17 +338,12 @@ const Index = () => {
             transition={{ duration: 0.7 }}
             className="max-w-3xl space-y-4"
           >
-            <div className="inline-flex items-center gap-2 bg-card/90 backdrop-blur-sm border border-border rounded-full px-4 py-1.5 text-sm font-medium text-foreground mb-2">
-              <MapPin className="h-3.5 w-3.5 text-primary" />
-              Ouagadougou, Burkina Faso
-            </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-card leading-tight">
-              Mon{' '}
-              <span className="text-primary bg-card px-2 rounded-lg">bien Immo</span>
+              Mon bien Immo
               <br />en un clic
             </h1>
-            <p className="text-base md:text-lg text-card/90 font-medium">
-              {availableProperties(properties).length} biens · Ouagadougou · {quartierNames.length} quartiers
+            <p className="text-sm text-card/70" style={{ fontSize: '14px' }}>
+              + 100 biens · Maisons · Villas · Studios · Bureaux · Locaux · Plusieurs quartiers et régions du Burkina
             </p>
           </motion.div>
 
@@ -405,10 +404,11 @@ const Index = () => {
               onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
               panelOpen={!!detailProperty}
               onQuartierChange={setActiveQuartier}
+              resetTrigger={mapResetTrigger}
             />
           </motion.div>
 
-          {/* Detail Panel — beside map */}
+          {/* Detail Panel — beside map on desktop */}
           {detailProperty && (
             <div className="w-[420px] shrink-0 border-l border-border hidden lg:block">
               <div className="h-[620px] overflow-y-auto">
@@ -475,35 +475,38 @@ const Index = () => {
       <section className="container mx-auto px-4 py-10">
         <div className="text-center mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-            Trouvez votre <span className="text-primary">chez-vous</span> à Ouagadougou
+            Trouvez votre <span className="text-primary">chez vous</span> partout au Burkina Faso
           </h2>
           <p className="text-sm text-muted-foreground mt-2">
             Location meublée · Bureau · Commerce · Découvrez nos biens mis en avant
           </p>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory">
-          {availableProperties(properties).slice(0, 8).map((p) => (
-            <motion.button
-              key={p.id}
-              whileHover={{ y: -4 }}
-              onClick={() => handleViewDetails(p)}
-              className="shrink-0 w-64 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-warm transition-all text-left"
-            >
-              <img
-                src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'}
-                alt={p.title}
-                className="w-full h-36 object-cover"
-                loading="lazy"
-              />
-              <div className="p-3">
-                <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
-                <p className="text-xs text-muted-foreground">{p.quartier}</p>
-                <p className="text-sm font-bold text-primary mt-1">
-                  {new Intl.NumberFormat('fr-FR').format(p.price)} FCFA <span className="text-xs font-normal text-muted-foreground">/mois</span>
-                </p>
-              </div>
-            </motion.button>
-          ))}
+          {availableProperties(properties).slice(0, 8).map((p) => {
+            const dp = formatDisplayPrice(p);
+            return (
+              <motion.button
+                key={p.id}
+                whileHover={{ y: -4 }}
+                onClick={() => handleViewDetails(p)}
+                className="shrink-0 w-64 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-warm transition-all text-left"
+              >
+                <img
+                  src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'}
+                  alt={p.title}
+                  className="w-full h-36 object-cover"
+                  loading="lazy"
+                />
+                <div className="p-3">
+                  <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
+                  <p className="text-xs text-muted-foreground">{p.quartier}</p>
+                  <p className="text-sm font-bold text-primary mt-1">
+                    {dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">{dp.suffix}</span>
+                  </p>
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
       </section>
 

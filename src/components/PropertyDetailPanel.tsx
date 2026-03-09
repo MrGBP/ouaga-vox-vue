@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Heart, ChevronLeft, ChevronRight, MapPin, Bed, Bath,
   Maximize, Calendar, Phone, MessageCircle, Mail, Camera,
-  Thermometer, Shield, Zap, TreePine, Droplets, Wifi, Star,
-  BarChart3, Map, Accessibility,
+  Thermometer, Shield, Zap, TreePine, Droplets, Wifi,
+  Map, Accessibility,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -109,6 +109,11 @@ const PropertyDetailPanel = ({
 
   const images = property.images?.length ? property.images : ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'];
 
+  // Price display: furnished → per night
+  const isFurnished = property.furnished || false;
+  const displayPrice = isFurnished ? Math.round(property.price / 26) : property.price;
+  const priceSuffix = isFurnished ? '/nuit' : '/mois';
+
   // Nearby POIs
   const nearbyPois = pois
     .map(poi => ({ ...poi, distance: distanceM(property.latitude, property.longitude, poi.latitude, poi.longitude) }))
@@ -130,14 +135,12 @@ const PropertyDetailPanel = ({
     property.has_internet && { icon: Wifi, label: 'Internet', value: '✓' },
   ].filter(Boolean) as { icon: any; label: string; value: any }[];
 
-  // Ratings — includes Accessibilité with Lucide icon
+  // Ratings — numeric "X.X / 5", no stars
   const ratings = [
     property.comfort_rating && { label: 'Confort', value: property.comfort_rating, emoji: '🛋️', LucideIcon: null },
     property.security_rating && { label: 'Sécurité', value: property.security_rating, emoji: '🔒', LucideIcon: null },
     property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating, emoji: null, LucideIcon: Accessibility },
   ].filter(Boolean) as { label: string; value: number; emoji: string | null; LucideIcon: any }[];
-
-  const isFurnished = property.furnished || property.type === 'maison' || property.type === 'villa' || property.type === 'appartement';
 
   const panelContent = (
     <>
@@ -222,14 +225,16 @@ const PropertyDetailPanel = ({
         <div>
           <h3 className="text-lg font-bold text-foreground">{property.title}</h3>
           <div className="text-2xl font-bold text-primary mt-1">
-            {fmt(property.price)} FCFA <span className="text-sm font-medium text-muted-foreground">/mois</span>
+            {fmt(displayPrice)} FCFA <span className="text-sm font-medium text-muted-foreground">{priceSuffix}</span>
           </div>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="text-xs text-muted-foreground">Location mensuelle</span>
+            <span className="text-xs text-muted-foreground">
+              {isFurnished ? 'Location courte durée · min 1 nuit' : 'Location mensuelle'}
+            </span>
             <Badge className="bg-primary/10 text-primary text-xs">
               {TYPE_LABELS[property.type] || property.type}
             </Badge>
-            {property.furnished && (
+            {isFurnished && (
               <Badge className="bg-accent/20 text-accent-foreground text-xs">Meublé</Badge>
             )}
           </div>
@@ -300,7 +305,7 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* ⑥ Notes et évaluations — includes Accessibility */}
+        {/* ⑥ Notes et évaluations — numeric "X / 5", no stars */}
         {ratings.length > 0 && (
           <div>
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Évaluations</h4>
@@ -309,18 +314,14 @@ const PropertyDetailPanel = ({
                 <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
                   {r.LucideIcon ? <r.LucideIcon className="h-4 w-4 text-primary" /> : <span className="text-sm">{r.emoji}</span>}
                   <span className="text-xs font-medium text-foreground">{r.label}</span>
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }, (_, j) => (
-                      <Star key={j} className={`h-3 w-3 ${j < r.value ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
-                    ))}
-                  </div>
+                  <span className="text-sm font-bold text-primary">{r.value} / 5</span>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* ⑦ Actions */}
+        {/* ⑦ Actions — Réserver + Explorer (no Comparer) */}
         <div className="flex gap-2">
           {property.type === 'bureau' || property.type === 'commerce' ? (
             <Button className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
@@ -336,19 +337,15 @@ const PropertyDetailPanel = ({
               Réserver
             </Button>
           )}
-          <Button variant="outline" className="gap-2 hover:bg-muted active:scale-[0.98] transition-all">
-            <BarChart3 className="h-4 w-4" />
-            Comparer
-          </Button>
           {onExploreOnMap && (
             <Button
               variant="outline"
-              size="icon"
               onClick={() => onExploreOnMap(property.id)}
-              className="shrink-0 hover:bg-muted active:scale-[0.98] transition-all"
+              className="gap-2 hover:bg-muted active:scale-[0.98] transition-all"
               title="Explorer sur la carte"
             >
               <Map className="h-4 w-4" />
+              🗺️ Explorer
             </Button>
           )}
         </div>
@@ -434,7 +431,6 @@ const PropertyDetailPanel = ({
     );
   }
 
-  // Desktop: inline panel (not fixed), rendered inside flex container
   return <div className="bg-card">{panelContent}</div>;
 };
 
