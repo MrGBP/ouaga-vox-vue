@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { POI_CATALOG } from '@/lib/mockData';
+import { POI_CATALOG, isTypeFurnished, pricePerNight, getTypeEmoji, mockQuartiers } from '@/lib/mockData';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Property {
@@ -39,6 +39,7 @@ interface Quartier {
   name: string;
   latitude: number;
   longitude: number;
+  bounds?: [[number, number], [number, number]];
 }
 
 interface ActiveFilters {
@@ -97,17 +98,17 @@ const distanceM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
 const fmtDist = (d: number) => (d < 1000 ? `${d} m` : `${(d / 1000).toFixed(1)} km`);
 
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string; emoji: string }> = {
-  maison:      { bg: '#1B3A5C', border: '#3B6A9C', text: '#FFFFFF', emoji: '🏠' },
-  villa:       { bg: '#4C3A6A', border: '#7C6A9A', text: '#FFFFFF', emoji: '🏡' },
-  appartement: { bg: '#2A5D7C', border: '#4A8DAC', text: '#FFFFFF', emoji: '🏬' },
-  bureau:      { bg: '#1B3A5C', border: '#4A7AAC', text: '#FFFFFF', emoji: '🏢' },
-  commerce:    { bg: '#6A4520', border: '#9A7550', text: '#FFFFFF', emoji: '🏪' },
-  boutique:    { bg: '#5A3030', border: '#8A6060', text: '#FFFFFF', emoji: '🛍️' },
-  terrain:     { bg: '#4A5A3A', border: '#7A8A6A', text: '#FFFFFF', emoji: '🏗️' },
+  maison_villa_meublee: { bg: '#4C3A6A', border: '#7C6A9A', text: '#FFFFFF', emoji: '🛋️' },
+  maison_villa_simple:  { bg: '#1B3A5C', border: '#3B6A9C', text: '#FFFFFF', emoji: '🔑' },
+  appartement_meuble:   { bg: '#2A5D7C', border: '#4A8DAC', text: '#FFFFFF', emoji: '🛋️' },
+  appartement_simple:   { bg: '#1B3A5C', border: '#4A7AAC', text: '#FFFFFF', emoji: '🔑' },
+  studio_meuble:        { bg: '#5A4570', border: '#8A75A0', text: '#FFFFFF', emoji: '🛋️' },
+  bureau:               { bg: '#1B3A5C', border: '#4A7AAC', text: '#FFFFFF', emoji: '🏢' },
+  local_commercial:     { bg: '#6A4520', border: '#9A7550', text: '#FFFFFF', emoji: '🏪' },
 };
 
 const getTypeStyle = (type: string) =>
-  TYPE_COLORS[type.toLowerCase()] || { bg: '#475569', border: '#94A3B8', text: '#FFFFFF', emoji: '📍' };
+  TYPE_COLORS[type.toLowerCase()] || { bg: '#475569', border: '#94A3B8', text: '#FFFFFF', emoji: getTypeEmoji(type) };
 
 // ─── Pin HTML helpers ────────────────────────────────────────────────────────
 const quartierClusterHTML = (name: string, count: number) => `
@@ -137,10 +138,10 @@ const propertyPinHTML = (p: Property, focused: boolean) => {
       </div>
     `;
   }
-  // Furnished → show per-night price
-  const effectivePrice = p.furnished ? Math.round(p.price / 26) : p.price;
+  const isFurnished = isTypeFurnished(p.type) || p.furnished;
+  const effectivePrice = isFurnished ? pricePerNight(p.price) : p.price;
   const priceText = effectivePrice >= 1000000 ? `${(effectivePrice/1000000).toFixed(1)}M` : `${Math.round(effectivePrice/1000)}k`;
-  const suffix = p.furnished ? '/n' : '';
+  const suffix = isFurnished ? '/n' : '';
   return `
     <div style="
       display:flex;align-items:center;gap:3px;
@@ -162,9 +163,7 @@ const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng
     let lng = p.longitude;
     let attempts = 0;
     while (attempts < 20) {
-      const overlap = placed.some(pl =>
-        Math.abs(pl.lat - lat) < MIN_GAP && Math.abs(pl.lng - lng) < MIN_GAP
-      );
+      const overlap = placed.some(pl => Math.abs(pl.lat - lat) < MIN_GAP && Math.abs(pl.lng - lng) < MIN_GAP);
       if (!overlap) break;
       const angle = (attempts * 137.5 * Math.PI) / 180;
       const r = MIN_GAP * (1 + attempts * 0.3);
@@ -179,18 +178,9 @@ const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng
 
 // ─── Component ────────────────────────────────────────────────────────────────
 const InteractiveMap = ({
-  properties,
-  pois,
-  quartiers = [],
-  onPropertyClick,
-  focusedPropertyId,
-  onFocusClear,
-  activeFilters,
-  externalQuartierSelect,
-  onExternalQuartierHandled,
-  panelOpen = false,
-  onQuartierChange,
-  resetTrigger,
+  properties, pois, quartiers = [], onPropertyClick, focusedPropertyId,
+  onFocusClear, activeFilters, externalQuartierSelect, onExternalQuartierHandled,
+  panelOpen = false, onQuartierChange, resetTrigger,
 }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map | null>(null);
@@ -226,11 +216,9 @@ const InteractiveMap = ({
   const viewLevel = focusedPropertyId ? 'focus' : selectedQuartier ? 'quartier' : 'global';
   viewLevelRef.current = viewLevel;
 
-  useEffect(() => {
-    onQuartierChange?.(selectedQuartier);
-  }, [selectedQuartier, onQuartierChange]);
+  useEffect(() => { onQuartierChange?.(selectedQuartier); }, [selectedQuartier, onQuartierChange]);
 
-  // ── Reset trigger — go back to global zoom 13 ──
+  // Reset trigger
   useEffect(() => {
     if (!resetTrigger || !mapInst.current) return;
     setSelectedQuartier(null);
@@ -240,78 +228,45 @@ const InteractiveMap = ({
     mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
   }, [resetTrigger]);
 
-  // ── Init map ───────────────────────────────────────────────────────────────
+  // Init map
   useEffect(() => {
     if (!mapRef.current || mapInst.current) return;
-
     const map = L.map(mapRef.current, {
-      center: OUAGA_CENTER,
-      zoom: 13,
-      zoomControl: false,
-      maxBounds: OUAGA_BOUNDS,
-      maxBoundsViscosity: 1.0,
-      minZoom: 11,
-      maxZoom: 18,
+      center: OUAGA_CENTER, zoom: 13, zoomControl: false,
+      maxBounds: OUAGA_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 11, maxZoom: 18,
     });
-
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    const tile = L.tileLayer(TILE_DEFAULT, {
-      attribution: '© <a href="https://openstreetmap.org">OSM</a>',
-      maxZoom: 18,
-    }).addTo(map);
+    const tile = L.tileLayer(TILE_DEFAULT, { attribution: '© <a href="https://openstreetmap.org">OSM</a>', maxZoom: 18 }).addTo(map);
     tileLayerRef.current = tile;
 
     const qLayer = L.layerGroup().addTo(map);
     const pLayer = L.layerGroup().addTo(map);
     const tLayer = L.layerGroup().addTo(map);
     const fLayer = L.layerGroup().addTo(map);
-
     quartierLayer.current = qLayer;
     propertyLayer.current = pLayer;
     tentacleLayer.current = tLayer;
     focusLayer.current = fLayer;
 
     map.on('zoomend', () => setZoom(map.getZoom()));
-    
-    map.on('click', () => {
-      if (viewLevelRef.current !== 'focus' && onFocusClear) {
-        onFocusClear();
-      }
-    });
-    
+    map.on('click', () => { if (viewLevelRef.current !== 'focus' && onFocusClear) onFocusClear(); });
     mapInst.current = map;
 
     const style = document.createElement('style');
-    style.textContent = `
-      @keyframes pulse {
-        0%, 100% { box-shadow: 0 0 0 6px rgba(27,58,92,0.3), 0 0 0 12px rgba(27,58,92,0.1); }
-        50% { box-shadow: 0 0 0 10px rgba(27,58,92,0.2), 0 0 0 20px rgba(27,58,92,0.05); }
-      }
-    `;
+    style.textContent = `@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 6px rgba(27,58,92,0.3), 0 0 0 12px rgba(27,58,92,0.1); } 50% { box-shadow: 0 0 0 10px rgba(27,58,92,0.2), 0 0 0 20px rgba(27,58,92,0.05); } }`;
     document.head.appendChild(style);
-
-    return () => {
-      map.remove();
-      mapInst.current = null;
-      style.remove();
-    };
+    return () => { map.remove(); mapInst.current = null; style.remove(); };
   }, []);
 
-  // ── Switch tile layer ─────────────────────────────────────────────────────
+  // Tile switch
   useEffect(() => {
     if (!tileLayerRef.current || !mapInst.current) return;
-    const newUrl = viewLevel === 'focus' ? TILE_FOCUS : TILE_DEFAULT;
-    tileLayerRef.current.setUrl(newUrl);
+    tileLayerRef.current.setUrl(viewLevel === 'focus' ? TILE_FOCUS : TILE_DEFAULT);
     const tilePane = mapInst.current.getPane('tilePane');
-    if (tilePane) {
-      tilePane.style.filter = viewLevel === 'focus'
-        ? 'grayscale(60%) brightness(0.88) saturate(0.4)'
-        : 'none';
-    }
+    if (tilePane) tilePane.style.filter = viewLevel === 'focus' ? 'grayscale(60%) brightness(0.88) saturate(0.4)' : 'none';
   }, [viewLevel]);
 
-  // ── LEVEL 1: Global view ─────────────────────────────────────────────────
+  // LEVEL 1: Global
   const renderGlobal = useCallback(() => {
     if (!quartierLayer.current || !propertyLayer.current || !mapInst.current) return;
     quartierLayer.current.clearLayers();
@@ -319,44 +274,25 @@ const InteractiveMap = ({
 
     const filtered = applyMapFilters(properties);
     const byQ = new Map<string, Property[]>();
-    filtered.forEach(p => {
-      const arr = byQ.get(p.quartier) || [];
-      arr.push(p);
-      byQ.set(p.quartier, arr);
-    });
+    filtered.forEach(p => { const arr = byQ.get(p.quartier) || []; arr.push(p); byQ.set(p.quartier, arr); });
 
+    // Use mockQuartiers for bounds data
+    const allQuartiers = quartiers.length > 0 ? quartiers : mockQuartiers;
     const quartiersToShow = activeFilters?.quartier && activeFilters.quartier !== 'all'
-      ? quartiers.filter(q => q.name === activeFilters.quartier)
-      : quartiers;
+      ? allQuartiers.filter(q => q.name === activeFilters.quartier) : allQuartiers;
 
     quartiersToShow.forEach(q => {
       const qProps = byQ.get(q.name) || [];
       if (qProps.length === 0) return;
-
-      const icon = L.divIcon({
-        html: quartierClusterHTML(q.name, qProps.length),
-        className: '',
-        iconSize: [80, 80],
-        iconAnchor: [40, 40],
-      });
-
+      const icon = L.divIcon({ html: quartierClusterHTML(q.name, qProps.length), className: '', iconSize: [80, 80], iconAnchor: [40, 40] });
       const m = L.marker([q.latitude, q.longitude], { icon, zIndexOffset: 100 });
-      m.bindTooltip(
-        `<div style="font-family:system-ui,sans-serif;min-width:130px;">
-          <strong style="color:#1a3560">${q.name}</strong><br/>
-          <span style="font-size:11px;color:#555;">${qProps.length} biens disponibles</span>
-        </div>`,
-        { direction: 'top', offset: [0, -44] }
-      );
-      m.on('click', (e) => {
-        L.DomEvent.stopPropagation(e);
-        setSelectedQuartier(q.name);
-      });
+      m.bindTooltip(`<div style="font-family:system-ui;min-width:130px;"><strong style="color:#1a3560">${q.name}</strong><br/><span style="font-size:11px;color:#555;">${qProps.length} biens disponibles</span></div>`, { direction: 'top', offset: [0, -44] });
+      m.on('click', (e) => { L.DomEvent.stopPropagation(e); setSelectedQuartier(q.name); });
       quartierLayer.current!.addLayer(m);
     });
   }, [properties, quartiers, applyMapFilters, activeFilters]);
 
-  // ── LEVEL 2: Quartier view ────────────────────────────────────────────────
+  // LEVEL 2: Quartier
   const renderQuartier = useCallback(() => {
     if (!quartierLayer.current || !propertyLayer.current || !mapInst.current) return;
     quartierLayer.current.clearLayers();
@@ -366,27 +302,39 @@ const InteractiveMap = ({
     const qProps = applyMapFilters(allQProps);
     const map = mapInst.current;
 
-    const boundsSource = allQProps.length > 0 ? allQProps : qProps;
-    if (boundsSource.length === 0) return;
-
-    const lats = boundsSource.map(p => p.latitude);
-    const lngs = boundsSource.map(p => p.longitude);
-    const latCenter = (Math.min(...lats) + Math.max(...lats)) / 2;
-    const lngCenter = (Math.min(...lngs) + Math.max(...lngs)) / 2;
-    const latSpread = Math.max(Math.max(...lats) - Math.min(...lats), 0.008);
-    const lngSpread = Math.max(Math.max(...lngs) - Math.min(...lngs), 0.010);
-    const pad = 0.4;
-    const qBounds = L.latLngBounds(
-      L.latLng(latCenter - latSpread * (0.5 + pad), lngCenter - lngSpread * (0.5 + pad)),
-      L.latLng(latCenter + latSpread * (0.5 + pad), lngCenter + lngSpread * (0.5 + pad))
-    );
-
-    map.flyToBounds(qBounds, { duration: 0.8, padding: [40, 40], maxZoom: 17 });
-    setTimeout(() => {
-      if (!mapInst.current) return;
-      mapInst.current.setMaxBounds(qBounds);
-      mapInst.current.setMinZoom(mapInst.current.getZoom() - 1);
-    }, 900);
+    // Get quartier bounds from mockQuartiers
+    const qData = mockQuartiers.find(q => q.name === selectedQuartier);
+    if (qData?.bounds) {
+      const qBounds = L.latLngBounds(
+        L.latLng(qData.bounds[0][0], qData.bounds[0][1]),
+        L.latLng(qData.bounds[1][0], qData.bounds[1][1])
+      );
+      map.flyToBounds(qBounds, { duration: 0.8, padding: [48, 48], maxZoom: 17 });
+      setTimeout(() => {
+        if (!mapInst.current) return;
+        // Enlarge bounds by 15% for max bounds
+        const enlarged = qBounds.pad(0.15);
+        mapInst.current.setMaxBounds(enlarged);
+        mapInst.current.setMinZoom(mapInst.current.getZoom() - 1);
+      }, 900);
+    } else {
+      // Fallback
+      const boundsSource = allQProps.length > 0 ? allQProps : qProps;
+      if (boundsSource.length === 0) return;
+      const lats = boundsSource.map(p => p.latitude);
+      const lngs = boundsSource.map(p => p.longitude);
+      const latCenter = (Math.min(...lats) + Math.max(...lats)) / 2;
+      const lngCenter = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+      const latSpread = Math.max(Math.max(...lats) - Math.min(...lats), 0.008);
+      const lngSpread = Math.max(Math.max(...lngs) - Math.min(...lngs), 0.010);
+      const pad = 0.4;
+      const qBounds = L.latLngBounds(
+        L.latLng(latCenter - latSpread * (0.5 + pad), lngCenter - lngSpread * (0.5 + pad)),
+        L.latLng(latCenter + latSpread * (0.5 + pad), lngCenter + lngSpread * (0.5 + pad))
+      );
+      map.flyToBounds(qBounds, { duration: 0.8, padding: [40, 40], maxZoom: 17 });
+      setTimeout(() => { if (!mapInst.current) return; mapInst.current.setMaxBounds(qBounds); mapInst.current.setMinZoom(mapInst.current.getZoom() - 1); }, 900);
+    }
 
     if (qProps.length === 0) return;
 
@@ -403,27 +351,14 @@ const InteractiveMap = ({
       subClusters.forEach((cluster) => {
         if (cluster.length === 1) {
           const p = cluster[0];
-          const icon = L.divIcon({
-            html: propertyPinHTML(p, false),
-            className: '',
-            iconSize: [100, 28],
-            iconAnchor: [50, 14],
-          });
+          const icon = L.divIcon({ html: propertyPinHTML(p, false), className: '', iconSize: [100, 28], iconAnchor: [50, 14] });
           const m = L.marker([p.latitude, p.longitude], { icon });
-          m.on('click', (e) => {
-            L.DomEvent.stopPropagation(e);
-            if (onPropertyClick) onPropertyClick(p.id);
-          });
+          m.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(p.id); });
           propertyLayer.current!.addLayer(m);
         } else {
           const avgLat = cluster.reduce((s, p) => s + p.latitude, 0) / cluster.length;
           const avgLng = cluster.reduce((s, p) => s + p.longitude, 0) / cluster.length;
-          const icon = L.divIcon({
-            html: quartierClusterHTML(`${cluster.length} biens`, cluster.length),
-            className: '',
-            iconSize: [60, 60],
-            iconAnchor: [30, 30],
-          });
+          const icon = L.divIcon({ html: quartierClusterHTML(`${cluster.length} biens`, cluster.length), className: '', iconSize: [60, 60], iconAnchor: [30, 30] });
           const m = L.marker([avgLat, avgLng], { icon });
           m.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
@@ -436,31 +371,19 @@ const InteractiveMap = ({
     } else {
       const positioned = offsetProperties(qProps);
       positioned.forEach(({ prop, lat, lng }) => {
-        const icon = L.divIcon({
-          html: propertyPinHTML(prop, false),
-          className: '',
-          iconSize: [100, 28],
-          iconAnchor: [50, 14],
-        });
+        const icon = L.divIcon({ html: propertyPinHTML(prop, false), className: '', iconSize: [100, 28], iconAnchor: [50, 14] });
         const m = L.marker([lat, lng], { icon });
-        m.bindTooltip(
-          `<div style="font-family:system-ui,sans-serif;min-width:140px;">
-            <strong style="color:#1a3560;font-size:12px;">${prop.title}</strong><br/>
-            <span style="font-size:11px;font-weight:700;color:#1a3560;">${new Intl.NumberFormat('fr-FR').format(prop.price)} FCFA/mois</span><br/>
-            <span style="font-size:10px;color:#666;">${prop.bedrooms || '–'} ch. · ${prop.surface_area || '–'} m²</span>
-          </div>`,
-          { direction: 'top', offset: [0, -8] }
-        );
-        m.on('click', (e) => {
-          L.DomEvent.stopPropagation(e);
-          if (onPropertyClick) onPropertyClick(prop.id);
-        });
+        const isFurnished = isTypeFurnished(prop.type) || prop.furnished;
+        const displayPrice = isFurnished ? pricePerNight(prop.price) : prop.price;
+        const suffix = isFurnished ? '/nuit' : '/mois';
+        m.bindTooltip(`<div style="font-family:system-ui;min-width:140px;"><strong style="color:#1a3560;font-size:12px;">${prop.title}</strong><br/><span style="font-size:11px;font-weight:700;color:#1a3560;">${new Intl.NumberFormat('fr-FR').format(displayPrice)} FCFA${suffix}</span><br/><span style="font-size:10px;color:#666;">${prop.bedrooms || '–'} ch. · ${prop.surface_area || '–'} m²</span></div>`, { direction: 'top', offset: [0, -8] });
+        m.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(prop.id); });
         propertyLayer.current!.addLayer(m);
       });
     }
   }, [properties, selectedQuartier, onPropertyClick, applyMapFilters]);
 
-  // ── LEVEL 3: Focus mode ───────────────────────────────────────────────────
+  // LEVEL 3: Focus
   const renderFocus = useCallback(() => {
     if (!focusLayer.current || !tentacleLayer.current || !mapInst.current) return;
     focusLayer.current.clearLayers();
@@ -472,24 +395,14 @@ const InteractiveMap = ({
     if (!prop) return;
 
     const map = mapInst.current;
-    const zoomLevel = 15;
-    map.flyTo([prop.latitude, prop.longitude], zoomLevel, { duration: 0.8 });
+    map.flyTo([prop.latitude, prop.longitude], 15, { duration: 0.8 });
+    setTimeout(() => { mapInst.current?.invalidateSize({ animate: false }); }, 350);
 
-    setTimeout(() => {
-      mapInst.current?.invalidateSize({ animate: false });
-    }, 350);
+    // Focused pin
+    const focusIcon = L.divIcon({ html: propertyPinHTML(prop, true), className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
+    L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 }).addTo(focusLayer.current);
 
-    // Focused pin with pulse
-    const focusIcon = L.divIcon({
-      html: propertyPinHTML(prop, true),
-      className: '',
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-    });
-    L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 })
-      .addTo(focusLayer.current);
-
-    // Radius circles — clickable to filter POIs
+    // Radius circles
     const radiusConfig = [
       { r: 300, fillOpacity: 0.15, dash: '', weight: 2, color: 'rgba(30,80,160,1)' },
       { r: 500, fillOpacity: 0.10, dash: '6 4', weight: 1.5, color: 'rgba(30,80,160,0.8)' },
@@ -498,18 +411,10 @@ const InteractiveMap = ({
     radiusConfig.forEach(({ r, fillOpacity, dash, weight, color }) => {
       const isActive = activeRadius === r;
       const circle = L.circle([prop.latitude, prop.longitude], {
-        radius: r,
-        color,
-        fillColor: 'rgba(30,80,160,0.1)',
-        fillOpacity,
-        weight: isActive ? weight + 2 : weight,
-        dashArray: dash,
-        interactive: true,
+        radius: r, color, fillColor: 'rgba(30,80,160,0.1)', fillOpacity,
+        weight: isActive ? weight + 2 : weight, dashArray: dash, interactive: true,
       });
-      circle.on('click', (e) => {
-        L.DomEvent.stopPropagation(e);
-        setActiveRadius(prev => prev === r ? null : r);
-      });
+      circle.on('click', (e) => { L.DomEvent.stopPropagation(e); setActiveRadius(prev => prev === r ? null : r); });
       circle.addTo(focusLayer.current!);
 
       const labelAngle = -45 * (Math.PI / 180);
@@ -518,58 +423,38 @@ const InteractiveMap = ({
       L.marker([labelLat, labelLng], {
         icon: L.divIcon({
           html: `<div style="font-size:9px;color:rgba(30,80,160,0.8);font-weight:600;font-family:system-ui;background:rgba(255,255,255,0.9);padding:1px 6px;border-radius:8px;white-space:nowrap;cursor:pointer;${isActive ? 'border:1.5px solid rgba(30,80,160,0.6);' : ''}">${fmtDist(r)}</div>`,
-          className: '',
-          iconAnchor: [16, 8],
+          className: '', iconAnchor: [16, 8],
         }),
         interactive: true,
-      })
-        .on('click', (e) => {
-          L.DomEvent.stopPropagation(e);
-          setActiveRadius(prev => prev === r ? null : r);
-        })
-        .addTo(focusLayer.current!);
+      }).on('click', (e) => { L.DomEvent.stopPropagation(e); setActiveRadius(prev => prev === r ? null : r); }).addTo(focusLayer.current!);
     });
 
-    // POI — filter by activeRadius if set, otherwise show all within 1km
+    // POI
     const maxDist = activeRadius || 1000;
     const allPoisInRange = pois
       .map(poi => ({ ...poi, distance: distanceM(prop.latitude, prop.longitude, poi.latitude, poi.longitude) }))
       .filter(p => p.distance <= maxDist)
       .sort((a, b) => a.distance - b.distance)
-      .slice(0, 12);
+      .slice(0, 25);
 
     const groupedByType = new Map<string, typeof allPoisInRange>();
-    allPoisInRange.forEach(poi => {
-      const arr = groupedByType.get(poi.type) || [];
-      arr.push(poi);
-      groupedByType.set(poi.type, arr);
-    });
+    allPoisInRange.forEach(poi => { const arr = groupedByType.get(poi.type) || []; arr.push(poi); groupedByType.set(poi.type, arr); });
 
     groupedByType.forEach((groupPois, type) => {
       const info = POI_CATALOG[type] || { emoji: '📍', color: '#78909C', label: type, bg: '#ECEFF1' };
       const closest = groupPois[0];
       const count = groupPois.length;
 
-      L.polyline(
-        [[prop.latitude, prop.longitude], [closest.latitude, closest.longitude]],
-        { color: info.color, weight: 1.2, opacity: 0.4, dashArray: '5 4', interactive: false }
-      ).addTo(tentacleLayer.current!);
+      L.polyline([[prop.latitude, prop.longitude], [closest.latitude, closest.longitude]], { color: info.color, weight: 1.2, opacity: 0.4, dashArray: '5 4', interactive: false }).addTo(tentacleLayer.current!);
 
       const midLat = (prop.latitude + closest.latitude) / 2;
       const midLng = (prop.longitude + closest.longitude) / 2;
-      const labelText = count > 1
-        ? `${info.label} (${count}) · ${fmtDist(closest.distance)}`
-        : `${info.label} · ${fmtDist(closest.distance)}`;
+      const labelText = count > 1 ? `${info.label} (${count}) · ${fmtDist(closest.distance)}` : `${info.label} · ${fmtDist(closest.distance)}`;
 
       L.marker([midLat, midLng], {
         icon: L.divIcon({
-          html: `<div style="
-            background:rgba(255,255,255,0.92);border:1px solid ${info.color}30;border-radius:20px;
-            padding:2px 8px;font-family:system-ui;font-size:9px;color:${info.color};font-weight:600;
-            white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.06);pointer-events:none;
-          ">${labelText}</div>`,
-          className: '',
-          iconAnchor: [45, 8],
+          html: `<div style="background:rgba(255,255,255,0.92);border:1px solid ${info.color}30;border-radius:20px;padding:2px 8px;font-family:system-ui;font-size:9px;color:${info.color};font-weight:600;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.06);pointer-events:none;">${labelText}</div>`,
+          className: '', iconAnchor: [45, 8],
         }),
         interactive: false,
       }).addTo(tentacleLayer.current!);
@@ -583,32 +468,21 @@ const InteractiveMap = ({
 
       L.marker([poi.latitude, poi.longitude], {
         icon: L.divIcon({
-          html: `<div style="
-            background:${info.bg};border:1.5px solid ${info.color}80;border-radius:50%;
-            width:24px;height:24px;display:flex;align-items:center;justify-content:center;
-            font-size:12px;box-shadow:0 1px 6px ${info.color}18;opacity:${opacity};
-          ">${info.emoji}</div>`,
-          className: '',
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
+          html: `<div style="background:${info.bg};border:1.5px solid ${info.color}80;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 1px 6px ${info.color}18;opacity:${opacity};">${info.emoji}</div>`,
+          className: '', iconSize: [24, 24], iconAnchor: [12, 12],
         }),
         zIndexOffset: 500,
-      })
-        .bindTooltip(
-          `<strong style="color:${info.color}">${info.label}</strong><br/><span style="font-size:11px;color:#666">${poi.name} · ${fmtDist(poi.distance)}</span>`,
-          { direction: 'top' }
-        )
-        .addTo(tentacleLayer.current!);
+      }).bindTooltip(`<strong style="color:${info.color}">${info.label}</strong><br/><span style="font-size:11px;color:#666">${poi.name} · ${fmtDist(poi.distance)}</span>`, { direction: 'top' }).addTo(tentacleLayer.current!);
     });
   }, [focusedPropertyId, properties, pois, panelOpen, activeRadius]);
 
-  // Invalidate map size when panel opens/closes
+  // Invalidate on panel change
   useEffect(() => {
     if (!mapInst.current) return;
     setTimeout(() => mapInst.current?.invalidateSize({ animate: true }), 350);
   }, [panelOpen]);
 
-  // ── External quartier selection ───────────────────────────────────────────
+  // External quartier
   useEffect(() => {
     if (!externalQuartierSelect || !mapInst.current) return;
     mapInst.current.setMinZoom(11);
@@ -617,24 +491,19 @@ const InteractiveMap = ({
     if (onExternalQuartierHandled) onExternalQuartierHandled();
   }, [externalQuartierSelect, onExternalQuartierHandled]);
 
-  // ── Master render dispatcher ──────────────────────────────────────────────
+  // Master render
   useEffect(() => {
     if (!mapInst.current) return;
     focusLayer.current?.clearLayers();
     tentacleLayer.current?.clearLayers();
     quartierLayer.current?.clearLayers();
     propertyLayer.current?.clearLayers();
-
-    if (viewLevel === 'focus') {
-      renderFocus();
-    } else if (viewLevel === 'quartier') {
-      renderQuartier();
-    } else {
-      renderGlobal();
-    }
+    if (viewLevel === 'focus') renderFocus();
+    else if (viewLevel === 'quartier') renderQuartier();
+    else renderGlobal();
   }, [viewLevel, renderGlobal, renderQuartier, renderFocus, activeFilters]);
 
-  // Re-render global on zoom
+  // Re-render on zoom
   useEffect(() => {
     if (!mapInst.current || viewLevel !== 'global') return;
     const map = mapInst.current;
@@ -645,7 +514,7 @@ const InteractiveMap = ({
     return () => { map.off('zoomend', handler); };
   }, [renderGlobal, viewLevel]);
 
-  // ── Navigation helpers ────────────────────────────────────────────────────
+  // Navigation
   const goBackToGlobal = () => {
     setSelectedQuartier(null);
     setActiveRadius(null);
@@ -662,7 +531,6 @@ const InteractiveMap = ({
     if (onFocusClear) onFocusClear();
   };
 
-  // Handle radius button clicks from UI
   const handleRadiusClick = (r: number) => {
     setActiveRadius(prev => prev === r ? null : r);
   };
@@ -671,70 +539,50 @@ const InteractiveMap = ({
     <div className="relative w-full h-[620px] rounded-xl overflow-hidden border border-border shadow-card">
       <div ref={mapRef} className="absolute inset-0 z-0" />
 
-      {/* ── Breadcrumb navigation — absolute inside map ── */}
+      {/* Breadcrumb */}
       <div className="absolute top-3 left-3 z-[600] flex items-center gap-1.5">
         {viewLevel !== 'global' && (
-          <button
-            onClick={goBackToGlobal}
-            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-foreground border-border hover:bg-muted active:scale-95"
-          >
+          <button onClick={goBackToGlobal} className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-foreground border-border hover:bg-muted active:scale-95">
             ← Ouagadougou
           </button>
         )}
         {viewLevel === 'focus' && selectedQuartier && (
-          <button
-            onClick={goBackToQuartier}
-            className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-foreground border-border hover:bg-muted active:scale-95"
-          >
+          <button onClick={goBackToQuartier} className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors backdrop-blur-sm border shadow-sm bg-card/90 text-foreground border-border hover:bg-muted active:scale-95">
             ← {selectedQuartier}
           </button>
         )}
       </div>
 
-      {/* ── Radius controls (focus mode) — absolute inside map ── */}
+      {/* Radius controls */}
       {viewLevel === 'focus' && (
         <div className="absolute top-3 right-3 z-[600]">
           <div className="bg-card/92 backdrop-blur-sm border border-border rounded-xl px-3 py-2 shadow-card flex items-center gap-2">
             <span className="text-xs font-semibold text-muted-foreground">Rayon</span>
             {RADIUS_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => handleRadiusClick(opt.value)}
+              <button key={opt.value} onClick={() => handleRadiusClick(opt.value)}
                 className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-colors active:scale-95 ${
-                  activeRadius === opt.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                }`}
-              >
-                {opt.label}
-              </button>
+                  activeRadius === opt.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}>{opt.label}</button>
             ))}
           </div>
         </div>
       )}
 
-      {/* ── Quartier bar (level 2) ── */}
+      {/* Quartier bar */}
       {viewLevel === 'quartier' && selectedQuartier && (
         <div className="absolute bottom-4 left-4 right-4 z-[600]">
           <div className="bg-card/95 backdrop-blur-sm border border-border rounded-xl px-4 py-2.5 shadow-card flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm">📍</span>
               <span className="text-sm font-semibold text-foreground">{selectedQuartier}</span>
-              <span className="text-xs text-muted-foreground">
-                — {applyMapFilters(properties.filter(p => p.quartier === selectedQuartier)).length} biens
-              </span>
+              <span className="text-xs text-muted-foreground">— {applyMapFilters(properties.filter(p => p.quartier === selectedQuartier)).length} biens</span>
             </div>
-            <button
-              onClick={goBackToGlobal}
-              className="text-xs text-primary font-semibold hover:underline"
-            >
-              ← Retour
-            </button>
+            <button onClick={goBackToGlobal} className="text-xs text-primary font-semibold hover:underline">← Retour</button>
           </div>
         </div>
       )}
 
-      {/* ── Instruction (level 1) ── */}
+      {/* Instruction */}
       {viewLevel === 'global' && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500]">
           <span className="text-xs text-muted-foreground bg-card/90 backdrop-blur-sm border border-border rounded-full px-4 py-1.5 shadow-sm">
