@@ -46,6 +46,7 @@ export type Database = {
       }
       properties: {
         Row: {
+          accessibility_rating: number | null
           address: string
           available: boolean | null
           bathrooms: number | null
@@ -67,6 +68,7 @@ export type Database = {
           virtual_tour_url: string | null
         }
         Insert: {
+          accessibility_rating?: number | null
           address: string
           available?: boolean | null
           bathrooms?: number | null
@@ -88,6 +90,7 @@ export type Database = {
           virtual_tour_url?: string | null
         }
         Update: {
+          accessibility_rating?: number | null
           address?: string
           available?: boolean | null
           bathrooms?: number | null
