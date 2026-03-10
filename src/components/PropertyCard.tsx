@@ -62,7 +62,7 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
         {/* Badges top-left */}
         <div className="absolute top-3 left-3 flex gap-2 flex-wrap">
           <Badge className="bg-primary text-primary-foreground text-xs px-2 py-0.5 font-semibold">
-            {getTypeEmoji(property.type)} {getTypeLabel(property.type)}
+            {getTypeLabel(property.type)}
           </Badge>
           {property.virtual_tour_url && (
             <Badge className="bg-foreground/80 text-card text-xs px-2 py-0.5 gap-1">
