@@ -193,9 +193,37 @@ const Index = () => {
       else if (sr === '150-300') result = result.filter(p => (p.surface_area || 0) >= 150 && (p.surface_area || 0) <= 300);
       else if (sr === '>300') result = result.filter(p => (p.surface_area || 0) > 300);
     }
-    // Characteristics (AND logic)
+    // Characteristics: OR within bedroom/bathroom groups, AND for everything else
     if (f.characteristics.length > 0) {
-      result = result.filter(p => f.characteristics.every(c => CHAR_CHECKS[c]?.(p as any)));
+      const OR_GROUPS = [
+        ['bed_1', 'bed_2', 'bed_3', 'bed_4plus'],
+        ['bath_1', 'bath_2plus'],
+      ];
+      // Split characteristics into OR-group keys and standalone AND keys
+      const orGroupChecks: ((p: any) => boolean)[] = [];
+      const andKeys: string[] = [];
+
+      const assignedToGroup = new Set<string>();
+      OR_GROUPS.forEach(group => {
+        const activeInGroup = f.characteristics.filter(c => group.includes(c));
+        if (activeInGroup.length > 0) {
+          activeInGroup.forEach(k => assignedToGroup.add(k));
+          // OR: property must match at least ONE checked key in this group
+          orGroupChecks.push((p: any) => activeInGroup.some(c => CHAR_CHECKS[c]?.(p)));
+        }
+      });
+
+      f.characteristics.forEach(c => {
+        if (!assignedToGroup.has(c)) andKeys.push(c);
+      });
+
+      result = result.filter(p => {
+        // All OR groups must pass (at least one match in each group)
+        const orPass = orGroupChecks.every(check => check(p));
+        // All standalone AND keys must pass
+        const andPass = andKeys.every(c => CHAR_CHECKS[c]?.(p as any));
+        return orPass && andPass;
+      });
     }
     // Min surface
     if (f.minSurface > 0) {
@@ -431,6 +459,7 @@ const Index = () => {
           showFavoritesOnly={showFavoritesOnly}
           onToggleFavoritesView={toggleFavoritesView}
           computeFilteredCount={computeFilteredCount}
+          externalFilters={filters}
         />
 
         <div className="flex gap-0 relative">
