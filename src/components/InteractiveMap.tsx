@@ -245,10 +245,12 @@ const InteractiveMap = ({
     const pLayer = L.layerGroup().addTo(map);
     const tLayer = L.layerGroup().addTo(map);
     const fLayer = L.layerGroup().addTo(map);
+    const favLayer = L.layerGroup().addTo(map);
     quartierLayer.current = qLayer;
     propertyLayer.current = pLayer;
     tentacleLayer.current = tLayer;
     focusLayer.current = fLayer;
+    favoriteLayer.current = favLayer;
 
     map.on('zoomend', () => setZoom(map.getZoom()));
     map.on('click', () => { if (viewLevelRef.current !== 'focus' && onFocusClear) onFocusClear(); });
