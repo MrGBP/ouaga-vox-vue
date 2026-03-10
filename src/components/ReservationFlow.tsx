@@ -151,27 +151,37 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     return { bookedDates: booked, pendingDates: pending, availableDates: available };
   }, []);
 
+  const isSameDay = (a: Date, b: Date) => a.toISOString().split('T')[0] === b.toISOString().split('T')[0];
+
   const handleSelectDate = (d: Date) => {
     if (!checkIn || (checkIn && checkOut)) {
       setCheckIn(d);
       setCheckOut(null);
       setShowUpgrade(false);
       setUpgradeShown(false);
-    } else {
-      if (d <= checkIn) {
+    } else if (checkIn && !checkOut) {
+      if (isSameDay(d, checkIn)) {
+        // Double-click same day = 1 night
+        const nextDay = new Date(d);
+        nextDay.setDate(nextDay.getDate() + 1);
+        setCheckOut(nextDay);
+      } else if (d < checkIn) {
+        // Click before check-in = swap
+        setCheckOut(checkIn);
         setCheckIn(d);
-        return;
-      }
-      // Check no booked dates in range
-      const current = new Date(checkIn);
-      while (current <= d) {
-        if (bookedDates.has(current.toISOString().split('T')[0])) {
-          toast({ title: 'Dates indisponibles', description: 'La plage sélectionnée inclut des jours occupés.', variant: 'destructive' });
-          return;
+      } else {
+        // Check no booked/pending dates in range
+        const current = new Date(checkIn);
+        while (current <= d) {
+          const key = current.toISOString().split('T')[0];
+          if (bookedDates.has(key) || pendingDates.has(key)) {
+            toast({ title: 'Dates indisponibles', description: 'La plage sélectionnée inclut des jours occupés ou en attente.', variant: 'destructive' });
+            return;
+          }
+          current.setDate(current.getDate() + 1);
         }
-        current.setDate(current.getDate() + 1);
+        setCheckOut(d);
       }
-      setCheckOut(d);
       // Show upgrade after 2 seconds
       if (!upgradeShown) {
         setTimeout(() => setShowUpgrade(true), 2000);
