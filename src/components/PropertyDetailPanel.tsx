@@ -359,8 +359,8 @@ const PropertyDetailPanel = ({
             </Button>
           )}
           {onExploreOnMap && (
-            <Button variant="outline" onClick={() => onExploreOnMap(property.id)} className="gap-2 hover:bg-muted active:scale-[0.98] transition-all" title="Explorer sur la carte">
-              <Map className="h-4 w-4" /> 🗺️ Explorer
+            <Button variant="outline" size="icon" onClick={() => onExploreOnMap(property.id)} className="shrink-0 h-10 w-10 hover:bg-muted active:scale-[0.98] transition-all" title="Explorer sur la carte">
+              <Map className="h-4 w-4" />
             </Button>
           )}
         </div>
