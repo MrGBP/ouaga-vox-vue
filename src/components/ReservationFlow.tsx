@@ -191,7 +191,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   };
 
   const nights = checkIn && checkOut
-    ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.max(1, Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
   const pricePerNight = Math.round(property.price / 30); // Monthly to nightly
