@@ -16,7 +16,7 @@ import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
-import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
