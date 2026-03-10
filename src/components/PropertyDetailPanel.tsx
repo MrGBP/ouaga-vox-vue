@@ -94,6 +94,7 @@ const PropertyDetailPanel = ({
   const [showReservation, setShowReservation] = useState(false);
   const [showAllPois, setShowAllPois] = useState(false);
   const [showCallbackModal, setShowCallbackModal] = useState(false);
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [callbackPhone, setCallbackPhone] = useState('');
   const [show360Overlay, setShow360Overlay] = useState(false);
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
@@ -102,7 +103,7 @@ const PropertyDetailPanel = ({
   const isMobile = isMobileOverride ?? false;
 
   // Reset media index when property changes
-  useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); }, [property?.id]);
+  useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); setShowAllFeatures(false); }, [property?.id]);
 
   if (!property) return null;
 
@@ -145,10 +146,10 @@ const PropertyDetailPanel = ({
 
   // Ratings
   const ratings = [
-    property.comfort_rating && { label: 'Confort', value: property.comfort_rating, emoji: '🛋️', LucideIcon: null },
-    property.security_rating && { label: 'Sécurité', value: property.security_rating, emoji: '🔒', LucideIcon: null },
-    property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating, emoji: null, LucideIcon: Accessibility },
-  ].filter(Boolean) as { label: string; value: number; emoji: string | null; LucideIcon: any }[];
+    property.comfort_rating && { label: 'Confort', value: property.comfort_rating },
+    property.security_rating && { label: 'Sécurité', value: property.security_rating },
+    property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating },
+  ].filter(Boolean) as { label: string; value: number }[];
 
   // WhatsApp share
   const handleWhatsAppShare = () => {
@@ -250,27 +251,33 @@ const PropertyDetailPanel = ({
         {/* Identity */}
         <div>
           <h3 className="text-lg font-bold text-foreground">{property.title}</h3>
-          <div className="text-2xl font-bold text-primary mt-1">
-            {fmt(property.price)} FCFA <span className="text-sm font-medium text-muted-foreground">/mois</span>
-          </div>
-          {isFurnished && nightPrice > 0 && (
-            <div className="text-sm text-muted-foreground mt-0.5">
-              soit <span className="font-semibold text-foreground">{fmt(nightPrice)} FCFA</span> /nuit
+          {isFurnished && nightPrice > 0 ? (
+            <>
+              <div className="text-2xl font-bold text-primary mt-1">
+                {fmt(nightPrice)} FCFA <span className="text-sm font-medium text-muted-foreground">/nuit</span>
+              </div>
+              <div className="text-sm text-muted-foreground mt-0.5">
+                soit {fmt(property.price)} FCFA /mois
+              </div>
+            </>
+          ) : (
+            <div className="text-2xl font-bold text-primary mt-1">
+              {fmt(property.price)} FCFA <span className="text-sm font-medium text-muted-foreground">/mois</span>
             </div>
           )}
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Badge className="bg-primary/10 text-primary text-xs">
-              {getTypeEmoji(property.type)} {getTypeLabel(property.type)}
+              {getTypeLabel(property.type)}
             </Badge>
           </div>
         </div>
 
-        {/* Features */}
+        {/* Features — 4 visible + see more */}
         {features.length > 0 && (
           <div>
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Caractéristiques</h4>
-            <div className="grid grid-cols-5 gap-2">
-              {features.map((f, i) => (
+            <div className="grid grid-cols-4 gap-2">
+              {features.slice(0, showAllFeatures ? features.length : 4).map((f, i) => (
                 <div key={i} className="flex flex-col items-center bg-muted/50 rounded-lg p-2 text-center">
                   <f.icon className="h-4 w-4 text-primary mb-0.5" />
                   <span className="text-xs font-bold text-foreground">{f.value}</span>
@@ -278,6 +285,11 @@ const PropertyDetailPanel = ({
                 </div>
               ))}
             </div>
+            {features.length > 4 && (
+              <button onClick={() => setShowAllFeatures(!showAllFeatures)} className="text-xs text-primary font-medium mt-1 hover:underline">
+                {showAllFeatures ? 'Voir moins' : `+${features.length - 4} autres caractéristiques`}
+              </button>
+            )}
           </div>
         )}
 
@@ -321,16 +333,15 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* Ratings */}
+        {/* Ratings — label left, score right, no icons */}
         {ratings.length > 0 && (
           <div>
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Évaluations</h4>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-1.5">
               {ratings.map((r, i) => (
-                <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
-                  {r.LucideIcon ? <r.LucideIcon className="h-4 w-4 text-primary" /> : <span className="text-sm">{r.emoji}</span>}
+                <div key={i} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
                   <span className="text-xs font-medium text-foreground">{r.label}</span>
-                  <span className="text-sm font-bold text-primary">{typeof r.value === 'number' ? r.value.toFixed(1) : r.value} / 5</span>
+                  <span className="text-sm"><span className="font-bold text-primary">{typeof r.value === 'number' ? r.value.toFixed(1) : r.value}</span> <span className="text-muted-foreground">/ 5</span></span>
                 </div>
               ))}
             </div>
@@ -349,8 +360,8 @@ const PropertyDetailPanel = ({
             </Button>
           )}
           {onExploreOnMap && (
-            <Button variant="outline" onClick={() => onExploreOnMap(property.id)} className="gap-2 hover:bg-muted active:scale-[0.98] transition-all" title="Explorer sur la carte">
-              <Map className="h-4 w-4" /> 🗺️ Explorer
+            <Button variant="outline" size="icon" onClick={() => onExploreOnMap(property.id)} className="shrink-0 h-10 w-10 hover:bg-muted active:scale-[0.98] transition-all" title="Explorer sur la carte">
+              <Map className="h-4 w-4" />
             </Button>
           )}
         </div>
