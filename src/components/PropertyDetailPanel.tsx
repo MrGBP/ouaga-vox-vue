@@ -332,16 +332,15 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* Ratings */}
+        {/* Ratings — label left, score right, no icons */}
         {ratings.length > 0 && (
           <div>
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Évaluations</h4>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-1.5">
               {ratings.map((r, i) => (
-                <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
-                  {r.LucideIcon ? <r.LucideIcon className="h-4 w-4 text-primary" /> : <span className="text-sm">{r.emoji}</span>}
+                <div key={i} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
                   <span className="text-xs font-medium text-foreground">{r.label}</span>
-                  <span className="text-sm font-bold text-primary">{typeof r.value === 'number' ? r.value.toFixed(1) : r.value} / 5</span>
+                  <span className="text-sm"><span className="font-bold text-primary">{typeof r.value === 'number' ? r.value.toFixed(1) : r.value}</span> <span className="text-muted-foreground">/ 5</span></span>
                 </div>
               ))}
             </div>
