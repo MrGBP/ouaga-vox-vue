@@ -509,10 +509,10 @@ const InteractiveMap = ({
     let hoverCircles: L.Circle[] = [];
     favProps.forEach(p => {
       const icon = L.divIcon({
-        html: `<div style="background:#1a3560;color:white;border:2px solid white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer;">❤️</div>`,
-        className: '', iconSize: [32, 32], iconAnchor: [16, 16],
+        html: `<div style="background:rgba(26,53,96,0.25);border:1.5px solid rgba(26,53,96,0.6);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;backdrop-filter:blur(2px);cursor:pointer;transition:all 200ms;">❤️</div>`,
+        className: '', iconSize: [26, 26], iconAnchor: [13, 13],
       });
-      const marker = L.marker([p.latitude, p.longitude], { icon, zIndexOffset: 900 });
+      const marker = L.marker([p.latitude, p.longitude], { icon, zIndexOffset: 400 });
       marker.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(p.id); });
       marker.on('mouseover', () => {
         [300, 500, 1000].forEach(r => {

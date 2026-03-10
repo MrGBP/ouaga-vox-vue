@@ -497,8 +497,14 @@ const Index = () => {
                 <div className="p-3">
                   <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
                   <p className="text-xs text-muted-foreground">{p.quartier}</p>
-                  <p className="text-sm font-bold text-primary mt-1">{dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">{dp.suffix}</span></p>
-                  {dp.nightPrice && <p className="text-xs text-muted-foreground">soit {dp.nightPrice} FCFA{dp.nightSuffix}</p>}
+                  {dp.nightPrice ? (
+                    <>
+                      <p className="text-sm font-bold text-primary mt-1">{dp.nightPrice} FCFA <span className="text-xs font-normal text-muted-foreground">/nuit</span></p>
+                      <p className="text-xs text-muted-foreground">soit {dp.price} FCFA /mois</p>
+                    </>
+                  ) : (
+                    <p className="text-sm font-bold text-primary mt-1">{dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">/mois</span></p>
+                  )}
                 </div>
               </motion.button>
             );

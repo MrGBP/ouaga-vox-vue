@@ -146,10 +146,10 @@ const PropertyDetailPanel = ({
 
   // Ratings
   const ratings = [
-    property.comfort_rating && { label: 'Confort', value: property.comfort_rating, emoji: '🛋️', LucideIcon: null },
-    property.security_rating && { label: 'Sécurité', value: property.security_rating, emoji: '🔒', LucideIcon: null },
-    property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating, emoji: null, LucideIcon: Accessibility },
-  ].filter(Boolean) as { label: string; value: number; emoji: string | null; LucideIcon: any }[];
+    property.comfort_rating && { label: 'Confort', value: property.comfort_rating },
+    property.security_rating && { label: 'Sécurité', value: property.security_rating },
+    property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating },
+  ].filter(Boolean) as { label: string; value: number }[];
 
   // WhatsApp share
   const handleWhatsAppShare = () => {
