@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Bed, Maximize, Eye, Camera, Heart, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
+import { getTypeLabel, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 
 interface Property {
   id: string;
@@ -62,7 +62,7 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
         {/* Badges top-left */}
         <div className="absolute top-3 left-3 flex gap-2 flex-wrap">
           <Badge className="bg-primary text-primary-foreground text-xs px-2 py-0.5 font-semibold">
-            {getTypeEmoji(property.type)} {getTypeLabel(property.type)}
+            {getTypeLabel(property.type)}
           </Badge>
           {property.virtual_tour_url && (
             <Badge className="bg-foreground/80 text-card text-xs px-2 py-0.5 gap-1">
@@ -95,14 +95,20 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
       <div className="p-4">
         <h3 className="font-semibold text-base text-foreground line-clamp-1 mb-2">{property.title}</h3>
 
-        {/* Dual pricing for furnished */}
+        {/* Pricing: nightly first for furnished */}
         <div className="mb-3">
-          <div className="text-lg font-bold text-primary">
-            {fmt(property.price)} FCFA <span className="text-sm font-normal text-muted-foreground">/mois</span>
-          </div>
-          {isFurnished && nightPrice > 0 && (
-            <div className="text-xs text-muted-foreground">
-              soit <span className="font-semibold text-foreground">{fmt(nightPrice)} FCFA</span> /nuit
+          {isFurnished && nightPrice > 0 ? (
+            <>
+              <div className="text-lg font-bold text-primary">
+                {fmt(nightPrice)} FCFA <span className="text-sm font-normal text-muted-foreground">/nuit</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                soit {fmt(property.price)} FCFA /mois
+              </div>
+            </>
+          ) : (
+            <div className="text-lg font-bold text-primary">
+              {fmt(property.price)} FCFA <span className="text-sm font-normal text-muted-foreground">/mois</span>
             </div>
           )}
         </div>

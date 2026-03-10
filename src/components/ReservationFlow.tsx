@@ -44,12 +44,14 @@ const MiniCalendar = ({
   month, year, 
   checkIn, checkOut, 
   bookedDates,
+  pendingDates,
   onSelectDate,
   onPrevMonth, onNextMonth 
 }: {
   month: number; year: number;
   checkIn: Date | null; checkOut: Date | null;
   bookedDates: Set<string>;
+  pendingDates?: Set<string>;
   onSelectDate: (d: Date) => void;
   onPrevMonth: () => void; onNextMonth: () => void;
 }) => {
@@ -84,24 +86,43 @@ const MiniCalendar = ({
         ))}
         {days.map((day, i) => {
           if (!day) return <span key={`e${i}`} />;
+          const key = dateKey(day);
           const isPast = day < today;
-          const isBooked = bookedDates.has(dateKey(day));
+          const isBooked = bookedDates.has(key);
+          const isPending = pendingDates?.has(key) || false;
+          const isDisabled = isPast || isBooked || isPending;
           const isCheckIn = checkIn && dateKey(day) === dateKey(checkIn);
           const isCheckOut = checkOut && dateKey(day) === dateKey(checkOut);
           const inRange = isInRange(day);
           
-          let bgClass = 'hover:bg-muted';
-          if (isPast) bgClass = 'bg-muted/50 text-muted-foreground/50 cursor-not-allowed';
-          else if (isBooked) bgClass = 'bg-destructive/10 text-destructive/70 cursor-not-allowed';
-          else if (isCheckIn || isCheckOut) bgClass = 'bg-primary text-primary-foreground';
-          else if (inRange) bgClass = 'bg-primary/15 text-primary';
+          let cellStyle: React.CSSProperties = {};
+          let classes = 'w-8 h-8 rounded-md text-xs font-medium transition-colors ';
+
+          if (isCheckIn || isCheckOut) {
+            classes += 'bg-primary text-primary-foreground';
+          } else if (inRange) {
+            classes += 'bg-primary/15 text-primary';
+          } else if (isPast) {
+            cellStyle = { background: '#f3f4f6' };
+            classes += 'text-muted-foreground/50 cursor-not-allowed';
+          } else if (isBooked) {
+            cellStyle = { background: '#fee2e2' };
+            classes += 'text-destructive/70 cursor-not-allowed';
+          } else if (isPending) {
+            cellStyle = { background: '#fef3c7' };
+            classes += 'text-yellow-700/70 cursor-not-allowed';
+          } else {
+            cellStyle = { background: '#d1fae5' };
+            classes += 'hover:bg-primary/10 cursor-pointer';
+          }
           
           return (
             <button
               key={i}
-              disabled={isPast || isBooked}
-              onClick={() => !isPast && !isBooked && onSelectDate(day)}
-              className={`w-8 h-8 rounded-md text-xs font-medium transition-colors ${bgClass}`}
+              disabled={isDisabled}
+              onClick={() => !isDisabled && onSelectDate(day)}
+              className={classes}
+              style={cellStyle}
             >
               {day.getDate()}
             </button>
@@ -109,9 +130,10 @@ const MiniCalendar = ({
         })}
       </div>
       <div className="flex gap-3 mt-3 text-[10px] text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-100 border border-green-300" /> Disponible</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/10 border border-destructive/30" /> Occupé</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-100 border border-yellow-300" /> En attente</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#d1fae5', border: '1px solid #86efac' }} /> Disponible</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#fee2e2', border: '1px solid #fca5a5' }} /> Réservé</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#fef3c7', border: '1px solid #fcd34d' }} /> En attente</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#f3f4f6', border: '1px solid #d1d5db' }} /> Passé</span>
       </div>
     </div>
   );
@@ -129,17 +151,29 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const [paymentType, setPaymentType] = useState<'partial' | 'full'>('partial');
   const { toast } = useToast();
 
-  // Mock booked dates
-  const bookedDates = useMemo(() => {
-    const s = new Set<string>();
-    const d = new Date();
-    // Book some random future dates
-    for (let i = 5; i < 10; i++) {
-      const bd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i);
-      s.add(bd.toISOString().split('T')[0]);
-    }
-    return s;
+  // Demo calendar statuses: reserved, pending, available
+  const { bookedDates, pendingDates, availableDates } = useMemo(() => {
+    const booked = new Set<string>();
+    const pending = new Set<string>();
+    const available = new Set<string>();
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    // Days 1-5 reserved
+    for (let d = 1; d <= 5; d++) booked.add(new Date(y, m, d).toISOString().split('T')[0]);
+    // Days 8-10 pending
+    for (let d = 8; d <= 10; d++) pending.add(new Date(y, m, d).toISOString().split('T')[0]);
+    // Days 12-20 available
+    for (let d = 12; d <= 20; d++) available.add(new Date(y, m, d).toISOString().split('T')[0]);
+    // Days 21-23 reserved
+    for (let d = 21; d <= 23; d++) booked.add(new Date(y, m, d).toISOString().split('T')[0]);
+    // Days 25+ available
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    for (let d = 25; d <= lastDay; d++) available.add(new Date(y, m, d).toISOString().split('T')[0]);
+    return { bookedDates: booked, pendingDates: pending, availableDates: available };
   }, []);
+
+  const isSameDay = (a: Date, b: Date) => a.toISOString().split('T')[0] === b.toISOString().split('T')[0];
 
   const handleSelectDate = (d: Date) => {
     if (!checkIn || (checkIn && checkOut)) {
@@ -147,21 +181,29 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
       setCheckOut(null);
       setShowUpgrade(false);
       setUpgradeShown(false);
-    } else {
-      if (d <= checkIn) {
+    } else if (checkIn && !checkOut) {
+      if (isSameDay(d, checkIn)) {
+        // Double-click same day = 1 night
+        const nextDay = new Date(d);
+        nextDay.setDate(nextDay.getDate() + 1);
+        setCheckOut(nextDay);
+      } else if (d < checkIn) {
+        // Click before check-in = swap
+        setCheckOut(checkIn);
         setCheckIn(d);
-        return;
-      }
-      // Check no booked dates in range
-      const current = new Date(checkIn);
-      while (current <= d) {
-        if (bookedDates.has(current.toISOString().split('T')[0])) {
-          toast({ title: 'Dates indisponibles', description: 'La plage sélectionnée inclut des jours occupés.', variant: 'destructive' });
-          return;
+      } else {
+        // Check no booked/pending dates in range
+        const current = new Date(checkIn);
+        while (current <= d) {
+          const key = current.toISOString().split('T')[0];
+          if (bookedDates.has(key) || pendingDates.has(key)) {
+            toast({ title: 'Dates indisponibles', description: 'La plage sélectionnée inclut des jours occupés ou en attente.', variant: 'destructive' });
+            return;
+          }
+          current.setDate(current.getDate() + 1);
         }
-        current.setDate(current.getDate() + 1);
+        setCheckOut(d);
       }
-      setCheckOut(d);
       // Show upgrade after 2 seconds
       if (!upgradeShown) {
         setTimeout(() => setShowUpgrade(true), 2000);
@@ -171,7 +213,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   };
 
   const nights = checkIn && checkOut
-    ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.max(1, Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
   const pricePerNight = Math.round(property.price / 30); // Monthly to nightly
@@ -247,6 +289,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                 checkIn={checkIn}
                 checkOut={checkOut}
                 bookedDates={bookedDates}
+                pendingDates={pendingDates}
                 onSelectDate={handleSelectDate}
                 onPrevMonth={() => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else setCalMonth(m => m - 1); }}
                 onNextMonth={() => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else setCalMonth(m => m + 1); }}
