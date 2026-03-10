@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { SlidersHorizontal, X, Heart, RotateCcw, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
@@ -33,6 +33,7 @@ interface FilterBarProps {
   onToggleFavoritesView?: () => void;
   allProperties?: Property[];
   computeFilteredCount?: (filters: FilterState) => number;
+  externalFilters?: FilterState;
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -58,7 +59,12 @@ const SURFACE_RANGES = [
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 
-// Characteristic groups
+// Keys that should use OR logic within their group (mutually exclusive choices)
+const OR_GROUPS = [
+  ['bed_1', 'bed_2', 'bed_3', 'bed_4plus'],
+  ['bath_1', 'bath_2plus'],
+];
+
 const CHAR_GROUPS = [
   {
     title: 'Pièces & Surface',
@@ -127,11 +133,27 @@ const FilterBar = ({
   showFavoritesOnly = false,
   onToggleFavoritesView,
   computeFilteredCount,
+  externalFilters,
 }: FilterBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
   const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
   const isMobile = useIsMobile();
+
+  // Sync with external filters (from IDX tags, quartier clicks, etc.)
+  useEffect(() => {
+    if (externalFilters) {
+      setApplied(externalFilters);
+      setDraft(externalFilters);
+    }
+  }, [externalFilters]);
+
+  // When drawer opens, always sync draft with current applied state
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(applied);
+    }
+  }, [isOpen]);
 
   const activeCount = [
     applied.type !== 'all',
