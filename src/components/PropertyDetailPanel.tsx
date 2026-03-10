@@ -271,12 +271,12 @@ const PropertyDetailPanel = ({
           </div>
         </div>
 
-        {/* Features */}
+        {/* Features — 4 visible + see more */}
         {features.length > 0 && (
           <div>
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Caractéristiques</h4>
-            <div className="grid grid-cols-5 gap-2">
-              {features.map((f, i) => (
+            <div className="grid grid-cols-4 gap-2">
+              {features.slice(0, showAllFeatures ? features.length : 4).map((f, i) => (
                 <div key={i} className="flex flex-col items-center bg-muted/50 rounded-lg p-2 text-center">
                   <f.icon className="h-4 w-4 text-primary mb-0.5" />
                   <span className="text-xs font-bold text-foreground">{f.value}</span>
@@ -284,6 +284,11 @@ const PropertyDetailPanel = ({
                 </div>
               ))}
             </div>
+            {features.length > 4 && (
+              <button onClick={() => setShowAllFeatures(!showAllFeatures)} className="text-xs text-primary font-medium mt-1 hover:underline">
+                {showAllFeatures ? 'Voir moins' : `+${features.length - 4} autres caractéristiques`}
+              </button>
+            )}
           </div>
         )}
 
