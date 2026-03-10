@@ -286,7 +286,13 @@ const Index = () => {
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
-    setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites));
+    const results = applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites);
+    setFilteredProperties(results);
+    if (results.length > 0) {
+      toast({ title: `✅ ${results.length} bien${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''} à votre recherche` });
+    } else {
+      toast({ title: 'Aucun résultat', description: 'Essayez de décocher une ou deux options.', variant: 'destructive' });
+    }
   };
 
   const handleFullReset = () => {
