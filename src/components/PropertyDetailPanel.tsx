@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Heart, ChevronLeft, ChevronRight, MapPin, Bed, Bath,
   Maximize, Calendar, Phone, MessageCircle, Mail, Camera,
   Thermometer, Shield, Zap, TreePine, Droplets, Wifi,
-  Map, Accessibility, Share2, PhoneCall,
+  Map, Accessibility, Share2, PhoneCall, Play,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,8 @@ interface Property {
   images?: string[];
   available: boolean;
   virtual_tour_url?: string;
+  has_video?: boolean;
+  video_url?: string;
   year_built?: number;
   has_ac?: boolean;
   has_guardian?: boolean;
@@ -43,7 +45,6 @@ interface Property {
   agent_phone?: string;
   agent_photo?: string;
   furnished?: boolean;
-  has_video?: boolean;
 }
 
 interface POI {
@@ -82,24 +83,42 @@ const distanceM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
 
 const fmtDist = (d: number) => (d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`);
 
+type MediaItem = { type: 'photo'; url: string } | { type: 'video'; url: string };
+
 const PropertyDetailPanel = ({
   property, onClose, pois, isFavorite = false, onToggleFavorite, onViewTour,
   similarProperties = [], onSelectProperty, onHighlightPoi, onExploreOnMap, isMobileOverride,
 }: PropertyDetailPanelProps) => {
-  const [photoIdx, setPhotoIdx] = useState(0);
+  const [mediaIdx, setMediaIdx] = useState(0);
   const [descExpanded, setDescExpanded] = useState(false);
   const [showReservation, setShowReservation] = useState(false);
   const [showAllPois, setShowAllPois] = useState(false);
   const [showCallbackModal, setShowCallbackModal] = useState(false);
   const [callbackPhone, setCallbackPhone] = useState('');
+  const [show360Overlay, setShow360Overlay] = useState(false);
+  const [showVideoOverlay, setShowVideoOverlay] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const isMobile = isMobileOverride ?? false;
+
+  // Reset media index when property changes
+  useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); }, [property?.id]);
 
   if (!property) return null;
 
   const images = property.images?.length ? property.images : ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'];
   const isFurnished = isTypeFurnished(property.type) || property.furnished || false;
   const nightPrice = isFurnished ? pricePerNight(property.price) : 0;
+  const videoUrl = property.video_url || (property.has_video ? 'https://www.w3schools.com/html/mov_bbb.mp4' : null);
+
+  // Build media items
+  const mediaItems: MediaItem[] = [
+    ...images.map(url => ({ type: 'photo' as const, url })),
+    ...(videoUrl ? [{ type: 'video' as const, url: videoUrl }] : []),
+  ];
+
+  const photoCount = images.length;
+  const videoCount = videoUrl ? 1 : 0;
 
   // Nearby POIs
   const nearbyPois = pois
@@ -145,6 +164,8 @@ const PropertyDetailPanel = ({
     setCallbackPhone('');
   };
 
+  const currentMedia = mediaItems[mediaIdx];
+
   const panelContent = (
     <>
       {isMobile && (
@@ -153,25 +174,49 @@ const PropertyDetailPanel = ({
         </div>
       )}
 
-      {/* Gallery */}
-      <div className="relative h-56 bg-muted">
-        <img src={images[photoIdx]} alt={property.title} className="w-full h-full object-cover" />
-        {images.length > 1 && (
+      {/* ── Media Slider ── */}
+      <div className="relative h-56 bg-muted overflow-hidden">
+        {currentMedia?.type === 'video' ? (
+          <video
+            ref={videoRef}
+            src={currentMedia.url}
+            className="w-full h-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+        ) : (
+          <img src={currentMedia?.url || images[0]} alt={property.title} className="w-full h-full object-cover" />
+        )}
+
+        {/* Navigation arrows */}
+        {mediaItems.length > 1 && (
           <>
-            <button onClick={() => setPhotoIdx(i => (i - 1 + images.length) % images.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow hover:bg-card active:scale-95 transition-all">
+            <button onClick={() => setMediaIdx(i => (i - 1 + mediaItems.length) % mediaItems.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow hover:bg-card active:scale-95 transition-all">
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <button onClick={() => setPhotoIdx(i => (i + 1) % images.length)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow hover:bg-card active:scale-95 transition-all">
+            <button onClick={() => setMediaIdx(i => (i + 1) % mediaItems.length)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow hover:bg-card active:scale-95 transition-all">
               <ChevronRight className="h-4 w-4" />
             </button>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-              {images.map((_, i) => (
-                <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === photoIdx ? 'bg-card w-3' : 'bg-card/60'}`} />
-              ))}
-            </div>
           </>
         )}
 
+        {/* Dots */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+          {mediaItems.map((_, i) => (
+            <button key={i} onClick={() => setMediaIdx(i)} className={`rounded-full transition-all ${i === mediaIdx ? 'bg-card w-3 h-1.5' : 'bg-card/60 w-1.5 h-1.5'}`} />
+          ))}
+        </div>
+
+        {/* Video badge */}
+        {currentMedia?.type === 'video' && (
+          <div className="absolute top-3 left-3">
+            <Badge className="bg-card/80 text-foreground gap-1 text-xs"><Play className="h-3 w-3" /> Vidéo</Badge>
+          </div>
+        )}
+
+        {/* Top right actions */}
         <div className="absolute top-3 right-3 flex gap-1.5">
           {onToggleFavorite && (
             <button onClick={() => onToggleFavorite(property.id)} className={`w-8 h-8 rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${isFavorite ? 'bg-secondary text-secondary-foreground' : 'bg-card/80 text-muted-foreground hover:text-secondary'}`}>
@@ -184,19 +229,24 @@ const PropertyDetailPanel = ({
         </div>
       </div>
 
-      <div className="p-5 space-y-5">
-        {/* 360° / Video */}
-        {(property.virtual_tour_url || property.has_video) && (
-          <div className="flex gap-2">
-            {property.virtual_tour_url && (
-              <Badge className="bg-accent text-accent-foreground cursor-pointer gap-1 px-3 py-1.5 hover:bg-accent/80 active:scale-95 transition-all" onClick={() => onViewTour?.(property)}>
-                <Camera className="h-3.5 w-3.5" /> Visite 360°
-              </Badge>
-            )}
-            {property.has_video && <Badge className="bg-muted text-foreground gap-1 px-3 py-1.5">🎬 Vidéo HD</Badge>}
-          </div>
+      {/* Media type buttons */}
+      <div className="flex gap-2 px-5 pt-3">
+        <Badge className="bg-muted text-foreground gap-1 px-3 py-1.5 text-xs cursor-pointer hover:bg-muted/80" onClick={() => setMediaIdx(0)}>
+          📷 {photoCount} photo{photoCount > 1 ? 's' : ''}
+        </Badge>
+        {videoUrl && (
+          <Badge className="bg-muted text-foreground gap-1 px-3 py-1.5 text-xs cursor-pointer hover:bg-muted/80" onClick={() => setShowVideoOverlay(true)}>
+            🎥 1 vidéo
+          </Badge>
         )}
+        {property.virtual_tour_url && (
+          <Badge className="bg-accent text-accent-foreground gap-1 px-3 py-1.5 text-xs cursor-pointer hover:bg-accent/80" onClick={() => setShow360Overlay(true)}>
+            🔭 Visite 360°
+          </Badge>
+        )}
+      </div>
 
+      <div className="p-5 space-y-5">
         {/* Identity */}
         <div>
           <h3 className="text-lg font-bold text-foreground">{property.title}</h3>
@@ -378,6 +428,60 @@ const PropertyDetailPanel = ({
       {/* Reservation Flow */}
       <AnimatePresence>
         {showReservation && <ReservationFlow property={property} onClose={() => setShowReservation(false)} />}
+      </AnimatePresence>
+
+      {/* ── Fullscreen 360° Overlay ── */}
+      <AnimatePresence>
+        {show360Overlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ background: '#000' }}
+          >
+            <iframe
+              src={property.virtual_tour_url || ''}
+              className="w-full h-full border-none"
+              allowFullScreen
+              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; xr-spatial-tracking"
+            />
+            <button
+              onClick={() => setShow360Overlay(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-xl text-card z-[10000] hover:bg-card/20 transition-colors"
+              style={{ background: 'rgba(255,255,255,0.15)' }}
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Fullscreen Video Overlay ── */}
+      <AnimatePresence>
+        {showVideoOverlay && videoUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ background: '#000' }}
+          >
+            <video
+              src={videoUrl}
+              className="w-full h-full object-contain"
+              controls
+              autoPlay
+            />
+            <button
+              onClick={() => setShowVideoOverlay(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-xl text-card z-[10000] hover:bg-card/20 transition-colors"
+              style={{ background: 'rgba(255,255,255,0.15)' }}
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
       </AnimatePresence>
     </>
   );

@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { SlidersHorizontal, X, Heart, RotateCcw, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { PROPERTY_TYPES } from '@/lib/mockData';
+import { PROPERTY_TYPES, CHAR_CHECKS } from '@/lib/mockData';
+import type { Property } from '@/lib/mockData';
 
 export interface FilterState {
   type: string;
@@ -16,6 +18,8 @@ export interface FilterState {
   hasVirtualTour: boolean;
   onlyAvailable: boolean;
   surfaceRange: string;
+  characteristics: string[];
+  minSurface: number;
 }
 
 interface FilterBarProps {
@@ -27,6 +31,8 @@ interface FilterBarProps {
   favoritesCount?: number;
   showFavoritesOnly?: boolean;
   onToggleFavoritesView?: () => void;
+  allProperties?: Property[];
+  computeFilteredCount?: (filters: FilterState) => number;
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -38,6 +44,8 @@ export const DEFAULT_FILTERS: FilterState = {
   hasVirtualTour: false,
   onlyAvailable: false,
   surfaceRange: 'all',
+  characteristics: [],
+  minSurface: 0,
 };
 
 const SURFACE_RANGES = [
@@ -48,9 +56,66 @@ const SURFACE_RANGES = [
   { value: '>300', label: '> 300m²' },
 ];
 
-const BEDROOMS = [1, 2, 3, 4];
-
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
+
+// Characteristic groups
+const CHAR_GROUPS = [
+  {
+    title: 'Pièces & Surface',
+    items: [
+      { key: 'bed_1', label: '1 chambre' },
+      { key: 'bed_2', label: '2 chambres' },
+      { key: 'bed_3', label: '3 chambres' },
+      { key: 'bed_4plus', label: '4 chambres et +' },
+      { key: 'bath_1', label: '1 salle de bain' },
+      { key: 'bath_2plus', label: '2 salles de bain +' },
+    ],
+  },
+  {
+    title: 'Équipements essentiels',
+    items: [
+      { key: 'clim', label: 'Climatisation' },
+      { key: 'generator', label: 'Groupe électrogène' },
+      { key: 'water', label: 'Eau courante' },
+      { key: 'water_tower', label: "Château d'eau" },
+      { key: 'wifi', label: 'WiFi / Internet' },
+      { key: 'kitchen', label: 'Cuisine équipée' },
+      { key: 'fridge', label: 'Réfrigérateur' },
+      { key: 'stove', label: 'Cuisinière' },
+    ],
+  },
+  {
+    title: 'Confort & Extérieur',
+    items: [
+      { key: 'furnished', label: 'Meublé' },
+      { key: 'tv', label: 'Télévision' },
+      { key: 'terrace', label: 'Terrasse / Balcon' },
+      { key: 'garden', label: 'Jardin / Cour' },
+      { key: 'pool', label: 'Piscine' },
+      { key: 'parking_int', label: 'Parking intérieur' },
+      { key: 'parking_ext', label: 'Parking extérieur' },
+    ],
+  },
+  {
+    title: 'Sécurité & Accès',
+    items: [
+      { key: 'guardian', label: 'Gardien 24h/24' },
+      { key: 'fenced', label: 'Clôturé' },
+      { key: 'auto_gate', label: 'Portail automatique' },
+      { key: 'cameras', label: 'Caméras de surveillance' },
+      { key: 'paved_road', label: 'Route goudronnée' },
+      { key: 'pmr', label: 'Accès facile (PMR)' },
+    ],
+  },
+  {
+    title: 'Standing',
+    items: [
+      { key: 'is_new', label: 'Neuf' },
+      { key: 'renovated', label: 'Rénové récemment' },
+      { key: 'pets', label: 'Animaux acceptés' },
+    ],
+  },
+];
 
 const FilterBar = ({
   onFilterChange,
@@ -61,6 +126,7 @@ const FilterBar = ({
   favoritesCount = 0,
   showFavoritesOnly = false,
   onToggleFavoritesView,
+  computeFilteredCount,
 }: FilterBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
@@ -75,6 +141,8 @@ const FilterBar = ({
     applied.hasVirtualTour,
     applied.onlyAvailable,
     applied.surfaceRange !== 'all',
+    applied.characteristics.length > 0,
+    applied.minSurface > 0,
   ].filter(Boolean).length;
 
   const summaryParts: string[] = [];
@@ -83,11 +151,18 @@ const FilterBar = ({
     if (t) summaryParts.push(t.label);
   }
   if (applied.quartier !== 'all') summaryParts.push(applied.quartier);
+  if (applied.characteristics.length > 0) summaryParts.push(`${applied.characteristics.length} caract.`);
   const summary = summaryParts.length > 0
     ? `${summaryParts.join(' · ')} · ${fmt(applied.minPrice)} – ${fmt(applied.maxPrice)} FCFA`
     : null;
 
   const dots = Array.from({ length: 3 }, (_, i) => i < activeCount);
+
+  // Real-time draft count
+  const draftCount = useMemo(() => {
+    if (computeFilteredCount) return computeFilteredCount(draft);
+    return filteredCount;
+  }, [draft, computeFilteredCount, filteredCount]);
 
   const handleApply = () => {
     setApplied(draft);
@@ -107,6 +182,15 @@ const FilterBar = ({
 
   const toggleType = (type: string) => {
     setDraft(d => ({ ...d, type: d.type === type ? 'all' : type }));
+  };
+
+  const toggleChar = (key: string) => {
+    setDraft(d => {
+      const chars = d.characteristics.includes(key)
+        ? d.characteristics.filter(c => c !== key)
+        : [...d.characteristics, key];
+      return { ...d, characteristics: chars };
+    });
   };
 
   return (
@@ -227,45 +311,37 @@ const FilterBar = ({
                   />
                 </div>
 
-                {/* SURFACE */}
-                <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Surface</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {SURFACE_RANGES.map(s => (
-                      <button
-                        key={s.value}
-                        onClick={() => setDraft(d => ({ ...d, surfaceRange: d.surfaceRange === s.value ? 'all' : s.value }))}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all active:scale-[0.98] ${
-                          draft.surfaceRange === s.value
-                            ? 'bg-primary/10 border-primary text-primary'
-                            : 'bg-muted/50 border-transparent text-muted-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
+                {/* CARACTÉRISTIQUES — GROUPED CHECKBOXES */}
+                {CHAR_GROUPS.map(group => (
+                  <div key={group.title}>
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">{group.title}</h4>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                      {group.items.map(item => (
+                        <label key={item.key} className="flex items-center gap-2 cursor-pointer group">
+                          <Checkbox
+                            checked={draft.characteristics.includes(item.key)}
+                            onCheckedChange={() => toggleChar(item.key)}
+                            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                          />
+                          <span className="text-sm text-foreground group-hover:text-primary transition-colors">{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {/* Surface slider for first group */}
+                    {group.title === 'Pièces & Surface' && (
+                      <div className="mt-3">
+                        <p className="text-xs text-muted-foreground mb-1">Surface minimum : <span className="font-semibold text-foreground">{draft.minSurface > 0 ? `${draft.minSurface} m²` : 'Aucune'}</span></p>
+                        <Slider
+                          value={[draft.minSurface]}
+                          onValueChange={([v]) => setDraft(d => ({ ...d, minSurface: v }))}
+                          min={0}
+                          max={500}
+                          step={10}
+                        />
+                      </div>
+                    )}
                   </div>
-                </div>
-
-                {/* CHAMBRES */}
-                <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Chambres</h4>
-                  <div className="flex gap-2">
-                    {BEDROOMS.map(n => (
-                      <button
-                        key={n}
-                        onClick={() => setDraft(d => ({ ...d, minBedrooms: d.minBedrooms === n ? 0 : n }))}
-                        className={`w-10 h-10 rounded-lg text-sm font-bold border transition-all active:scale-[0.98] ${
-                          draft.minBedrooms === n
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {n === 4 ? '4+' : n}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                ))}
 
                 {/* OPTIONS */}
                 <div>
@@ -290,11 +366,20 @@ const FilterBar = ({
                     <RotateCcw className="h-3.5 w-3.5" />
                     Réinitialiser
                   </Button>
-                  <Button onClick={handleApply} className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]">
+                  <Button
+                    onClick={handleApply}
+                    disabled={draftCount === 0}
+                    className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
+                  >
                     <Check className="h-3.5 w-3.5" />
-                    Appliquer
+                    {draftCount === 0 ? 'Aucun résultat' : `Appliquer (${draftCount} bien${draftCount > 1 ? 's' : ''})`}
                   </Button>
                 </div>
+                {draftCount === 0 && (
+                  <p className="text-xs text-destructive text-center">
+                    Aucun bien ne correspond à tous ces critères. Essayez d'en cocher moins.
+                  </p>
+                )}
               </div>
             </motion.div>
           </>

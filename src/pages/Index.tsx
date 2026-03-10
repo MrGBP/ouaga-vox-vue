@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { mockProperties, mockPois, mockQuartiers, isTypeFurnished, pricePerNight, getTypeLabel } from '@/lib/mockData';
+import { mockProperties, mockPois, mockQuartiers, isTypeFurnished, pricePerNight, getTypeLabel, CHAR_CHECKS, IDX_KEYWORD_MAP } from '@/lib/mockData';
 import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
 import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import Header from '@/components/Header';
@@ -16,7 +16,7 @@ import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
-import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
@@ -39,6 +39,8 @@ interface Property {
   images?: string[];
   available: boolean;
   virtual_tour_url?: string;
+  has_video?: boolean;
+  video_url?: string;
   status?: string;
   agent_name?: string;
   agent_phone?: string;
@@ -50,8 +52,24 @@ interface Property {
   has_garden?: boolean;
   has_water?: boolean;
   has_internet?: boolean;
+  has_kitchen?: boolean;
+  has_fridge?: boolean;
+  has_stove?: boolean;
+  has_tv?: boolean;
+  has_terrace?: boolean;
+  has_pool?: boolean;
+  has_parking_int?: boolean;
+  has_parking_ext?: boolean;
+  has_fence?: boolean;
+  has_auto_gate?: boolean;
+  has_cameras?: boolean;
+  has_paved_road?: boolean;
+  has_pmr?: boolean;
+  has_water_tower?: boolean;
+  is_new_build?: boolean;
+  is_renovated?: boolean;
+  pets_allowed?: boolean;
   furnished?: boolean;
-  has_video?: boolean;
   created_at?: string;
 }
 
@@ -97,6 +115,7 @@ const Index = () => {
   const [mapQuartierTrigger, setMapQuartierTrigger] = useState<string | null>(null);
   const [activeQuartier, setActiveQuartier] = useState<string | null>(null);
   const [mapResetTrigger, setMapResetTrigger] = useState(0);
+  const [idxTags, setIdxTags] = useState<{ characteristic: string; emoji: string; label: string }[]>([]);
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
@@ -174,7 +193,32 @@ const Index = () => {
       else if (sr === '150-300') result = result.filter(p => (p.surface_area || 0) >= 150 && (p.surface_area || 0) <= 300);
       else if (sr === '>300') result = result.filter(p => (p.surface_area || 0) > 300);
     }
+    // Characteristics (AND logic)
+    if (f.characteristics.length > 0) {
+      result = result.filter(p => f.characteristics.every(c => CHAR_CHECKS[c]?.(p as any)));
+    }
+    // Min surface
+    if (f.minSurface > 0) {
+      result = result.filter(p => (p.surface_area || 0) >= f.minSurface);
+    }
     return result;
+  }, []);
+
+  // Compute filtered count for FilterBar real-time
+  const computeFilteredCount = useCallback((draftFilters: FilterState) => {
+    return applyFilters(properties, searchQuery, draftFilters, showFavoritesOnly, favorites).length;
+  }, [properties, searchQuery, showFavoritesOnly, favorites, applyFilters]);
+
+  // IDX keyword detection
+  const detectIdxTags = useCallback((query: string) => {
+    const q = query.toLowerCase();
+    const detected: { characteristic: string; emoji: string; label: string }[] = [];
+    IDX_KEYWORD_MAP.forEach(mapping => {
+      if (mapping.keywords.some(kw => q.includes(kw))) {
+        detected.push({ characteristic: mapping.characteristic, emoji: mapping.emoji, label: mapping.label });
+      }
+    });
+    return detected;
   }, []);
 
   const handleSearch = (query: string) => {
@@ -182,7 +226,15 @@ const Index = () => {
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
-    const filtered = applyFilters(properties, query, filters, showFavoritesOnly, favorites);
+
+    // Detect IDX tags and auto-set characteristics
+    const tags = detectIdxTags(query);
+    setIdxTags(tags);
+    const autoChars = tags.map(t => t.characteristic);
+    const newFilters = { ...filters, characteristics: [...new Set([...filters.characteristics, ...autoChars])] };
+    setFilters(newFilters);
+
+    const filtered = applyFilters(properties, query, newFilters, showFavoritesOnly, favorites);
     setFilteredProperties(filtered);
     if (filtered.length > 0) {
       speak(`J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''} pour "${query}".`);
@@ -191,6 +243,14 @@ const Index = () => {
       speak("Aucun bien ne correspond à votre recherche.");
       toast({ title: 'Aucun résultat', description: 'Élargissez votre recherche.', variant: 'destructive' });
     }
+  };
+
+  const removeIdxTag = (characteristic: string) => {
+    setIdxTags(prev => prev.filter(t => t.characteristic !== characteristic));
+    const newChars = filters.characteristics.filter(c => c !== characteristic);
+    const newFilters = { ...filters, characteristics: newChars };
+    setFilters(newFilters);
+    setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites));
   };
 
   const handleFilterChange = (newFilters: FilterState) => {
@@ -204,6 +264,7 @@ const Index = () => {
   const handleFullReset = () => {
     setFilters(DEFAULT_FILTERS);
     setSearchQuery('');
+    setIdxTags([]);
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
@@ -243,6 +304,7 @@ const Index = () => {
     const newFilters = { ...filters, quartier: q.name };
     setFilters(newFilters);
     setSearchQuery('');
+    setIdxTags([]);
     setCurrentPage(1);
     setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
     setMapQuartierTrigger(q.name);
@@ -300,7 +362,6 @@ const Index = () => {
     return { price: fmtN(p.price), suffix: '/mois', nightPrice: null, nightSuffix: null };
   };
 
-  // Recently viewed handler
   const handleRecentlyViewedClick = (id: string) => {
     const prop = properties.find(p => p.id === id);
     if (prop) handleViewDetails(prop);
@@ -337,6 +398,19 @@ const Index = () => {
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25 }} className="mt-8 w-full" style={{ maxWidth: '605px' }}>
             <VoiceSearch onSearchQuery={handleSearch} searchQuery={searchQuery} onSearchQueryChange={setSearchQuery} />
+            {/* IDX Tags */}
+            {idxTags.length > 0 && (
+              <div className="flex gap-2 flex-wrap justify-center mt-3">
+                {idxTags.map(tag => (
+                  <span key={tag.characteristic} className="inline-flex items-center gap-1 bg-card/90 text-foreground rounded-full px-3 py-1 text-xs font-medium shadow-sm">
+                    {tag.emoji} {tag.label}
+                    <button onClick={() => removeIdxTag(tag.characteristic)} className="ml-0.5 hover:text-destructive transition-colors">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </motion.div>
         </div>
       </section>
@@ -356,6 +430,7 @@ const Index = () => {
           favoritesCount={favorites.size}
           showFavoritesOnly={showFavoritesOnly}
           onToggleFavoritesView={toggleFavoritesView}
+          computeFilteredCount={computeFilteredCount}
         />
 
         <div className="flex gap-0 relative">
@@ -464,6 +539,7 @@ const Index = () => {
                   onClick={() => handlePageChange(-1)} className="h-10 w-10 disabled:opacity-30">
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
+                <span className="text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
                 <Button variant="outline" size="icon" disabled={currentPage === totalPages}
                   onClick={() => handlePageChange(1)} className="h-10 w-10 disabled:opacity-30">
                   <ChevronRight className="h-5 w-5" />

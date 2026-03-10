@@ -20,6 +20,7 @@ export interface Property {
   available: boolean;
   virtual_tour_url?: string;
   has_video?: boolean;
+  video_url?: string;
   year_built?: number;
   has_ac?: boolean;
   has_guardian?: boolean;
@@ -27,6 +28,23 @@ export interface Property {
   has_garden?: boolean;
   has_water?: boolean;
   has_internet?: boolean;
+  has_kitchen?: boolean;
+  has_fridge?: boolean;
+  has_stove?: boolean;
+  has_tv?: boolean;
+  has_terrace?: boolean;
+  has_pool?: boolean;
+  has_parking_int?: boolean;
+  has_parking_ext?: boolean;
+  has_fence?: boolean;
+  has_auto_gate?: boolean;
+  has_cameras?: boolean;
+  has_paved_road?: boolean;
+  has_pmr?: boolean;
+  has_water_tower?: boolean;
+  is_new_build?: boolean;
+  is_renovated?: boolean;
+  pets_allowed?: boolean;
   status?: 'available' | 'reserved' | 'rented';
   agent_name?: string;
   agent_phone?: string;
@@ -51,7 +69,7 @@ export interface Quartier {
   image_url?: string;
   latitude: number;
   longitude: number;
-  bounds?: [[number, number], [number, number]]; // [SW, NE]
+  bounds?: [[number, number], [number, number]];
 }
 
 // ─── 7 TYPES OFFICIELS ──────────────────────────────────────────────────────
@@ -79,6 +97,54 @@ export const getTypeEmoji = (type: string): string =>
 /** Prix par nuit = prix/mois ÷ 30, arrondi au 500 FCFA le plus proche */
 export const pricePerNight = (monthlyPrice: number): number =>
   Math.round(monthlyPrice / 30 / 500) * 500;
+
+// ─── CHARACTERISTIC CHECKS for filter logic ─────────────────────────────────
+export const CHAR_CHECKS: Record<string, (p: Property) => boolean> = {
+  bed_1: p => p.bedrooms === 1,
+  bed_2: p => p.bedrooms === 2,
+  bed_3: p => p.bedrooms === 3,
+  bed_4plus: p => (p.bedrooms || 0) >= 4,
+  bath_1: p => p.bathrooms === 1,
+  bath_2plus: p => (p.bathrooms || 0) >= 2,
+  clim: p => !!p.has_ac,
+  generator: p => !!p.has_generator,
+  water: p => !!p.has_water,
+  water_tower: p => !!p.has_water_tower,
+  wifi: p => !!p.has_internet,
+  kitchen: p => !!p.has_kitchen,
+  fridge: p => !!p.has_fridge,
+  stove: p => !!p.has_stove,
+  furnished: p => !!p.furnished,
+  tv: p => !!p.has_tv,
+  terrace: p => !!p.has_terrace,
+  garden: p => !!p.has_garden,
+  pool: p => !!p.has_pool,
+  parking_int: p => !!p.has_parking_int,
+  parking_ext: p => !!p.has_parking_ext,
+  guardian: p => !!p.has_guardian,
+  fenced: p => !!p.has_fence,
+  auto_gate: p => !!p.has_auto_gate,
+  cameras: p => !!p.has_cameras,
+  paved_road: p => !!p.has_paved_road,
+  pmr: p => !!p.has_pmr,
+  is_new: p => !!p.is_new_build,
+  renovated: p => !!p.is_renovated,
+  pets: p => !!p.pets_allowed,
+};
+
+// ─── IDX keyword → characteristic mapping ───────────────────────────────────
+export const IDX_KEYWORD_MAP: { keywords: string[]; characteristic: string; emoji: string; label: string }[] = [
+  { keywords: ['climatisé', 'clim'], characteristic: 'clim', emoji: '❄️', label: 'Climatisation' },
+  { keywords: ['wifi', 'internet'], characteristic: 'wifi', emoji: '📶', label: 'WiFi' },
+  { keywords: ['parking', 'garage'], characteristic: 'parking_int', emoji: '🚗', label: 'Parking' },
+  { keywords: ['gardien', 'sécurisé'], characteristic: 'guardian', emoji: '🛡️', label: 'Gardien' },
+  { keywords: ['meublé'], characteristic: 'furnished', emoji: '🛋️', label: 'Meublé' },
+  { keywords: ['piscine'], characteristic: 'pool', emoji: '🏊', label: 'Piscine' },
+  { keywords: ['groupe', 'électrogène'], characteristic: 'generator', emoji: '⚡', label: 'Groupe élec.' },
+  { keywords: ['clôturé', 'clôture'], characteristic: 'fenced', emoji: '🔒', label: 'Clôturé' },
+  { keywords: ['neuf', 'nouveau'], characteristic: 'is_new', emoji: '✨', label: 'Neuf' },
+  { keywords: ['animaux'], characteristic: 'pets', emoji: '🐾', label: 'Animaux' },
+];
 
 // ─── 16 QUARTIERS ────────────────────────────────────────────────────────────
 export const mockQuartiers: Quartier[] = [
@@ -114,29 +180,38 @@ const IMAGES_POOL = {
     'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=600&auto=format',
     'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&auto=format',
     'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=600&auto=format',
+    'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=600&auto=format',
   ],
   villa: [
     'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&auto=format',
     'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format',
     'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&auto=format',
     'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&auto=format',
+    'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&auto=format',
   ],
   appartement: [
     'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format',
     'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&auto=format',
     'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format',
+    'https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=600&auto=format',
   ],
   studio: [
     'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&auto=format',
     'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=600&auto=format',
+    'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&auto=format',
+    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&auto=format',
   ],
   bureau: [
     'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&auto=format',
     'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=600&auto=format',
+    'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600&auto=format',
+    'https://images.unsplash.com/photo-1497215842964-222b430dc094?w=600&auto=format',
   ],
   commerce: [
     'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&auto=format',
     'https://images.unsplash.com/photo-1528698827591-e19cef791f48?w=600&auto=format',
+    'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=600&auto=format',
+    'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&auto=format',
   ],
 };
 
@@ -149,8 +224,15 @@ function getImages(type: string, idx: number): string[] {
   else if (type.includes('villa') || (type.includes('maison') && idx % 3 === 0)) pool = IMAGES_POOL.villa;
   else pool = IMAGES_POOL.maison;
   const start = idx % pool.length;
-  return [pool[start], pool[(start + 1) % pool.length], pool[(start + 2) % pool.length]];
+  const result: string[] = [];
+  for (let j = 0; j < Math.min(pool.length, 4 + (idx % 2)); j++) {
+    result.push(pool[(start + j) % pool.length]);
+  }
+  return result;
 }
+
+const DEMO_VIDEO_URL = 'https://www.w3schools.com/html/mov_bbb.mp4';
+const DEMO_360_URL = 'https://www.youtube.com/embed/2OzlksZBTiA';
 
 // Random within range
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
@@ -178,7 +260,6 @@ const GEN_CONFIGS: GenConfig[] = [
   { type: 'local_commercial', count: 7, priceRange: [80000, 500000], bedRange: [0, 0], bathRange: [1, 1], surfaceRange: [30, 200], titleParts: ['Local Commercial', 'Boutique', 'Espace Commercial', 'Commerce'] },
 ];
 
-// Quartier distribution
 const QUARTIER_ALLOC: { name: string; count: number }[] = [
   { name: 'Ouaga 2000', count: 14 },
   { name: 'Tampouy', count: 12 },
@@ -200,21 +281,13 @@ const QUARTIER_ALLOC: { name: string; count: number }[] = [
 
 function generateProperties(): Property[] {
   const props: Property[] = [];
-  let idx = 0;
 
-  // Build quartier slots with GPS jitter
   const quartierSlots: string[] = [];
-  QUARTIER_ALLOC.forEach(q => {
-    for (let i = 0; i < q.count; i++) quartierSlots.push(q.name);
-  });
+  QUARTIER_ALLOC.forEach(q => { for (let i = 0; i < q.count; i++) quartierSlots.push(q.name); });
 
-  // Build type slots
   const typeSlots: GenConfig[] = [];
-  GEN_CONFIGS.forEach(cfg => {
-    for (let i = 0; i < cfg.count; i++) typeSlots.push(cfg);
-  });
+  GEN_CONFIGS.forEach(cfg => { for (let i = 0; i < cfg.count; i++) typeSlots.push(cfg); });
 
-  // Shuffle quartier slots deterministically (seeded shuffle)
   const seededShuffle = <T,>(arr: T[], seed: number): T[] => {
     const a = [...arr];
     let s = seed;
@@ -239,7 +312,6 @@ function generateProperties(): Property[] {
     const agent = AGENTS[i % AGENTS.length];
     const isFurnished = isTypeFurnished(cfg.type);
 
-    // GPS: jitter within quartier bounds
     const bounds = q.bounds || [[q.latitude - 0.01, q.longitude - 0.01], [q.latitude + 0.01, q.longitude + 0.01]];
     const lat = +(bounds[0][0] + Math.random() * (bounds[1][0] - bounds[0][0])).toFixed(6);
     const lng = +(bounds[0][1] + Math.random() * (bounds[1][1] - bounds[0][1])).toFixed(6);
@@ -252,7 +324,6 @@ function generateProperties(): Property[] {
     const security = +(rand(2, 5)).toFixed(1);
     const accessibility = +(rand(2, 5)).toFixed(1);
 
-    // 10 biens récents (< 7 jours)
     const isRecent = i < 10;
     const createdAt = isRecent
       ? new Date(now - randInt(0, 6) * DAY).toISOString()
@@ -260,6 +331,9 @@ function generateProperties(): Property[] {
 
     const titlePart = cfg.titleParts[i % cfg.titleParts.length];
     const suffix = bedrooms > 0 ? ` ${bedrooms}ch` : surface > 100 ? ` ${surface}m²` : '';
+
+    const hasVideo = i % 4 === 0;
+    const has360 = i % 3 === 0;
 
     props.push({
       id: `p${i + 1}`,
@@ -280,22 +354,39 @@ function generateProperties(): Property[] {
       images: getImages(cfg.type, i),
       available: true,
       status: 'available',
-      virtual_tour_url: i % 5 === 0 ? `https://tour.example.com/p${i + 1}` : undefined,
-      has_video: i % 7 === 0,
+      virtual_tour_url: has360 ? DEMO_360_URL : undefined,
+      has_video: hasVideo,
+      video_url: hasVideo ? DEMO_VIDEO_URL : undefined,
       year_built: randInt(2010, 2025),
       has_ac: isFurnished || i % 3 === 0,
-      has_guardian: i % 4 === 0,
-      has_generator: i % 5 === 0,
+      has_guardian: i % 3 === 0,
+      has_generator: i % 4 === 0,
       has_garden: bedrooms >= 3 && i % 2 === 0,
       has_water: true,
       has_internet: isFurnished || i % 2 === 0,
+      has_kitchen: isFurnished || i % 3 === 0,
+      has_fridge: isFurnished || i % 4 === 0,
+      has_stove: isFurnished || i % 5 === 0,
+      has_tv: isFurnished || i % 4 === 0,
+      has_terrace: i % 3 === 0,
+      has_pool: i % 10 === 0,
+      has_parking_int: i % 4 === 0,
+      has_parking_ext: i % 3 === 0,
+      has_fence: i % 2 === 0,
+      has_auto_gate: i % 6 === 0,
+      has_cameras: i % 7 === 0,
+      has_paved_road: i % 2 === 0,
+      has_pmr: i % 8 === 0,
+      has_water_tower: i % 3 === 0,
+      is_new_build: i % 9 === 0,
+      is_renovated: i % 5 === 0,
+      pets_allowed: i % 6 === 0,
       furnished: isFurnished,
       agent_name: agent.name,
       agent_phone: agent.phone,
       agent_photo: agent.photo,
       created_at: createdAt,
     });
-    idx++;
   }
 
   return props;
@@ -305,62 +396,46 @@ export const mockProperties: Property[] = generateProperties();
 
 // ─── MOCK POIs ───────────────────────────────────────────────────────────────
 export const mockPois: POI[] = [
-  // Ouaga 2000
   { id: 'poi1', name: 'Clinique Les Genêts', type: 'clinique', quartier: 'Ouaga 2000', latitude: 12.300, longitude: -1.618 },
   { id: 'poi2', name: 'Lycée International', type: 'lycee', quartier: 'Ouaga 2000', latitude: 12.295, longitude: -1.625 },
   { id: 'poi3', name: 'Banque BICIA-B', type: 'banque', quartier: 'Ouaga 2000', latitude: 12.302, longitude: -1.615 },
   { id: 'poi4', name: 'Restaurant Le Verdoyant', type: 'restaurant', quartier: 'Ouaga 2000', latitude: 12.296, longitude: -1.622 },
   { id: 'poi5', name: 'Station Total O2000', type: 'station_total', quartier: 'Ouaga 2000', latitude: 12.305, longitude: -1.610 },
   { id: 'poi6', name: 'Pharmacie du Progrès', type: 'pharmacie', quartier: 'Ouaga 2000', latitude: 12.293, longitude: -1.617 },
-  // Tampouy
   { id: 'poi7', name: 'Grand Marché Tampouy', type: 'grand_marche', quartier: 'Tampouy', latitude: 12.450, longitude: -1.522 },
   { id: 'poi8', name: 'CSPS Tampouy', type: 'hopital', quartier: 'Tampouy', latitude: 12.454, longitude: -1.518 },
   { id: 'poi9', name: 'Lycée Tampouy', type: 'lycee', quartier: 'Tampouy', latitude: 12.456, longitude: -1.525 },
   { id: 'poi10', name: 'Gare Routière Tampouy', type: 'gare_routiere', quartier: 'Tampouy', latitude: 12.448, longitude: -1.515 },
   { id: 'poi11', name: 'Mosquée de Tampouy', type: 'mosquee_quartier', quartier: 'Tampouy', latitude: 12.453, longitude: -1.521 },
-  // Zogona
   { id: 'poi12', name: 'Université de Ouagadougou', type: 'universite', quartier: 'Zogona', latitude: 12.402, longitude: -1.514 },
   { id: 'poi13', name: 'CHU Yalgado', type: 'hopital', quartier: 'Zogona', latitude: 12.398, longitude: -1.518 },
   { id: 'poi14', name: 'Parc Bangr Wéoogo', type: 'parc', quartier: 'Zogona', latitude: 12.405, longitude: -1.510 },
   { id: 'poi15', name: 'Banque SGBF Zogona', type: 'banque', quartier: 'Zogona', latitude: 12.397, longitude: -1.512 },
-  // Patte d'Oie
   { id: 'poi16', name: "Centre Commercial Patte d'Oie", type: 'supermarche', quartier: "Patte d'Oie", latitude: 12.345, longitude: -1.588 },
   { id: 'poi17', name: "Clinique Patte d'Oie", type: 'clinique', quartier: "Patte d'Oie", latitude: 12.340, longitude: -1.592 },
-  { id: 'poi18', name: "Banque BOA", type: 'banque', quartier: "Patte d'Oie", latitude: 12.347, longitude: -1.585 },
-  // Zone du Bois
+  { id: 'poi18', name: 'Banque BOA', type: 'banque', quartier: "Patte d'Oie", latitude: 12.347, longitude: -1.585 },
   { id: 'poi19', name: 'École Les Lauréats', type: 'ecole_primaire', quartier: 'Zone du Bois', latitude: 12.380, longitude: -1.508 },
   { id: 'poi20', name: 'Pharmacie du Bois', type: 'pharmacie', quartier: 'Zone du Bois', latitude: 12.375, longitude: -1.512 },
   { id: 'poi21', name: 'Maquis Chez Tantie', type: 'restaurant', quartier: 'Zone du Bois', latitude: 12.382, longitude: -1.505 },
-  // Koulouba
   { id: 'poi22', name: 'Centre de Santé Koulouba', type: 'hopital', quartier: 'Koulouba', latitude: 12.362, longitude: -1.538 },
   { id: 'poi23', name: 'Marché Koulouba', type: 'marche_quartier', quartier: 'Koulouba', latitude: 12.358, longitude: -1.542 },
   { id: 'poi24', name: 'Cathédrale Koulouba', type: 'cathedrale', quartier: 'Koulouba', latitude: 12.365, longitude: -1.535 },
-  // Dassasgho
   { id: 'poi25', name: 'Marché Dassasgho', type: 'marche_quartier', quartier: 'Dassasgho', latitude: 12.374, longitude: -1.478 },
   { id: 'poi26', name: 'École Dassasgho', type: 'ecole_primaire', quartier: 'Dassasgho', latitude: 12.370, longitude: -1.482 },
-  // Pissy
   { id: 'poi27', name: 'Marché Pissy', type: 'marche_quartier', quartier: 'Pissy', latitude: 12.312, longitude: -1.658 },
   { id: 'poi28', name: 'CSPS Pissy', type: 'hopital', quartier: 'Pissy', latitude: 12.308, longitude: -1.662 },
-  // Gounghin
   { id: 'poi29', name: 'Marché Gounghin', type: 'grand_marche', quartier: 'Gounghin', latitude: 12.397, longitude: -1.638 },
   { id: 'poi30', name: 'Mosquée Gounghin', type: 'mosquee_quartier', quartier: 'Gounghin', latitude: 12.393, longitude: -1.642 },
-  // Tanghin
   { id: 'poi31', name: 'Barrage Tanghin', type: 'parc', quartier: 'Tanghin', latitude: 12.455, longitude: -1.435 },
-  // Wemtenga
   { id: 'poi32', name: 'Marché Wemtenga', type: 'marche_quartier', quartier: 'Wemtenga', latitude: 12.392, longitude: -1.426 },
-  // Samandin
   { id: 'poi33', name: 'École Samandin', type: 'ecole_primaire', quartier: 'Samandin', latitude: 12.350, longitude: -1.593 },
-  // Kalgondin
   { id: 'poi34', name: 'CSPS Kalgondin', type: 'hopital', quartier: 'Kalgondin', latitude: 12.332, longitude: -1.446 },
-  // Somgandé
   { id: 'poi35', name: 'Mosquée Somgandé', type: 'mosquee_quartier', quartier: 'Somgandé', latitude: 12.464, longitude: -1.663 },
-  // Bogodogo
   { id: 'poi36', name: 'Mairie Bogodogo', type: 'mairie', quartier: 'Bogodogo', latitude: 12.297, longitude: -1.468 },
-  // Nongsin
   { id: 'poi37', name: 'École Nongsin', type: 'ecole_primaire', quartier: 'Nongsin', latitude: 12.462, longitude: -1.580 },
 ];
 
-// ─── POI CATALOG (icons, colors) for Overpass + fallback ─────────────────────
+// ─── POI CATALOG ─────────────────────────────────────────────────────────────
 export interface POICatalogEntry {
   emoji: string;
   bg: string;
