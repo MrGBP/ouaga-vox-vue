@@ -459,6 +459,7 @@ const Index = () => {
           showFavoritesOnly={showFavoritesOnly}
           onToggleFavoritesView={toggleFavoritesView}
           computeFilteredCount={computeFilteredCount}
+          externalFilters={filters}
         />
 
         <div className="flex gap-0 relative">
