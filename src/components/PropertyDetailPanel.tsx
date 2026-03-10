@@ -103,7 +103,7 @@ const PropertyDetailPanel = ({
   const isMobile = isMobileOverride ?? false;
 
   // Reset media index when property changes
-  useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); }, [property?.id]);
+  useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); setShowAllFeatures(false); }, [property?.id]);
 
   if (!property) return null;
 
