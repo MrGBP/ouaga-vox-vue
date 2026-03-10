@@ -94,6 +94,7 @@ const PropertyDetailPanel = ({
   const [showReservation, setShowReservation] = useState(false);
   const [showAllPois, setShowAllPois] = useState(false);
   const [showCallbackModal, setShowCallbackModal] = useState(false);
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [callbackPhone, setCallbackPhone] = useState('');
   const [show360Overlay, setShow360Overlay] = useState(false);
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
