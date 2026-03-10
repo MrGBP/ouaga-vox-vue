@@ -390,18 +390,12 @@ const FilterBar = ({
                   </Button>
                   <Button
                     onClick={handleApply}
-                    disabled={draftCount === 0}
-                    className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
+                    className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
                   >
                     <Check className="h-3.5 w-3.5" />
-                    {draftCount === 0 ? 'Aucun résultat' : `Appliquer (${draftCount} bien${draftCount > 1 ? 's' : ''})`}
+                    Appliquer ({draftCount} bien{draftCount !== 1 ? 's' : ''})
                   </Button>
                 </div>
-                {draftCount === 0 && (
-                  <p className="text-xs text-destructive text-center">
-                    Aucun bien ne correspond à tous ces critères. Essayez d'en cocher moins.
-                  </p>
-                )}
               </div>
             </motion.div>
           </>
