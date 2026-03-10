@@ -190,6 +190,7 @@ const InteractiveMap = ({
   const propertyLayer = useRef<L.LayerGroup | null>(null);
   const focusLayer = useRef<L.LayerGroup | null>(null);
   const tentacleLayer = useRef<L.LayerGroup | null>(null);
+  const favoriteLayer = useRef<L.LayerGroup | null>(null);
   const zoomHandlerRef = useRef<(() => void) | null>(null);
   const viewLevelRef = useRef<string>('global');
 
