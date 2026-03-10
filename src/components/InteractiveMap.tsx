@@ -66,6 +66,7 @@ interface InteractiveMapProps {
   panelOpen?: boolean;
   onQuartierChange?: (quartier: string | null) => void;
   resetTrigger?: number;
+  favoriteIds?: Set<string>;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────

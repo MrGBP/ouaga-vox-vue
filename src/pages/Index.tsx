@@ -442,6 +442,7 @@ const Index = () => {
               activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
               onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
               panelOpen={!!detailProperty} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
+              favoriteIds={favorites}
             />
           </motion.div>
 
