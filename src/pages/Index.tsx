@@ -16,7 +16,7 @@ import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
-import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
@@ -286,7 +286,13 @@ const Index = () => {
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
-    setFilteredProperties(applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites));
+    const results = applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites);
+    setFilteredProperties(results);
+    if (results.length > 0) {
+      toast({ title: `✅ ${results.length} bien${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''} à votre recherche` });
+    } else {
+      toast({ title: 'Aucun résultat', description: 'Essayez de décocher une ou deux options.', variant: 'destructive' });
+    }
   };
 
   const handleFullReset = () => {
@@ -300,7 +306,9 @@ const Index = () => {
     setMapQuartierTrigger(null);
     setActiveQuartier(null);
     setMapResetTrigger(prev => prev + 1);
-    setFilteredProperties(applyFilters(properties, '', DEFAULT_FILTERS, false, favorites));
+    const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites);
+    setFilteredProperties(all);
+    toast({ title: `🔄 Filtres réinitialisés — ${all.length} biens affichés` });
   };
 
   const handleViewDetails = useCallback((property: Property) => {
@@ -586,9 +594,14 @@ const Index = () => {
         ) : (
           <div className="text-center py-20 bg-card border border-border rounded-xl">
             <div className="text-4xl mb-4">{showFavoritesOnly ? '❤️' : '🏠'}</div>
-            <p className="text-lg font-semibold text-foreground mb-2">{showFavoritesOnly ? 'Aucun favori' : 'Aucun bien trouvé'}</p>
-            <p className="text-sm text-muted-foreground mb-4">{showFavoritesOnly ? 'Ajoutez des biens en favoris avec le bouton ❤️' : 'Essayez de modifier vos filtres.'}</p>
-            {!showFavoritesOnly && <button onClick={handleFullReset} className="text-sm text-primary font-semibold hover:underline">Réinitialiser tout ×</button>}
+            <p className="text-lg font-semibold text-foreground mb-2">{showFavoritesOnly ? 'Aucun favori' : 'Aucun bien ne correspond exactement à cette sélection'}</p>
+            <p className="text-sm text-muted-foreground mb-4">{showFavoritesOnly ? 'Ajoutez des biens en favoris avec le bouton ❤️' : 'Essayez de décocher une ou deux options.'}</p>
+            {!showFavoritesOnly && (
+              <Button variant="outline" onClick={handleFullReset} className="gap-2">
+                <RotateCcw className="h-3.5 w-3.5" />
+                Réinitialiser les filtres
+              </Button>
+            )}
           </div>
         )}
       </section>
