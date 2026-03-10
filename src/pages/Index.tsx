@@ -594,9 +594,14 @@ const Index = () => {
         ) : (
           <div className="text-center py-20 bg-card border border-border rounded-xl">
             <div className="text-4xl mb-4">{showFavoritesOnly ? '❤️' : '🏠'}</div>
-            <p className="text-lg font-semibold text-foreground mb-2">{showFavoritesOnly ? 'Aucun favori' : 'Aucun bien trouvé'}</p>
-            <p className="text-sm text-muted-foreground mb-4">{showFavoritesOnly ? 'Ajoutez des biens en favoris avec le bouton ❤️' : 'Essayez de modifier vos filtres.'}</p>
-            {!showFavoritesOnly && <button onClick={handleFullReset} className="text-sm text-primary font-semibold hover:underline">Réinitialiser tout ×</button>}
+            <p className="text-lg font-semibold text-foreground mb-2">{showFavoritesOnly ? 'Aucun favori' : 'Aucun bien ne correspond exactement à cette sélection'}</p>
+            <p className="text-sm text-muted-foreground mb-4">{showFavoritesOnly ? 'Ajoutez des biens en favoris avec le bouton ❤️' : 'Essayez de décocher une ou deux options.'}</p>
+            {!showFavoritesOnly && (
+              <Button variant="outline" onClick={handleFullReset} className="gap-2">
+                <RotateCcw className="h-3.5 w-3.5" />
+                Réinitialiser les filtres
+              </Button>
+            )}
           </div>
         )}
       </section>
