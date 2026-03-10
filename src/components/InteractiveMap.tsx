@@ -495,6 +495,42 @@ const InteractiveMap = ({
     if (onExternalQuartierHandled) onExternalQuartierHandled();
   }, [externalQuartierSelect, onExternalQuartierHandled]);
 
+  // Render favorite pins with hover radius
+  const renderFavorites = useCallback(() => {
+    if (!favoriteLayer.current || !mapInst.current || !favoriteIds || favoriteIds.size === 0) return;
+    favoriteLayer.current.clearLayers();
+
+    const favProps = properties.filter(p => favoriteIds.has(p.id));
+    if (favProps.length === 0) return;
+
+    // Only show favorite pins when in global or quartier view, not focus
+    if (viewLevel === 'focus') return;
+
+    let hoverCircles: L.Circle[] = [];
+    favProps.forEach(p => {
+      const icon = L.divIcon({
+        html: `<div style="background:#1a3560;color:white;border:2px solid white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer;">❤️</div>`,
+        className: '', iconSize: [32, 32], iconAnchor: [16, 16],
+      });
+      const marker = L.marker([p.latitude, p.longitude], { icon, zIndexOffset: 900 });
+      marker.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(p.id); });
+      marker.on('mouseover', () => {
+        [300, 500, 1000].forEach(r => {
+          const c = L.circle([p.latitude, p.longitude], {
+            radius: r, color: 'rgba(30,80,160,0.6)', fillColor: 'rgba(30,80,160,0.08)',
+            fillOpacity: 0.1, weight: 1, dashArray: '4 3', interactive: false,
+          }).addTo(favoriteLayer.current!);
+          hoverCircles.push(c);
+        });
+      });
+      marker.on('mouseout', () => {
+        hoverCircles.forEach(c => favoriteLayer.current?.removeLayer(c));
+        hoverCircles = [];
+      });
+      favoriteLayer.current!.addLayer(marker);
+    });
+  }, [properties, favoriteIds, viewLevel, onPropertyClick]);
+
   // Master render
   useEffect(() => {
     if (!mapInst.current) return;
@@ -502,10 +538,12 @@ const InteractiveMap = ({
     tentacleLayer.current?.clearLayers();
     quartierLayer.current?.clearLayers();
     propertyLayer.current?.clearLayers();
+    favoriteLayer.current?.clearLayers();
     if (viewLevel === 'focus') renderFocus();
     else if (viewLevel === 'quartier') renderQuartier();
     else renderGlobal();
-  }, [viewLevel, renderGlobal, renderQuartier, renderFocus, activeFilters]);
+    renderFavorites();
+  }, [viewLevel, renderGlobal, renderQuartier, renderFocus, activeFilters, renderFavorites]);
 
   // Re-render on zoom
   useEffect(() => {
