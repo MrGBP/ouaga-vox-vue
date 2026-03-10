@@ -135,29 +135,22 @@ const Index = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [propertiesRes, poisRes, quartiersRes] = await Promise.all([
-        supabase.from('properties').select('*').order('price', { ascending: false }),
-        supabase.from('pois').select('*'),
-        supabase.from('quartiers').select('*'),
-      ]);
-      const props = (propertiesRes.data && propertiesRes.data.length > 0) ? propertiesRes.data : null;
-      const poisData = (poisRes.data && poisRes.data.length > 0) ? poisRes.data : null;
-      const quartiersData = (quartiersRes.data && quartiersRes.data.length > 0) ? quartiersRes.data : null;
-
-      const finalProps = props || mockProperties;
-      const finalPois = poisData || mockPois;
-      const finalQuartiers = quartiersData || mockQuartiers;
+      // Always use mockProperties because the DB schema doesn't have characteristic
+      // columns (has_ac, has_guardian, etc.) needed for filtering. Mock data has all fields.
+      const finalProps = mockProperties as unknown as Property[];
+      const finalPois = mockPois as unknown as POI[];
+      const finalQuartiers = mockQuartiers as unknown as Quartier[];
 
       setProperties(finalProps);
       setFilteredProperties(finalProps);
       setPois(finalPois);
       setQuartiers(finalQuartiers);
     } catch (error: any) {
-      console.warn('DB error, using mock data:', error.message);
-      setProperties(mockProperties);
-      setFilteredProperties(mockProperties);
-      setPois(mockPois);
-      setQuartiers(mockQuartiers);
+      console.warn('Error loading data:', error.message);
+      setProperties(mockProperties as unknown as Property[]);
+      setFilteredProperties(mockProperties as unknown as Property[]);
+      setPois(mockPois as unknown as POI[]);
+      setQuartiers(mockQuartiers as unknown as Quartier[]);
     } finally {
       setLoading(false);
     }
