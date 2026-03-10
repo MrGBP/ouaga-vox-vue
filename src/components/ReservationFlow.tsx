@@ -44,12 +44,14 @@ const MiniCalendar = ({
   month, year, 
   checkIn, checkOut, 
   bookedDates,
+  pendingDates,
   onSelectDate,
   onPrevMonth, onNextMonth 
 }: {
   month: number; year: number;
   checkIn: Date | null; checkOut: Date | null;
   bookedDates: Set<string>;
+  pendingDates?: Set<string>;
   onSelectDate: (d: Date) => void;
   onPrevMonth: () => void; onNextMonth: () => void;
 }) => {
@@ -84,24 +86,43 @@ const MiniCalendar = ({
         ))}
         {days.map((day, i) => {
           if (!day) return <span key={`e${i}`} />;
+          const key = dateKey(day);
           const isPast = day < today;
-          const isBooked = bookedDates.has(dateKey(day));
+          const isBooked = bookedDates.has(key);
+          const isPending = pendingDates?.has(key) || false;
+          const isDisabled = isPast || isBooked || isPending;
           const isCheckIn = checkIn && dateKey(day) === dateKey(checkIn);
           const isCheckOut = checkOut && dateKey(day) === dateKey(checkOut);
           const inRange = isInRange(day);
           
-          let bgClass = 'hover:bg-muted';
-          if (isPast) bgClass = 'bg-muted/50 text-muted-foreground/50 cursor-not-allowed';
-          else if (isBooked) bgClass = 'bg-destructive/10 text-destructive/70 cursor-not-allowed';
-          else if (isCheckIn || isCheckOut) bgClass = 'bg-primary text-primary-foreground';
-          else if (inRange) bgClass = 'bg-primary/15 text-primary';
+          let cellStyle: React.CSSProperties = {};
+          let classes = 'w-8 h-8 rounded-md text-xs font-medium transition-colors ';
+
+          if (isCheckIn || isCheckOut) {
+            classes += 'bg-primary text-primary-foreground';
+          } else if (inRange) {
+            classes += 'bg-primary/15 text-primary';
+          } else if (isPast) {
+            cellStyle = { background: '#f3f4f6' };
+            classes += 'text-muted-foreground/50 cursor-not-allowed';
+          } else if (isBooked) {
+            cellStyle = { background: '#fee2e2' };
+            classes += 'text-destructive/70 cursor-not-allowed';
+          } else if (isPending) {
+            cellStyle = { background: '#fef3c7' };
+            classes += 'text-yellow-700/70 cursor-not-allowed';
+          } else {
+            cellStyle = { background: '#d1fae5' };
+            classes += 'hover:bg-primary/10 cursor-pointer';
+          }
           
           return (
             <button
               key={i}
-              disabled={isPast || isBooked}
-              onClick={() => !isPast && !isBooked && onSelectDate(day)}
-              className={`w-8 h-8 rounded-md text-xs font-medium transition-colors ${bgClass}`}
+              disabled={isDisabled}
+              onClick={() => !isDisabled && onSelectDate(day)}
+              className={classes}
+              style={cellStyle}
             >
               {day.getDate()}
             </button>
@@ -109,9 +130,10 @@ const MiniCalendar = ({
         })}
       </div>
       <div className="flex gap-3 mt-3 text-[10px] text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-100 border border-green-300" /> Disponible</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/10 border border-destructive/30" /> Occupé</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-100 border border-yellow-300" /> En attente</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#d1fae5', border: '1px solid #86efac' }} /> Disponible</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#fee2e2', border: '1px solid #fca5a5' }} /> Réservé</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#fef3c7', border: '1px solid #fcd34d' }} /> En attente</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#f3f4f6', border: '1px solid #d1d5db' }} /> Passé</span>
       </div>
     </div>
   );
