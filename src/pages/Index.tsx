@@ -131,15 +131,15 @@ const Index = () => {
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
-  // Body scroll lock on mobile when sheet open
+  // Body scroll lock on mobile only when filters open
   useEffect(() => {
-    if (isMobile && (sheetState !== 'closed' || detailProperty)) {
+    if (isMobile && showMobileFilters) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [isMobile, sheetState, detailProperty]);
+  }, [isMobile, showMobileFilters]);
 
   useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { fetchData(); }, []);
@@ -305,7 +305,8 @@ const Index = () => {
     setFocusedPropertyId(property.id);
     addToRecentlyViewed(property);
     if (isMobile) {
-      setSheetState('preview');
+      // Scroll to top so map + detail panel are visible
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
@@ -453,12 +454,12 @@ const Index = () => {
   if (isMobile) {
     return (
       <div className="min-h-screen w-screen relative bg-background">
-        {/* Sticky map — always visible at top while scrolling */}
-        <div className="sticky top-0 z-0 h-[60vh]">
+        {/* Sticky map — always visible at top, shrinks when detail open */}
+        <div className={`sticky top-0 z-0 transition-all duration-300 ${detailProperty ? 'h-[35vh]' : 'h-[60vh]'}`}>
           <InteractiveMap
             properties={mapProperties} pois={pois} quartiers={quartiers}
             onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
-            onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); setSheetState('closed'); }}
+            onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); }}
             activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
             onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
             panelOpen={false} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
@@ -531,15 +532,16 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* MODE 3: Bottom sheet for property detail */}
+        {/* MODE 3: Inline property detail — shows below reduced map */}
         {detailProperty && (
-          <MobileBottomSheet
-            state={sheetState}
-            onStateChange={handleSheetStateChange}
-          >
+          <div className="relative z-20 bg-card rounded-t-2xl -mt-4 shadow-[0_-4px_24px_rgba(0,0,0,0.1)] pb-[80px]">
+            {/* Drag handle visual */}
+            <div className="flex justify-center pt-2 pb-1">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
             <PropertyDetailPanel
               property={detailProperty}
-              onClose={handleSheetClose}
+              onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
               pois={pois}
               isFavorite={favorites.has(detailProperty.id)}
               onToggleFavorite={toggleFavorite}
@@ -547,20 +549,18 @@ const Index = () => {
               similarProperties={similarProperties}
               onSelectProperty={(id) => {
                 const p = properties.find(pr => pr.id === id);
-                if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); setSheetState('preview'); }
+                if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); }
               }}
               onExploreOnMap={handleExploreOnMap}
               isMobileOverride={true}
             />
             {/* Sticky reserve button */}
-            {sheetState === 'full' && (
-              <div className="sticky bottom-0 bg-card border-t border-border p-3">
-                <Button className="w-full bg-secondary text-secondary-foreground gap-2 min-h-[44px]">
-                  📅 Réserver
-                </Button>
-              </div>
-            )}
-          </MobileBottomSheet>
+            <div className="sticky bottom-0 bg-card border-t border-border p-3">
+              <Button className="w-full bg-secondary text-secondary-foreground gap-2 min-h-[44px]">
+                📅 Réserver
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* Mobile filter drawer */}
