@@ -88,13 +88,35 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
   }
+
+  /* Prevent iOS zoom on inputs */
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+/* Scroll utilities */
+.scrollable {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.scrollable::-webkit-scrollbar {
+  display: none;
+}
+
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Leaflet cluster custom styles */
@@ -115,5 +137,14 @@
 
 .marker-cluster {
   background-clip: padding-box;
+}
+
+/* Mobile: hide scrollbar on carousel */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
