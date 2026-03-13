@@ -856,7 +856,7 @@ const Index = () => {
                   </button>
                   <button
                     onClick={() => setFavViewMode('map')}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${favViewMode === 'map' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-muted-foreground"
                   >
                     🗺️ Carte
                   </button>
