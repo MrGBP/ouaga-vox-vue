@@ -578,7 +578,7 @@ const InteractiveMap = ({
   };
 
   return (
-    <div className="relative w-full h-[620px] rounded-xl overflow-hidden border border-border shadow-card">
+    <div className="relative w-full h-full min-h-[400px] lg:h-[620px] lg:rounded-xl overflow-hidden lg:border lg:border-border lg:shadow-card">
       <div ref={mapRef} className="absolute inset-0 z-0" />
 
       {/* Breadcrumb */}
