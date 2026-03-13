@@ -878,6 +878,7 @@ const Index = () => {
         </div>
       </section>
 
+      <Footer />
       <VirtualTourModal property={selectedProperty} open={modalOpen} onOpenChange={setModalOpen} pois={pois} />
     </div>
   );
