@@ -870,7 +870,7 @@ const Index = () => {
       <section id="ia" className="container mx-auto px-4 pb-16">
         <div className="flex items-center gap-2 mb-6">
           <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="text-2xl font-bold text-foreground">Intelligence IA</h2>
+          <h2 className="text-2xl font-bold text-foreground">SapSap AI Engine</h2>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <AIComparator favorites={favoriteProperties} priorities={[]} />
