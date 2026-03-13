@@ -601,6 +601,79 @@ const Index = () => {
           )}
         </AnimatePresence>
 
+        {/* ═══ Scrollable content below the map ═══ */}
+        <div className="relative z-10 bg-background pb-[80px]">
+          {/* Featured carousel */}
+          <section className="px-4 py-6">
+            <h2 className="text-lg font-bold text-foreground mb-3">
+              Biens mis en avant
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollable">
+              {availableProperties(properties).slice(0, 8).map((p) => {
+                const dp = formatDisplayPrice(p);
+                return (
+                  <button key={p.id} onClick={() => handleViewDetails(p)}
+                    className="shrink-0 w-56 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card text-left active:scale-[0.97] transition-transform"
+                  >
+                    <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'} alt={p.title} className="w-full h-32 object-cover" loading="lazy" />
+                    <div className="p-2.5">
+                      <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
+                      <p className="text-xs text-muted-foreground">{p.quartier}</p>
+                      {dp.nightPrice ? (
+                        <p className="text-sm font-bold text-primary mt-1">{dp.nightPrice} FCFA <span className="text-xs font-normal text-muted-foreground">/nuit</span></p>
+                      ) : (
+                        <p className="text-sm font-bold text-primary mt-1">{dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">/mois</span></p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Properties grid */}
+          <section className="px-4 pb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-foreground">
+                {showFavoritesOnly ? '❤️ Mes favoris' : 'Tous les biens'}
+              </h2>
+              <span className="text-xs text-muted-foreground">
+                <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
+              </span>
+            </div>
+            {paginatedProperties.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 gap-4">
+                  {paginatedProperties.map((p) => (
+                    <PropertyCard key={p.id} property={p} onViewDetails={handleViewDetails} isFavorite={favorites.has(p.id)} onToggleFavorite={toggleFavorite} onFocusOnMap={handleFocusOnMap} />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-6">
+                    <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => handlePageChange(-1)} className="h-10 w-10 disabled:opacity-30">
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
+                    <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => handlePageChange(1)} className="h-10 w-10 disabled:opacity-30">
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-12 bg-card border border-border rounded-xl">
+                <p className="text-sm text-muted-foreground">Aucun bien trouvé</p>
+                <Button variant="outline" size="sm" onClick={handleFullReset} className="mt-3 gap-2">
+                  <RotateCcw className="h-3 w-3" /> Réinitialiser
+                </Button>
+              </div>
+            )}
+          </section>
+
+          <TestimonialsSection />
+          <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
+        </div>
+
         {/* Bottom navigation */}
         <MobileBottomNav
           activeTab={mobileTab}
