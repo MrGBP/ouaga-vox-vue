@@ -673,6 +673,7 @@ const Index = () => {
 
           <TestimonialsSection />
           <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
+          <Footer />
         </div>
 
         {/* Bottom navigation */}
