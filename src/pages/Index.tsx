@@ -453,12 +453,12 @@ const Index = () => {
   if (isMobile) {
     return (
       <div className="min-h-screen w-screen relative bg-background">
-        {/* Sticky map — always visible at top while scrolling */}
-        <div className="sticky top-0 z-0 h-[60vh]">
+        {/* Sticky map — always visible at top, shrinks when detail open */}
+        <div className={`sticky top-0 z-0 transition-all duration-300 ${detailProperty ? 'h-[35vh]' : 'h-[60vh]'}`}>
           <InteractiveMap
             properties={mapProperties} pois={pois} quartiers={quartiers}
             onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
-            onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); setSheetState('closed'); }}
+            onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); }}
             activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
             onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
             panelOpen={false} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
