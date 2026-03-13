@@ -910,10 +910,10 @@ const Index = () => {
               >
                 <span className="text-sm font-bold text-foreground">❤️ Favoris sur la carte</span>
                 <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
-                  <button onClick={() => setFavViewMode('list')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${favViewMode === 'list' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>
+                  <button onClick={() => setFavViewMode('list')} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-muted-foreground">
                     ☰ Liste
                   </button>
-                  <button onClick={() => setFavViewMode('map')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${favViewMode === 'map' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>
+                  <button onClick={() => setFavViewMode('map')} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-card text-foreground shadow-sm">
                     🗺️ Carte
                   </button>
                 </div>
