@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -8,10 +8,11 @@ import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import MobileHeader from '@/components/MobileHeader';
+import MobileNavbar, { NavLevel } from '@/components/MobileNavbar';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import MobileBottomSheet, { SheetSnapState } from '@/components/MobileBottomSheet';
+import MobileBottomSheet, { MobileBottomSheetRef, SheetSnapState } from '@/components/MobileBottomSheet';
 import MobileCarousel from '@/components/MobileCarousel';
+import MobileSearchOverlay from '@/components/MobileSearchOverlay';
 import VoiceSearch from '@/components/VoiceSearch';
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import PropertyCard from '@/components/PropertyCard';
@@ -22,7 +23,7 @@ import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
-import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
@@ -125,22 +126,25 @@ const Index = () => {
 
   // Mobile state
   const isMobile = useIsMobile();
-  const [mobileTab, setMobileTab] = useState('map');
-  const [sheetState, setSheetState] = useState<SheetSnapState>('closed');
+  const [mobileTab, setMobileTab] = useState('home');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [favViewMode, setFavViewMode] = useState<'list' | 'map'>('list');
+  const sheetRef = useRef<MobileBottomSheetRef>(null);
+  const [currentSheetSnap, setCurrentSheetSnap] = useState<SheetSnapState>('closed');
 
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
-  // Body scroll lock on mobile only when filters open
+  // Body scroll lock on mobile only when filters or search open
   useEffect(() => {
-    if (isMobile && showMobileFilters) {
+    if (isMobile && (showMobileFilters || showMobileSearch)) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [isMobile, showMobileFilters]);
+  }, [isMobile, showMobileFilters, showMobileSearch]);
 
   useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { fetchData(); }, []);
@@ -253,6 +257,12 @@ const Index = () => {
     setFilters(newFilters);
     const filtered = applyFilters(properties, query, newFilters, showFavoritesOnly, favorites);
     setFilteredProperties(filtered);
+    // Save recent search
+    try {
+      const recent = JSON.parse(localStorage.getItem('sapsap_recent_searches') || '[]');
+      const updated = [query, ...recent.filter((s: string) => s !== query)].slice(0, 5);
+      localStorage.setItem('sapsap_recent_searches', JSON.stringify(updated));
+    } catch {}
     if (filtered.length > 0) {
       speak(`J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''} pour "${query}".`);
       toast({ title: '🔍 Résultats', description: `${filtered.length} bien(s) trouvé(s)` });
@@ -295,7 +305,7 @@ const Index = () => {
     setMapQuartierTrigger(null);
     setActiveQuartier(null);
     setMapResetTrigger(prev => prev + 1);
-    setSheetState('closed');
+    sheetRef.current?.snapTo('closed');
     const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites);
     setFilteredProperties(all);
     toast({ title: `🔄 Filtres réinitialisés — ${all.length} biens affichés` });
@@ -306,12 +316,15 @@ const Index = () => {
     setFocusedPropertyId(property.id);
     addToRecentlyViewed(property);
     if (isMobile) {
-      // Scroll to top so map + detail panel are visible
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (mobileTab === 'map') {
+        // Open bottom sheet to preview
+        sheetRef.current?.snapTo('preview');
+      }
+      // For home tab, open a fullscreen detail
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [isMobile]);
+  }, [isMobile, mobileTab]);
 
   const handlePropertyClick = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
@@ -320,14 +333,24 @@ const Index = () => {
 
   const handleFocusOnMap = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
-    if (prop) handleViewDetails(prop);
-  }, [properties, handleViewDetails]);
+    if (prop) {
+      if (isMobile) {
+        setMobileTab('map');
+        setDetailProperty(prop);
+        setFocusedPropertyId(id);
+        addToRecentlyViewed(prop);
+        setTimeout(() => sheetRef.current?.snapTo('preview'), 100);
+      } else {
+        handleViewDetails(prop);
+      }
+    }
+  }, [properties, handleViewDetails, isMobile]);
 
   const handleExploreOnMap = (id: string) => {
     setDetailProperty(null);
     setFocusedPropertyId(id);
     if (isMobile) {
-      setSheetState('closed');
+      sheetRef.current?.snapTo('closed');
       setMobileTab('map');
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
@@ -381,7 +404,6 @@ const Index = () => {
     setPageTransition(true);
     setTimeout(() => {
       setCurrentPage(p => p + dir);
-      document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
       setTimeout(() => setPageTransition(false), 50);
     }, 200);
   };
@@ -403,14 +425,25 @@ const Index = () => {
 
   // Mobile tab change
   const handleMobileTabChange = (tab: string) => {
+    // Close sheet when changing tabs
+    sheetRef.current?.snapTo('closed');
+    setDetailProperty(null);
+    setFocusedPropertyId(null);
+
+    if (tab === 'search') {
+      setShowMobileSearch(true);
+      setMobileTab('map'); // Keep map visible behind search overlay
+      return;
+    }
+
     setMobileTab(tab);
+    setShowMobileSearch(false);
+
     if (tab === 'favorites') {
       setShowFavoritesOnly(true);
       setFilteredProperties(applyFilters(properties, searchQuery, filters, true, favorites));
-    } else if (tab === 'search') {
-      setShowMobileFilters(true);
     } else {
-      if (showFavoritesOnly && tab !== 'favorites') {
+      if (showFavoritesOnly) {
         setShowFavoritesOnly(false);
         setFilteredProperties(applyFilters(properties, searchQuery, filters, false, favorites));
       }
@@ -422,19 +455,176 @@ const Index = () => {
     ? availableProperties(filteredProperties).filter(p => p.quartier === activeQuartier)
     : [];
 
-  // Mobile sheet close
-  const handleSheetClose = () => {
-    setSheetState('closed');
-    setDetailProperty(null);
-    setFocusedPropertyId(null);
+  // Navigation level
+  const navLevel: NavLevel = detailProperty ? 3 : activeQuartier ? 2 : 1;
+
+  // Navigation back handlers
+  const handleNavBack = () => {
+    if (navLevel === 3) {
+      setDetailProperty(null);
+      setFocusedPropertyId(null);
+      sheetRef.current?.snapTo(activeQuartier ? 'preview' : 'closed');
+    } else if (navLevel === 2) {
+      setActiveQuartier(null);
+      setMapResetTrigger(prev => prev + 1);
+      sheetRef.current?.snapTo('closed');
+    }
   };
 
-  const handleSheetStateChange = (newState: SheetSnapState) => {
-    if (newState === 'closed') {
-      handleSheetClose();
-    } else {
-      setSheetState(newState);
+  const handleNavHome = () => {
+    setDetailProperty(null);
+    setFocusedPropertyId(null);
+    setActiveQuartier(null);
+    setMapResetTrigger(prev => prev + 1);
+    sheetRef.current?.snapTo('closed');
+  };
+
+  // Sheet snap change
+  const handleSheetSnapChange = (snap: SheetSnapState) => {
+    setCurrentSheetSnap(snap);
+    if (snap === 'closed') {
+      // If we were at level 3 and sheet closes, go back to level 2
+      if (detailProperty && activeQuartier) {
+        setDetailProperty(null);
+        setFocusedPropertyId(null);
+      } else if (detailProperty) {
+        setDetailProperty(null);
+        setFocusedPropertyId(null);
+      }
     }
+  };
+
+  // Map tap handler (close sheet)
+  const handleMapTap = () => {
+    if (currentSheetSnap !== 'closed') {
+      sheetRef.current?.snapTo('closed');
+    }
+  };
+
+  // When quartier changes from map, open sheet
+  useEffect(() => {
+    if (isMobile && activeQuartier && mobileTab === 'map' && !detailProperty) {
+      sheetRef.current?.snapTo('preview');
+    }
+  }, [activeQuartier, isMobile, mobileTab, detailProperty]);
+
+  // Sheet header content based on level
+  const getSheetHeader = () => {
+    if (navLevel === 2 && activeQuartier) {
+      const count = quartierProperties.length;
+      return (
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleNavBack}
+            className="flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1.5 text-xs font-medium active:scale-[0.97] transition-transform"
+          >
+            <ChevronLeft className="h-3 w-3" />
+            Ouagadougou › {activeQuartier} · {count} bien{count > 1 ? 's' : ''}
+          </button>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setShowMobileSearch(true)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <button onClick={handleNavHome} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
+              <X className="h-4 w-4 text-secondary" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+    if (navLevel === 3 && detailProperty) {
+      return (
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleNavBack}
+            className="flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1.5 text-xs font-medium active:scale-[0.97] transition-transform"
+          >
+            <ChevronLeft className="h-3 w-3" />
+            {activeQuartier || detailProperty.quartier}
+          </button>
+          <button onClick={() => setShowMobileSearch(true)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Sheet body content based on level
+  const getSheetContent = () => {
+    if (navLevel === 2 && activeQuartier && !detailProperty) {
+      // Carousel of properties in quartier
+      return (
+        <div className="px-3">
+          <div
+            className="flex gap-2.5 overflow-x-auto pb-3 snap-x snap-mandatory scrollable"
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
+            {quartierProperties.map(p => {
+              const dp = formatDisplayPrice(p);
+              const isFav = favorites.has(p.id);
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => handlePropertyClick(p.id)}
+                  className="shrink-0 bg-card rounded-[14px] overflow-hidden shadow-card border border-border text-left active:scale-[0.97] transition-transform"
+                  style={{ width: 220, height: 160, scrollSnapAlign: 'start' }}
+                >
+                  <div className="relative h-[100px]">
+                    <img
+                      src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop'}
+                      alt={p.title} className="w-full h-full object-cover" loading="lazy"
+                    />
+                    {isFav && (
+                      <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
+                        <Heart className="h-3 w-3 text-secondary-foreground fill-current" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <p className="text-[11px] font-semibold text-foreground line-clamp-1">{p.title}</p>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-[10px] text-muted-foreground">{p.quartier}</span>
+                      {dp.nightPrice ? (
+                        <span className="text-[11px] font-bold text-primary">{dp.nightPrice} /n</span>
+                      ) : (
+                        <span className="text-[11px] font-bold text-primary">{dp.price} /m</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    if (navLevel === 3 && detailProperty) {
+      // Property detail
+      return (
+        <div>
+          <PropertyDetailPanel
+            property={detailProperty}
+            onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); sheetRef.current?.snapTo('closed'); }}
+            pois={pois}
+            isFavorite={favorites.has(detailProperty.id)}
+            onToggleFavorite={toggleFavorite}
+            onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
+            similarProperties={similarProperties}
+            onSelectProperty={(id) => {
+              const p = properties.find(pr => pr.id === id);
+              if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); }
+            }}
+            onExploreOnMap={handleExploreOnMap}
+            isMobileOverride={true}
+          />
+        </div>
+      );
+    }
+
+    return null;
   };
 
   if (loading) {
@@ -450,13 +640,17 @@ const Index = () => {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // MOBILE LAYOUT (< 768px) — Google Maps style
+  // MOBILE LAYOUT (< 768px) — Option C+
+  // Map ALWAYS visible · Clean map · UI in navbar/sheet/bottomnav
   // ═══════════════════════════════════════════════════════════════
   if (isMobile) {
+    const isMapVisible = mobileTab === 'map' || mobileTab === 'favorites' && favViewMode === 'map';
+    const showFullscreenPage = mobileTab === 'home' || mobileTab === 'profile' || (mobileTab === 'favorites' && favViewMode === 'list');
+
     return (
-      <div className="min-h-screen w-screen relative bg-background">
-        {/* Sticky map — always visible at top, shrinks when detail open */}
-        <div className={`sticky top-0 z-0 transition-all duration-300 ${detailProperty ? 'h-[35vh]' : 'h-[60vh]'}`}>
+      <div className="w-screen h-screen relative overflow-hidden bg-background">
+        {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
+        <div className="fixed inset-0 z-0">
           <InteractiveMap
             properties={mapProperties} pois={pois} quartiers={quartiers}
             onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
@@ -468,103 +662,359 @@ const Index = () => {
           />
         </div>
 
-        {/* Mobile navbar */}
-        <MobileHeader />
+        {/* ═══ NAVBAR ═══ */}
+        {mobileTab === 'map' ? (
+          <MobileNavbar
+            level={navLevel}
+            quartierName={activeQuartier || undefined}
+            quartierCount={quartierProperties.length}
+            propertyTitle={detailProperty?.title}
+            propertyQuartier={detailProperty?.quartier}
+            onBack={handleNavBack}
+            onHome={handleNavHome}
+          />
+        ) : mobileTab === 'home' ? (
+          <MobileNavbar level={1} />
+        ) : null}
 
-        {/* IDX search bar — fixed under navbar */}
-        <div
-          className="fixed z-[99] left-3 right-3"
-          style={{ top: 60 }}
-        >
-          <div className="bg-card rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.15)] overflow-hidden" style={{ height: 44 }}>
-            <VoiceSearch onSearchQuery={handleSearch} searchQuery={searchQuery} onSearchQueryChange={setSearchQuery} />
-          </div>
-          {/* IDX Tags */}
-          {idxTags.length > 0 && (
-            <div className="flex gap-1.5 flex-wrap mt-2">
-              {idxTags.map(tag => (
-                <span key={tag.characteristic} className="inline-flex items-center gap-1 bg-card/95 text-foreground rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm">
-                  {tag.emoji} {tag.label}
-                  <button onClick={() => removeIdxTag(tag.characteristic)} className="ml-0.5 hover:text-destructive">
-                    <X className="h-2.5 w-2.5" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Floating filter button — visible in MODE 1 & 2 */}
-        {sheetState === 'closed' && (
-          <button
-            onClick={() => setShowMobileFilters(true)}
-            className="fixed z-50 bottom-[80px] right-4 w-11 h-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
-            style={{ bottom: 'calc(72px + env(safe-area-inset-bottom))' }}
-          >
-            <SlidersHorizontal className="h-5 w-5" />
-          </button>
-        )}
-
-        {/* Floating AI button */}
-        {sheetState === 'closed' && (
-          <button
-            className="fixed z-50 right-4 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
-            style={{ bottom: 'calc(120px + env(safe-area-inset-bottom))' }}
-          >
-            <Sparkles className="h-5 w-5" />
-          </button>
-        )}
-
-        {/* MODE 2: Quartier carousel */}
-        <AnimatePresence>
-          {activeQuartier && !detailProperty && sheetState === 'closed' && (
-            <MobileCarousel
-              properties={quartierProperties}
-              quartierName={activeQuartier}
-              onPropertyTap={handlePropertyClick}
-              onSwipeFavorite={toggleFavorite}
-              onActiveChange={(id) => setFocusedPropertyId(id)}
-              onDragClose={() => {
-                setActiveQuartier(null);
-                setMapResetTrigger(prev => prev + 1);
+        {/* ═══ FULLSCREEN TAB PAGES (covers map) ═══ */}
+        <AnimatePresence mode="wait">
+          {/* HOME TAB — scrollable page */}
+          {mobileTab === 'home' && (
+            <motion.div
+              key="home-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
+              style={{
+                paddingTop: 52,
+                paddingBottom: 'calc(52px + env(safe-area-inset-bottom))',
               }}
-              favoriteIds={favorites}
+            >
+              {/* Hero */}
+              <section className="relative h-[45vh] overflow-hidden">
+                <img src={heroImage} alt="Ouagadougou" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
+                <div className="relative z-10 h-full flex flex-col justify-center items-center text-center px-6">
+                  <h2 className="text-3xl font-bold text-card leading-tight">
+                    Mon bien Immo<br />en un clic
+                  </h2>
+                  <p className="text-xs text-card/70 mt-2">
+                    + 100 biens · Maisons · Villas · Studios · Bureaux
+                  </p>
+                </div>
+              </section>
+
+              {/* Filter bar */}
+              <section className="px-4 pt-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => setShowMobileFilters(true)}
+                    className="inline-flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2 text-sm font-medium text-foreground active:scale-[0.98] transition-all shadow-sm"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+                    ⚙️ Filtres
+                  </button>
+                  <button
+                    onClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-all border active:scale-[0.98] ${
+                      showFavoritesOnly
+                        ? 'bg-secondary text-secondary-foreground border-secondary'
+                        : 'bg-card text-muted-foreground border-border'
+                    }`}
+                  >
+                    <Heart className={`h-3.5 w-3.5 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                    ❤️ Favoris {favorites.size > 0 && `(${favorites.size})`}
+                  </button>
+                </div>
+                {/* IDX Tags */}
+                {idxTags.length > 0 && (
+                  <div className="flex gap-1.5 flex-wrap mt-2">
+                    {idxTags.map(tag => (
+                      <span key={tag.characteristic} className="inline-flex items-center gap-1 bg-card text-foreground rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm border border-border">
+                        {tag.emoji} {tag.label}
+                        <button onClick={() => removeIdxTag(tag.characteristic)} className="ml-0.5 hover:text-destructive">
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Featured carousel */}
+              <section className="px-4 py-5">
+                <h2 className="text-lg font-bold text-foreground mb-3">Biens mis en avant</h2>
+                <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollable">
+                  {availableProperties(properties).slice(0, 8).map(p => {
+                    const dp = formatDisplayPrice(p);
+                    return (
+                      <button key={p.id} onClick={() => handleViewDetails(p)}
+                        className="shrink-0 w-56 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card text-left active:scale-[0.97] transition-transform"
+                      >
+                        <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'} alt={p.title} className="w-full h-32 object-cover" loading="lazy" />
+                        <div className="p-2.5">
+                          <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
+                          <p className="text-xs text-muted-foreground">{p.quartier}</p>
+                          {dp.nightPrice ? (
+                            <p className="text-sm font-bold text-primary mt-1">{dp.nightPrice} FCFA <span className="text-xs font-normal text-muted-foreground">/nuit</span></p>
+                          ) : (
+                            <p className="text-sm font-bold text-primary mt-1">{dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">/mois</span></p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* Properties grid */}
+              <section className="px-4 pb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-foreground">Tous les biens</h2>
+                  <span className="text-xs text-muted-foreground">
+                    <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                {paginatedProperties.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-1 gap-4">
+                      {paginatedProperties.map(p => (
+                        <PropertyCard key={p.id} property={p} onViewDetails={handleViewDetails} isFavorite={favorites.has(p.id)} onToggleFavorite={toggleFavorite} onFocusOnMap={handleFocusOnMap} />
+                      ))}
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-4 mt-6">
+                        <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => handlePageChange(-1)} className="h-10 w-10 disabled:opacity-30">
+                          <ChevronLeft className="h-5 w-5" />
+                        </Button>
+                        <span className="text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
+                        <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => handlePageChange(1)} className="h-10 w-10 disabled:opacity-30">
+                          <ChevronRight className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-12 bg-card border border-border rounded-xl">
+                    <p className="text-sm text-muted-foreground">Aucun bien trouvé</p>
+                    <Button variant="outline" size="sm" onClick={handleFullReset} className="mt-3 gap-2">
+                      <RotateCcw className="h-3 w-3" /> Réinitialiser
+                    </Button>
+                  </div>
+                )}
+              </section>
+
+              <TestimonialsSection />
+              <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
+
+              {/* SapSap AI Engine section */}
+              <section className="px-4 py-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h2 className="text-lg font-bold text-foreground">SapSap AI Engine</h2>
+                </div>
+                <AIComparator favorites={favoriteProperties} priorities={[]} />
+              </section>
+
+              <Footer />
+            </motion.div>
+          )}
+
+          {/* FAVORITES TAB — list mode */}
+          {mobileTab === 'favorites' && favViewMode === 'list' && (
+            <motion.div
+              key="fav-list-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
+              style={{
+                paddingTop: 52,
+                paddingBottom: 'calc(52px + env(safe-area-inset-bottom))',
+              }}
+            >
+              {/* Navbar for favorites */}
+              <nav
+                className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-3 no-select"
+                style={{
+                  height: 52,
+                  background: 'rgba(255,255,255,0.97)',
+                  backdropFilter: 'blur(8px)',
+                  borderBottom: '0.5px solid hsl(var(--border))',
+                }}
+              >
+                <span className="text-sm font-bold text-foreground">❤️ Mes favoris</span>
+                <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+                  <button
+                    onClick={() => setFavViewMode('list')}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-card text-foreground shadow-sm"
+                  >
+                    ☰ Liste
+                  </button>
+                  <button
+                    onClick={() => setFavViewMode('map')}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-muted-foreground"
+                  >
+                    🗺️ Carte
+                  </button>
+                </div>
+              </nav>
+
+              <div className="px-4 pt-4">
+                {favoriteProperties.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-1 gap-4">
+                      {favoriteProperties.map(p => (
+                        <PropertyCard key={p.id} property={p as any} onViewDetails={handleViewDetails as any} isFavorite={true} onToggleFavorite={toggleFavorite} onFocusOnMap={handleFocusOnMap} />
+                      ))}
+                    </div>
+                    {/* Recap */}
+                    <div className="mt-6 bg-card border border-border rounded-xl p-4 space-y-2">
+                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Récapitulatif</h4>
+                      <p className="text-sm text-foreground">
+                        {favoriteProperties.length} bien{favoriteProperties.length > 1 ? 's' : ''} en favoris
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Budget moyen : {new Intl.NumberFormat('fr-FR').format(Math.round(favoriteProperties.reduce((s, p) => s + p.price, 0) / favoriteProperties.length))} FCFA/mois
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-20">
+                    <div className="text-5xl mb-4">❤️</div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Aucun favori pour l'instant</h3>
+                    <p className="text-sm text-muted-foreground mb-6">Swipez une card vers la droite pour ajouter</p>
+                    <Button onClick={() => handleMobileTabChange('map')} className="bg-primary text-primary-foreground gap-2">
+                      Explorer les biens →
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* FAVORITES TAB — map mode (map visible, sheet with fav pins) */}
+          {mobileTab === 'favorites' && favViewMode === 'map' && (
+            <motion.div key="fav-map-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <nav
+                className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-3 no-select"
+                style={{
+                  height: 52,
+                  background: 'rgba(255,255,255,0.97)',
+                  backdropFilter: 'blur(8px)',
+                  borderBottom: '0.5px solid hsl(var(--border))',
+                }}
+              >
+                <span className="text-sm font-bold text-foreground">❤️ Favoris sur la carte</span>
+                <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+                  <button onClick={() => setFavViewMode('list')} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-muted-foreground">
+                    ☰ Liste
+                  </button>
+                  <button onClick={() => setFavViewMode('map')} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-card text-foreground shadow-sm">
+                    🗺️ Carte
+                  </button>
+                </div>
+              </nav>
+            </motion.div>
+          )}
+
+          {/* PROFILE TAB */}
+          {mobileTab === 'profile' && (
+            <motion.div
+              key="profile-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
+              style={{
+                paddingTop: 52,
+                paddingBottom: 'calc(52px + env(safe-area-inset-bottom))',
+              }}
+            >
+              <nav
+                className="fixed top-0 left-0 right-0 z-[100] flex items-center px-3 no-select"
+                style={{
+                  height: 52,
+                  background: 'rgba(255,255,255,0.97)',
+                  backdropFilter: 'blur(8px)',
+                  borderBottom: '0.5px solid hsl(var(--border))',
+                }}
+              >
+                <span className="text-sm font-bold text-foreground">👤 Profil</span>
+              </nav>
+
+              <div className="flex flex-col items-center justify-center h-full px-6">
+                <div className="text-5xl mb-4">👤</div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Connectez-vous</h3>
+                <p className="text-sm text-muted-foreground text-center mb-6">
+                  Connectez-vous pour accéder à votre profil, vos réservations et vos alertes.
+                </p>
+                <Button className="bg-primary text-primary-foreground w-full max-w-xs mb-3">
+                  Se connecter
+                </Button>
+                <Button variant="outline" className="w-full max-w-xs">
+                  Créer un compte
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ═══ MAP TAB — Bottom sheet ═══ */}
+        {mobileTab === 'map' && (
+          <>
+            {/* Floating AI button */}
+            {currentSheetSnap === 'closed' && (
+              <button
+                className="fixed z-50 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
+                style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
+              >
+                <Sparkles className="h-5 w-5" />
+              </button>
+            )}
+
+            <MobileBottomSheet
+              ref={sheetRef}
+              onSnapChange={handleSheetSnapChange}
+              headerContent={getSheetHeader()}
+            >
+              {getSheetContent()}
+            </MobileBottomSheet>
+          </>
+        )}
+
+        {/* ═══ SEARCH OVERLAY ═══ */}
+        <AnimatePresence>
+          {showMobileSearch && (
+            <MobileSearchOverlay
+              properties={availableProperties(properties) as any}
+              onClose={() => setShowMobileSearch(false)}
+              onSelectProperty={(id) => {
+                const prop = properties.find(p => p.id === id);
+                if (prop) {
+                  setMobileTab('map');
+                  setDetailProperty(prop);
+                  setFocusedPropertyId(id);
+                  addToRecentlyViewed(prop);
+                  setTimeout(() => sheetRef.current?.snapTo('preview'), 100);
+                }
+                setShowMobileSearch(false);
+              }}
+              onSearchSubmit={handleSearch}
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              onOpenFilters={() => {
+                setShowMobileSearch(false);
+                setShowMobileFilters(true);
+              }}
             />
           )}
         </AnimatePresence>
 
-        {/* MODE 3: Inline property detail — shows below reduced map */}
-        {detailProperty && (
-          <div className="relative z-20 bg-card rounded-t-2xl -mt-4 shadow-[0_-4px_24px_rgba(0,0,0,0.1)] pb-[80px]">
-            {/* Drag handle visual */}
-            <div className="flex justify-center pt-2 pb-1">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-            </div>
-            <PropertyDetailPanel
-              property={detailProperty}
-              onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
-              pois={pois}
-              isFavorite={favorites.has(detailProperty.id)}
-              onToggleFavorite={toggleFavorite}
-              onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
-              similarProperties={similarProperties}
-              onSelectProperty={(id) => {
-                const p = properties.find(pr => pr.id === id);
-                if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); }
-              }}
-              onExploreOnMap={handleExploreOnMap}
-              isMobileOverride={true}
-            />
-            {/* Sticky reserve button */}
-            <div className="sticky bottom-0 bg-card border-t border-border p-3">
-              <Button className="w-full bg-secondary text-secondary-foreground gap-2 min-h-[44px]">
-                📅 Réserver
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Mobile filter drawer */}
+        {/* ═══ MOBILE FILTER DRAWER ═══ */}
         <AnimatePresence>
           {showMobileFilters && (
             <>
@@ -602,81 +1052,56 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* ═══ Scrollable content below the map ═══ */}
-        <div className="relative z-10 bg-background pb-[80px]">
-          {/* Featured carousel */}
-          <section className="px-4 py-6">
-            <h2 className="text-lg font-bold text-foreground mb-3">
-              Biens mis en avant
-            </h2>
-            <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollable">
-              {availableProperties(properties).slice(0, 8).map((p) => {
-                const dp = formatDisplayPrice(p);
-                return (
-                  <button key={p.id} onClick={() => handleViewDetails(p)}
-                    className="shrink-0 w-56 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card text-left active:scale-[0.97] transition-transform"
-                  >
-                    <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'} alt={p.title} className="w-full h-32 object-cover" loading="lazy" />
-                    <div className="p-2.5">
-                      <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
-                      <p className="text-xs text-muted-foreground">{p.quartier}</p>
-                      {dp.nightPrice ? (
-                        <p className="text-sm font-bold text-primary mt-1">{dp.nightPrice} FCFA <span className="text-xs font-normal text-muted-foreground">/nuit</span></p>
-                      ) : (
-                        <p className="text-sm font-bold text-primary mt-1">{dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">/mois</span></p>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+        {/* ═══ HOME TAB — Property detail fullscreen overlay ═══ */}
+        <AnimatePresence>
+          {mobileTab === 'home' && detailProperty && (
+            <motion.div
+              key="home-detail"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              className="fixed inset-0 z-[120] bg-card overflow-y-auto scrollable"
+            >
+              {/* Detail navbar */}
+              <nav
+                className="sticky top-0 z-10 flex items-center gap-2 px-3 no-select"
+                style={{
+                  height: 52,
+                  background: 'rgba(255,255,255,0.97)',
+                  backdropFilter: 'blur(8px)',
+                  borderBottom: '0.5px solid hsl(var(--border))',
+                }}
+              >
+                <button
+                  onClick={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
+                  className="w-8 h-8 rounded-full bg-primary flex items-center justify-center min-h-[44px] min-w-[44px] -ml-1"
+                >
+                  <ChevronLeft className="h-4 w-4 text-primary-foreground" />
+                </button>
+                <span className="text-sm font-semibold text-foreground truncate flex-1">{detailProperty.title}</span>
+              </nav>
 
-          {/* Properties grid */}
-          <section className="px-4 pb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">
-                {showFavoritesOnly ? '❤️ Mes favoris' : 'Tous les biens'}
-              </h2>
-              <span className="text-xs text-muted-foreground">
-                <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
-              </span>
-            </div>
-            {paginatedProperties.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 gap-4">
-                  {paginatedProperties.map((p) => (
-                    <PropertyCard key={p.id} property={p} onViewDetails={handleViewDetails} isFavorite={favorites.has(p.id)} onToggleFavorite={toggleFavorite} onFocusOnMap={handleFocusOnMap} />
-                  ))}
-                </div>
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-4 mt-6">
-                    <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => handlePageChange(-1)} className="h-10 w-10 disabled:opacity-30">
-                      <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <span className="text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
-                    <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => handlePageChange(1)} className="h-10 w-10 disabled:opacity-30">
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-12 bg-card border border-border rounded-xl">
-                <p className="text-sm text-muted-foreground">Aucun bien trouvé</p>
-                <Button variant="outline" size="sm" onClick={handleFullReset} className="mt-3 gap-2">
-                  <RotateCcw className="h-3 w-3" /> Réinitialiser
-                </Button>
-              </div>
-            )}
-          </section>
+              <PropertyDetailPanel
+                property={detailProperty}
+                onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
+                pois={pois}
+                isFavorite={favorites.has(detailProperty.id)}
+                onToggleFavorite={toggleFavorite}
+                onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
+                similarProperties={similarProperties}
+                onSelectProperty={(id) => {
+                  const p = properties.find(pr => pr.id === id);
+                  if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); }
+                }}
+                onExploreOnMap={handleFocusOnMap}
+                isMobileOverride={true}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          <TestimonialsSection />
-          <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
-          <Footer />
-        </div>
-
-        {/* Bottom navigation */}
+        {/* ═══ BOTTOM NAVIGATION ═══ */}
         <MobileBottomNav
           activeTab={mobileTab}
           onTabChange={handleMobileTabChange}
