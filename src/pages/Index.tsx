@@ -7,6 +7,7 @@ import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
 import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import MobileHeader from '@/components/MobileHeader';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import MobileBottomSheet, { SheetSnapState } from '@/components/MobileBottomSheet';
@@ -672,6 +673,7 @@ const Index = () => {
 
           <TestimonialsSection />
           <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
+          <Footer />
         </div>
 
         {/* Bottom navigation */}
@@ -870,7 +872,7 @@ const Index = () => {
       <section id="ia" className="container mx-auto px-4 pb-16">
         <div className="flex items-center gap-2 mb-6">
           <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="text-2xl font-bold text-foreground">Intelligence IA</h2>
+          <h2 className="text-2xl font-bold text-foreground">SapSap AI Engine</h2>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <AIComparator favorites={favoriteProperties} priorities={[]} />
@@ -878,6 +880,7 @@ const Index = () => {
         </div>
       </section>
 
+      <Footer />
       <VirtualTourModal property={selectedProperty} open={modalOpen} onOpenChange={setModalOpen} pois={pois} />
     </div>
   );
