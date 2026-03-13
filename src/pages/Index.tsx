@@ -7,6 +7,7 @@ import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
 import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import MobileHeader from '@/components/MobileHeader';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import MobileBottomSheet, { SheetSnapState } from '@/components/MobileBottomSheet';
