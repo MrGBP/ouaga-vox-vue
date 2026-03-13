@@ -79,7 +79,7 @@ const AIComparator = ({ favorites, priorities }: AIComparatorProps) => {
             <BarChart3 className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Comparateur IA</h3>
+            <h3 className="text-sm font-semibold text-foreground">SapSap AI Engine</h3>
             <p className="text-xs text-muted-foreground">{favorites.length} bien{favorites.length > 1 ? 's' : ''} en favoris</p>
           </div>
         </div>
