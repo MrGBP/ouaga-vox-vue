@@ -305,7 +305,8 @@ const Index = () => {
     setFocusedPropertyId(property.id);
     addToRecentlyViewed(property);
     if (isMobile) {
-      setSheetState('preview');
+      // Scroll to top so map + detail panel are visible
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
