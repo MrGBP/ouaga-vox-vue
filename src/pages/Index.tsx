@@ -131,15 +131,15 @@ const Index = () => {
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
 
-  // Body scroll lock on mobile when sheet open
+  // Body scroll lock on mobile only when filters open
   useEffect(() => {
-    if (isMobile && (sheetState !== 'closed' || detailProperty)) {
+    if (isMobile && showMobileFilters) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [isMobile, sheetState, detailProperty]);
+  }, [isMobile, showMobileFilters]);
 
   useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { fetchData(); }, []);
