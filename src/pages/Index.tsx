@@ -452,9 +452,9 @@ const Index = () => {
   // ═══════════════════════════════════════════════════════════════
   if (isMobile) {
     return (
-      <div className="h-screen w-screen overflow-hidden relative">
-        {/* Fixed map — always visible behind everything */}
-        <div className="fixed inset-0 z-0">
+      <div className="min-h-screen w-screen relative bg-background">
+        {/* Sticky map — always visible at top while scrolling */}
+        <div className="sticky top-0 z-0 h-[60vh]">
           <InteractiveMap
             properties={mapProperties} pois={pois} quartiers={quartiers}
             onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
