@@ -65,7 +65,7 @@ const AIComparator = ({ favorites, priorities }: AIComparatorProps) => {
       <div className="bg-card border border-border rounded-xl p-5 text-center">
         <Sparkles className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
         <p className="text-sm text-muted-foreground">
-          Ajoutez au moins <strong>2 favoris</strong> pour utiliser le comparateur IA
+          Ajoutez au moins <strong>2 favoris</strong> pour utiliser SapSap AI Engine
         </p>
       </div>
     );
