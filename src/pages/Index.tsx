@@ -850,7 +850,7 @@ const Index = () => {
                 <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
                   <button
                     onClick={() => setFavViewMode('list')}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${favViewMode === 'list' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-card text-foreground shadow-sm"
                   >
                     ☰ Liste
                   </button>
