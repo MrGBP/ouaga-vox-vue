@@ -1035,7 +1035,7 @@ const Index = () => {
         {/* ═══ FLOATING "VOIR LES INFOS" BUTTON (explore mode) ═══ */}
         {sheetHeight <= 10 && navLevel === 3 && mobileTab === 'map' && (
           <button
-            onClick={() => setSheetHeight(Math.round(window.innerHeight * 0.40))}
+            onClick={() => sheetRef.current?.snapDefault()}
             style={{
               position: 'fixed',
               bottom: 'calc(68px + env(safe-area-inset-bottom))',
