@@ -6,9 +6,11 @@ import { mockProperties, mockPois, mockQuartiers, isTypeFurnished, pricePerNight
 import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
 import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNav } from '@/contexts/NavigationContext';
+import { useSwipeBack } from '@/hooks/useSwipeBack';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import MobileNavbar, { NavLevel } from '@/components/MobileNavbar';
+import MobileNavbar from '@/components/MobileNavbar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import UniversalSheet from '@/components/mobile/UniversalSheet';
 import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
