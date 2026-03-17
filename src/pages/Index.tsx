@@ -694,7 +694,7 @@ const Index = () => {
   // Map ALWAYS visible · Clean map · UI in navbar/sheet/bottomnav
   // ═══════════════════════════════════════════════════════════════
   if (isMobile) {
-    const isMapVisible = mobileTab === 'map' || mobileTab === 'favorites' && favViewMode === 'map';
+    const isMapVisible = mobileTab === 'map' || (mobileTab === 'favorites' && favViewMode === 'map');
     const showFullscreenPage = mobileTab === 'home' || mobileTab === 'profile' || (mobileTab === 'favorites' && favViewMode === 'list');
 
     return (
