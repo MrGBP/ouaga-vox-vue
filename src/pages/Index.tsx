@@ -12,7 +12,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileNavbar from '@/components/MobileNavbar';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import UniversalSheet from '@/components/mobile/UniversalSheet';
+import UniversalSheet, { UniversalSheetHandle } from '@/components/mobile/UniversalSheet';
 import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
 import MobileCarousel from '@/components/MobileCarousel';
 import MobileSearchOverlay from '@/components/MobileSearchOverlay';
