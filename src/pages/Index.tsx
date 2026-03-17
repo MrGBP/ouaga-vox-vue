@@ -927,27 +927,26 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* ═══ MAP TAB — Bottom sheet ═══ */}
-        {mobileTab === 'map' && (
-          <>
-            {/* Floating AI button */}
-            {currentSheetSnap === 'closed' && (
-              <button
-                className="fixed z-50 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
-                style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
-              >
-                <Sparkles className="h-5 w-5" />
-              </button>
-            )}
+        {/* ═══ MAP TAB — Universal Sheet ═══ */}
+        {mobileTab === 'map' && (activeQuartier || detailProperty) && (
+          <UniversalSheet
+            sheetKey={`map-${navLevel}-${activeQuartier || ''}-${detailProperty?.id || ''}`}
+            initialSnapVh={45}
+            headerContent={getSheetHeader()}
+            onHeightChange={handleSheetHeightChange}
+          >
+            {getSheetContent()}
+          </UniversalSheet>
+        )}
 
-            <MobileBottomSheet
-              ref={sheetRef}
-              onSnapChange={handleSheetSnapChange}
-              headerContent={getSheetHeader()}
-            >
-              {getSheetContent()}
-            </MobileBottomSheet>
-          </>
+        {/* Floating AI button */}
+        {mobileTab === 'map' && sheetHeight < 10 && (
+          <button
+            className="fixed z-50 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
+            style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
+          >
+            <Sparkles className="h-5 w-5" />
+          </button>
         )}
 
         {/* ═══ SEARCH OVERLAY ═══ */}
