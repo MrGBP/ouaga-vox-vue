@@ -319,11 +319,11 @@ const Index = () => {
     setFocusedPropertyId(property.id);
     addToRecentlyViewed(property);
     if (isMobile) {
-      // Sheet will auto-show via detailProperty being set
+      nav.push({ screen: 'carte-niveau3', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [isMobile, mobileTab]);
+  }, [isMobile, mobileTab, nav]);
 
   const handlePropertyClick = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
