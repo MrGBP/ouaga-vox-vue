@@ -951,6 +951,37 @@ const Index = () => {
           </UniversalSheet>
         )}
 
+        {/* ═══ FLOATING "VOIR LES INFOS" BUTTON (explore mode) ═══ */}
+        {sheetHeight <= 10 && navLevel === 3 && mobileTab === 'map' && (
+          <button
+            onClick={() => setSheetHeight(Math.round(window.innerHeight * 0.40))}
+            style={{
+              position: 'fixed',
+              bottom: 'calc(68px + env(safe-area-inset-bottom))',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 40,
+              background: 'rgba(255,255,255,0.95)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '0.5px solid #e5e7eb',
+              borderRadius: 9999,
+              padding: '10px 20px',
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#1a3560',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+              cursor: 'pointer',
+            }}
+          >
+            <ChevronUp size={16} />
+            Voir les infos
+          </button>
+        )}
+
         {/* Floating AI button */}
         {mobileTab === 'map' && navLevel === 1 && (
           <button
