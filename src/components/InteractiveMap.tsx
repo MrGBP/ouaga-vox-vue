@@ -401,7 +401,13 @@ const InteractiveMap = ({
 
     const map = mapInst.current;
     map.flyTo([prop.latitude, prop.longitude], 15, { duration: 0.8 });
-    setTimeout(() => { mapInst.current?.invalidateSize({ animate: false }); }, 350);
+    setTimeout(() => {
+      if (!mapInst.current) return;
+      mapInst.current.invalidateSize({ animate: false });
+      // Offset pin upward so it's visible above the sheet (40% height)
+      const offsetPx = window.innerHeight * 0.20;
+      mapInst.current.panBy([0, offsetPx], { animate: true, duration: 0.4 });
+    }, 900);
 
     // Focused pin
     const focusIcon = L.divIcon({ html: propertyPinHTML(prop, true), className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
