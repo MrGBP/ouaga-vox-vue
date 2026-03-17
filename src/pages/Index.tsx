@@ -305,7 +305,6 @@ const Index = () => {
     setMapQuartierTrigger(null);
     setActiveQuartier(null);
     setMapResetTrigger(prev => prev + 1);
-    sheetRef.current?.snapTo('closed');
     const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites);
     setFilteredProperties(all);
     toast({ title: `🔄 Filtres réinitialisés — ${all.length} biens affichés` });
