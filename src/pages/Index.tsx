@@ -473,6 +473,20 @@ const Index = () => {
     nav.popToRoot();
   };
 
+  // Sync local state when nav stack changes (e.g. swipe-back, Android back)
+  useEffect(() => {
+    const screen = nav.current.screen;
+    if (screen === 'carte-niveau1') {
+      setDetailProperty(null);
+      setFocusedPropertyId(null);
+      setActiveQuartier(null);
+      setMapResetTrigger(prev => prev + 1);
+    } else if (screen === 'carte-niveau2') {
+      setDetailProperty(null);
+      setFocusedPropertyId(null);
+    }
+  }, [nav.current.screen]);
+
   // Sheet height change handler
   const handleSheetHeightChange = useCallback((h: number) => {
     setSheetHeight(h);
@@ -621,15 +635,7 @@ const Index = () => {
       <div className="w-screen h-screen relative overflow-hidden bg-background">
         {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
         <div className="fixed inset-0 z-0">
-          <div
-            onClick={() => {
-              if (sheetHeight >= Math.round(window.innerHeight * 0.75) - 4) {
-                // Tap on map when sheet is at max → collapse to default (40%)
-                setSheetHeight(Math.round(window.innerHeight * 0.40));
-              }
-            }}
-            className="w-full h-full"
-          >
+          <div className="w-full h-full">
             <InteractiveMap
               properties={mapProperties} pois={pois} quartiers={quartiers}
               onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
@@ -960,7 +966,7 @@ const Index = () => {
         )}
 
         {/* Floating AI button */}
-        {mobileTab === 'map' && sheetHeight < 10 && (
+        {mobileTab === 'map' && navLevel === 1 && (
           <button
             className="fixed z-30 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
             style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}

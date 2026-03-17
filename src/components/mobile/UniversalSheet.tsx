@@ -60,9 +60,6 @@ export function UniversalSheet({ children, initialSnapVh = 40, sheetKey, headerC
         ref={contentRef}
         className={`flex-1 min-h-0 sheet-content ${isAtMax ? 'overflow-y-auto' : 'overflow-hidden'}`}
         style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
-        onTouchStart={handlers.onTouchStart}
-        onTouchMove={handlers.onTouchMove}
-        onTouchEnd={handlers.onTouchEnd}
       >
         {children}
       </div>
