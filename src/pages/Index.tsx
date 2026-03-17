@@ -426,11 +426,21 @@ const Index = () => {
   }, [properties, handleViewDetails, isMobile]);
 
   const handleExploreOnMap = (id: string) => {
-    setDetailProperty(null);
-    setFocusedPropertyId(id);
+    const prop = properties.find(p => p.id === id);
+    if (!prop) return;
     if (isMobile) {
       setMobileTab('map');
+      setFocusedPropertyId(id);
+      setDetailProperty(prop);
+      setActiveQuartier(prop.quartier);
+      nav.push({
+        screen: 'carte-niveau3',
+        propertyId: id,
+        propertyTitle: prop.title,
+        propertyQuartier: prop.quartier,
+      });
     } else {
+      setFocusedPropertyId(id);
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
