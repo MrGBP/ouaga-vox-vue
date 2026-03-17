@@ -860,7 +860,7 @@ const Index = () => {
             </motion.div>
           )}
 
-          {/* FAVORITES TAB — map mode (map visible, sheet with fav pins) */}
+          {/* FAVORITES TAB — map mode (map visible, sheet with fav list) */}
           {mobileTab === 'favorites' && favViewMode === 'map' && (
             <motion.div key="fav-map-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <nav
