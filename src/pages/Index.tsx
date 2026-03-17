@@ -11,6 +11,7 @@ import Footer from '@/components/Footer';
 import MobileNavbar, { NavLevel } from '@/components/MobileNavbar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import MobileBottomSheet, { MobileBottomSheetRef, SheetSnapState } from '@/components/MobileBottomSheet';
+import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
 import MobileCarousel from '@/components/MobileCarousel';
 import MobileSearchOverlay from '@/components/MobileSearchOverlay';
 import VoiceSearch from '@/components/VoiceSearch';
