@@ -487,6 +487,12 @@ const InteractiveMap = ({
     setTimeout(() => mapInst.current?.invalidateSize({ animate: true }), 350);
   }, [panelOpen]);
 
+  // Invalidate on sheet height change
+  useEffect(() => {
+    if (!mapInst.current || sheetHeight === undefined) return;
+    mapInst.current.invalidateSize({ animate: false });
+  }, [sheetHeight]);
+
   // External quartier
   useEffect(() => {
     if (!externalQuartierSelect || !mapInst.current) return;
