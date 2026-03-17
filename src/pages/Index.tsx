@@ -615,15 +615,25 @@ const Index = () => {
       <div className="w-screen h-screen relative overflow-hidden bg-background">
         {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
         <div className="fixed inset-0 z-0">
-          <InteractiveMap
-            properties={mapProperties} pois={pois} quartiers={quartiers}
-            onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
-            onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); }}
-            activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
-            onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
-            panelOpen={false} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
-            favoriteIds={favorites}
-          />
+          <div
+            onClick={() => {
+              if (sheetHeight >= Math.round(window.innerHeight * 0.72) - 4) {
+                // Tap on map when sheet is at max → collapse to mid
+                setSheetHeight(Math.round(window.innerHeight * 0.35));
+              }
+            }}
+            className="w-full h-full"
+          >
+            <InteractiveMap
+              properties={mapProperties} pois={pois} quartiers={quartiers}
+              onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
+              onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); }}
+              activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
+              onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
+              panelOpen={false} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
+              favoriteIds={favorites}
+            />
+          </div>
         </div>
 
         {/* ═══ NAVBAR ═══ */}
@@ -802,7 +812,7 @@ const Index = () => {
             >
               {/* Navbar for favorites */}
               <nav
-                className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-3 no-select"
+                className="fixed top-0 left-0 right-0 z-[80] flex items-center justify-between px-3 no-select"
                 style={{
                   height: 52,
                   background: 'rgba(255,255,255,0.97)',
@@ -864,7 +874,7 @@ const Index = () => {
           {mobileTab === 'favorites' && favViewMode === 'map' && (
             <motion.div key="fav-map-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <nav
-                className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-3 no-select"
+                className="fixed top-0 left-0 right-0 z-[80] flex items-center justify-between px-3 no-select"
                 style={{
                   height: 52,
                   background: 'rgba(255,255,255,0.97)',
@@ -899,7 +909,7 @@ const Index = () => {
               }}
             >
               <nav
-                className="fixed top-0 left-0 right-0 z-[100] flex items-center px-3 no-select"
+                className="fixed top-0 left-0 right-0 z-[80] flex items-center px-3 no-select"
                 style={{
                   height: 52,
                   background: 'rgba(255,255,255,0.97)',
@@ -931,7 +941,7 @@ const Index = () => {
         {mobileTab === 'map' && (activeQuartier || detailProperty) && (
           <UniversalSheet
             sheetKey={`map-${navLevel}-${activeQuartier || ''}-${detailProperty?.id || ''}`}
-            initialSnapVh={45}
+            initialSnapVh={35}
             headerContent={getSheetHeader()}
             onHeightChange={handleSheetHeightChange}
           >
@@ -942,7 +952,7 @@ const Index = () => {
         {/* Floating AI button */}
         {mobileTab === 'map' && sheetHeight < 10 && (
           <button
-            className="fixed z-50 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
+            className="fixed z-30 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
             style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
           >
             <Sparkles className="h-5 w-5" />
@@ -1007,7 +1017,7 @@ const Index = () => {
         {mobileTab === 'home' && detailProperty && (
           <UniversalSheet
             sheetKey={`home-detail-${detailProperty.id}`}
-            initialSnapVh={65}
+            initialSnapVh={52}
             headerContent={
               <div className="flex items-center gap-2">
                 <button
@@ -1042,7 +1052,7 @@ const Index = () => {
         {mobileTab === 'favorites' && favViewMode === 'map' && favoriteProperties.length > 0 && (
           <UniversalSheet
             sheetKey="favorites-map"
-            initialSnapVh={45}
+            initialSnapVh={35}
             headerContent={
               <span className="text-xs font-semibold text-muted-foreground">
                 {favoriteProperties.length} favori{favoriteProperties.length > 1 ? 's' : ''} sur la carte

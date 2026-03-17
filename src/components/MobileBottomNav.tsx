@@ -16,7 +16,7 @@ const tabs = [
 
 const MobileBottomNav = ({ activeTab, onTabChange, favoritesCount = 0 }: MobileBottomNavProps) => {
   return (
-    <nav className="flex lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border justify-around items-center z-[100] no-select"
+    <nav className="flex lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border justify-around items-center z-[90] no-select"
       style={{ height: 'calc(52px + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {tabs.map(tab => {

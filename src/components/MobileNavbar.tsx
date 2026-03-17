@@ -44,7 +44,7 @@ const MobileNavbar = ({
   return (
     <>
       <nav
-        className="flex lg:hidden fixed top-0 left-0 right-0 items-center justify-between px-3 z-[100] no-select"
+        className="flex lg:hidden fixed top-0 left-0 right-0 items-center justify-between px-3 z-[80] no-select"
         style={{
           height: 52,
           background: 'rgba(255,255,255,0.97)',
