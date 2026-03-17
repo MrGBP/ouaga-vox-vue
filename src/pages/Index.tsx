@@ -655,6 +655,7 @@ const Index = () => {
             propertyQuartier={detailProperty?.quartier}
             onBack={handleNavBack}
             onHome={handleNavHome}
+            depth={nav.depth}
           />
         ) : mobileTab === 'home' ? (
           <MobileNavbar level={1} />
