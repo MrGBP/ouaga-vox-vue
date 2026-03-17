@@ -10,7 +10,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileNavbar, { NavLevel } from '@/components/MobileNavbar';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import MobileBottomSheet, { MobileBottomSheetRef, SheetSnapState } from '@/components/MobileBottomSheet';
+import UniversalSheet from '@/components/mobile/UniversalSheet';
 import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
 import MobileCarousel from '@/components/MobileCarousel';
 import MobileSearchOverlay from '@/components/MobileSearchOverlay';
@@ -131,8 +131,7 @@ const Index = () => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [favViewMode, setFavViewMode] = useState<'list' | 'map'>('list');
-  const sheetRef = useRef<MobileBottomSheetRef>(null);
-  const [currentSheetSnap, setCurrentSheetSnap] = useState<SheetSnapState>('closed');
+  const [sheetHeight, setSheetHeight] = useState(0);
 
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
@@ -306,7 +305,6 @@ const Index = () => {
     setMapQuartierTrigger(null);
     setActiveQuartier(null);
     setMapResetTrigger(prev => prev + 1);
-    sheetRef.current?.snapTo('closed');
     const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites);
     setFilteredProperties(all);
     toast({ title: `🔄 Filtres réinitialisés — ${all.length} biens affichés` });
@@ -317,11 +315,7 @@ const Index = () => {
     setFocusedPropertyId(property.id);
     addToRecentlyViewed(property);
     if (isMobile) {
-      if (mobileTab === 'map') {
-        // Open bottom sheet to preview
-        sheetRef.current?.snapTo('preview');
-      }
-      // For home tab, open a fullscreen detail
+      // Sheet will auto-show via detailProperty being set
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
@@ -340,7 +334,6 @@ const Index = () => {
         setDetailProperty(prop);
         setFocusedPropertyId(id);
         addToRecentlyViewed(prop);
-        setTimeout(() => sheetRef.current?.snapTo('preview'), 100);
       } else {
         handleViewDetails(prop);
       }
@@ -351,7 +344,6 @@ const Index = () => {
     setDetailProperty(null);
     setFocusedPropertyId(id);
     if (isMobile) {
-      sheetRef.current?.snapTo('closed');
       setMobileTab('map');
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
@@ -426,8 +418,6 @@ const Index = () => {
 
   // Mobile tab change
   const handleMobileTabChange = (tab: string) => {
-    // Close sheet when changing tabs
-    sheetRef.current?.snapTo('closed');
     setDetailProperty(null);
     setFocusedPropertyId(null);
 
@@ -464,11 +454,9 @@ const Index = () => {
     if (navLevel === 3) {
       setDetailProperty(null);
       setFocusedPropertyId(null);
-      sheetRef.current?.snapTo(activeQuartier ? 'preview' : 'closed');
     } else if (navLevel === 2) {
       setActiveQuartier(null);
       setMapResetTrigger(prev => prev + 1);
-      sheetRef.current?.snapTo('closed');
     }
   };
 
@@ -477,37 +465,12 @@ const Index = () => {
     setFocusedPropertyId(null);
     setActiveQuartier(null);
     setMapResetTrigger(prev => prev + 1);
-    sheetRef.current?.snapTo('closed');
   };
 
-  // Sheet snap change
-  const handleSheetSnapChange = (snap: SheetSnapState) => {
-    setCurrentSheetSnap(snap);
-    if (snap === 'closed') {
-      // If we were at level 3 and sheet closes, go back to level 2
-      if (detailProperty && activeQuartier) {
-        setDetailProperty(null);
-        setFocusedPropertyId(null);
-      } else if (detailProperty) {
-        setDetailProperty(null);
-        setFocusedPropertyId(null);
-      }
-    }
-  };
-
-  // Map tap handler (close sheet)
-  const handleMapTap = () => {
-    if (currentSheetSnap !== 'closed') {
-      sheetRef.current?.snapTo('closed');
-    }
-  };
-
-  // When quartier changes from map, open sheet
-  useEffect(() => {
-    if (isMobile && activeQuartier && mobileTab === 'map' && !detailProperty) {
-      sheetRef.current?.snapTo('preview');
-    }
-  }, [activeQuartier, isMobile, mobileTab, detailProperty]);
+  // Sheet height change handler
+  const handleSheetHeightChange = useCallback((h: number) => {
+    setSheetHeight(h);
+  }, []);
 
   // Sheet header content based on level
   const getSheetHeader = () => {
@@ -608,7 +571,7 @@ const Index = () => {
         <div>
           <PropertyDetailPanel
             property={detailProperty}
-            onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); sheetRef.current?.snapTo('closed'); }}
+            onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
             pois={pois}
             isFavorite={favorites.has(detailProperty.id)}
             onToggleFavorite={toggleFavorite}
@@ -897,7 +860,7 @@ const Index = () => {
             </motion.div>
           )}
 
-          {/* FAVORITES TAB — map mode (map visible, sheet with fav pins) */}
+          {/* FAVORITES TAB — map mode (map visible, sheet with fav list) */}
           {mobileTab === 'favorites' && favViewMode === 'map' && (
             <motion.div key="fav-map-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <nav
@@ -964,27 +927,26 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* ═══ MAP TAB — Bottom sheet ═══ */}
-        {mobileTab === 'map' && (
-          <>
-            {/* Floating AI button */}
-            {currentSheetSnap === 'closed' && (
-              <button
-                className="fixed z-50 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
-                style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
-              >
-                <Sparkles className="h-5 w-5" />
-              </button>
-            )}
+        {/* ═══ MAP TAB — Universal Sheet ═══ */}
+        {mobileTab === 'map' && (activeQuartier || detailProperty) && (
+          <UniversalSheet
+            sheetKey={`map-${navLevel}-${activeQuartier || ''}-${detailProperty?.id || ''}`}
+            initialSnapVh={45}
+            headerContent={getSheetHeader()}
+            onHeightChange={handleSheetHeightChange}
+          >
+            {getSheetContent()}
+          </UniversalSheet>
+        )}
 
-            <MobileBottomSheet
-              ref={sheetRef}
-              onSnapChange={handleSheetSnapChange}
-              headerContent={getSheetHeader()}
-            >
-              {getSheetContent()}
-            </MobileBottomSheet>
-          </>
+        {/* Floating AI button */}
+        {mobileTab === 'map' && sheetHeight < 10 && (
+          <button
+            className="fixed z-50 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
+            style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
+          >
+            <Sparkles className="h-5 w-5" />
+          </button>
         )}
 
         {/* ═══ SEARCH OVERLAY ═══ */}
@@ -1000,7 +962,7 @@ const Index = () => {
                   setDetailProperty(prop);
                   setFocusedPropertyId(id);
                   addToRecentlyViewed(prop);
-                  setTimeout(() => sheetRef.current?.snapTo('preview'), 100);
+                  // Sheet auto-shows via detailProperty state
                 }
                 setShowMobileSearch(false);
               }}
@@ -1041,21 +1003,13 @@ const Index = () => {
           </div>
         </MobileDraggableDrawer>
 
-        {/* ═══ HOME TAB — Property detail draggable drawer ═══ */}
-        <MobileDraggableDrawer
-          open={mobileTab === 'home' && !!detailProperty}
-          onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
-          maxHeightVh={85}
-          initialHeightVh={80}
-          snapPoints={[0, 45, 65, 85]}
-          overlayZIndex={110}
-          drawerZIndex={120}
-          bottomOffset="calc(52px + env(safe-area-inset-bottom))"
-        >
-          {detailProperty && (
-            <>
-              {/* Header inside drawer */}
-              <div className="flex items-center gap-2 px-3 pb-2 shrink-0 border-b border-border">
+        {/* ═══ HOME TAB — Property detail as UniversalSheet ═══ */}
+        {mobileTab === 'home' && detailProperty && (
+          <UniversalSheet
+            sheetKey={`home-detail-${detailProperty.id}`}
+            initialSnapVh={65}
+            headerContent={
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
                   className="w-8 h-8 rounded-full bg-primary flex items-center justify-center min-h-[44px] min-w-[44px]"
@@ -1064,25 +1018,72 @@ const Index = () => {
                 </button>
                 <span className="text-sm font-semibold text-foreground truncate flex-1">{detailProperty.title}</span>
               </div>
+            }
+          >
+            <PropertyDetailPanel
+              property={detailProperty}
+              onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
+              pois={pois}
+              isFavorite={favorites.has(detailProperty.id)}
+              onToggleFavorite={toggleFavorite}
+              onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
+              similarProperties={similarProperties}
+              onSelectProperty={(id) => {
+                const p = properties.find(pr => pr.id === id);
+                if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); }
+              }}
+              onExploreOnMap={handleFocusOnMap}
+              isMobileOverride={true}
+            />
+          </UniversalSheet>
+        )}
 
-              <PropertyDetailPanel
-                property={detailProperty}
-                onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
-                pois={pois}
-                isFavorite={favorites.has(detailProperty.id)}
-                onToggleFavorite={toggleFavorite}
-                onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
-                similarProperties={similarProperties}
-                onSelectProperty={(id) => {
-                  const p = properties.find(pr => pr.id === id);
-                  if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); }
-                }}
-                onExploreOnMap={handleFocusOnMap}
-                isMobileOverride={true}
-              />
-            </>
-          )}
-        </MobileDraggableDrawer>
+        {/* ═══ FAVORITES MAP — UniversalSheet with favorite cards ═══ */}
+        {mobileTab === 'favorites' && favViewMode === 'map' && favoriteProperties.length > 0 && (
+          <UniversalSheet
+            sheetKey="favorites-map"
+            initialSnapVh={45}
+            headerContent={
+              <span className="text-xs font-semibold text-muted-foreground">
+                {favoriteProperties.length} favori{favoriteProperties.length > 1 ? 's' : ''} sur la carte
+              </span>
+            }
+          >
+            <div className="px-3">
+              <div className="flex gap-2.5 overflow-x-auto pb-3 snap-x snap-mandatory scrollable" style={{ scrollbarWidth: 'none' }}>
+                {favoriteProperties.map(p => {
+                  const dp = formatDisplayPrice(p);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => handlePropertyClick(p.id)}
+                      className="shrink-0 bg-card rounded-[14px] overflow-hidden shadow-card border border-border text-left active:scale-[0.97] transition-transform"
+                      style={{ width: 220, height: 160, scrollSnapAlign: 'start' }}
+                    >
+                      <div className="relative h-[100px]">
+                        <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop'} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
+                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
+                          <Heart className="h-3 w-3 text-secondary-foreground fill-current" />
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        <p className="text-[11px] font-semibold text-foreground line-clamp-1">{p.title}</p>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <span className="text-[10px] text-muted-foreground">{p.quartier}</span>
+                          {dp.nightPrice ? (
+                            <span className="text-[11px] font-bold text-primary">{dp.nightPrice} /n</span>
+                          ) : (
+                            <span className="text-[11px] font-bold text-primary">{dp.price} /m</span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </UniversalSheet>
+        )}
 
         {/* ═══ BOTTOM NAVIGATION ═══ */}
         <MobileBottomNav
