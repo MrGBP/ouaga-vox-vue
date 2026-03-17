@@ -13,6 +13,7 @@ import AdminAnalytics from '@/admin/pages/AdminAnalytics';
 import AdminSettings from '@/admin/pages/AdminSettings';
 
 function AdminProtected() {
+  console.log('AdminProtected rendered, auth:', localStorage.getItem('sapsap_admin_auth'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (!localStorage.getItem('sapsap_admin_auth')) {
