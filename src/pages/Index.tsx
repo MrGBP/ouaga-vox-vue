@@ -1166,7 +1166,7 @@ const Index = () => {
         />
 
         <div className="flex gap-0 relative">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`transition-all duration-300 ${detailProperty ? 'w-[calc(100%-420px)]' : 'w-full'}`}>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`transition-all duration-300 ${detailProperty ? 'w-full md:w-[calc(100%-360px)] lg:w-[calc(100%-420px)]' : 'w-full'}`}>
             <InteractiveMap
               properties={mapProperties} pois={pois} quartiers={quartiers}
               onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
@@ -1179,7 +1179,7 @@ const Index = () => {
           </motion.div>
 
           {detailProperty && (
-            <div className="w-[420px] shrink-0 border-l border-border hidden lg:block">
+            <div className="w-[360px] lg:w-[420px] shrink-0 border-l border-border hidden md:block">
               <div className="h-[620px] overflow-y-auto">
                 <PropertyDetailPanel
                   property={detailProperty} onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
