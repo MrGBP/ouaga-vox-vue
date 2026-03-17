@@ -316,11 +316,7 @@ const Index = () => {
     setFocusedPropertyId(property.id);
     addToRecentlyViewed(property);
     if (isMobile) {
-      if (mobileTab === 'map') {
-        // Open bottom sheet to preview
-        sheetRef.current?.snapTo('preview');
-      }
-      // For home tab, open a fullscreen detail
+      // Sheet will auto-show via detailProperty being set
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
