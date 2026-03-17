@@ -1023,6 +1023,7 @@ const Index = () => {
         {/* ═══ MAP TAB — Universal Sheet ═══ */}
         {mobileTab === 'map' && (activeQuartier || detailProperty) && (
           <UniversalSheet
+            ref={sheetRef}
             sheetKey={`map-${navLevel}-${activeQuartier || ''}-${detailProperty?.id || ''}`}
             initialSnapVh={40}
             headerContent={getSheetHeader()}
