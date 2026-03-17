@@ -473,6 +473,20 @@ const Index = () => {
     nav.popToRoot();
   };
 
+  // Sync local state when nav stack changes (e.g. swipe-back, Android back)
+  useEffect(() => {
+    const screen = nav.current.screen;
+    if (screen === 'carte-niveau1') {
+      setDetailProperty(null);
+      setFocusedPropertyId(null);
+      setActiveQuartier(null);
+      setMapResetTrigger(prev => prev + 1);
+    } else if (screen === 'carte-niveau2') {
+      setDetailProperty(null);
+      setFocusedPropertyId(null);
+    }
+  }, [nav.current.screen]);
+
   // Sheet height change handler
   const handleSheetHeightChange = useCallback((h: number) => {
     setSheetHeight(h);
