@@ -13,7 +13,7 @@ const BOTTOM_NAV_H = 56;
 
 export function UniversalSheet({ children, initialSnapVh = 40, sheetKey, headerContent, onHeightChange }: UniversalSheetProps) {
   const {
-    height, isAtMax, sheetRef, contentRef,
+    height, isAtMax, isPageMode, sheetRef, contentRef,
     handlers,
   } = useUniversalSheet(initialSnapVh);
 
@@ -25,13 +25,15 @@ export function UniversalSheet({ children, initialSnapVh = 40, sheetKey, headerC
     <div
       ref={sheetRef}
       key={sheetKey}
-      className="block lg:hidden fixed left-0 right-0 bg-card rounded-t-[20px] z-50 flex flex-col"
+      className="block lg:hidden fixed left-0 right-0 bg-card z-50 flex flex-col"
       style={{
         bottom: `calc(${BOTTOM_NAV_H}px + env(safe-area-inset-bottom))`,
         height: `${height}px`,
         boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
         willChange: 'height',
         touchAction: 'none',
+        borderRadius: isPageMode ? 0 : '20px 20px 0 0',
+        transition: 'border-radius 200ms ease',
       }}
     >
       {/* Handle — always draggable */}
@@ -55,10 +57,10 @@ export function UniversalSheet({ children, initialSnapVh = 40, sheetKey, headerC
         </div>
       )}
 
-      {/* Content — draggable from top, scrollable at max */}
+      {/* Content — draggable from top, scrollable at max or page mode */}
       <div
         ref={contentRef}
-        className={`flex-1 min-h-0 sheet-content ${isAtMax ? 'overflow-y-auto' : 'overflow-hidden'}`}
+        className={`flex-1 min-h-0 sheet-content ${(isAtMax || isPageMode) ? 'overflow-y-auto' : 'overflow-hidden'}`}
         style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
       >
         {children}

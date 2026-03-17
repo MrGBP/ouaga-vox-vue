@@ -13,7 +13,8 @@ interface MobileNavbarProps {
   propertyQuartier?: string;
   onBack?: () => void;
   onHome?: () => void;
-  depth?: number; // stack depth for dots
+  depth?: number;
+  isExploring?: boolean;
 }
 
 const LevelDots = ({ depth }: { depth: number }) => {
@@ -43,6 +44,7 @@ const MobileNavbar = ({
   onBack,
   onHome,
   depth,
+  isExploring = false,
 }: MobileNavbarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const showBack = level > 1;
@@ -55,10 +57,11 @@ const MobileNavbar = ({
         className="flex lg:hidden fixed top-0 left-0 right-0 items-center justify-between px-3 z-[80] no-select"
         style={{
           height: 52,
-          background: 'rgba(255,255,255,0.97)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          borderBottom: '0.5px solid hsl(var(--border))',
+          background: isExploring ? 'rgba(255,255,255,0)' : 'rgba(255,255,255,0.97)',
+          backdropFilter: isExploring ? 'none' : 'blur(8px)',
+          WebkitBackdropFilter: isExploring ? 'none' : 'blur(8px)',
+          borderBottom: isExploring ? 'none' : '0.5px solid hsl(var(--border))',
+          transition: 'background 300ms ease, backdrop-filter 300ms ease',
         }}
       >
         {/* Left */}
@@ -74,17 +77,26 @@ const MobileNavbar = ({
             <>
               <button
                 onClick={onBack}
-                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 min-h-[44px] min-w-[44px] -ml-1.5"
+                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 min-h-[44px] min-w-[44px] -ml-1.5"
+                style={{
+                  background: isExploring ? 'rgba(255,255,255,0.9)' : undefined,
+                }}
               >
-                <ChevronLeft className="h-4 w-4 text-primary-foreground" />
+                <ChevronLeft className="h-4 w-4" style={{ color: isExploring ? '#1a3560' : undefined }} />
               </button>
               {level === 2 ? (
-                <span className="text-sm font-semibold text-foreground truncate">
-                  {quartierName} · <span className="text-muted-foreground font-normal">{quartierCount} bien{(quartierCount || 0) > 1 ? 's' : ''}</span>
+                <span
+                  className="text-sm font-semibold truncate"
+                  style={isExploring ? { color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' } : undefined}
+                >
+                  {quartierName} · <span className={isExploring ? '' : 'text-muted-foreground font-normal'}>{quartierCount} bien{(quartierCount || 0) > 1 ? 's' : ''}</span>
                 </span>
               ) : (
-                <span className="text-sm font-semibold text-foreground truncate">
-                  {propertyTitle} · <span className="text-muted-foreground font-normal text-xs">{propertyQuartier}</span>
+                <span
+                  className="text-sm font-semibold truncate"
+                  style={isExploring ? { color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' } : undefined}
+                >
+                  {propertyTitle} · <span className={`text-xs ${isExploring ? '' : 'text-muted-foreground font-normal'}`}>{propertyQuartier}</span>
                 </span>
               )}
             </>

@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 
 const vh = () => (typeof window !== 'undefined' ? window.innerHeight : 800);
 
-const SNAP_VH = [0, 15, 40, 58, 75];
+const SNAP_VH = [0, 15, 40, 58, 75, 90];
 const getSnaps = () => SNAP_VH.map(v => Math.round(vh() * v / 100));
 
 const SNAP_THRESHOLD_VH = 0.05;
@@ -21,13 +21,16 @@ export function useUniversalSheet(initialSnapVh = 40) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
+  const SNAP_PAGE = Math.round(vh() * 0.90);
   const SNAP_MAX = Math.round(vh() * 0.75);
   const SNAP_MID = Math.round(vh() * 0.58);
   const SNAP_DEFAULT = Math.round(vh() * 0.40);
   const SNAP_PEEK = Math.round(vh() * 0.15);
   const SNAP_MIN = 0;
 
-  const clamp = (v: number) => Math.max(SNAP_MIN, Math.min(SNAP_MAX, v));
+  const clamp = (v: number) => Math.max(SNAP_MIN, Math.min(SNAP_PAGE, v));
+
+  const isPageMode = height >= SNAP_PAGE - 4;
 
   const animateTo = useCallback((target: number) => {
     if (sheetRef.current) {
@@ -101,18 +104,19 @@ export function useUniversalSheet(initialSnapVh = 40) {
   useEffect(() => {
     const content = contentRef.current;
     if (!content) return;
-    if (isAtMax) {
+    if (isAtMax || isPageMode) {
       content.style.overflowY = 'auto';
       content.style.overscrollBehavior = 'contain';
     } else {
       content.style.overflowY = 'hidden';
       content.scrollTop = 0;
     }
-  }, [isAtMax]);
+  }, [isAtMax, isPageMode]);
 
   return {
     height,
     isAtMax,
+    isPageMode,
     sheetRef,
     contentRef,
     handlers: { onTouchStart, onTouchMove, onTouchEnd },
@@ -120,8 +124,10 @@ export function useUniversalSheet(initialSnapVh = 40) {
     snapDefault: () => animateTo(SNAP_DEFAULT),
     snapMid: () => animateTo(SNAP_MID),
     snapMax: () => animateTo(SNAP_MAX),
+    snapPage: () => animateTo(SNAP_PAGE),
     snapPeek: () => animateTo(SNAP_PEEK),
     close: () => animateTo(SNAP_MIN),
+    SNAP_PAGE,
     SNAP_MAX,
     SNAP_MID,
     SNAP_DEFAULT,
