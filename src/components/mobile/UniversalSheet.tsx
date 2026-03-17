@@ -36,6 +36,8 @@ export const UniversalSheet = forwardRef<UniversalSheetHandle, UniversalSheetPro
       onHeightChange?.(height);
     }, [height, onHeightChange]);
 
+    if (height <= 2) return null;
+
     return (
       <div
         ref={sheetRef}
@@ -75,7 +77,7 @@ export const UniversalSheet = forwardRef<UniversalSheetHandle, UniversalSheetPro
         {/* Content — draggable from top, scrollable at max or page mode */}
         <div
           ref={contentRef}
-          className={`flex-1 min-h-0 sheet-content ${(isAtMax || isPageMode) ? 'overflow-y-auto' : 'overflow-hidden'}`}
+          className={`flex-1 min-h-0 ${isAtMax ? 'overflow-y-auto' : 'overflow-hidden'}`}
           style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
         >
           {children}
