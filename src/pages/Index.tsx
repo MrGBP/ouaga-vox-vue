@@ -1052,7 +1052,7 @@ const Index = () => {
         {mobileTab === 'favorites' && favViewMode === 'map' && favoriteProperties.length > 0 && (
           <UniversalSheet
             sheetKey="favorites-map"
-            initialSnapVh={45}
+            initialSnapVh={35}
             headerContent={
               <span className="text-xs font-semibold text-muted-foreground">
                 {favoriteProperties.length} favori{favoriteProperties.length > 1 ? 's' : ''} sur la carte
