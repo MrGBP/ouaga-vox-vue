@@ -462,6 +462,7 @@ const Index = () => {
       setActiveQuartier(null);
       setMapResetTrigger(prev => prev + 1);
     }
+    if (nav.canGoBack) nav.pop();
   };
 
   const handleNavHome = () => {
@@ -469,6 +470,7 @@ const Index = () => {
     setFocusedPropertyId(null);
     setActiveQuartier(null);
     setMapResetTrigger(prev => prev + 1);
+    nav.popToRoot();
   };
 
   // Sheet height change handler
