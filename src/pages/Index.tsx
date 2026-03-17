@@ -1041,35 +1041,29 @@ const Index = () => {
           </div>
         </MobileDraggableDrawer>
 
-        {/* ═══ HOME TAB — Property detail fullscreen overlay ═══ */}
-        <AnimatePresence>
-          {mobileTab === 'home' && detailProperty && (
-            <motion.div
-              key="home-detail"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed inset-0 z-[120] bg-card overflow-y-auto scrollable"
-            >
-              {/* Detail navbar */}
-              <nav
-                className="sticky top-0 z-10 flex items-center gap-2 px-3 no-select"
-                style={{
-                  height: 52,
-                  background: 'rgba(255,255,255,0.97)',
-                  backdropFilter: 'blur(8px)',
-                  borderBottom: '0.5px solid hsl(var(--border))',
-                }}
-              >
+        {/* ═══ HOME TAB — Property detail draggable drawer ═══ */}
+        <MobileDraggableDrawer
+          open={mobileTab === 'home' && !!detailProperty}
+          onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
+          maxHeightVh={85}
+          initialHeightVh={80}
+          snapPoints={[0, 45, 65, 85]}
+          overlayZIndex={110}
+          drawerZIndex={120}
+          bottomOffset="calc(52px + env(safe-area-inset-bottom))"
+        >
+          {detailProperty && (
+            <>
+              {/* Header inside drawer */}
+              <div className="flex items-center gap-2 px-3 pb-2 shrink-0 border-b border-border">
                 <button
                   onClick={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
-                  className="w-8 h-8 rounded-full bg-primary flex items-center justify-center min-h-[44px] min-w-[44px] -ml-1"
+                  className="w-8 h-8 rounded-full bg-primary flex items-center justify-center min-h-[44px] min-w-[44px]"
                 >
                   <ChevronLeft className="h-4 w-4 text-primary-foreground" />
                 </button>
                 <span className="text-sm font-semibold text-foreground truncate flex-1">{detailProperty.title}</span>
-              </nav>
+              </div>
 
               <PropertyDetailPanel
                 property={detailProperty}
@@ -1086,9 +1080,9 @@ const Index = () => {
                 onExploreOnMap={handleFocusOnMap}
                 isMobileOverride={true}
               />
-            </motion.div>
+            </>
           )}
-        </AnimatePresence>
+        </MobileDraggableDrawer>
 
         {/* ═══ BOTTOM NAVIGATION ═══ */}
         <MobileBottomNav
