@@ -9,7 +9,7 @@ interface UniversalSheetProps {
   onHeightChange?: (height: number) => void;
 }
 
-const BOTTOM_NAV_H = 52;
+const BOTTOM_NAV_H = 56;
 
 export function UniversalSheet({ children, initialSnapVh = 45, sheetKey, headerContent, onHeightChange }: UniversalSheetProps) {
   const {

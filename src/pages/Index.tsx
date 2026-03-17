@@ -952,7 +952,7 @@ const Index = () => {
         {/* Floating AI button */}
         {mobileTab === 'map' && sheetHeight < 10 && (
           <button
-            className="fixed z-50 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
+            className="fixed z-30 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
             style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
           >
             <Sparkles className="h-5 w-5" />
