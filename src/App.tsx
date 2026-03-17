@@ -25,23 +25,14 @@ const App = () => (
               path="/admin/*"
               element={
                 <Suspense fallback={
-                  <div style={{
-                    minHeight: '100vh',
-                    background: '#0f172a',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontSize: 14,
-                  }}>
-                    Chargement du dashboard…
+                  <div style={{ minHeight:"100vh", background:"#0f172a", display:"flex", alignItems:"center", justifyContent:"center", color:"white", fontSize:14 }}>
+                    Chargement…
                   </div>
                 }>
                   <AdminLayout />
                 </Suspense>
               }
             />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
