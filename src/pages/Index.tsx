@@ -713,6 +713,7 @@ const Index = () => {
                 if (q) nav.push({ screen: 'carte-niveau2', quartierName: q });
               }} resetTrigger={mapResetTrigger}
               favoriteIds={favorites}
+              sheetHeight={sheetHeight}
             />
           </div>
         </div>
