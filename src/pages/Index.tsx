@@ -471,7 +471,7 @@ const Index = () => {
   const similarProperties = detailProperty
     ? availableProperties(properties).filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
     : [];
-  const mapProperties = availableProperties(showFavoritesOnly ? filteredProperties : properties);
+  const mapProperties = availableProperties(filteredProperties);
 
   // Pagination
   const displayProperties = availableProperties(filteredProperties);
