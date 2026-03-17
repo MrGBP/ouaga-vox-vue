@@ -11,7 +11,7 @@ interface UniversalSheetProps {
 
 const BOTTOM_NAV_H = 56;
 
-export function UniversalSheet({ children, initialSnapVh = 35, sheetKey, headerContent, onHeightChange }: UniversalSheetProps) {
+export function UniversalSheet({ children, initialSnapVh = 40, sheetKey, headerContent, onHeightChange }: UniversalSheetProps) {
   const {
     height, isAtMax, sheetRef, contentRef,
     handlers,
@@ -31,12 +31,14 @@ export function UniversalSheet({ children, initialSnapVh = 35, sheetKey, headerC
         height: `${height}px`,
         boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
         willChange: 'height',
+        touchAction: 'none',
       }}
     >
       {/* Handle — always draggable */}
       <div
         data-handle="true"
         className="flex flex-col items-center pt-2 pb-1 cursor-grab no-select shrink-0"
+        style={{ touchAction: 'none', userSelect: 'none' }}
         {...handlers}
       >
         <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
@@ -57,6 +59,7 @@ export function UniversalSheet({ children, initialSnapVh = 35, sheetKey, headerC
       <div
         ref={contentRef}
         className={`flex-1 min-h-0 sheet-content ${isAtMax ? 'overflow-y-auto' : 'overflow-hidden'}`}
+        style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
         onTouchStart={handlers.onTouchStart}
         onTouchMove={handlers.onTouchMove}
         onTouchEnd={handlers.onTouchEnd}
