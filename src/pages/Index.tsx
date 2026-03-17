@@ -345,7 +345,6 @@ const Index = () => {
     setDetailProperty(null);
     setFocusedPropertyId(id);
     if (isMobile) {
-      sheetRef.current?.snapTo('closed');
       setMobileTab('map');
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
