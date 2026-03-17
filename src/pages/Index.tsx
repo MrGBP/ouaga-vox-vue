@@ -1003,21 +1003,13 @@ const Index = () => {
           </div>
         </MobileDraggableDrawer>
 
-        {/* ═══ HOME TAB — Property detail draggable drawer ═══ */}
-        <MobileDraggableDrawer
-          open={mobileTab === 'home' && !!detailProperty}
-          onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
-          maxHeightVh={85}
-          initialHeightVh={80}
-          snapPoints={[0, 45, 65, 85]}
-          overlayZIndex={110}
-          drawerZIndex={120}
-          bottomOffset="calc(52px + env(safe-area-inset-bottom))"
-        >
-          {detailProperty && (
-            <>
-              {/* Header inside drawer */}
-              <div className="flex items-center gap-2 px-3 pb-2 shrink-0 border-b border-border">
+        {/* ═══ HOME TAB — Property detail as UniversalSheet ═══ */}
+        {mobileTab === 'home' && detailProperty && (
+          <UniversalSheet
+            sheetKey={`home-detail-${detailProperty.id}`}
+            initialSnapVh={65}
+            headerContent={
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
                   className="w-8 h-8 rounded-full bg-primary flex items-center justify-center min-h-[44px] min-w-[44px]"
@@ -1026,25 +1018,72 @@ const Index = () => {
                 </button>
                 <span className="text-sm font-semibold text-foreground truncate flex-1">{detailProperty.title}</span>
               </div>
+            }
+          >
+            <PropertyDetailPanel
+              property={detailProperty}
+              onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
+              pois={pois}
+              isFavorite={favorites.has(detailProperty.id)}
+              onToggleFavorite={toggleFavorite}
+              onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
+              similarProperties={similarProperties}
+              onSelectProperty={(id) => {
+                const p = properties.find(pr => pr.id === id);
+                if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); }
+              }}
+              onExploreOnMap={handleFocusOnMap}
+              isMobileOverride={true}
+            />
+          </UniversalSheet>
+        )}
 
-              <PropertyDetailPanel
-                property={detailProperty}
-                onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
-                pois={pois}
-                isFavorite={favorites.has(detailProperty.id)}
-                onToggleFavorite={toggleFavorite}
-                onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
-                similarProperties={similarProperties}
-                onSelectProperty={(id) => {
-                  const p = properties.find(pr => pr.id === id);
-                  if (p) { setDetailProperty(p); setFocusedPropertyId(id); addToRecentlyViewed(p); }
-                }}
-                onExploreOnMap={handleFocusOnMap}
-                isMobileOverride={true}
-              />
-            </>
-          )}
-        </MobileDraggableDrawer>
+        {/* ═══ FAVORITES MAP — UniversalSheet with favorite cards ═══ */}
+        {mobileTab === 'favorites' && favViewMode === 'map' && favoriteProperties.length > 0 && (
+          <UniversalSheet
+            sheetKey="favorites-map"
+            initialSnapVh={45}
+            headerContent={
+              <span className="text-xs font-semibold text-muted-foreground">
+                {favoriteProperties.length} favori{favoriteProperties.length > 1 ? 's' : ''} sur la carte
+              </span>
+            }
+          >
+            <div className="px-3">
+              <div className="flex gap-2.5 overflow-x-auto pb-3 snap-x snap-mandatory scrollable" style={{ scrollbarWidth: 'none' }}>
+                {favoriteProperties.map(p => {
+                  const dp = formatDisplayPrice(p);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => handlePropertyClick(p.id)}
+                      className="shrink-0 bg-card rounded-[14px] overflow-hidden shadow-card border border-border text-left active:scale-[0.97] transition-transform"
+                      style={{ width: 220, height: 160, scrollSnapAlign: 'start' }}
+                    >
+                      <div className="relative h-[100px]">
+                        <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop'} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
+                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
+                          <Heart className="h-3 w-3 text-secondary-foreground fill-current" />
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        <p className="text-[11px] font-semibold text-foreground line-clamp-1">{p.title}</p>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <span className="text-[10px] text-muted-foreground">{p.quartier}</span>
+                          {dp.nightPrice ? (
+                            <span className="text-[11px] font-bold text-primary">{dp.nightPrice} /n</span>
+                          ) : (
+                            <span className="text-[11px] font-bold text-primary">{dp.price} /m</span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </UniversalSheet>
+        )}
 
         {/* ═══ BOTTOM NAVIGATION ═══ */}
         <MobileBottomNav
