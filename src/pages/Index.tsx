@@ -963,7 +963,7 @@ const Index = () => {
                   setDetailProperty(prop);
                   setFocusedPropertyId(id);
                   addToRecentlyViewed(prop);
-                  setTimeout(() => sheetRef.current?.snapTo('preview'), 100);
+                  // Sheet auto-shows via detailProperty state
                 }
                 setShowMobileSearch(false);
               }}
