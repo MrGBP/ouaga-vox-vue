@@ -418,8 +418,6 @@ const Index = () => {
 
   // Mobile tab change
   const handleMobileTabChange = (tab: string) => {
-    // Close sheet when changing tabs
-    sheetRef.current?.snapTo('closed');
     setDetailProperty(null);
     setFocusedPropertyId(null);
 
