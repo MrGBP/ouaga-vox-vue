@@ -560,48 +560,13 @@ const Index = () => {
     if (navLevel === 2 && activeQuartier && !detailProperty) {
       // Carousel of properties in quartier
       return (
-        <div className="px-3">
-          <div
-            className="flex gap-2.5 overflow-x-auto pb-3 snap-x snap-mandatory scrollable"
-            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
-          >
-            {quartierProperties.map(p => {
-              const dp = formatDisplayPrice(p);
-              const isFav = favorites.has(p.id);
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => handlePropertyClick(p.id)}
-                  className="shrink-0 bg-card rounded-[14px] overflow-hidden shadow-card border border-border text-left active:scale-[0.97] transition-transform"
-                  style={{ width: 220, height: 160, scrollSnapAlign: 'start' }}
-                >
-                  <div className="relative h-[100px]">
-                    <img
-                      src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop'}
-                      alt={p.title} className="w-full h-full object-cover" loading="lazy"
-                    />
-                    {isFav && (
-                      <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
-                        <Heart className="h-3 w-3 text-secondary-foreground fill-current" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2">
-                    <p className="text-[11px] font-semibold text-foreground line-clamp-1">{p.title}</p>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[10px] text-muted-foreground">{p.quartier}</span>
-                      {dp.nightPrice ? (
-                        <span className="text-[11px] font-bold text-primary">{dp.nightPrice} /n</span>
-                      ) : (
-                        <span className="text-[11px] font-bold text-primary">{dp.price} /m</span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <CarouselWithSwipeHint
+          properties={quartierProperties}
+          activeQuartier={activeQuartier}
+          favorites={favorites}
+          formatDisplayPrice={formatDisplayPrice}
+          onPropertyClick={handlePropertyClick}
+        />
       );
     }
 
