@@ -8,6 +8,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PROPERTY_TYPES, CHAR_CHECKS } from '@/lib/mockData';
 import type { Property } from '@/lib/mockData';
+import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
+import { PROPERTY_TYPES, CHAR_CHECKS } from '@/lib/mockData';
+import type { Property } from '@/lib/mockData';
 
 export interface FilterState {
   type: string;
