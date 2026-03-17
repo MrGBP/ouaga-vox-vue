@@ -12,7 +12,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileNavbar from '@/components/MobileNavbar';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import UniversalSheet from '@/components/mobile/UniversalSheet';
+import UniversalSheet, { UniversalSheetHandle } from '@/components/mobile/UniversalSheet';
 import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
 import MobileCarousel from '@/components/MobileCarousel';
 import MobileSearchOverlay from '@/components/MobileSearchOverlay';
@@ -26,7 +26,7 @@ import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
-import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search } from 'lucide-react';
+import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search, Maximize2, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
@@ -104,6 +104,86 @@ interface Quartier {
 const FAVORITES_KEY = 'sapsap_favorites';
 const ITEMS_PER_PAGE = 25;
 
+// Carousel with first-visit swipe hint animation
+const CarouselWithSwipeHint = ({ properties, activeQuartier, favorites, formatDisplayPrice, onPropertyClick }: {
+  properties: Property[];
+  activeQuartier: string;
+  favorites: Set<string>;
+  formatDisplayPrice: (p: Property) => { price: string; suffix: string; nightPrice: string | null; nightSuffix: string | null };
+  onPropertyClick: (id: string) => void;
+}) => {
+  useEffect(() => {
+    const hinted = localStorage.getItem('sapsap_swipe_hinted');
+    if (hinted) return;
+
+    const timer = setTimeout(() => {
+      const firstCard = document.querySelector('.carousel-card-first');
+      if (!firstCard) return;
+
+      firstCard.animate([
+        { transform: 'translateX(0px)' },
+        { transform: 'translateX(-10px)' },
+        { transform: 'translateX(10px)' },
+        { transform: 'translateX(-6px)' },
+        { transform: 'translateX(6px)' },
+        { transform: 'translateX(0px)' },
+      ], {
+        duration: 700,
+        easing: 'ease-in-out',
+      });
+
+      localStorage.setItem('sapsap_swipe_hinted', 'true');
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [activeQuartier]);
+
+  return (
+    <div className="px-3">
+      <div
+        className="flex gap-2.5 overflow-x-auto pb-3 snap-x snap-mandatory scrollable"
+        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+      >
+        {properties.map((p, i) => {
+          const dp = formatDisplayPrice(p);
+          const isFav = favorites.has(p.id);
+          return (
+            <button
+              key={p.id}
+              onClick={() => onPropertyClick(p.id)}
+              className={`shrink-0 bg-card rounded-[14px] overflow-hidden shadow-card border border-border text-left active:scale-[0.97] transition-transform${i === 0 ? ' carousel-card-first' : ''}`}
+              style={{ width: 220, height: 160, scrollSnapAlign: 'start' }}
+            >
+              <div className="relative h-[100px]">
+                <img
+                  src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop'}
+                  alt={p.title} className="w-full h-full object-cover" loading="lazy"
+                />
+                {isFav && (
+                  <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
+                    <Heart className="h-3 w-3 text-secondary-foreground fill-current" />
+                  </div>
+                )}
+              </div>
+              <div className="p-2">
+                <p className="text-[11px] font-semibold text-foreground line-clamp-1">{p.title}</p>
+                <div className="flex items-center justify-between mt-0.5">
+                  <span className="text-[10px] text-muted-foreground">{p.quartier}</span>
+                  {dp.nightPrice ? (
+                    <span className="text-[11px] font-bold text-primary">{dp.nightPrice} /n</span>
+                  ) : (
+                    <span className="text-[11px] font-bold text-primary">{dp.price} /m</span>
+                  )}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
@@ -136,6 +216,7 @@ const Index = () => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [favViewMode, setFavViewMode] = useState<'list' | 'map'>('list');
   const [sheetHeight, setSheetHeight] = useState(0);
+  const sheetRef = useRef<UniversalSheetHandle>(null);
 
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
@@ -526,9 +607,29 @@ const Index = () => {
             <ChevronLeft className="h-3 w-3" />
             {activeQuartier || detailProperty.quartier}
           </button>
-          <button onClick={() => setShowMobileSearch(true)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => sheetRef.current?.close()}
+              style={{
+                width: 34,
+                height: 34,
+                background: '#f0f4ff',
+                border: 'none',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+              title="Explorer sur la carte"
+            >
+              <Maximize2 size={16} color="#1a3560" />
+            </button>
+            <button onClick={() => setShowMobileSearch(true)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
         </div>
       );
     }
@@ -540,48 +641,13 @@ const Index = () => {
     if (navLevel === 2 && activeQuartier && !detailProperty) {
       // Carousel of properties in quartier
       return (
-        <div className="px-3">
-          <div
-            className="flex gap-2.5 overflow-x-auto pb-3 snap-x snap-mandatory scrollable"
-            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
-          >
-            {quartierProperties.map(p => {
-              const dp = formatDisplayPrice(p);
-              const isFav = favorites.has(p.id);
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => handlePropertyClick(p.id)}
-                  className="shrink-0 bg-card rounded-[14px] overflow-hidden shadow-card border border-border text-left active:scale-[0.97] transition-transform"
-                  style={{ width: 220, height: 160, scrollSnapAlign: 'start' }}
-                >
-                  <div className="relative h-[100px]">
-                    <img
-                      src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop'}
-                      alt={p.title} className="w-full h-full object-cover" loading="lazy"
-                    />
-                    {isFav && (
-                      <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
-                        <Heart className="h-3 w-3 text-secondary-foreground fill-current" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2">
-                    <p className="text-[11px] font-semibold text-foreground line-clamp-1">{p.title}</p>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[10px] text-muted-foreground">{p.quartier}</span>
-                      {dp.nightPrice ? (
-                        <span className="text-[11px] font-bold text-primary">{dp.nightPrice} /n</span>
-                      ) : (
-                        <span className="text-[11px] font-bold text-primary">{dp.price} /m</span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <CarouselWithSwipeHint
+          properties={quartierProperties}
+          activeQuartier={activeQuartier}
+          favorites={favorites}
+          formatDisplayPrice={formatDisplayPrice}
+          onPropertyClick={handlePropertyClick}
+        />
       );
     }
 
@@ -647,6 +713,7 @@ const Index = () => {
                 if (q) nav.push({ screen: 'carte-niveau2', quartierName: q });
               }} resetTrigger={mapResetTrigger}
               favoriteIds={favorites}
+              sheetHeight={sheetHeight}
             />
           </div>
         </div>
@@ -662,6 +729,7 @@ const Index = () => {
             onBack={handleNavBack}
             onHome={handleNavHome}
             depth={nav.depth}
+            isExploring={sheetHeight <= 10 && navLevel === 3}
           />
         ) : mobileTab === 'home' ? (
           <MobileNavbar level={1} />
@@ -956,6 +1024,7 @@ const Index = () => {
         {/* ═══ MAP TAB — Universal Sheet ═══ */}
         {mobileTab === 'map' && (activeQuartier || detailProperty) && (
           <UniversalSheet
+            ref={sheetRef}
             sheetKey={`map-${navLevel}-${activeQuartier || ''}-${detailProperty?.id || ''}`}
             initialSnapVh={40}
             headerContent={getSheetHeader()}
@@ -963,6 +1032,37 @@ const Index = () => {
           >
             {getSheetContent()}
           </UniversalSheet>
+        )}
+
+        {/* ═══ FLOATING "VOIR LES INFOS" BUTTON (explore mode) ═══ */}
+        {sheetHeight <= 10 && navLevel === 3 && mobileTab === 'map' && (
+          <button
+            onClick={() => sheetRef.current?.snapDefault()}
+            style={{
+              position: 'fixed',
+              bottom: 'calc(68px + env(safe-area-inset-bottom))',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 40,
+              background: 'rgba(255,255,255,0.95)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '0.5px solid #e5e7eb',
+              borderRadius: 9999,
+              padding: '10px 20px',
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#1a3560',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+              cursor: 'pointer',
+            }}
+          >
+            <ChevronUp size={16} />
+            Voir les infos
+          </button>
         )}
 
         {/* Floating AI button */}
