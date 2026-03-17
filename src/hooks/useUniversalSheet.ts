@@ -2,13 +2,13 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 
 const vh = () => (typeof window !== 'undefined' ? window.innerHeight : 800);
 
-const SNAP_VH = [0, 18, 35, 52, 72];
+const SNAP_VH = [0, 15, 40, 58, 75];
 const getSnaps = () => SNAP_VH.map(v => Math.round(vh() * v / 100));
 
-const SNAP_THRESHOLD_VH = 0.06;
+const SNAP_THRESHOLD_VH = 0.05;
 const VELOCITY_THRESHOLD = 0.4; // px/ms
 
-export function useUniversalSheet(initialSnapVh = 35) {
+export function useUniversalSheet(initialSnapVh = 40) {
   const [height, setHeight] = useState(() => Math.round(vh() * initialSnapVh / 100));
   const [isAtMax, setIsAtMax] = useState(false);
 
@@ -21,16 +21,17 @@ export function useUniversalSheet(initialSnapVh = 35) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const SNAP_MAX = Math.round(vh() * 0.72);
-  const SNAP_MID = Math.round(vh() * 0.35);
-  const SNAP_PEEK = Math.round(vh() * 0.18);
+  const SNAP_MAX = Math.round(vh() * 0.75);
+  const SNAP_MID = Math.round(vh() * 0.58);
+  const SNAP_DEFAULT = Math.round(vh() * 0.40);
+  const SNAP_PEEK = Math.round(vh() * 0.15);
   const SNAP_MIN = 0;
 
   const clamp = (v: number) => Math.max(SNAP_MIN, Math.min(SNAP_MAX, v));
 
   const animateTo = useCallback((target: number) => {
     if (sheetRef.current) {
-      sheetRef.current.style.transition = 'height 320ms cubic-bezier(0.34, 1.2, 0.64, 1)';
+      sheetRef.current.style.transition = 'height 300ms cubic-bezier(0.34, 1.2, 0.64, 1)';
     }
     setHeight(target);
     setIsAtMax(target >= SNAP_MAX - 4);
@@ -116,12 +117,14 @@ export function useUniversalSheet(initialSnapVh = 35) {
     contentRef,
     handlers: { onTouchStart, onTouchMove, onTouchEnd },
     animateTo,
+    snapDefault: () => animateTo(SNAP_DEFAULT),
     snapMid: () => animateTo(SNAP_MID),
     snapMax: () => animateTo(SNAP_MAX),
     snapPeek: () => animateTo(SNAP_PEEK),
     close: () => animateTo(SNAP_MIN),
     SNAP_MAX,
     SNAP_MID,
+    SNAP_DEFAULT,
     SNAP_PEEK,
     SNAP_MIN,
   };
