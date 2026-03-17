@@ -170,7 +170,7 @@ const MobileBottomSheet = forwardRef<MobileBottomSheetRef, MobileBottomSheetProp
     }, [snapToHeight, onSnapChange]);
 
     // Check if sheet is at max (allow internal scroll)
-    const isAtMax = height >= MAX_HEIGHT * 0.95;
+    const isAtMax = height >= MAX_HEIGHT * 0.90;
 
     if (height <= 2) return null;
 
