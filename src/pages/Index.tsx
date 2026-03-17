@@ -335,7 +335,6 @@ const Index = () => {
         setDetailProperty(prop);
         setFocusedPropertyId(id);
         addToRecentlyViewed(prop);
-        setTimeout(() => sheetRef.current?.snapTo('preview'), 100);
       } else {
         handleViewDetails(prop);
       }
