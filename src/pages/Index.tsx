@@ -136,6 +136,7 @@ const Index = () => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [favViewMode, setFavViewMode] = useState<'list' | 'map'>('list');
   const [sheetHeight, setSheetHeight] = useState(0);
+  const sheetRef = useRef<UniversalSheetHandle>(null);
 
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
