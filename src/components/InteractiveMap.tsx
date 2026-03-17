@@ -67,6 +67,7 @@ interface InteractiveMapProps {
   onQuartierChange?: (quartier: string | null) => void;
   resetTrigger?: number;
   favoriteIds?: Set<string>;
+  sheetHeight?: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
