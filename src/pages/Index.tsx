@@ -1094,11 +1094,23 @@ const Index = () => {
               onSelectProperty={(id) => {
                 const prop = properties.find(p => p.id === id);
                 if (prop) {
+                  if (activeQuartier && prop.quartier !== activeQuartier) {
+                    setActiveQuartier(prop.quartier);
+                    setMapQuartierTrigger(prop.quartier);
+                  } else if (!activeQuartier) {
+                    setActiveQuartier(prop.quartier);
+                    setMapQuartierTrigger(prop.quartier);
+                  }
                   setMobileTab('map');
                   setDetailProperty(prop);
                   setFocusedPropertyId(id);
                   addToRecentlyViewed(prop);
-                  // Sheet auto-shows via detailProperty state
+                  nav.push({
+                    screen: 'carte-niveau3',
+                    propertyId: id,
+                    propertyTitle: prop.title,
+                    propertyQuartier: prop.quartier,
+                  });
                 }
                 setShowMobileSearch(false);
               }}
