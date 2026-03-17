@@ -609,7 +609,7 @@ const Index = () => {
           </button>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setSheetHeight(0)}
+              onClick={() => sheetRef.current?.close()}
               style={{
                 width: 34,
                 height: 34,
