@@ -426,11 +426,21 @@ const Index = () => {
   }, [properties, handleViewDetails, isMobile]);
 
   const handleExploreOnMap = (id: string) => {
-    setDetailProperty(null);
-    setFocusedPropertyId(id);
+    const prop = properties.find(p => p.id === id);
+    if (!prop) return;
     if (isMobile) {
       setMobileTab('map');
+      setFocusedPropertyId(id);
+      setDetailProperty(prop);
+      setActiveQuartier(prop.quartier);
+      nav.push({
+        screen: 'carte-niveau3',
+        propertyId: id,
+        propertyTitle: prop.title,
+        propertyQuartier: prop.quartier,
+      });
     } else {
+      setFocusedPropertyId(id);
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
@@ -471,7 +481,7 @@ const Index = () => {
   const similarProperties = detailProperty
     ? availableProperties(properties).filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
     : [];
-  const mapProperties = availableProperties(showFavoritesOnly ? filteredProperties : properties);
+  const mapProperties = availableProperties(filteredProperties);
 
   // Pagination
   const displayProperties = availableProperties(filteredProperties);
@@ -694,7 +704,7 @@ const Index = () => {
   // Map ALWAYS visible · Clean map · UI in navbar/sheet/bottomnav
   // ═══════════════════════════════════════════════════════════════
   if (isMobile) {
-    const isMapVisible = mobileTab === 'map' || mobileTab === 'favorites' && favViewMode === 'map';
+    const isMapVisible = mobileTab === 'map' || (mobileTab === 'favorites' && favViewMode === 'map');
     const showFullscreenPage = mobileTab === 'home' || mobileTab === 'profile' || (mobileTab === 'favorites' && favViewMode === 'list');
 
     return (
@@ -1084,11 +1094,23 @@ const Index = () => {
               onSelectProperty={(id) => {
                 const prop = properties.find(p => p.id === id);
                 if (prop) {
+                  if (activeQuartier && prop.quartier !== activeQuartier) {
+                    setActiveQuartier(prop.quartier);
+                    setMapQuartierTrigger(prop.quartier);
+                  } else if (!activeQuartier) {
+                    setActiveQuartier(prop.quartier);
+                    setMapQuartierTrigger(prop.quartier);
+                  }
                   setMobileTab('map');
                   setDetailProperty(prop);
                   setFocusedPropertyId(id);
                   addToRecentlyViewed(prop);
-                  // Sheet auto-shows via detailProperty state
+                  nav.push({
+                    screen: 'carte-niveau3',
+                    propertyId: id,
+                    propertyTitle: prop.title,
+                    propertyQuartier: prop.quartier,
+                  });
                 }
                 setShowMobileSearch(false);
               }}
