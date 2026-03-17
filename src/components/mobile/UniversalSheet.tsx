@@ -36,6 +36,8 @@ export const UniversalSheet = forwardRef<UniversalSheetHandle, UniversalSheetPro
       onHeightChange?.(height);
     }, [height, onHeightChange]);
 
+    if (height <= 2) return null;
+
     return (
       <div
         ref={sheetRef}
