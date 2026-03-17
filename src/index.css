@@ -148,3 +148,20 @@
   display: none;
 }
 
+/* Universal Sheet — scroll interne fluide iOS */
+.sheet-content {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Désactive sélection texte pendant drag */
+.dragging {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Leaflet touch */
+.leaflet-container {
+  touch-action: pan-x pan-y;
+}
+
