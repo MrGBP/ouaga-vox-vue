@@ -947,7 +947,7 @@ const Index = () => {
         {mobileTab === 'map' && (activeQuartier || detailProperty) && (
           <UniversalSheet
             sheetKey={`map-${navLevel}-${activeQuartier || ''}-${detailProperty?.id || ''}`}
-            initialSnapVh={35}
+            initialSnapVh={40}
             headerContent={getSheetHeader()}
             onHeightChange={handleSheetHeightChange}
           >
