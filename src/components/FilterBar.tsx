@@ -216,6 +216,110 @@ const FilterBar = ({
     });
   };
 
+  const filterContent = (
+    <div className="p-5 space-y-6">
+      {/* 7 TYPES OFFICIELS */}
+      <div>
+        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Type de bien</h4>
+        <div className="grid grid-cols-2 gap-2">
+          {PROPERTY_TYPES.map(t => (
+            <button
+              key={t.value}
+              onClick={() => toggleType(t.value)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all active:scale-[0.98] ${
+                draft.type === t.value
+                  ? 'bg-primary/10 border-primary text-primary'
+                  : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
+              }`}
+            >
+              <span>{t.emoji}</span>
+              <span className="text-xs">{t.label}</span>
+              {draft.type === t.value && <Check className="h-3.5 w-3.5 ml-auto" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* PRIX */}
+      <div>
+        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Prix (FCFA/mois)</h4>
+        <p className="text-sm font-semibold text-foreground mb-3">
+          {fmt(draft.minPrice)} — {fmt(draft.maxPrice)}
+        </p>
+        <Slider
+          value={[draft.minPrice, draft.maxPrice]}
+          onValueChange={([min, max]) => setDraft(d => ({ ...d, minPrice: min, maxPrice: max }))}
+          min={20000}
+          max={2000000}
+          step={10000}
+        />
+      </div>
+
+      {/* CARACTÉRISTIQUES — GROUPED CHECKBOXES */}
+      {CHAR_GROUPS.map(group => (
+        <div key={group.title}>
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">{group.title}</h4>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+            {group.items.map(item => (
+              <label key={item.key} className="flex items-center gap-2 cursor-pointer group">
+                <Checkbox
+                  checked={draft.characteristics.includes(item.key)}
+                  onCheckedChange={() => toggleChar(item.key)}
+                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+                <span className="text-sm text-foreground group-hover:text-primary transition-colors">{item.label}</span>
+              </label>
+            ))}
+          </div>
+          {group.title === 'Pièces & Surface' && (
+            <div className="mt-3">
+              <p className="text-xs text-muted-foreground mb-1">Surface minimum : <span className="font-semibold text-foreground">{draft.minSurface > 0 ? `${draft.minSurface} m²` : 'Aucune'}</span></p>
+              <Slider
+                value={[draft.minSurface]}
+                onValueChange={([v]) => setDraft(d => ({ ...d, minSurface: v }))}
+                min={0}
+                max={500}
+                step={10}
+              />
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* OPTIONS */}
+      <div>
+        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Options</h4>
+        <button
+          onClick={() => setDraft(d => ({ ...d, hasVirtualTour: !d.hasVirtualTour }))}
+          className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all active:scale-[0.98] ${
+            draft.hasVirtualTour
+              ? 'bg-primary/10 border-primary text-primary'
+              : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
+          }`}
+        >
+          <span>🔭</span>
+          <span>Visite 360° disponible</span>
+          {draft.hasVirtualTour && <Check className="h-3.5 w-3.5 ml-auto" />}
+        </button>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3 pt-2">
+        <Button variant="outline" onClick={handleReset} className="flex-1 gap-2 hover:bg-muted active:scale-[0.98]">
+          <RotateCcw className="h-3.5 w-3.5" />
+          Réinitialiser
+        </Button>
+        <Button
+          onClick={handleApply}
+          className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
+        >
+          <Check className="h-3.5 w-3.5" />
+          Appliquer ({draftCount} bien{draftCount !== 1 ? 's' : ''})
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="w-full mb-4">
       {/* Pill Bar */}
