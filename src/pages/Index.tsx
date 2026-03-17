@@ -874,7 +874,7 @@ const Index = () => {
           {mobileTab === 'favorites' && favViewMode === 'map' && (
             <motion.div key="fav-map-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <nav
-                className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-3 no-select"
+                className="fixed top-0 left-0 right-0 z-[80] flex items-center justify-between px-3 no-select"
                 style={{
                   height: 52,
                   background: 'rgba(255,255,255,0.97)',
