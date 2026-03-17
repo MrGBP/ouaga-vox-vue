@@ -621,15 +621,7 @@ const Index = () => {
       <div className="w-screen h-screen relative overflow-hidden bg-background">
         {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
         <div className="fixed inset-0 z-0">
-          <div
-            onClick={() => {
-              if (sheetHeight >= Math.round(window.innerHeight * 0.75) - 4) {
-                // Tap on map when sheet is at max → collapse to default (40%)
-                setSheetHeight(Math.round(window.innerHeight * 0.40));
-              }
-            }}
-            className="w-full h-full"
-          >
+          <div className="w-full h-full">
             <InteractiveMap
               properties={mapProperties} pois={pois} quartiers={quartiers}
               onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
