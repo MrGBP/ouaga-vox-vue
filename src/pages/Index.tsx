@@ -909,7 +909,7 @@ const Index = () => {
               }}
             >
               <nav
-                className="fixed top-0 left-0 right-0 z-[100] flex items-center px-3 no-select"
+                className="fixed top-0 left-0 right-0 z-[80] flex items-center px-3 no-select"
                 style={{
                   height: 52,
                   background: 'rgba(255,255,255,0.97)',

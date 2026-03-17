@@ -9,7 +9,7 @@ const MobileHeader = () => {
   return (
     <>
       <header
-        className="flex lg:hidden fixed top-0 left-0 right-0 h-14 items-center justify-between px-4 z-[100] no-select"
+        className="flex lg:hidden fixed top-0 left-0 right-0 h-14 items-center justify-between px-4 z-[80] no-select"
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
       >
         {/* Logo */}
