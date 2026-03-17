@@ -467,34 +467,10 @@ const Index = () => {
     setMapResetTrigger(prev => prev + 1);
   };
 
-  // Sheet snap change
-  const handleSheetSnapChange = (snap: SheetSnapState) => {
-    setCurrentSheetSnap(snap);
-    if (snap === 'closed') {
-      // If we were at level 3 and sheet closes, go back to level 2
-      if (detailProperty && activeQuartier) {
-        setDetailProperty(null);
-        setFocusedPropertyId(null);
-      } else if (detailProperty) {
-        setDetailProperty(null);
-        setFocusedPropertyId(null);
-      }
-    }
-  };
-
-  // Map tap handler (close sheet)
-  const handleMapTap = () => {
-    if (currentSheetSnap !== 'closed') {
-      sheetRef.current?.snapTo('closed');
-    }
-  };
-
-  // When quartier changes from map, open sheet
-  useEffect(() => {
-    if (isMobile && activeQuartier && mobileTab === 'map' && !detailProperty) {
-      sheetRef.current?.snapTo('preview');
-    }
-  }, [activeQuartier, isMobile, mobileTab, detailProperty]);
+  // Sheet height change handler
+  const handleSheetHeightChange = useCallback((h: number) => {
+    setSheetHeight(h);
+  }, []);
 
   // Sheet header content based on level
   const getSheetHeader = () => {
