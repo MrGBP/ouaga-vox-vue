@@ -1017,7 +1017,7 @@ const Index = () => {
         {mobileTab === 'home' && detailProperty && (
           <UniversalSheet
             sheetKey={`home-detail-${detailProperty.id}`}
-            initialSnapVh={65}
+            initialSnapVh={52}
             headerContent={
               <div className="flex items-center gap-2">
                 <button
