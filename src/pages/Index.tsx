@@ -615,15 +615,25 @@ const Index = () => {
       <div className="w-screen h-screen relative overflow-hidden bg-background">
         {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
         <div className="fixed inset-0 z-0">
-          <InteractiveMap
-            properties={mapProperties} pois={pois} quartiers={quartiers}
-            onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
-            onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); }}
-            activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
-            onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
-            panelOpen={false} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
-            favoriteIds={favorites}
-          />
+          <div
+            onClick={() => {
+              if (sheetHeight >= Math.round(window.innerHeight * 0.72) - 4) {
+                // Tap on map when sheet is at max → collapse to mid
+                setSheetHeight(Math.round(window.innerHeight * 0.35));
+              }
+            }}
+            className="w-full h-full"
+          >
+            <InteractiveMap
+              properties={mapProperties} pois={pois} quartiers={quartiers}
+              onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
+              onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); }}
+              activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
+              onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
+              panelOpen={false} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
+              favoriteIds={favorites}
+            />
+          </div>
         </div>
 
         {/* ═══ NAVBAR ═══ */}
