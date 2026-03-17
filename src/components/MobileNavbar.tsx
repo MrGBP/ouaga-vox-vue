@@ -13,22 +13,26 @@ interface MobileNavbarProps {
   propertyQuartier?: string;
   onBack?: () => void;
   onHome?: () => void;
+  depth?: number; // stack depth for dots
 }
 
-const LevelDots = ({ level }: { level: NavLevel }) => (
-  <div className="flex items-center gap-1">
-    {[1, 2, 3].map(i => (
-      <div
-        key={i}
-        className={`rounded-[3px] transition-all duration-200 ${
-          i === level
-            ? 'w-[14px] h-[5px] bg-primary'
-            : 'w-[5px] h-[5px] bg-muted-foreground/30'
-        }`}
-      />
-    ))}
-  </div>
-);
+const LevelDots = ({ depth }: { depth: number }) => {
+  const count = Math.min(depth, 4);
+  return (
+    <div className="flex items-center gap-1">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className={`rounded-[3px] transition-all duration-200 ${
+            i === count - 1
+              ? 'w-[14px] h-[5px] bg-primary'
+              : 'w-[5px] h-[5px] bg-muted-foreground/30'
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
 
 const MobileNavbar = ({
   level,
@@ -38,8 +42,12 @@ const MobileNavbar = ({
   propertyQuartier,
   onBack,
   onHome,
+  depth,
 }: MobileNavbarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const showBack = level > 1;
+  const showHome = level >= 3 || (depth && depth >= 3);
+  const dotDepth = depth || level;
 
   return (
     <>
@@ -55,7 +63,7 @@ const MobileNavbar = ({
       >
         {/* Left */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          {level === 1 ? (
+          {!showBack ? (
             <>
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
                 <Building2 className="h-4 w-4 text-primary-foreground" />
@@ -84,13 +92,15 @@ const MobileNavbar = ({
         </div>
 
         {/* Center: dots */}
-        <div className="shrink-0 mx-2">
-          <LevelDots level={level} />
-        </div>
+        {showBack && (
+          <div className="shrink-0 mx-2">
+            <LevelDots depth={dotDepth} />
+          </div>
+        )}
 
         {/* Right */}
         <div className="flex items-center gap-1 shrink-0">
-          {level === 3 && onHome && (
+          {showHome && onHome && (
             <button
               onClick={onHome}
               className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center min-h-[44px] min-w-[44px]"
@@ -99,7 +109,7 @@ const MobileNavbar = ({
               <HomeIcon className="h-4 w-4 text-secondary-foreground" />
             </button>
           )}
-          {level === 1 && (
+          {!showBack && (
             <button
               onClick={() => setDrawerOpen(true)}
               className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors"

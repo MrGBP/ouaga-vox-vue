@@ -6,9 +6,11 @@ import { mockProperties, mockPois, mockQuartiers, isTypeFurnished, pricePerNight
 import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
 import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNav } from '@/contexts/NavigationContext';
+import { useSwipeBack } from '@/hooks/useSwipeBack';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import MobileNavbar, { NavLevel } from '@/components/MobileNavbar';
+import MobileNavbar from '@/components/MobileNavbar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import UniversalSheet from '@/components/mobile/UniversalSheet';
 import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
@@ -127,6 +129,8 @@ const Index = () => {
 
   // Mobile state
   const isMobile = useIsMobile();
+  const nav = useNav();
+  useSwipeBack();
   const [mobileTab, setMobileTab] = useState('home');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -315,11 +319,11 @@ const Index = () => {
     setFocusedPropertyId(property.id);
     addToRecentlyViewed(property);
     if (isMobile) {
-      // Sheet will auto-show via detailProperty being set
+      nav.push({ screen: 'carte-niveau3', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [isMobile, mobileTab]);
+  }, [isMobile, mobileTab, nav]);
 
   const handlePropertyClick = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
@@ -447,7 +451,7 @@ const Index = () => {
     : [];
 
   // Navigation level
-  const navLevel: NavLevel = detailProperty ? 3 : activeQuartier ? 2 : 1;
+  const navLevel: 1 | 2 | 3 = detailProperty ? 3 : activeQuartier ? 2 : 1;
 
   // Navigation back handlers
   const handleNavBack = () => {
@@ -458,6 +462,7 @@ const Index = () => {
       setActiveQuartier(null);
       setMapResetTrigger(prev => prev + 1);
     }
+    if (nav.canGoBack) nav.pop();
   };
 
   const handleNavHome = () => {
@@ -465,6 +470,7 @@ const Index = () => {
     setFocusedPropertyId(null);
     setActiveQuartier(null);
     setMapResetTrigger(prev => prev + 1);
+    nav.popToRoot();
   };
 
   // Sheet height change handler
@@ -617,9 +623,9 @@ const Index = () => {
         <div className="fixed inset-0 z-0">
           <div
             onClick={() => {
-              if (sheetHeight >= Math.round(window.innerHeight * 0.72) - 4) {
-                // Tap on map when sheet is at max → collapse to mid
-                setSheetHeight(Math.round(window.innerHeight * 0.35));
+              if (sheetHeight >= Math.round(window.innerHeight * 0.75) - 4) {
+                // Tap on map when sheet is at max → collapse to default (40%)
+                setSheetHeight(Math.round(window.innerHeight * 0.40));
               }
             }}
             className="w-full h-full"
@@ -630,7 +636,10 @@ const Index = () => {
               onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); }}
               activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
               onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
-              panelOpen={false} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
+              panelOpen={false} onQuartierChange={(q) => {
+                setActiveQuartier(q);
+                if (q) nav.push({ screen: 'carte-niveau2', quartierName: q });
+              }} resetTrigger={mapResetTrigger}
               favoriteIds={favorites}
             />
           </div>
@@ -646,6 +655,7 @@ const Index = () => {
             propertyQuartier={detailProperty?.quartier}
             onBack={handleNavBack}
             onHome={handleNavHome}
+            depth={nav.depth}
           />
         ) : mobileTab === 'home' ? (
           <MobileNavbar level={1} />
@@ -941,7 +951,7 @@ const Index = () => {
         {mobileTab === 'map' && (activeQuartier || detailProperty) && (
           <UniversalSheet
             sheetKey={`map-${navLevel}-${activeQuartier || ''}-${detailProperty?.id || ''}`}
-            initialSnapVh={35}
+            initialSnapVh={40}
             headerContent={getSheetHeader()}
             onHeightChange={handleSheetHeightChange}
           >
@@ -1017,7 +1027,7 @@ const Index = () => {
         {mobileTab === 'home' && detailProperty && (
           <UniversalSheet
             sheetKey={`home-detail-${detailProperty.id}`}
-            initialSnapVh={52}
+            initialSnapVh={40}
             headerContent={
               <div className="flex items-center gap-2">
                 <button
@@ -1052,7 +1062,7 @@ const Index = () => {
         {mobileTab === 'favorites' && favViewMode === 'map' && favoriteProperties.length > 0 && (
           <UniversalSheet
             sheetKey="favorites-map"
-            initialSnapVh={35}
+            initialSnapVh={40}
             headerContent={
               <span className="text-xs font-semibold text-muted-foreground">
                 {favoriteProperties.length} favori{favoriteProperties.length > 1 ? 's' : ''} sur la carte
