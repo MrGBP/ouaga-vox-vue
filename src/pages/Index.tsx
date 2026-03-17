@@ -11,6 +11,7 @@ import Footer from '@/components/Footer';
 import MobileNavbar, { NavLevel } from '@/components/MobileNavbar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import MobileBottomSheet, { MobileBottomSheetRef, SheetSnapState } from '@/components/MobileBottomSheet';
+import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
 import MobileCarousel from '@/components/MobileCarousel';
 import MobileSearchOverlay from '@/components/MobileSearchOverlay';
 import VoiceSearch from '@/components/VoiceSearch';
@@ -1014,73 +1015,55 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* ═══ MOBILE FILTER DRAWER ═══ */}
-        <AnimatePresence>
-          {showMobileFilters && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-foreground/20 z-[150]"
-                onClick={() => setShowMobileFilters(false)}
-              />
-              <motion.div
-                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                className="fixed inset-x-0 bottom-0 z-[151] bg-card rounded-t-2xl shadow-lg"
-                style={{ maxHeight: '75vh', overflowY: 'auto' }}
-                onClick={e => e.stopPropagation()}
-              >
-                <div className="flex justify-center pt-3 pb-1">
-                  <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-                </div>
-                <div className="px-4 pb-4">
-                  <FilterBar
-                    onFilterChange={(f) => { handleFilterChange(f); setShowMobileFilters(false); }}
-                    onReset={() => { handleFullReset(); setShowMobileFilters(false); }}
-                    quartiers={quartierNames}
-                    totalCount={availableProperties(properties).length}
-                    filteredCount={displayProperties.length}
-                    favoritesCount={favorites.size}
-                    showFavoritesOnly={showFavoritesOnly}
-                    onToggleFavoritesView={toggleFavoritesView}
-                    computeFilteredCount={computeFilteredCount}
-                    externalFilters={filters}
-                  />
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        {/* ═══ MOBILE FILTER DRAWER (draggable) ═══ */}
+        <MobileDraggableDrawer
+          open={showMobileFilters}
+          onClose={() => setShowMobileFilters(false)}
+          maxHeightVh={75}
+          initialHeightVh={65}
+          snapPoints={[0, 40, 60, 75]}
+          overlayZIndex={150}
+          drawerZIndex={151}
+        >
+          <div className="px-4 pb-4">
+            <FilterBar
+              onFilterChange={(f) => { handleFilterChange(f); setShowMobileFilters(false); }}
+              onReset={() => { handleFullReset(); setShowMobileFilters(false); }}
+              quartiers={quartierNames}
+              totalCount={availableProperties(properties).length}
+              filteredCount={displayProperties.length}
+              favoritesCount={favorites.size}
+              showFavoritesOnly={showFavoritesOnly}
+              onToggleFavoritesView={toggleFavoritesView}
+              computeFilteredCount={computeFilteredCount}
+              externalFilters={filters}
+            />
+          </div>
+        </MobileDraggableDrawer>
 
-        {/* ═══ HOME TAB — Property detail fullscreen overlay ═══ */}
-        <AnimatePresence>
-          {mobileTab === 'home' && detailProperty && (
-            <motion.div
-              key="home-detail"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed inset-0 z-[120] bg-card overflow-y-auto scrollable"
-            >
-              {/* Detail navbar */}
-              <nav
-                className="sticky top-0 z-10 flex items-center gap-2 px-3 no-select"
-                style={{
-                  height: 52,
-                  background: 'rgba(255,255,255,0.97)',
-                  backdropFilter: 'blur(8px)',
-                  borderBottom: '0.5px solid hsl(var(--border))',
-                }}
-              >
+        {/* ═══ HOME TAB — Property detail draggable drawer ═══ */}
+        <MobileDraggableDrawer
+          open={mobileTab === 'home' && !!detailProperty}
+          onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
+          maxHeightVh={85}
+          initialHeightVh={80}
+          snapPoints={[0, 45, 65, 85]}
+          overlayZIndex={110}
+          drawerZIndex={120}
+          bottomOffset="calc(52px + env(safe-area-inset-bottom))"
+        >
+          {detailProperty && (
+            <>
+              {/* Header inside drawer */}
+              <div className="flex items-center gap-2 px-3 pb-2 shrink-0 border-b border-border">
                 <button
                   onClick={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
-                  className="w-8 h-8 rounded-full bg-primary flex items-center justify-center min-h-[44px] min-w-[44px] -ml-1"
+                  className="w-8 h-8 rounded-full bg-primary flex items-center justify-center min-h-[44px] min-w-[44px]"
                 >
                   <ChevronLeft className="h-4 w-4 text-primary-foreground" />
                 </button>
                 <span className="text-sm font-semibold text-foreground truncate flex-1">{detailProperty.title}</span>
-              </nav>
+              </div>
 
               <PropertyDetailPanel
                 property={detailProperty}
@@ -1097,9 +1080,9 @@ const Index = () => {
                 onExploreOnMap={handleFocusOnMap}
                 isMobileOverride={true}
               />
-            </motion.div>
+            </>
           )}
-        </AnimatePresence>
+        </MobileDraggableDrawer>
 
         {/* ═══ BOTTOM NAVIGATION ═══ */}
         <MobileBottomNav
