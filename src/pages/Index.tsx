@@ -571,7 +571,7 @@ const Index = () => {
         <div>
           <PropertyDetailPanel
             property={detailProperty}
-            onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); sheetRef.current?.snapTo('closed'); }}
+            onClose={() => { setDetailProperty(null); setFocusedPropertyId(null); }}
             pois={pois}
             isFavorite={favorites.has(detailProperty.id)}
             onToggleFavorite={toggleFavorite}
