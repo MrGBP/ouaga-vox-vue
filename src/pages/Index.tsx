@@ -526,9 +526,29 @@ const Index = () => {
             <ChevronLeft className="h-3 w-3" />
             {activeQuartier || detailProperty.quartier}
           </button>
-          <button onClick={() => setShowMobileSearch(true)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSheetHeight(0)}
+              style={{
+                width: 34,
+                height: 34,
+                background: '#f0f4ff',
+                border: 'none',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+              title="Explorer sur la carte"
+            >
+              <Maximize2 size={16} color="#1a3560" />
+            </button>
+            <button onClick={() => setShowMobileSearch(true)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
         </div>
       );
     }
