@@ -1015,43 +1015,31 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* ═══ MOBILE FILTER DRAWER ═══ */}
-        <AnimatePresence>
-          {showMobileFilters && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-foreground/20 z-[150]"
-                onClick={() => setShowMobileFilters(false)}
-              />
-              <motion.div
-                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                className="fixed inset-x-0 bottom-0 z-[151] bg-card rounded-t-2xl shadow-lg"
-                style={{ maxHeight: '75vh', overflowY: 'auto' }}
-                onClick={e => e.stopPropagation()}
-              >
-                <div className="flex justify-center pt-3 pb-1">
-                  <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-                </div>
-                <div className="px-4 pb-4">
-                  <FilterBar
-                    onFilterChange={(f) => { handleFilterChange(f); setShowMobileFilters(false); }}
-                    onReset={() => { handleFullReset(); setShowMobileFilters(false); }}
-                    quartiers={quartierNames}
-                    totalCount={availableProperties(properties).length}
-                    filteredCount={displayProperties.length}
-                    favoritesCount={favorites.size}
-                    showFavoritesOnly={showFavoritesOnly}
-                    onToggleFavoritesView={toggleFavoritesView}
-                    computeFilteredCount={computeFilteredCount}
-                    externalFilters={filters}
-                  />
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        {/* ═══ MOBILE FILTER DRAWER (draggable) ═══ */}
+        <MobileDraggableDrawer
+          open={showMobileFilters}
+          onClose={() => setShowMobileFilters(false)}
+          maxHeightVh={75}
+          initialHeightVh={65}
+          snapPoints={[0, 40, 60, 75]}
+          overlayZIndex={150}
+          drawerZIndex={151}
+        >
+          <div className="px-4 pb-4">
+            <FilterBar
+              onFilterChange={(f) => { handleFilterChange(f); setShowMobileFilters(false); }}
+              onReset={() => { handleFullReset(); setShowMobileFilters(false); }}
+              quartiers={quartierNames}
+              totalCount={availableProperties(properties).length}
+              filteredCount={displayProperties.length}
+              favoritesCount={favorites.size}
+              showFavoritesOnly={showFavoritesOnly}
+              onToggleFavoritesView={toggleFavoritesView}
+              computeFilteredCount={computeFilteredCount}
+              externalFilters={filters}
+            />
+          </div>
+        </MobileDraggableDrawer>
 
         {/* ═══ HOME TAB — Property detail fullscreen overlay ═══ */}
         <AnimatePresence>
