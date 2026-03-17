@@ -449,7 +449,7 @@ const Index = () => {
     : [];
 
   // Navigation level
-  const navLevel: NavLevel = detailProperty ? 3 : activeQuartier ? 2 : 1;
+  const navLevel: 1 | 2 | 3 = detailProperty ? 3 : activeQuartier ? 2 : 1;
 
   // Navigation back handlers
   const handleNavBack = () => {
