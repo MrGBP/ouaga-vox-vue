@@ -454,11 +454,9 @@ const Index = () => {
     if (navLevel === 3) {
       setDetailProperty(null);
       setFocusedPropertyId(null);
-      sheetRef.current?.snapTo(activeQuartier ? 'preview' : 'closed');
     } else if (navLevel === 2) {
       setActiveQuartier(null);
       setMapResetTrigger(prev => prev + 1);
-      sheetRef.current?.snapTo('closed');
     }
   };
 
@@ -467,7 +465,6 @@ const Index = () => {
     setFocusedPropertyId(null);
     setActiveQuartier(null);
     setMapResetTrigger(prev => prev + 1);
-    sheetRef.current?.snapTo('closed');
   };
 
   // Sheet snap change
