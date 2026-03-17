@@ -129,6 +129,8 @@ const Index = () => {
 
   // Mobile state
   const isMobile = useIsMobile();
+  const nav = useNav();
+  useSwipeBack();
   const [mobileTab, setMobileTab] = useState('home');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
