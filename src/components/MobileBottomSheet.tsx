@@ -125,10 +125,9 @@ const MobileBottomSheet = forwardRef<MobileBottomSheetRef, MobileBottomSheetProp
       const snaps = getSnaps();
       const currentH = heightRef.current;
 
-      // Fast swipe detection
-      const VELOCITY_THRESHOLD = 0.5; // px/ms
-      if (Math.abs(velocity.current) > VELOCITY_THRESHOLD) {
-        // Find current snap index
+      // Very fast swipe → snap to next/prev for quick open/close gestures
+      const FAST_VELOCITY = 1.2; // px/ms — only truly fast flicks
+      if (Math.abs(velocity.current) > FAST_VELOCITY) {
         const currentSnapIdx = snaps.reduce(
           (bestIdx, snap, idx) =>
             Math.abs(snap - startHeight.current) < Math.abs(snaps[bestIdx] - startHeight.current)
@@ -138,31 +137,37 @@ const MobileBottomSheet = forwardRef<MobileBottomSheetRef, MobileBottomSheetProp
         );
 
         if (velocity.current > 0) {
-          // Swiping up → next snap
           const nextIdx = Math.min(currentSnapIdx + 1, snaps.length - 1);
           snapToHeight(snaps[nextIdx]);
         } else {
-          // Swiping down → previous snap
           const prevIdx = Math.max(currentSnapIdx - 1, 0);
           snapToHeight(snaps[prevIdx]);
         }
         return;
       }
 
-      // Find nearest snap
+      // Magnetic snap: only if VERY close to a snap point (within 3vh)
+      const MAGNETIC_THRESHOLD = window.innerHeight * 0.03;
       const nearest = snaps.reduce((a, b) =>
         Math.abs(b - currentH) < Math.abs(a - currentH) ? b : a
       );
 
-      if (Math.abs(nearest - currentH) < SNAP_THRESHOLD) {
+      if (Math.abs(nearest - currentH) < MAGNETIC_THRESHOLD) {
         snapToHeight(nearest);
       } else {
-        // Stay at current height — but still animate to settle
+        // FREE POSITION — stay exactly where the user left it
         if (sheetRef.current) {
-          sheetRef.current.style.transition = 'height 150ms ease-out';
+          sheetRef.current.style.transition = 'height 100ms ease-out';
         }
+        // Update snap state based on nearest for internal scroll logic
+        const nearestIdx = snaps.reduce(
+          (bestIdx, snap, idx) =>
+            Math.abs(snap - currentH) < Math.abs(snaps[bestIdx] - currentH) ? idx : bestIdx,
+          0
+        );
+        onSnapChange?.(snapNameFromIndex(nearestIdx));
       }
-    }, [snapToHeight, SNAP_THRESHOLD]);
+    }, [snapToHeight, onSnapChange]);
 
     // Check if sheet is at max (allow internal scroll)
     const isAtMax = height >= MAX_HEIGHT * 0.95;
