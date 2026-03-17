@@ -636,7 +636,10 @@ const Index = () => {
               onFocusClear={() => { setFocusedPropertyId(null); setDetailProperty(null); }}
               activeFilters={filters} externalQuartierSelect={mapQuartierTrigger}
               onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
-              panelOpen={false} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
+              panelOpen={false} onQuartierChange={(q) => {
+                setActiveQuartier(q);
+                if (q) nav.push({ screen: 'carte-niveau2', quartierName: q });
+              }} resetTrigger={mapResetTrigger}
               favoriteIds={favorites}
             />
           </div>
