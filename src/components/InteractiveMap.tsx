@@ -587,7 +587,7 @@ const InteractiveMap = ({
 
   const goBackToQuartier = () => {
     setActiveRadius(null);
-    if (onFocusClear) onFocusClear();
+    onFocusClearRef.current?.();
   };
 
   const handleRadiusClick = (r: number) => {

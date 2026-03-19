@@ -441,7 +441,15 @@ export default function MobileApp(props: MobileAppProps) {
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-background">
       {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
-      <div className="fixed inset-0 z-0">
+      <div
+        className="fixed inset-0 z-0"
+        style={{
+          visibility: (mobileTab === 'map' || (mobileTab === 'favorites' && favViewMode === 'map'))
+            ? 'visible' : 'hidden',
+          pointerEvents: (mobileTab === 'map' || (mobileTab === 'favorites' && favViewMode === 'map'))
+            ? 'auto' : 'none',
+        }}
+      >
         <div className="w-full h-full">
           <InteractiveMap
             properties={mapProperties} pois={props.pois} quartiers={props.quartiers}
@@ -452,7 +460,6 @@ export default function MobileApp(props: MobileAppProps) {
             panelOpen={false} onQuartierChange={handleQuartierChange}
             resetTrigger={props.mapResetTrigger}
             favoriteIds={props.favorites}
-            sheetHeight={sheetHeight}
           />
         </div>
       </div>
