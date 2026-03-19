@@ -199,22 +199,6 @@ const InteractiveMap = ({
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
 
-  const applyMapFilters = useCallback((props: Property[]) => {
-    if (!activeFilters) return props;
-    let result = props;
-    if (activeFilters.type !== 'all') result = result.filter(p => p.type === activeFilters.type);
-    result = result.filter(p => p.price >= activeFilters.minPrice && p.price <= activeFilters.maxPrice);
-    if (activeFilters.minBedrooms > 0) result = result.filter(p => (p.bedrooms || 0) >= activeFilters.minBedrooms);
-    if (activeFilters.hasVirtualTour) result = result.filter(p => !!p.virtual_tour_url);
-    if (activeFilters.surfaceRange && activeFilters.surfaceRange !== 'all') {
-      const sr = activeFilters.surfaceRange;
-      if (sr === '<50') result = result.filter(p => (p.surface_area || 0) < 50);
-      else if (sr === '50-150') result = result.filter(p => (p.surface_area || 0) >= 50 && (p.surface_area || 0) <= 150);
-      else if (sr === '150-300') result = result.filter(p => (p.surface_area || 0) >= 150 && (p.surface_area || 0) <= 300);
-      else if (sr === '>300') result = result.filter(p => (p.surface_area || 0) > 300);
-    }
-    return result;
-  }, [activeFilters]);
 
   const viewLevel = focusedPropertyId ? 'focus' : selectedQuartier ? 'quartier' : 'global';
   viewLevelRef.current = viewLevel;
