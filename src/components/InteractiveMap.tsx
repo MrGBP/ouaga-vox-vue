@@ -375,11 +375,11 @@ const InteractiveMap = ({
         const displayPrice = isFurnished ? pricePerNight(prop.price) : prop.price;
         const suffix = isFurnished ? '/nuit' : '/mois';
         m.bindTooltip(`<div style="font-family:system-ui;min-width:140px;"><strong style="color:#1a3560;font-size:12px;">${prop.title}</strong><br/><span style="font-size:11px;font-weight:700;color:#1a3560;">${new Intl.NumberFormat('fr-FR').format(displayPrice)} FCFA${suffix}</span><br/><span style="font-size:10px;color:#666;">${prop.bedrooms || '–'} ch. · ${prop.surface_area || '–'} m²</span></div>`, { direction: 'top', offset: [0, -8] });
-        m.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(prop.id); });
+        m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(prop.id); });
         propertyLayer.current!.addLayer(m);
       });
     }
-  }, [properties, selectedQuartier, onPropertyClick]);
+  }, [properties, selectedQuartier]);
 
   // LEVEL 3: Focus
   const renderFocus = useCallback(() => {
