@@ -370,7 +370,7 @@ const InteractiveMap = ({
         propertyLayer.current!.addLayer(m);
       });
     }
-  }, [properties, selectedQuartier, onPropertyClick, applyMapFilters]);
+  }, [properties, selectedQuartier, onPropertyClick]);
 
   // LEVEL 3: Focus
   const renderFocus = useCallback(() => {
