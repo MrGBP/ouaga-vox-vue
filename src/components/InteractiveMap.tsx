@@ -72,7 +72,7 @@ interface InteractiveMapProps {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const OUAGA_CENTER: [number, number] = [12.3714, -1.5197];
-const OUAGA_BOUNDS = L.latLngBounds(L.latLng(12.20, -1.72), L.latLng(12.50, -1.38));
+const OUAGA_BOUNDS = L.latLngBounds(L.latLng(12.10, -1.85), L.latLng(12.60, -1.25));
 
 const RADIUS_OPTIONS = [
   { label: '300 m', value: 300 },
