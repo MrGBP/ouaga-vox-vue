@@ -96,6 +96,7 @@ interface Quartier {
 }
 
 const FAVORITES_KEY = 'sapsap_favorites';
+const ITEMS_PER_PAGE = 25;
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
