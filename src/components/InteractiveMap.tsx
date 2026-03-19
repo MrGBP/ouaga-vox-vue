@@ -477,10 +477,13 @@ const InteractiveMap = ({
     setTimeout(() => mapInst.current?.invalidateSize({ animate: true }), 350);
   }, [panelOpen]);
 
-  // Invalidate on sheet height change
+  // Invalidate on sheet height change (debounced)
   useEffect(() => {
     if (!mapInst.current || sheetHeight === undefined) return;
-    mapInst.current.invalidateSize({ animate: false });
+    const timer = setTimeout(() => {
+      mapInst.current?.invalidateSize();
+    }, 150);
+    return () => clearTimeout(timer);
   }, [sheetHeight]);
 
   // External quartier
