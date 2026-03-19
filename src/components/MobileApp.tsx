@@ -277,6 +277,22 @@ export default function MobileApp(props: MobileAppProps) {
     }, 200);
   };
 
+  // Stable callbacks for InteractiveMap (prevent infinite re-render loops)
+  const handleQuartierChange = useCallback((q: string | null) => {
+    props.onQuartierChange(q);
+    if (q) {
+      nav.push({ screen: 'carte-niveau2', quartierName: q });
+    }
+  }, [props.onQuartierChange, nav]);
+
+  const handleFocusClear = useCallback(() => {
+    props.onFocusClear();
+  }, [props.onFocusClear]);
+
+  const handlePropertyClick = useCallback((id: string) => {
+    props.onPropertyClick(id);
+  }, [props.onPropertyClick]);
+
   // Navigation handlers
   const handleNavBack = () => {
     if (navLevel === 3) {
