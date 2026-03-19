@@ -277,6 +277,22 @@ export default function MobileApp(props: MobileAppProps) {
     }, 200);
   };
 
+  // Stable callbacks for InteractiveMap (prevent infinite re-render loops)
+  const handleQuartierChange = useCallback((q: string | null) => {
+    props.onQuartierChange(q);
+    if (q) {
+      nav.push({ screen: 'carte-niveau2', quartierName: q });
+    }
+  }, [props.onQuartierChange, nav]);
+
+  const handleFocusClear = useCallback(() => {
+    props.onFocusClear();
+  }, [props.onFocusClear]);
+
+  const handlePropertyClick = useCallback((id: string) => {
+    props.onPropertyClick(id);
+  }, [props.onPropertyClick]);
+
   // Navigation handlers
   const handleNavBack = () => {
     if (navLevel === 3) {
@@ -421,14 +437,12 @@ export default function MobileApp(props: MobileAppProps) {
         <div className="w-full h-full">
           <InteractiveMap
             properties={mapProperties} pois={props.pois} quartiers={props.quartiers}
-            onPropertyClick={props.onPropertyClick} focusedPropertyId={props.focusedPropertyId}
-            onFocusClear={() => { props.onFocusClear(); }}
+            onPropertyClick={handlePropertyClick} focusedPropertyId={props.focusedPropertyId}
+            onFocusClear={handleFocusClear}
             activeFilters={props.filters} externalQuartierSelect={props.mapQuartierTrigger}
             onExternalQuartierHandled={props.onExternalQuartierHandled}
-            panelOpen={false} onQuartierChange={(q) => {
-              props.onQuartierChange(q);
-              if (q) nav.push({ screen: 'carte-niveau2', quartierName: q });
-            }} resetTrigger={props.mapResetTrigger}
+            panelOpen={false} onQuartierChange={handleQuartierChange}
+            resetTrigger={props.mapResetTrigger}
             favoriteIds={props.favorites}
             sheetHeight={sheetHeight}
           />
