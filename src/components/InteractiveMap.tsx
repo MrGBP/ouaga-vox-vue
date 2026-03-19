@@ -181,7 +181,7 @@ const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng
 const InteractiveMap = ({
   properties, pois, quartiers = [], onPropertyClick, focusedPropertyId,
   onFocusClear, activeFilters, externalQuartierSelect, onExternalQuartierHandled,
-  panelOpen = false, onQuartierChange, resetTrigger, favoriteIds, sheetHeight,
+  panelOpen = false, onQuartierChange, resetTrigger, favoriteIds,
 }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map | null>(null);
