@@ -198,11 +198,21 @@ const InteractiveMap = ({
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
 
+  // Stable refs for callbacks to break re-render loops
+  const onQuartierChangeRef = useRef(onQuartierChange);
+  useEffect(() => { onQuartierChangeRef.current = onQuartierChange; });
+
+  const onPropertyClickRef = useRef(onPropertyClick);
+  useEffect(() => { onPropertyClickRef.current = onPropertyClick; });
+
+  const onFocusClearRef = useRef(onFocusClear);
+  useEffect(() => { onFocusClearRef.current = onFocusClear; });
 
   const viewLevel = focusedPropertyId ? 'focus' : selectedQuartier ? 'quartier' : 'global';
   viewLevelRef.current = viewLevel;
 
-  useEffect(() => { onQuartierChange?.(selectedQuartier); }, [selectedQuartier, onQuartierChange]);
+  // Notify parent of quartier change via stable ref
+  useEffect(() => { onQuartierChangeRef.current?.(selectedQuartier); }, [selectedQuartier]);
 
   // Reset trigger
   useEffect(() => {
