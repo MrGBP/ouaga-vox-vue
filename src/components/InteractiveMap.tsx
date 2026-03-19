@@ -261,7 +261,7 @@ const InteractiveMap = ({
     quartierLayer.current.clearLayers();
     propertyLayer.current.clearLayers();
 
-    const filtered = applyMapFilters(properties);
+    const filtered = properties;
     const byQ = new Map<string, Property[]>();
     filtered.forEach(p => { const arr = byQ.get(p.quartier) || []; arr.push(p); byQ.set(p.quartier, arr); });
 
