@@ -532,9 +532,25 @@ const InteractiveMap = ({
     });
   }, [properties, favoriteIds, viewLevel]);
 
-  // Master render
+  // Master render — use property ID key to avoid unnecessary re-renders
+  const prevPropertiesKey = useRef('');
+  const prevViewLevel = useRef(viewLevel);
+
   useEffect(() => {
     if (!mapInst.current) return;
+    const key = properties.map(p => p.id).join(',');
+    const viewChanged = viewLevel !== prevViewLevel.current;
+    const propsChanged = key !== prevPropertiesKey.current;
+
+    if (!viewChanged && !propsChanged) {
+      // Only re-render favorites if nothing else changed
+      renderFavorites();
+      return;
+    }
+
+    prevPropertiesKey.current = key;
+    prevViewLevel.current = viewLevel;
+
     focusLayer.current?.clearLayers();
     tentacleLayer.current?.clearLayers();
     quartierLayer.current?.clearLayers();
