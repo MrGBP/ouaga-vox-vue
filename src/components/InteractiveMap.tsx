@@ -279,7 +279,7 @@ const InteractiveMap = ({
       m.on('click', (e) => { L.DomEvent.stopPropagation(e); setSelectedQuartier(q.name); });
       quartierLayer.current!.addLayer(m);
     });
-  }, [properties, quartiers, applyMapFilters, activeFilters]);
+  }, [properties, quartiers, activeFilters]);
 
   // LEVEL 2: Quartier
   const renderQuartier = useCallback(() => {
