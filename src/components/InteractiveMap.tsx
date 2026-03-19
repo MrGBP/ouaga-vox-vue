@@ -288,7 +288,7 @@ const InteractiveMap = ({
     propertyLayer.current.clearLayers();
 
     const allQProps = properties.filter(p => p.quartier === selectedQuartier);
-    const qProps = applyMapFilters(allQProps);
+    const qProps = allQProps;
     const map = mapInst.current;
 
     // Get quartier bounds from mockQuartiers
