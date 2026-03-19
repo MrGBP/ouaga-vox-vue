@@ -530,7 +530,7 @@ const InteractiveMap = ({
       });
       favoriteLayer.current!.addLayer(marker);
     });
-  }, [properties, favoriteIds, viewLevel, onPropertyClick]);
+  }, [properties, favoriteIds, viewLevel]);
 
   // Master render
   useEffect(() => {
