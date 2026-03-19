@@ -247,7 +247,7 @@ const InteractiveMap = ({
     favoriteLayer.current = favLayer;
 
     map.on('zoomend', () => setZoom(map.getZoom()));
-    map.on('click', () => { if (viewLevelRef.current !== 'focus' && onFocusClear) onFocusClear(); });
+    map.on('click', () => { if (viewLevelRef.current !== 'focus') onFocusClearRef.current?.(); });
     mapInst.current = map;
 
     const style = document.createElement('style');
