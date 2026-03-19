@@ -67,7 +67,6 @@ interface InteractiveMapProps {
   onQuartierChange?: (quartier: string | null) => void;
   resetTrigger?: number;
   favoriteIds?: Set<string>;
-  sheetHeight?: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -182,7 +181,7 @@ const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng
 const InteractiveMap = ({
   properties, pois, quartiers = [], onPropertyClick, focusedPropertyId,
   onFocusClear, activeFilters, externalQuartierSelect, onExternalQuartierHandled,
-  panelOpen = false, onQuartierChange, resetTrigger, favoriteIds, sheetHeight,
+  panelOpen = false, onQuartierChange, resetTrigger, favoriteIds,
 }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map | null>(null);
@@ -199,11 +198,21 @@ const InteractiveMap = ({
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
 
+  // Stable refs for callbacks to break re-render loops
+  const onQuartierChangeRef = useRef(onQuartierChange);
+  useEffect(() => { onQuartierChangeRef.current = onQuartierChange; });
+
+  const onPropertyClickRef = useRef(onPropertyClick);
+  useEffect(() => { onPropertyClickRef.current = onPropertyClick; });
+
+  const onFocusClearRef = useRef(onFocusClear);
+  useEffect(() => { onFocusClearRef.current = onFocusClear; });
 
   const viewLevel = focusedPropertyId ? 'focus' : selectedQuartier ? 'quartier' : 'global';
   viewLevelRef.current = viewLevel;
 
-  useEffect(() => { onQuartierChange?.(selectedQuartier); }, [selectedQuartier, onQuartierChange]);
+  // Notify parent of quartier change via stable ref
+  useEffect(() => { onQuartierChangeRef.current?.(selectedQuartier); }, [selectedQuartier]);
 
   // Reset trigger
   useEffect(() => {
@@ -238,7 +247,7 @@ const InteractiveMap = ({
     favoriteLayer.current = favLayer;
 
     map.on('zoomend', () => setZoom(map.getZoom()));
-    map.on('click', () => { if (viewLevelRef.current !== 'focus' && onFocusClear) onFocusClear(); });
+    map.on('click', () => { if (viewLevelRef.current !== 'focus') onFocusClearRef.current?.(); });
     mapInst.current = map;
 
     const style = document.createElement('style');
@@ -342,7 +351,7 @@ const InteractiveMap = ({
           const p = cluster[0];
           const icon = L.divIcon({ html: propertyPinHTML(p, false), className: '', iconSize: [100, 28], iconAnchor: [50, 14] });
           const m = L.marker([p.latitude, p.longitude], { icon });
-          m.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(p.id); });
+          m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
           propertyLayer.current!.addLayer(m);
         } else {
           const avgLat = cluster.reduce((s, p) => s + p.latitude, 0) / cluster.length;
@@ -366,11 +375,11 @@ const InteractiveMap = ({
         const displayPrice = isFurnished ? pricePerNight(prop.price) : prop.price;
         const suffix = isFurnished ? '/nuit' : '/mois';
         m.bindTooltip(`<div style="font-family:system-ui;min-width:140px;"><strong style="color:#1a3560;font-size:12px;">${prop.title}</strong><br/><span style="font-size:11px;font-weight:700;color:#1a3560;">${new Intl.NumberFormat('fr-FR').format(displayPrice)} FCFA${suffix}</span><br/><span style="font-size:10px;color:#666;">${prop.bedrooms || '–'} ch. · ${prop.surface_area || '–'} m²</span></div>`, { direction: 'top', offset: [0, -8] });
-        m.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(prop.id); });
+        m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(prop.id); });
         propertyLayer.current!.addLayer(m);
       });
     }
-  }, [properties, selectedQuartier, onPropertyClick]);
+  }, [properties, selectedQuartier]);
 
   // LEVEL 3: Focus
   const renderFocus = useCallback(() => {
@@ -477,14 +486,6 @@ const InteractiveMap = ({
     setTimeout(() => mapInst.current?.invalidateSize({ animate: true }), 350);
   }, [panelOpen]);
 
-  // Invalidate on sheet height change (debounced)
-  useEffect(() => {
-    if (!mapInst.current || sheetHeight === undefined) return;
-    const timer = setTimeout(() => {
-      mapInst.current?.invalidateSize();
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [sheetHeight]);
 
   // External quartier
   useEffect(() => {
@@ -513,7 +514,7 @@ const InteractiveMap = ({
         className: '', iconSize: [26, 26], iconAnchor: [13, 13],
       });
       const marker = L.marker([p.latitude, p.longitude], { icon, zIndexOffset: 400 });
-      marker.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(p.id); });
+      marker.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
       marker.on('mouseover', () => {
         [300, 500, 1000].forEach(r => {
           const c = L.circle([p.latitude, p.longitude], {
@@ -529,11 +530,27 @@ const InteractiveMap = ({
       });
       favoriteLayer.current!.addLayer(marker);
     });
-  }, [properties, favoriteIds, viewLevel, onPropertyClick]);
+  }, [properties, favoriteIds, viewLevel]);
 
-  // Master render
+  // Master render — use property ID key to avoid unnecessary re-renders
+  const prevPropertiesKey = useRef('');
+  const prevViewLevel = useRef(viewLevel);
+
   useEffect(() => {
     if (!mapInst.current) return;
+    const key = properties.map(p => p.id).join(',');
+    const viewChanged = viewLevel !== prevViewLevel.current;
+    const propsChanged = key !== prevPropertiesKey.current;
+
+    if (!viewChanged && !propsChanged) {
+      // Only re-render favorites if nothing else changed
+      renderFavorites();
+      return;
+    }
+
+    prevPropertiesKey.current = key;
+    prevViewLevel.current = viewLevel;
+
     focusLayer.current?.clearLayers();
     tentacleLayer.current?.clearLayers();
     quartierLayer.current?.clearLayers();
@@ -560,9 +577,9 @@ const InteractiveMap = ({
   const goBackToGlobal = () => {
     setSelectedQuartier(null);
     setActiveRadius(null);
-    if (onFocusClear) onFocusClear();
+    onFocusClearRef.current?.();
     if (mapInst.current) {
-      mapInst.current.setMinZoom(11);
+      mapInst.current.setMinZoom(10);
       mapInst.current.setMaxBounds(OUAGA_BOUNDS);
       mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
     }
@@ -570,7 +587,7 @@ const InteractiveMap = ({
 
   const goBackToQuartier = () => {
     setActiveRadius(null);
-    if (onFocusClear) onFocusClear();
+    onFocusClearRef.current?.();
   };
 
   const handleRadiusClick = (r: number) => {

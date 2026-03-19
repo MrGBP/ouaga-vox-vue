@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNav } from '@/contexts/NavigationContext';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
@@ -240,17 +240,25 @@ export default function MobileApp(props: MobileAppProps) {
 
   const navLevel: 1 | 2 | 3 = props.detailProperty ? 3 : props.activeQuartier ? 2 : 1;
 
-  const quartierProperties = props.activeQuartier
-    ? availableProperties(props.filteredProperties).filter(p => p.quartier === props.activeQuartier)
-    : [];
-
-  const favoriteProperties = props.properties.filter(p => props.favorites.has(p.id));
-  const mapProperties = (() => {
+  const mapProperties = useMemo(() => {
     const source = props.filteredProperties?.length > 0
       ? props.filteredProperties
       : props.properties;
     return source.filter(p => p.status !== 'rented' && p.available !== false);
-  })();
+  }, [props.filteredProperties, props.properties]);
+
+  const quartierProperties = useMemo(() =>
+    props.activeQuartier
+      ? mapProperties.filter(p => p.quartier === props.activeQuartier)
+      : [],
+    [mapProperties, props.activeQuartier]
+  );
+
+  const favoriteProperties = useMemo(() =>
+    props.properties.filter(p => props.favorites.has(p.id)),
+    [props.properties, props.favorites]
+  );
+
   const displayProperties = availableProperties(props.filteredProperties);
   const totalPages = Math.ceil(displayProperties.length / ITEMS_PER_PAGE);
   const paginatedProperties = displayProperties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -433,7 +441,15 @@ export default function MobileApp(props: MobileAppProps) {
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-background">
       {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
-      <div className="fixed inset-0 z-0">
+      <div
+        className="fixed inset-0 z-0"
+        style={{
+          visibility: (mobileTab === 'map' || (mobileTab === 'favorites' && favViewMode === 'map'))
+            ? 'visible' : 'hidden',
+          pointerEvents: (mobileTab === 'map' || (mobileTab === 'favorites' && favViewMode === 'map'))
+            ? 'auto' : 'none',
+        }}
+      >
         <div className="w-full h-full">
           <InteractiveMap
             properties={mapProperties} pois={props.pois} quartiers={props.quartiers}
@@ -444,7 +460,6 @@ export default function MobileApp(props: MobileAppProps) {
             panelOpen={false} onQuartierChange={handleQuartierChange}
             resetTrigger={props.mapResetTrigger}
             favoriteIds={props.favorites}
-            sheetHeight={sheetHeight}
           />
         </div>
       </div>
