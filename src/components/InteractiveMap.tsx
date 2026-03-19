@@ -351,7 +351,7 @@ const InteractiveMap = ({
           const p = cluster[0];
           const icon = L.divIcon({ html: propertyPinHTML(p, false), className: '', iconSize: [100, 28], iconAnchor: [50, 14] });
           const m = L.marker([p.latitude, p.longitude], { icon });
-          m.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(p.id); });
+          m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
           propertyLayer.current!.addLayer(m);
         } else {
           const avgLat = cluster.reduce((s, p) => s + p.latitude, 0) / cluster.length;
