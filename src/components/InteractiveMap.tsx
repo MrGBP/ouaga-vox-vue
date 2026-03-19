@@ -514,7 +514,7 @@ const InteractiveMap = ({
         className: '', iconSize: [26, 26], iconAnchor: [13, 13],
       });
       const marker = L.marker([p.latitude, p.longitude], { icon, zIndexOffset: 400 });
-      marker.on('click', (e) => { L.DomEvent.stopPropagation(e); if (onPropertyClick) onPropertyClick(p.id); });
+      marker.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
       marker.on('mouseover', () => {
         [300, 500, 1000].forEach(r => {
           const c = L.circle([p.latitude, p.longitude], {
