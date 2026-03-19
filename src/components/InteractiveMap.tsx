@@ -577,9 +577,9 @@ const InteractiveMap = ({
   const goBackToGlobal = () => {
     setSelectedQuartier(null);
     setActiveRadius(null);
-    if (onFocusClear) onFocusClear();
+    onFocusClearRef.current?.();
     if (mapInst.current) {
-      mapInst.current.setMinZoom(11);
+      mapInst.current.setMinZoom(10);
       mapInst.current.setMaxBounds(OUAGA_BOUNDS);
       mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
     }
