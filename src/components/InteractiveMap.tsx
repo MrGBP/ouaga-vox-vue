@@ -210,7 +210,7 @@ const InteractiveMap = ({
     if (!resetTrigger || !mapInst.current) return;
     setSelectedQuartier(null);
     setActiveRadius(null);
-    mapInst.current.setMinZoom(11);
+    mapInst.current.setMinZoom(10);
     mapInst.current.setMaxBounds(OUAGA_BOUNDS);
     mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
   }, [resetTrigger]);
