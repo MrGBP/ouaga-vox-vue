@@ -437,14 +437,12 @@ export default function MobileApp(props: MobileAppProps) {
         <div className="w-full h-full">
           <InteractiveMap
             properties={mapProperties} pois={props.pois} quartiers={props.quartiers}
-            onPropertyClick={props.onPropertyClick} focusedPropertyId={props.focusedPropertyId}
-            onFocusClear={() => { props.onFocusClear(); }}
+            onPropertyClick={handlePropertyClick} focusedPropertyId={props.focusedPropertyId}
+            onFocusClear={handleFocusClear}
             activeFilters={props.filters} externalQuartierSelect={props.mapQuartierTrigger}
             onExternalQuartierHandled={props.onExternalQuartierHandled}
-            panelOpen={false} onQuartierChange={(q) => {
-              props.onQuartierChange(q);
-              if (q) nav.push({ screen: 'carte-niveau2', quartierName: q });
-            }} resetTrigger={props.mapResetTrigger}
+            panelOpen={false} onQuartierChange={handleQuartierChange}
+            resetTrigger={props.mapResetTrigger}
             favoriteIds={props.favorites}
             sheetHeight={sheetHeight}
           />
