@@ -72,7 +72,7 @@ interface InteractiveMapProps {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const OUAGA_CENTER: [number, number] = [12.3714, -1.5197];
-const OUAGA_BOUNDS = L.latLngBounds(L.latLng(12.20, -1.72), L.latLng(12.50, -1.38));
+const OUAGA_BOUNDS = L.latLngBounds(L.latLng(12.10, -1.85), L.latLng(12.60, -1.25));
 
 const RADIUS_OPTIONS = [
   { label: '300 m', value: 300 },
@@ -199,22 +199,6 @@ const InteractiveMap = ({
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
 
-  const applyMapFilters = useCallback((props: Property[]) => {
-    if (!activeFilters) return props;
-    let result = props;
-    if (activeFilters.type !== 'all') result = result.filter(p => p.type === activeFilters.type);
-    result = result.filter(p => p.price >= activeFilters.minPrice && p.price <= activeFilters.maxPrice);
-    if (activeFilters.minBedrooms > 0) result = result.filter(p => (p.bedrooms || 0) >= activeFilters.minBedrooms);
-    if (activeFilters.hasVirtualTour) result = result.filter(p => !!p.virtual_tour_url);
-    if (activeFilters.surfaceRange && activeFilters.surfaceRange !== 'all') {
-      const sr = activeFilters.surfaceRange;
-      if (sr === '<50') result = result.filter(p => (p.surface_area || 0) < 50);
-      else if (sr === '50-150') result = result.filter(p => (p.surface_area || 0) >= 50 && (p.surface_area || 0) <= 150);
-      else if (sr === '150-300') result = result.filter(p => (p.surface_area || 0) >= 150 && (p.surface_area || 0) <= 300);
-      else if (sr === '>300') result = result.filter(p => (p.surface_area || 0) > 300);
-    }
-    return result;
-  }, [activeFilters]);
 
   const viewLevel = focusedPropertyId ? 'focus' : selectedQuartier ? 'quartier' : 'global';
   viewLevelRef.current = viewLevel;
@@ -226,7 +210,7 @@ const InteractiveMap = ({
     if (!resetTrigger || !mapInst.current) return;
     setSelectedQuartier(null);
     setActiveRadius(null);
-    mapInst.current.setMinZoom(11);
+    mapInst.current.setMinZoom(10);
     mapInst.current.setMaxBounds(OUAGA_BOUNDS);
     mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
   }, [resetTrigger]);
@@ -236,7 +220,7 @@ const InteractiveMap = ({
     if (!mapRef.current || mapInst.current) return;
     const map = L.map(mapRef.current, {
       center: OUAGA_CENTER, zoom: 13, zoomControl: false,
-      maxBounds: OUAGA_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 11, maxZoom: 18,
+      maxBounds: OUAGA_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 18,
     });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     const tile = L.tileLayer(TILE_DEFAULT, { attribution: '© <a href="https://openstreetmap.org">OSM</a>', maxZoom: 18 }).addTo(map);
@@ -277,7 +261,7 @@ const InteractiveMap = ({
     quartierLayer.current.clearLayers();
     propertyLayer.current.clearLayers();
 
-    const filtered = applyMapFilters(properties);
+    const filtered = properties;
     const byQ = new Map<string, Property[]>();
     filtered.forEach(p => { const arr = byQ.get(p.quartier) || []; arr.push(p); byQ.set(p.quartier, arr); });
 
@@ -295,7 +279,7 @@ const InteractiveMap = ({
       m.on('click', (e) => { L.DomEvent.stopPropagation(e); setSelectedQuartier(q.name); });
       quartierLayer.current!.addLayer(m);
     });
-  }, [properties, quartiers, applyMapFilters, activeFilters]);
+  }, [properties, quartiers, activeFilters]);
 
   // LEVEL 2: Quartier
   const renderQuartier = useCallback(() => {
@@ -304,7 +288,7 @@ const InteractiveMap = ({
     propertyLayer.current.clearLayers();
 
     const allQProps = properties.filter(p => p.quartier === selectedQuartier);
-    const qProps = applyMapFilters(allQProps);
+    const qProps = allQProps;
     const map = mapInst.current;
 
     // Get quartier bounds from mockQuartiers
@@ -386,7 +370,7 @@ const InteractiveMap = ({
         propertyLayer.current!.addLayer(m);
       });
     }
-  }, [properties, selectedQuartier, onPropertyClick, applyMapFilters]);
+  }, [properties, selectedQuartier, onPropertyClick]);
 
   // LEVEL 3: Focus
   const renderFocus = useCallback(() => {
@@ -493,10 +477,13 @@ const InteractiveMap = ({
     setTimeout(() => mapInst.current?.invalidateSize({ animate: true }), 350);
   }, [panelOpen]);
 
-  // Invalidate on sheet height change
+  // Invalidate on sheet height change (debounced)
   useEffect(() => {
     if (!mapInst.current || sheetHeight === undefined) return;
-    mapInst.current.invalidateSize({ animate: false });
+    const timer = setTimeout(() => {
+      mapInst.current?.invalidateSize();
+    }, 150);
+    return () => clearTimeout(timer);
   }, [sheetHeight]);
 
   // External quartier
@@ -630,7 +617,7 @@ const InteractiveMap = ({
             <div className="flex items-center gap-2">
               <span className="text-sm">📍</span>
               <span className="text-sm font-semibold text-foreground">{selectedQuartier}</span>
-              <span className="text-xs text-muted-foreground">— {applyMapFilters(properties.filter(p => p.quartier === selectedQuartier)).length} biens</span>
+              <span className="text-xs text-muted-foreground">— {properties.filter(p => p.quartier === selectedQuartier).length} biens</span>
             </div>
             <button onClick={goBackToGlobal} className="text-xs text-primary font-semibold hover:underline">← Retour</button>
           </div>

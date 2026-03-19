@@ -245,7 +245,12 @@ export default function MobileApp(props: MobileAppProps) {
     : [];
 
   const favoriteProperties = props.properties.filter(p => props.favorites.has(p.id));
-  const mapProperties = availableProperties(props.filteredProperties);
+  const mapProperties = (() => {
+    const source = props.filteredProperties?.length > 0
+      ? props.filteredProperties
+      : props.properties;
+    return source.filter(p => p.status !== 'rented' && p.available !== false);
+  })();
   const displayProperties = availableProperties(props.filteredProperties);
   const totalPages = Math.ceil(displayProperties.length / ITEMS_PER_PAGE);
   const paginatedProperties = displayProperties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
