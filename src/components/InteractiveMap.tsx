@@ -617,7 +617,7 @@ const InteractiveMap = ({
             <div className="flex items-center gap-2">
               <span className="text-sm">📍</span>
               <span className="text-sm font-semibold text-foreground">{selectedQuartier}</span>
-              <span className="text-xs text-muted-foreground">— {applyMapFilters(properties.filter(p => p.quartier === selectedQuartier)).length} biens</span>
+              <span className="text-xs text-muted-foreground">— {properties.filter(p => p.quartier === selectedQuartier).length} biens</span>
             </div>
             <button onClick={goBackToGlobal} className="text-xs text-primary font-semibold hover:underline">← Retour</button>
           </div>
