@@ -204,26 +204,9 @@ const Index = () => {
   // Mobile state
   const isMobile = useIsMobile();
   const nav = useNav();
-  useSwipeBack();
-  const [mobileTab, setMobileTab] = useState('home');
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
-  const [favViewMode, setFavViewMode] = useState<'list' | 'map'>('list');
-  const [sheetHeight, setSheetHeight] = useState(0);
-  const sheetRef = useRef<UniversalSheetHandle>(null);
 
   const { toast } = useToast();
   const { speak } = useVoiceSynthesis();
-
-  // Body scroll lock on mobile only when filters or search open
-  useEffect(() => {
-    if (isMobile && (showMobileFilters || showMobileSearch)) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isMobile, showMobileFilters, showMobileSearch]);
 
   useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { fetchData(); }, []);
