@@ -381,7 +381,7 @@ const Index = () => {
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [isMobile, mobileTab, nav]);
+  }, [isMobile, nav]);
 
   const handlePropertyClick = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
@@ -392,7 +392,6 @@ const Index = () => {
     const prop = properties.find(p => p.id === id);
     if (prop) {
       if (isMobile) {
-        setMobileTab('map');
         setDetailProperty(prop);
         setFocusedPropertyId(id);
         addToRecentlyViewed(prop);
@@ -406,7 +405,6 @@ const Index = () => {
     const prop = properties.find(p => p.id === id);
     if (!prop) return;
     if (isMobile) {
-      setMobileTab('map');
       setFocusedPropertyId(id);
       setDetailProperty(prop);
       setActiveQuartier(prop.quartier);
