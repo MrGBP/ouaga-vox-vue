@@ -375,7 +375,7 @@ const InteractiveMap = ({
     } else {
       const positioned = offsetProperties(qProps);
       positioned.forEach(({ prop, lat, lng }) => {
-        const icon = L.divIcon({ html: propertyPinHTML(prop, false), className: '', iconSize: [100, 28], iconAnchor: [50, 14] });
+        const icon = L.divIcon({ html: propertyPinHTML(prop, false, favoriteIds?.has(prop.id)), className: '', iconSize: [110, 28], iconAnchor: [55, 14] });
         const m = L.marker([lat, lng], { icon });
         const isFurnished = isTypeFurnished(prop.type) || prop.furnished;
         const displayPrice = isFurnished ? pricePerNight(prop.price) : prop.price;
