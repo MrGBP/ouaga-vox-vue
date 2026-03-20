@@ -856,6 +856,7 @@ export default function MobileApp(props: MobileAppProps) {
             showFavoritesOnly={props.showFavoritesOnly}
             computeFilteredCount={props.computeFilteredCount}
             externalFilters={props.filters}
+            forceOpen={true}
           />
         </div>
       </MobileDraggableDrawer>
