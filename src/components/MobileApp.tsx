@@ -611,14 +611,6 @@ export default function MobileApp(props: MobileAppProps) {
             <TestimonialsSection />
             <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
 
-            {/* SapSap AI Engine section */}
-            <section className="px-4 py-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <h2 className="text-lg font-bold text-foreground">SapSap AI Engine</h2>
-              </div>
-              <AIComparator favorites={favoriteProperties} priorities={[]} />
-            </section>
 
             <Footer />
           </motion.div>
