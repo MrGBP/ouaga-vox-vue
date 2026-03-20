@@ -403,36 +403,43 @@ export default function MobileApp(props: MobileAppProps) {
 
   // Sheet body content based on level
   const getSheetContent = () => {
+    const key = navLevel === 2 ? `level2-${props.activeQuartier}` : `level3-${props.detailProperty?.id}`;
     if (navLevel === 2 && props.activeQuartier && !props.detailProperty) {
       return (
-        <CarouselWithSwipeHint
-          properties={quartierProperties}
-          activeQuartier={props.activeQuartier}
-          favorites={props.favorites}
-          formatDisplayPrice={formatDisplayPrice}
-          onPropertyClick={props.onPropertyClick}
-        />
+        <AnimatePresence mode="wait">
+          <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            <CarouselWithSwipeHint
+              properties={quartierProperties}
+              activeQuartier={props.activeQuartier}
+              favorites={props.favorites}
+              formatDisplayPrice={formatDisplayPrice}
+              onPropertyClick={props.onPropertyClick}
+            />
+          </motion.div>
+        </AnimatePresence>
       );
     }
     if (navLevel === 3 && props.detailProperty) {
       return (
-        <div>
-          <PropertyDetailPanel
-            property={props.detailProperty}
-            onClose={() => { props.onDetailClose(); props.onFocusClear(); }}
-            pois={props.pois}
-            isFavorite={props.favorites.has(props.detailProperty.id)}
-            onToggleFavorite={props.onToggleFavorite}
-            onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
-            similarProperties={similarProperties}
-            onSelectProperty={(id) => {
-              const p = props.properties.find(pr => pr.id === id);
-              if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
-            }}
-            onExploreOnMap={props.onExploreOnMap}
-            isMobileOverride={true}
-          />
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            <PropertyDetailPanel
+              property={props.detailProperty}
+              onClose={() => { props.onDetailClose(); props.onFocusClear(); }}
+              pois={props.pois}
+              isFavorite={props.favorites.has(props.detailProperty.id)}
+              onToggleFavorite={props.onToggleFavorite}
+              onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
+              similarProperties={similarProperties}
+              onSelectProperty={(id) => {
+                const p = props.properties.find(pr => pr.id === id);
+                if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
+              }}
+              onExploreOnMap={props.onExploreOnMap}
+              isMobileOverride={true}
+            />
+          </motion.div>
+        </AnimatePresence>
       );
     }
     return null;
