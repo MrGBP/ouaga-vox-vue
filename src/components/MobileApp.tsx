@@ -305,6 +305,7 @@ export default function MobileApp(props: MobileAppProps) {
 
   // Navigation handlers
   const handleNavBack = () => {
+    if (isExploring) { setIsExploring(false); return; }
     if (navLevel === 3) {
       props.onDetailClose();
       props.onFocusClear();
