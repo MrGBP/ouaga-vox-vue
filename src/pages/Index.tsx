@@ -349,7 +349,7 @@ const Index = () => {
     setCurrentPage(1);
     setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
     setMapQuartierTrigger(q.name);
-    speak(`Voici les biens disponibles dans le quartier ${q.name}`);
+    
     if (!isMobile) document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   };
 
