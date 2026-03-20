@@ -322,6 +322,10 @@ const FilterBar = ({
     </div>
   );
 
+  if (forceOpen) {
+    return <div className="w-full">{filterContent}</div>;
+  }
+
   return (
     <div className="w-full mb-4">
       {/* Pill Bar */}
