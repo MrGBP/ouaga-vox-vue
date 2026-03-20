@@ -245,10 +245,8 @@ const Index = () => {
       localStorage.setItem('sapsap_recent_searches', JSON.stringify(updated));
     } catch {}
     if (filtered.length > 0) {
-      speak(`J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''} pour "${query}".`);
       toast({ title: '🔍 Résultats', description: `${filtered.length} bien(s) trouvé(s)` });
     } else {
-      speak("Aucun bien ne correspond à votre recherche.");
       toast({ title: 'Aucun résultat', description: 'Élargissez votre recherche.', variant: 'destructive' });
     }
   };
