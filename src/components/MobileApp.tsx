@@ -16,8 +16,9 @@ import PropertyCard from '@/components/PropertyCard';
 import VirtualTourModal from '@/components/VirtualTourModal';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed, { addToRecentlyViewed } from '@/components/RecentlyViewed';
-import AIComparator from '@/components/AIComparator';
 import Footer from '@/components/Footer';
+import MobileOnboarding from '@/components/mobile/MobileOnboarding';
+import { getTypeLabel } from '@/lib/mockData';
 import { ChevronLeft, ChevronRight, X, Search, Heart, Sparkles, Maximize2, ChevronUp, SlidersHorizontal, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
@@ -206,6 +207,7 @@ export default function MobileApp(props: MobileAppProps) {
   const [sheetHeight, setSheetHeight] = useState(0);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isExploring, setIsExploring] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageTransition, setPageTransition] = useState(false);
   const sheetRef = useRef<UniversalSheetHandle>(null);
@@ -303,6 +305,7 @@ export default function MobileApp(props: MobileAppProps) {
 
   // Navigation handlers
   const handleNavBack = () => {
+    if (isExploring) { setIsExploring(false); return; }
     if (navLevel === 3) {
       props.onDetailClose();
       props.onFocusClear();
@@ -379,7 +382,7 @@ export default function MobileApp(props: MobileAppProps) {
           </button>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => sheetRef.current?.close()}
+              onClick={() => setIsExploring(true)}
               style={{
                 width: 34, height: 34, background: '#f0f4ff', border: 'none',
                 borderRadius: '50%', display: 'flex', alignItems: 'center',
@@ -401,36 +404,43 @@ export default function MobileApp(props: MobileAppProps) {
 
   // Sheet body content based on level
   const getSheetContent = () => {
+    const key = navLevel === 2 ? `level2-${props.activeQuartier}` : `level3-${props.detailProperty?.id}`;
     if (navLevel === 2 && props.activeQuartier && !props.detailProperty) {
       return (
-        <CarouselWithSwipeHint
-          properties={quartierProperties}
-          activeQuartier={props.activeQuartier}
-          favorites={props.favorites}
-          formatDisplayPrice={formatDisplayPrice}
-          onPropertyClick={props.onPropertyClick}
-        />
+        <AnimatePresence mode="wait">
+          <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            <CarouselWithSwipeHint
+              properties={quartierProperties}
+              activeQuartier={props.activeQuartier}
+              favorites={props.favorites}
+              formatDisplayPrice={formatDisplayPrice}
+              onPropertyClick={props.onPropertyClick}
+            />
+          </motion.div>
+        </AnimatePresence>
       );
     }
     if (navLevel === 3 && props.detailProperty) {
       return (
-        <div>
-          <PropertyDetailPanel
-            property={props.detailProperty}
-            onClose={() => { props.onDetailClose(); props.onFocusClear(); }}
-            pois={props.pois}
-            isFavorite={props.favorites.has(props.detailProperty.id)}
-            onToggleFavorite={props.onToggleFavorite}
-            onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
-            similarProperties={similarProperties}
-            onSelectProperty={(id) => {
-              const p = props.properties.find(pr => pr.id === id);
-              if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
-            }}
-            onExploreOnMap={props.onExploreOnMap}
-            isMobileOverride={true}
-          />
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+            <PropertyDetailPanel
+              property={props.detailProperty}
+              onClose={() => { props.onDetailClose(); props.onFocusClear(); }}
+              pois={props.pois}
+              isFavorite={props.favorites.has(props.detailProperty.id)}
+              onToggleFavorite={props.onToggleFavorite}
+              onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
+              similarProperties={similarProperties}
+              onSelectProperty={(id) => {
+                const p = props.properties.find(pr => pr.id === id);
+                if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
+              }}
+              onExploreOnMap={props.onExploreOnMap}
+              isMobileOverride={true}
+            />
+          </motion.div>
+        </AnimatePresence>
       );
     }
     return null;
@@ -440,6 +450,8 @@ export default function MobileApp(props: MobileAppProps) {
 
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-background">
+      {/* ═══ ONBOARDING ═══ */}
+      {mobileTab === 'map' && navLevel === 1 && <MobileOnboarding onDone={() => {}} />}
       {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
       <div
         className="fixed inset-0 z-0"
@@ -475,7 +487,7 @@ export default function MobileApp(props: MobileAppProps) {
           onBack={handleNavBack}
           onHome={handleNavHome}
           depth={nav.depth}
-          isExploring={sheetHeight <= 10 && navLevel === 3}
+          isExploring={isExploring && navLevel === 3}
         />
       ) : mobileTab === 'home' ? (
         <MobileNavbar level={1} />
@@ -609,14 +621,6 @@ export default function MobileApp(props: MobileAppProps) {
             <TestimonialsSection />
             <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
 
-            {/* SapSap AI Engine section */}
-            <section className="px-4 py-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <h2 className="text-lg font-bold text-foreground">SapSap AI Engine</h2>
-              </div>
-              <AIComparator favorites={favoriteProperties} priorities={[]} />
-            </section>
 
             <Footer />
           </motion.div>
@@ -723,8 +727,57 @@ export default function MobileApp(props: MobileAppProps) {
         )}
       </AnimatePresence>
 
-      {/* ═══ MAP TAB — Universal Sheet ═══ */}
-      {mobileTab === 'map' && (props.activeQuartier || props.detailProperty) && (
+      {/* ═══ IMMERSIVE EXPLORE OVERLAY ═══ */}
+      {isExploring && navLevel === 3 && props.detailProperty && (
+        <>
+          {/* Property info at bottom */}
+          <div
+            className="fixed left-3 right-3 z-[25] flex items-center justify-between"
+            style={{ bottom: 'calc(108px + env(safe-area-inset-bottom))' }}
+          >
+            <div className="flex-1 min-w-0">
+              <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary mb-1">
+                {getTypeLabel(props.detailProperty.type)}
+              </span>
+              <p className="text-sm font-bold text-foreground truncate">
+                {props.detailProperty.title}
+              </p>
+              <p className="text-xs font-semibold text-primary">
+                {(() => {
+                  const dp = formatDisplayPrice(props.detailProperty!);
+                  return dp.nightPrice ? `${dp.nightPrice} FCFA/nuit` : `${dp.price} FCFA/mois`;
+                })()}
+              </p>
+            </div>
+            <button
+              onClick={() => props.onToggleFavorite(props.detailProperty!.id)}
+              style={{ width: 36, height: 36, background: '#f0f4ff', border: 'none', borderRadius: 10, fontSize: 16, cursor: 'pointer' }}
+            >
+              {props.favorites.has(props.detailProperty.id) ? '❤️' : '🤍'}
+            </button>
+          </div>
+
+          {/* "Voir la fiche" button */}
+          <button
+            onClick={() => setIsExploring(false)}
+            style={{
+              position: 'fixed', bottom: 'calc(68px + env(safe-area-inset-bottom))',
+              left: '50%', transform: 'translateX(-50%)', zIndex: 26,
+              background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)', border: '0.5px solid #e5e7eb',
+              borderRadius: 9999, padding: '9px 20px', fontSize: 13, fontWeight: 600,
+              color: '#1a3560', display: 'flex', alignItems: 'center', gap: 7,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)', cursor: 'pointer',
+            }}
+          >
+            <ChevronUp size={16} />
+            Voir la fiche
+          </button>
+        </>
+      )}
+
+      {/* ═══ MAP TAB — Universal Sheet (hidden in explore mode) ═══ */}
+      {mobileTab === 'map' && (props.activeQuartier || props.detailProperty) && !isExploring && (
         <UniversalSheet
           ref={sheetRef}
           sheetKey={`map-${navLevel}-${props.activeQuartier || ''}-${props.detailProperty?.id || ''}`}
@@ -734,25 +787,6 @@ export default function MobileApp(props: MobileAppProps) {
         >
           {getSheetContent()}
         </UniversalSheet>
-      )}
-
-      {/* ═══ FLOATING "VOIR LES INFOS" BUTTON (explore mode) ═══ */}
-      {sheetHeight <= 10 && navLevel === 3 && mobileTab === 'map' && (
-        <button
-          onClick={() => sheetRef.current?.snapDefault()}
-          style={{
-            position: 'fixed', bottom: 'calc(68px + env(safe-area-inset-bottom))',
-            left: '50%', transform: 'translateX(-50%)', zIndex: 40,
-            background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)', border: '0.5px solid #e5e7eb',
-            borderRadius: 9999, padding: '10px 20px', fontSize: 13, fontWeight: 600,
-            color: '#1a3560', display: 'flex', alignItems: 'center', gap: 8,
-            boxShadow: '0 6px 20px rgba(0,0,0,0.15)', cursor: 'pointer',
-          }}
-        >
-          <ChevronUp size={16} />
-          Voir les infos
-        </button>
       )}
 
       {/* Floating AI button */}

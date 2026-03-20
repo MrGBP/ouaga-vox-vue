@@ -535,21 +535,23 @@ const InteractiveMap = ({
   // Master render — use property ID key to avoid unnecessary re-renders
   const prevPropertiesKey = useRef('');
   const prevViewLevel = useRef(viewLevel);
+  const prevFocusId = useRef<string | null | undefined>(null);
 
   useEffect(() => {
     if (!mapInst.current) return;
     const key = properties.map(p => p.id).join(',');
     const viewChanged = viewLevel !== prevViewLevel.current;
     const propsChanged = key !== prevPropertiesKey.current;
+    const focusChanged = focusedPropertyId !== prevFocusId.current;
 
-    if (!viewChanged && !propsChanged) {
-      // Only re-render favorites if nothing else changed
+    if (!viewChanged && !propsChanged && !focusChanged) {
       renderFavorites();
       return;
     }
 
     prevPropertiesKey.current = key;
     prevViewLevel.current = viewLevel;
+    prevFocusId.current = focusedPropertyId;
 
     focusLayer.current?.clearLayers();
     tentacleLayer.current?.clearLayers();
@@ -560,7 +562,7 @@ const InteractiveMap = ({
     else if (viewLevel === 'quartier') renderQuartier();
     else renderGlobal();
     renderFavorites();
-  }, [viewLevel, renderGlobal, renderQuartier, renderFocus, activeFilters, renderFavorites]);
+  }, [viewLevel, focusedPropertyId, renderGlobal, renderQuartier, renderFocus, activeFilters, renderFavorites]);
 
   // Re-render on zoom
   useEffect(() => {

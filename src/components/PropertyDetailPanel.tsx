@@ -40,6 +40,17 @@ interface Property {
   has_garden?: boolean;
   has_water?: boolean;
   has_internet?: boolean;
+  has_kitchen?: boolean;
+  has_fridge?: boolean;
+  has_tv?: boolean;
+  has_terrace?: boolean;
+  has_pool?: boolean;
+  has_parking_int?: boolean;
+  has_parking_ext?: boolean;
+  has_fence?: boolean;
+  has_cameras?: boolean;
+  has_paved_road?: boolean;
+  has_water_tower?: boolean;
   status?: string;
   agent_name?: string;
   agent_phone?: string;
@@ -131,6 +142,39 @@ const PropertyDetailPanel = ({
   const visiblePois = showAllPois ? nearbyPois : nearbyPois.slice(0, 3);
 
   // Features
+  // Essential features
+  const essentialFeatures = [
+    property.bedrooms && property.bedrooms > 0 && { icon: Bed, label: 'Chambres', value: property.bedrooms },
+    property.bathrooms && property.bathrooms > 0 && { icon: Bath, label: 'SdB', value: property.bathrooms },
+    property.surface_area && { icon: Maximize, label: 'Surface', value: `${property.surface_area}m²` },
+    property.year_built && { icon: Calendar, label: 'Année', value: property.year_built },
+  ].filter(Boolean) as { icon: any; label: string; value: any }[];
+
+  // Equipment features
+  const equipmentFeatures = [
+    property.has_ac && { emoji: '❄️', label: 'Climatisation' },
+    property.has_internet && { emoji: '📶', label: 'WiFi' },
+    property.has_kitchen && { emoji: '🍳', label: 'Cuisine' },
+    property.has_tv && { emoji: '📺', label: 'TV' },
+    property.has_generator && { emoji: '⚡', label: 'Groupe élec.' },
+    property.has_water && { emoji: '💧', label: 'Eau' },
+    property.has_fridge && { emoji: '🧊', label: 'Frigo' },
+    property.has_garden && { emoji: '🌳', label: 'Jardin' },
+    property.has_terrace && { emoji: '🏖️', label: 'Terrasse' },
+    property.has_pool && { emoji: '🏊', label: 'Piscine' },
+  ].filter(Boolean) as { emoji: string; label: string }[];
+
+  // Security & access features
+  const securityFeatures = [
+    property.has_guardian && { emoji: '🛡️', label: 'Gardien' },
+    property.has_fence && { emoji: '🔒', label: 'Clôture' },
+    property.has_cameras && { emoji: '📹', label: 'Caméras' },
+    property.has_paved_road && { emoji: '🛣️', label: 'Goudronnée' },
+    property.has_parking_int && { emoji: '🚗', label: 'Parking int.' },
+    property.has_parking_ext && { emoji: '🅿️', label: 'Parking ext.' },
+    property.has_water_tower && { emoji: '🗼', label: 'Château d\'eau' },
+  ].filter(Boolean) as { emoji: string; label: string }[];
+
   const features = [
     property.bedrooms && property.bedrooms > 0 && { icon: Bed, label: 'Chambres', value: property.bedrooms },
     property.bathrooms && property.bathrooms > 0 && { icon: Bath, label: 'SdB', value: property.bathrooms },
@@ -272,12 +316,17 @@ const PropertyDetailPanel = ({
           </div>
         </div>
 
-        {/* Features — 4 visible + see more */}
-        {features.length > 0 && (
+        {/* Section: Essentiel */}
+        {essentialFeatures.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Caractéristiques</h4>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <Maximize className="h-3 w-3 text-primary" />
+              </div>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Essentiel</h4>
+            </div>
             <div className="grid grid-cols-4 gap-2">
-              {features.slice(0, showAllFeatures ? features.length : 4).map((f, i) => (
+              {essentialFeatures.map((f, i) => (
                 <div key={i} className="flex flex-col items-center bg-muted/50 rounded-lg p-2 text-center">
                   <f.icon className="h-4 w-4 text-primary mb-0.5" />
                   <span className="text-xs font-bold text-foreground">{f.value}</span>
@@ -285,11 +334,44 @@ const PropertyDetailPanel = ({
                 </div>
               ))}
             </div>
-            {features.length > 4 && (
-              <button onClick={() => setShowAllFeatures(!showAllFeatures)} className="text-xs text-primary font-medium mt-1 hover:underline">
-                {showAllFeatures ? 'Voir moins' : `+${features.length - 4} autres caractéristiques`}
-              </button>
-            )}
+          </div>
+        )}
+
+        {/* Section: Équipements */}
+        {equipmentFeatures.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-accent/30 flex items-center justify-center">
+                <Zap className="h-3 w-3 text-accent-foreground" />
+              </div>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Équipements</h4>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {equipmentFeatures.map((f, i) => (
+                <span key={i} className="inline-flex items-center gap-1 bg-muted/50 rounded-full px-2.5 py-1 text-xs text-foreground">
+                  {f.emoji} {f.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Section: Sécurité & Accès */}
+        {securityFeatures.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <Shield className="h-3 w-3 text-primary" />
+              </div>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Sécurité & Accès</h4>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {securityFeatures.map((f, i) => (
+                <span key={i} className="inline-flex items-center gap-1 bg-muted/50 rounded-full px-2.5 py-1 text-xs text-foreground">
+                  {f.emoji} {f.label}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -335,6 +335,8 @@ const Index = () => {
       });
     } else {
       setFocusedPropertyId(id);
+      setDetailProperty(prop);
+      setActiveQuartier(prop.quartier);
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
@@ -375,7 +377,7 @@ const Index = () => {
   const similarProperties = detailProperty
     ? availableProperties(properties).filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
     : [];
-  const mapProperties = availableProperties(filteredProperties);
+  const mapProperties = useMemo(() => availableProperties(filteredProperties), [filteredProperties, availableProperties]);
 
   // Pagination
   const displayProperties = availableProperties(filteredProperties);
