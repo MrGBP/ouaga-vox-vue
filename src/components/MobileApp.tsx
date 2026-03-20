@@ -296,6 +296,10 @@ export default function MobileApp(props: MobileAppProps) {
 
   const handlePropertyClick = useCallback((id: string) => {
     props.onPropertyClick(id);
+    // Snap to fullscreen after property opens
+    setTimeout(() => {
+      sheetRef.current?.snapFullscreen?.();
+    }, 120);
   }, [props.onPropertyClick]);
 
   // Navigation handlers
