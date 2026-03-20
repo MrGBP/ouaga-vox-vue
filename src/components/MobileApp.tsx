@@ -450,6 +450,8 @@ export default function MobileApp(props: MobileAppProps) {
 
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-background">
+      {/* ═══ ONBOARDING ═══ */}
+      {mobileTab === 'map' && navLevel === 1 && <MobileOnboarding onDone={() => {}} />}
       {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
       <div
         className="fixed inset-0 z-0"
