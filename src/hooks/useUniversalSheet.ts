@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 
 const vh = () => (typeof window !== 'undefined' ? window.innerHeight : 800);
 
-const SNAP_VH = [0, 15, 40, 58, 75, 90];
+const SNAP_VH = [0, 15, 40, 58, 75, 92];
 const getSnaps = () => SNAP_VH.map(v => Math.round(vh() * v / 100));
 
 const SNAP_THRESHOLD_VH = 0.05;
@@ -21,16 +21,18 @@ export function useUniversalSheet(initialSnapVh = 40) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const SNAP_PAGE = Math.round(vh() * 0.90);
+  const SNAP_FULLSCREEN = Math.round(vh() * 0.92);
+  const SNAP_PAGE = SNAP_FULLSCREEN; // alias
   const SNAP_MAX = Math.round(vh() * 0.75);
   const SNAP_MID = Math.round(vh() * 0.58);
   const SNAP_DEFAULT = Math.round(vh() * 0.40);
   const SNAP_PEEK = Math.round(vh() * 0.15);
   const SNAP_MIN = 0;
 
-  const clamp = (v: number) => Math.max(SNAP_MIN, Math.min(SNAP_PAGE, v));
+  const isFullscreen = height >= SNAP_FULLSCREEN - 4;
+  const isPageMode = isFullscreen;
 
-  const isPageMode = height >= SNAP_PAGE - 4;
+  const clamp = (v: number) => Math.max(SNAP_MIN, Math.min(SNAP_FULLSCREEN, v));
 
   const animateTo = useCallback((target: number) => {
     if (sheetRef.current) {
@@ -104,19 +106,20 @@ export function useUniversalSheet(initialSnapVh = 40) {
   useEffect(() => {
     const content = contentRef.current;
     if (!content) return;
-    if (isAtMax || isPageMode) {
+    if (isAtMax || isFullscreen) {
       content.style.overflowY = 'auto';
       content.style.overscrollBehavior = 'contain';
     } else {
       content.style.overflowY = 'hidden';
       content.scrollTop = 0;
     }
-  }, [isAtMax, isPageMode]);
+  }, [isAtMax, isFullscreen]);
 
   return {
     height,
     isAtMax,
     isPageMode,
+    isFullscreen,
     sheetRef,
     contentRef,
     handlers: { onTouchStart, onTouchMove, onTouchEnd },
@@ -125,8 +128,10 @@ export function useUniversalSheet(initialSnapVh = 40) {
     snapMid: () => animateTo(SNAP_MID),
     snapMax: () => animateTo(SNAP_MAX),
     snapPage: () => animateTo(SNAP_PAGE),
+    snapFullscreen: () => animateTo(SNAP_FULLSCREEN),
     snapPeek: () => animateTo(SNAP_PEEK),
     close: () => animateTo(SNAP_MIN),
+    SNAP_FULLSCREEN,
     SNAP_PAGE,
     SNAP_MAX,
     SNAP_MID,
