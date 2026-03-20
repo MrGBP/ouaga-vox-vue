@@ -381,7 +381,7 @@ export default function MobileApp(props: MobileAppProps) {
           </button>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setIsExploring(true)}
+              onClick={() => { setIsExploring(true); sheetRef.current?.close?.(); }}
               style={{
                 width: 34, height: 34, background: '#f0f4ff', border: 'none',
                 borderRadius: '50%', display: 'flex', alignItems: 'center',
