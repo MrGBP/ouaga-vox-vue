@@ -485,7 +485,7 @@ export default function MobileApp(props: MobileAppProps) {
           onBack={handleNavBack}
           onHome={handleNavHome}
           depth={nav.depth}
-          isExploring={sheetHeight <= 10 && navLevel === 3}
+          isExploring={isExploring && navLevel === 3}
         />
       ) : mobileTab === 'home' ? (
         <MobileNavbar level={1} />
