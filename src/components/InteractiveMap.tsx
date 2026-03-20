@@ -125,17 +125,20 @@ const quartierClusterHTML = (name: string, count: number) => `
   </div>
 `;
 
-const propertyPinHTML = (p: Property, focused: boolean) => {
+const propertyPinHTML = (p: Property, focused: boolean, isFav?: boolean) => {
   const ts = getTypeStyle(p.type);
   if (focused) {
     return `
-      <div style="
-        width:32px;height:32px;display:flex;align-items:center;justify-content:center;
-        background:${ts.bg};border:3px solid ${ts.border};border-radius:50%;
-        box-shadow:0 0 0 6px ${ts.border}30,0 0 0 12px ${ts.border}12,0 4px 16px rgba(0,0,0,0.25);
-        animation:pulse 2s infinite;
-      ">
-        <span style="font-size:14px;">${ts.emoji}</span>
+      <div style="position:relative;display:inline-block;">
+        <div style="
+          width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+          background:${ts.bg};border:3px solid ${ts.border};border-radius:50%;
+          box-shadow:0 0 0 6px ${ts.border}30,0 0 0 12px ${ts.border}12,0 4px 16px rgba(0,0,0,0.25);
+          animation:pulse 2s infinite;
+        ">
+          <span style="font-size:14px;">${ts.emoji}</span>
+        </div>
+        ${isFav ? `<div style="position:absolute;top:-4px;right:-4px;width:12px;height:12px;background:#e02d2d;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:7px;line-height:1;">♥</div>` : ''}
       </div>
     `;
   }
@@ -144,14 +147,17 @@ const propertyPinHTML = (p: Property, focused: boolean) => {
   const priceText = effectivePrice >= 1000000 ? `${(effectivePrice/1000000).toFixed(1)}M` : `${Math.round(effectivePrice/1000)}k`;
   const suffix = isFurnished ? '/n' : '';
   return `
-    <div style="
-      display:flex;align-items:center;gap:3px;
-      background:${ts.bg};border:1.5px solid ${ts.border};border-radius:16px;
-      padding:4px 8px 4px 6px;font-family:system-ui,sans-serif;white-space:nowrap;
-      box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:transform 0.15s;
-    ">
-      <span style="font-size:11px;">${ts.emoji}</span>
-      <span style="font-size:10px;font-weight:700;color:${ts.text};">${priceText}${suffix}</span>
+    <div style="position:relative;display:inline-block;">
+      <div style="
+        display:flex;align-items:center;gap:3px;
+        background:${ts.bg};border:1.5px solid ${ts.border};border-radius:16px;
+        padding:4px 8px 4px 6px;font-family:system-ui,sans-serif;white-space:nowrap;
+        box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer;transition:transform 0.15s;
+      ">
+        <span style="font-size:11px;">${ts.emoji}</span>
+        <span style="font-size:10px;font-weight:700;color:${ts.text};">${priceText}${suffix}</span>
+      </div>
+      ${isFav ? `<div style="position:absolute;top:-4px;right:-4px;width:12px;height:12px;background:#e02d2d;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:7px;line-height:1;">♥</div>` : ''}
     </div>
   `;
 };
@@ -349,7 +355,7 @@ const InteractiveMap = ({
       subClusters.forEach((cluster) => {
         if (cluster.length === 1) {
           const p = cluster[0];
-          const icon = L.divIcon({ html: propertyPinHTML(p, false), className: '', iconSize: [100, 28], iconAnchor: [50, 14] });
+          const icon = L.divIcon({ html: propertyPinHTML(p, false, favoriteIds?.has(p.id)), className: '', iconSize: [110, 28], iconAnchor: [55, 14] });
           const m = L.marker([p.latitude, p.longitude], { icon });
           m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
           propertyLayer.current!.addLayer(m);
@@ -369,7 +375,7 @@ const InteractiveMap = ({
     } else {
       const positioned = offsetProperties(qProps);
       positioned.forEach(({ prop, lat, lng }) => {
-        const icon = L.divIcon({ html: propertyPinHTML(prop, false), className: '', iconSize: [100, 28], iconAnchor: [50, 14] });
+        const icon = L.divIcon({ html: propertyPinHTML(prop, false, favoriteIds?.has(prop.id)), className: '', iconSize: [110, 28], iconAnchor: [55, 14] });
         const m = L.marker([lat, lng], { icon });
         const isFurnished = isTypeFurnished(prop.type) || prop.furnished;
         const displayPrice = isFurnished ? pricePerNight(prop.price) : prop.price;
@@ -403,7 +409,7 @@ const InteractiveMap = ({
     }, 900);
 
     // Focused pin
-    const focusIcon = L.divIcon({ html: propertyPinHTML(prop, true), className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
+    const focusIcon = L.divIcon({ html: propertyPinHTML(prop, true, favoriteIds?.has(prop.id)), className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
     L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 }).addTo(focusLayer.current);
 
     // Radius circles

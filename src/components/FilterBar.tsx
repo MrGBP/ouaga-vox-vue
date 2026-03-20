@@ -35,6 +35,7 @@ interface FilterBarProps {
   allProperties?: Property[];
   computeFilteredCount?: (filters: FilterState) => number;
   externalFilters?: FilterState;
+  forceOpen?: boolean;
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -135,6 +136,7 @@ const FilterBar = ({
   onToggleFavoritesView,
   computeFilteredCount,
   externalFilters,
+  forceOpen = false,
 }: FilterBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
@@ -319,6 +321,10 @@ const FilterBar = ({
       </div>
     </div>
   );
+
+  if (forceOpen) {
+    return <div className="w-full">{filterContent}</div>;
+  }
 
   return (
     <div className="w-full mb-4">

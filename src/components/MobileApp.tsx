@@ -171,11 +171,6 @@ const CarouselWithSwipeHint = ({ properties, activeQuartier, favorites, formatDi
             >
               <div className="relative h-[100px]">
                 <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop'} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
-                {isFav && (
-                  <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
-                    <Heart className="h-3 w-3 text-secondary-foreground fill-current" />
-                  </div>
-                )}
               </div>
               <div className="p-2">
                 <p className="text-[11px] font-semibold text-foreground line-clamp-1">{p.title}</p>
@@ -301,6 +296,10 @@ export default function MobileApp(props: MobileAppProps) {
 
   const handlePropertyClick = useCallback((id: string) => {
     props.onPropertyClick(id);
+    // Snap to fullscreen after property opens
+    setTimeout(() => {
+      sheetRef.current?.snapFullscreen?.();
+    }, 120);
   }, [props.onPropertyClick]);
 
   // Navigation handlers
@@ -382,7 +381,7 @@ export default function MobileApp(props: MobileAppProps) {
           </button>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setIsExploring(true)}
+              onClick={() => { setIsExploring(true); sheetRef.current?.close?.(); }}
               style={{
                 width: 34, height: 34, background: '#f0f4ff', border: 'none',
                 borderRadius: '50%', display: 'flex', alignItems: 'center',
@@ -436,7 +435,7 @@ export default function MobileApp(props: MobileAppProps) {
                 const p = props.properties.find(pr => pr.id === id);
                 if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
               }}
-              onExploreOnMap={props.onExploreOnMap}
+              onExploreOnMap={(id) => { props.onExploreOnMap(id); setIsExploring(true); sheetRef.current?.close?.(); }}
               isMobileOverride={true}
             />
           </motion.div>
@@ -759,7 +758,7 @@ export default function MobileApp(props: MobileAppProps) {
 
           {/* "Voir la fiche" button */}
           <button
-            onClick={() => setIsExploring(false)}
+            onClick={() => { setIsExploring(false); sheetRef.current?.snapFullscreen?.(); }}
             style={{
               position: 'fixed', bottom: 'calc(68px + env(safe-area-inset-bottom))',
               left: '50%', transform: 'translateX(-50%)', zIndex: 26,
@@ -803,27 +802,27 @@ export default function MobileApp(props: MobileAppProps) {
       <AnimatePresence>
         {showMobileSearch && (
           <MobileSearchOverlay
-            properties={availableProperties(props.properties) as any}
+            properties={(props.filteredProperties.length > 0 ? props.filteredProperties : props.properties).filter(p => p.status !== 'rented' && p.available !== false) as any}
             onClose={() => setShowMobileSearch(false)}
             onSelectProperty={(id) => {
               const prop = props.properties.find(p => p.id === id);
-              if (prop) {
-                if (props.activeQuartier && prop.quartier !== props.activeQuartier) {
-                  props.onQuartierChange(prop.quartier);
-                } else if (!props.activeQuartier) {
-                  props.onQuartierChange(prop.quartier);
-                }
-                setMobileTab('map');
-                props.onViewDetails(prop);
-                addToRecentlyViewed(prop);
-                nav.push({
-                  screen: 'carte-niveau3',
-                  propertyId: id,
-                  propertyTitle: prop.title,
-                  propertyQuartier: prop.quartier,
-                });
+              if (!prop) { setShowMobileSearch(false); return; }
+              if (prop.quartier !== props.activeQuartier) {
+                props.onQuartierChange(prop.quartier);
               }
+              props.onViewDetails(prop);
+              addToRecentlyViewed(prop);
+              setMobileTab('map');
+              nav.push({
+                screen: 'carte-niveau3',
+                propertyId: id,
+                propertyTitle: prop.title,
+                propertyQuartier: prop.quartier,
+              });
               setShowMobileSearch(false);
+              setTimeout(() => {
+                sheetRef.current?.snapFullscreen?.();
+              }, 200);
             }}
             onSearchSubmit={props.onSearch}
             searchQuery={props.searchQuery}
@@ -857,6 +856,7 @@ export default function MobileApp(props: MobileAppProps) {
             showFavoritesOnly={props.showFavoritesOnly}
             computeFilteredCount={props.computeFilteredCount}
             externalFilters={props.filters}
+            forceOpen={true}
           />
         </div>
       </MobileDraggableDrawer>

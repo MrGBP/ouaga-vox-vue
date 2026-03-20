@@ -430,23 +430,46 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          {property.type === 'bureau' || property.type === 'local_commercial' ? (
-            <Button className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
-              <Phone className="h-4 w-4" /> Contacter l'agent
-            </Button>
-          ) : (
-            <Button onClick={() => setShowReservation(true)} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
-              <Calendar className="h-4 w-4" /> Réserver
-            </Button>
-          )}
-          {onExploreOnMap && (
-            <Button variant="outline" size="icon" onClick={() => onExploreOnMap(property.id)} className="shrink-0 h-10 w-10 hover:bg-muted active:scale-[0.98] transition-all" title="Explorer sur la carte">
-              <Map className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        {/* Actions — sticky bottom for mobile */}
+        {isMobile ? (
+          <div className="sticky bottom-0 left-0 right-0 border-t border-border bg-card px-4 py-3 flex gap-3 -mx-5 -mb-5" style={{ marginLeft: -20, marginRight: -20, marginBottom: -20, paddingLeft: 16, paddingRight: 16 }}>
+            {onExploreOnMap && (
+              <button
+                onClick={() => onExploreOnMap(property.id)}
+                className="flex items-center justify-center gap-2 h-12 px-4 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform flex-shrink-0"
+                style={{ minWidth: 52 }}
+                title="Explorer sur la carte"
+              >
+                <Map className="h-5 w-5" />
+              </button>
+            )}
+            <button
+              onClick={() => setShowReservation(true)}
+              className="flex-1 h-12 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
+            >
+              📅 Réserver · {isFurnished && nightPrice > 0
+                ? `${fmt(nightPrice)} FCFA/nuit`
+                : `${fmt(property.price)} FCFA/mois`}
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            {property.type === 'bureau' || property.type === 'local_commercial' ? (
+              <Button className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
+                <Phone className="h-4 w-4" /> Contacter l'agent
+              </Button>
+            ) : (
+              <Button onClick={() => setShowReservation(true)} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
+                <Calendar className="h-4 w-4" /> Réserver
+              </Button>
+            )}
+            {onExploreOnMap && (
+              <Button variant="outline" size="icon" onClick={() => onExploreOnMap(property.id)} className="shrink-0 h-10 w-10 hover:bg-muted active:scale-[0.98] transition-all" title="Explorer sur la carte">
+                <Map className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* WhatsApp + Callback */}
         <div className="flex gap-2">

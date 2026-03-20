@@ -4,8 +4,10 @@ import { useUniversalSheet } from '@/hooks/useUniversalSheet';
 export interface UniversalSheetHandle {
   animateTo: (target: number) => void;
   snapDefault: () => void;
+  snapFullscreen: () => void;
   close: () => void;
   SNAP_DEFAULT: number;
+  SNAP_FULLSCREEN: number;
 }
 
 interface UniversalSheetProps {
@@ -21,16 +23,18 @@ const BOTTOM_NAV_H = 56;
 export const UniversalSheet = forwardRef<UniversalSheetHandle, UniversalSheetProps>(
   ({ children, initialSnapVh = 40, sheetKey, headerContent, onHeightChange }, ref) => {
     const {
-      height, isAtMax, isPageMode, sheetRef, contentRef,
-      handlers, animateTo, snapDefault, close, SNAP_DEFAULT,
+      height, isAtMax, isFullscreen, sheetRef, contentRef,
+      handlers, animateTo, snapDefault, snapFullscreen, close, SNAP_DEFAULT, SNAP_FULLSCREEN,
     } = useUniversalSheet(initialSnapVh);
 
     useImperativeHandle(ref, () => ({
       animateTo,
       snapDefault,
+      snapFullscreen,
       close,
       SNAP_DEFAULT,
-    }), [animateTo, snapDefault, close, SNAP_DEFAULT]);
+      SNAP_FULLSCREEN,
+    }), [animateTo, snapDefault, snapFullscreen, close, SNAP_DEFAULT, SNAP_FULLSCREEN]);
 
     useEffect(() => {
       onHeightChange?.(height);
@@ -49,7 +53,7 @@ export const UniversalSheet = forwardRef<UniversalSheetHandle, UniversalSheetPro
           boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
           willChange: 'height',
           touchAction: 'none',
-          borderRadius: isPageMode ? 0 : '20px 20px 0 0',
+          borderRadius: isFullscreen ? 0 : '20px 20px 0 0',
           transition: 'border-radius 200ms ease',
         }}
       >
@@ -74,17 +78,17 @@ export const UniversalSheet = forwardRef<UniversalSheetHandle, UniversalSheetPro
           </div>
         )}
 
-        {/* Content — scrollable at max or page mode */}
+        {/* Content — scrollable at max or fullscreen */}
         <div className="relative flex-1 min-h-0">
           <div
             ref={contentRef}
-            className={`h-full ${isAtMax ? 'overflow-y-auto' : 'overflow-hidden'}`}
+            className={`h-full ${(isAtMax || isFullscreen) ? 'overflow-y-auto' : 'overflow-hidden'}`}
             style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
           >
             {children}
           </div>
           {/* Gradient fade indicator */}
-          {!isAtMax && (
+          {!isAtMax && !isFullscreen && (
             <div
               className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
               style={{ background: 'linear-gradient(to bottom, transparent, hsl(var(--card)))' }}

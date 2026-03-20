@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { mockProperties, mockPois, mockQuartiers, isTypeFurnished, pricePerNight, getTypeLabel, CHAR_CHECKS, IDX_KEYWORD_MAP } from '@/lib/mockData';
-import { useVoiceSynthesis } from '@/hooks/useVoiceSynthesis';
+
 import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNav } from '@/contexts/NavigationContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileApp from '@/components/MobileApp';
-import VoiceSearch from '@/components/VoiceSearch';
+
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
@@ -125,7 +125,7 @@ const Index = () => {
   const nav = useNav();
 
   const { toast } = useToast();
-  const { speak } = useVoiceSynthesis();
+  
 
   useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { fetchData(); }, []);
@@ -245,10 +245,8 @@ const Index = () => {
       localStorage.setItem('sapsap_recent_searches', JSON.stringify(updated));
     } catch {}
     if (filtered.length > 0) {
-      speak(`J'ai trouvé ${filtered.length} résultat${filtered.length > 1 ? 's' : ''} pour "${query}".`);
       toast({ title: '🔍 Résultats', description: `${filtered.length} bien(s) trouvé(s)` });
     } else {
-      speak("Aucun bien ne correspond à votre recherche.");
       toast({ title: 'Aucun résultat', description: 'Élargissez votre recherche.', variant: 'destructive' });
     }
   };
@@ -351,7 +349,7 @@ const Index = () => {
     setCurrentPage(1);
     setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
     setMapQuartierTrigger(q.name);
-    speak(`Voici les biens disponibles dans le quartier ${q.name}`);
+    
     if (!isMobile) document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -496,7 +494,23 @@ const Index = () => {
             </p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25 }} className="mt-8 w-full" style={{ maxWidth: '605px' }}>
-            <VoiceSearch onSearchQuery={handleSearch} searchQuery={searchQuery} onSearchQueryChange={setSearchQuery} />
+            <div className="relative w-full" style={{ maxWidth: 605 }}>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
+                placeholder="Rechercher un bien, un quartier, un type..."
+                className="w-full h-14 rounded-full bg-card/95 pl-6 pr-36 text-foreground text-base outline-none shadow-lg focus:ring-2 focus:ring-primary/30"
+                style={{ fontSize: 16 }}
+              />
+              <button
+                onClick={() => handleSearch(searchQuery)}
+                className="absolute right-2 top-2 h-10 px-6 bg-secondary text-secondary-foreground rounded-full text-sm font-semibold active:scale-[0.97] transition-transform"
+              >
+                Chercher
+              </button>
+            </div>
             {idxTags.length > 0 && (
               <div className="flex gap-2 flex-wrap justify-center mt-3">
                 {idxTags.map(tag => (

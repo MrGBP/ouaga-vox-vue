@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Clock, TrendingUp } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { getTypeLabel, getTypeEmoji } from '@/lib/mockData';
 
 interface Property {
@@ -30,13 +30,6 @@ const TYPEWRITER_PHRASES = [
   "Local commercial moins de 150 000 FCFA à Pissy...",
   "Studio meublé wifi à Patte d'Oie...",
   "Villa avec piscine et clôture à Ouaga 2000...",
-];
-
-const POPULAR_SEARCHES = [
-  "Villa meublée Ouaga 2000",
-  "Studio meublé Tampouy",
-  "Bureau centre-ville",
-  "Appartement 2 chambres",
 ];
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
@@ -112,7 +105,7 @@ const MobileSearchOverlay = ({
             p.price.toString().includes(q)
           );
         })
-        .slice(0, 6)
+        .slice(0, 8)
     : [];
 
   const handleSelect = (id: string) => {
@@ -127,8 +120,6 @@ const MobileSearchOverlay = ({
     }
   };
 
-  const recentSearches = JSON.parse(localStorage.getItem('sapsap_recent_searches') || '[]').slice(0, 2);
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -137,13 +128,8 @@ const MobileSearchOverlay = ({
       className="fixed inset-0 z-[99]"
       style={{ bottom: kbHeight > 0 ? 0 : undefined }}
     >
-      {/* Semi-transparent overlay on map */}
-      <div
-        className="absolute inset-0 bg-foreground/45"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-foreground/45" onClick={onClose} />
 
-      {/* Search panel */}
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
@@ -155,12 +141,10 @@ const MobileSearchOverlay = ({
           maxHeight: '70vh',
         }}
       >
-        {/* Handle */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
 
-        {/* Search input */}
         <div className="px-4 pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -172,9 +156,8 @@ const MobileSearchOverlay = ({
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               placeholder=""
               className="w-full h-11 rounded-full bg-muted border-none pl-10 pr-10 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-              style={{ fontSize: 16 }} // Prevent iOS zoom
+              style={{ fontSize: 16 }}
             />
-            {/* Typewriter placeholder */}
             {typewriterActive && (
               <span className="absolute left-10 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/60 pointer-events-none">
                 {typewriterText}
@@ -193,7 +176,6 @@ const MobileSearchOverlay = ({
         </div>
 
         <div className="px-4 pb-4 overflow-y-auto scrollable" style={{ maxHeight: 'calc(70vh - 100px)' }}>
-          {/* Fuzzy results */}
           {fuzzyResults.length > 0 ? (
             <div className="space-y-1">
               {fuzzyResults.map(p => (
@@ -213,54 +195,12 @@ const MobileSearchOverlay = ({
           ) : searchQuery.trim().length > 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">Aucun résultat pour "{searchQuery}"</p>
           ) : (
-            <>
-              {/* Popular searches */}
-              <div className="mb-4">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <TrendingUp className="h-3 w-3" /> Recherches populaires
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {POPULAR_SEARCHES.map(s => (
-                    <button
-                      key={s}
-                      onClick={() => { onSearchQueryChange(s); }}
-                      className="px-3 py-1.5 rounded-full bg-muted text-xs font-medium text-foreground active:scale-[0.97] transition-transform"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent searches */}
-              {recentSearches.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Clock className="h-3 w-3" /> Récents
-                  </h4>
-                  <div className="space-y-1">
-                    {recentSearches.map((s: string, i: number) => (
-                      <button
-                        key={i}
-                        onClick={() => onSearchQueryChange(s)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors text-left"
-                      >
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Filter button */}
-              <button
-                onClick={onOpenFilters}
-                className="w-full mt-4 py-3 rounded-xl bg-muted text-sm font-medium text-foreground flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-              >
-                ⚙️ Filtres avancés
-              </button>
-            </>
+            <button
+              onClick={onOpenFilters}
+              className="w-full mt-2 py-3 rounded-xl bg-muted text-sm font-medium text-foreground flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            >
+              ⚙️ Filtres avancés
+            </button>
           )}
         </div>
       </motion.div>
