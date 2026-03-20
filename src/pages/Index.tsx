@@ -10,7 +10,7 @@ import { useNav } from '@/contexts/NavigationContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileApp from '@/components/MobileApp';
-import VoiceSearch from '@/components/VoiceSearch';
+
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
