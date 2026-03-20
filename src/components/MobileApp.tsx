@@ -725,8 +725,57 @@ export default function MobileApp(props: MobileAppProps) {
         )}
       </AnimatePresence>
 
-      {/* ═══ MAP TAB — Universal Sheet ═══ */}
-      {mobileTab === 'map' && (props.activeQuartier || props.detailProperty) && (
+      {/* ═══ IMMERSIVE EXPLORE OVERLAY ═══ */}
+      {isExploring && navLevel === 3 && props.detailProperty && (
+        <>
+          {/* Property info at bottom */}
+          <div
+            className="fixed left-3 right-3 z-[25] flex items-center justify-between"
+            style={{ bottom: 'calc(108px + env(safe-area-inset-bottom))' }}
+          >
+            <div className="flex-1 min-w-0">
+              <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary mb-1">
+                {getTypeLabel(props.detailProperty.type)}
+              </span>
+              <p className="text-sm font-bold text-foreground truncate">
+                {props.detailProperty.title}
+              </p>
+              <p className="text-xs font-semibold text-primary">
+                {(() => {
+                  const dp = formatDisplayPrice(props.detailProperty!);
+                  return dp.nightPrice ? `${dp.nightPrice} FCFA/nuit` : `${dp.price} FCFA/mois`;
+                })()}
+              </p>
+            </div>
+            <button
+              onClick={() => props.onToggleFavorite(props.detailProperty!.id)}
+              style={{ width: 36, height: 36, background: '#f0f4ff', border: 'none', borderRadius: 10, fontSize: 16, cursor: 'pointer' }}
+            >
+              {props.favorites.has(props.detailProperty.id) ? '❤️' : '🤍'}
+            </button>
+          </div>
+
+          {/* "Voir la fiche" button */}
+          <button
+            onClick={() => setIsExploring(false)}
+            style={{
+              position: 'fixed', bottom: 'calc(68px + env(safe-area-inset-bottom))',
+              left: '50%', transform: 'translateX(-50%)', zIndex: 26,
+              background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)', border: '0.5px solid #e5e7eb',
+              borderRadius: 9999, padding: '9px 20px', fontSize: 13, fontWeight: 600,
+              color: '#1a3560', display: 'flex', alignItems: 'center', gap: 7,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)', cursor: 'pointer',
+            }}
+          >
+            <ChevronUp size={16} />
+            Voir la fiche
+          </button>
+        </>
+      )}
+
+      {/* ═══ MAP TAB — Universal Sheet (hidden in explore mode) ═══ */}
+      {mobileTab === 'map' && (props.activeQuartier || props.detailProperty) && !isExploring && (
         <UniversalSheet
           ref={sheetRef}
           sheetKey={`map-${navLevel}-${props.activeQuartier || ''}-${props.detailProperty?.id || ''}`}
@@ -736,25 +785,6 @@ export default function MobileApp(props: MobileAppProps) {
         >
           {getSheetContent()}
         </UniversalSheet>
-      )}
-
-      {/* ═══ FLOATING "VOIR LES INFOS" BUTTON (explore mode) ═══ */}
-      {sheetHeight <= 10 && navLevel === 3 && mobileTab === 'map' && (
-        <button
-          onClick={() => sheetRef.current?.snapDefault()}
-          style={{
-            position: 'fixed', bottom: 'calc(68px + env(safe-area-inset-bottom))',
-            left: '50%', transform: 'translateX(-50%)', zIndex: 40,
-            background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)', border: '0.5px solid #e5e7eb',
-            borderRadius: 9999, padding: '10px 20px', fontSize: 13, fontWeight: 600,
-            color: '#1a3560', display: 'flex', alignItems: 'center', gap: 8,
-            boxShadow: '0 6px 20px rgba(0,0,0,0.15)', cursor: 'pointer',
-          }}
-        >
-          <ChevronUp size={16} />
-          Voir les infos
-        </button>
       )}
 
       {/* Floating AI button */}
