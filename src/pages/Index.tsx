@@ -125,7 +125,7 @@ const Index = () => {
   const nav = useNav();
 
   const { toast } = useToast();
-  const { speak } = useVoiceSynthesis();
+  
 
   useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { fetchData(); }, []);
