@@ -207,6 +207,7 @@ export default function MobileApp(props: MobileAppProps) {
   const [sheetHeight, setSheetHeight] = useState(0);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isExploring, setIsExploring] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageTransition, setPageTransition] = useState(false);
   const sheetRef = useRef<UniversalSheetHandle>(null);

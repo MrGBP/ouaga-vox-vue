@@ -74,13 +74,22 @@ export const UniversalSheet = forwardRef<UniversalSheetHandle, UniversalSheetPro
           </div>
         )}
 
-        {/* Content — draggable from top, scrollable at max or page mode */}
-        <div
-          ref={contentRef}
-          className={`flex-1 min-h-0 ${isAtMax ? 'overflow-y-auto' : 'overflow-hidden'}`}
-          style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
-        >
-          {children}
+        {/* Content — scrollable at max or page mode */}
+        <div className="relative flex-1 min-h-0">
+          <div
+            ref={contentRef}
+            className={`h-full ${isAtMax ? 'overflow-y-auto' : 'overflow-hidden'}`}
+            style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
+          >
+            {children}
+          </div>
+          {/* Gradient fade indicator */}
+          {!isAtMax && (
+            <div
+              className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
+              style={{ background: 'linear-gradient(to bottom, transparent, hsl(var(--card)))' }}
+            />
+          )}
         </div>
       </div>
     );
