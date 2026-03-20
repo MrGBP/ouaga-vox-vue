@@ -40,6 +40,17 @@ interface Property {
   has_garden?: boolean;
   has_water?: boolean;
   has_internet?: boolean;
+  has_kitchen?: boolean;
+  has_fridge?: boolean;
+  has_tv?: boolean;
+  has_terrace?: boolean;
+  has_pool?: boolean;
+  has_parking_int?: boolean;
+  has_parking_ext?: boolean;
+  has_fence?: boolean;
+  has_cameras?: boolean;
+  has_paved_road?: boolean;
+  has_water_tower?: boolean;
   status?: string;
   agent_name?: string;
   agent_phone?: string;
