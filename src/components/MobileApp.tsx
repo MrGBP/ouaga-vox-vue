@@ -435,7 +435,7 @@ export default function MobileApp(props: MobileAppProps) {
                 const p = props.properties.find(pr => pr.id === id);
                 if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
               }}
-              onExploreOnMap={props.onExploreOnMap}
+              onExploreOnMap={(id) => { props.onExploreOnMap(id); setIsExploring(true); sheetRef.current?.close?.(); }}
               isMobileOverride={true}
             />
           </motion.div>
