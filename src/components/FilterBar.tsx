@@ -35,6 +35,7 @@ interface FilterBarProps {
   allProperties?: Property[];
   computeFilteredCount?: (filters: FilterState) => number;
   externalFilters?: FilterState;
+  forceOpen?: boolean;
 }
 
 export const DEFAULT_FILTERS: FilterState = {
