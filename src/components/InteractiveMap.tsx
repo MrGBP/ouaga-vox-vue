@@ -409,7 +409,7 @@ const InteractiveMap = ({
     }, 900);
 
     // Focused pin
-    const focusIcon = L.divIcon({ html: propertyPinHTML(prop, true), className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
+    const focusIcon = L.divIcon({ html: propertyPinHTML(prop, true, favoriteIds?.has(prop.id)), className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
     L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 }).addTo(focusLayer.current);
 
     // Radius circles
