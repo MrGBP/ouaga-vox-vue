@@ -316,12 +316,17 @@ const PropertyDetailPanel = ({
           </div>
         </div>
 
-        {/* Features — 4 visible + see more */}
-        {features.length > 0 && (
+        {/* Section: Essentiel */}
+        {essentialFeatures.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Caractéristiques</h4>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <Maximize className="h-3 w-3 text-primary" />
+              </div>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Essentiel</h4>
+            </div>
             <div className="grid grid-cols-4 gap-2">
-              {features.slice(0, showAllFeatures ? features.length : 4).map((f, i) => (
+              {essentialFeatures.map((f, i) => (
                 <div key={i} className="flex flex-col items-center bg-muted/50 rounded-lg p-2 text-center">
                   <f.icon className="h-4 w-4 text-primary mb-0.5" />
                   <span className="text-xs font-bold text-foreground">{f.value}</span>
@@ -329,11 +334,44 @@ const PropertyDetailPanel = ({
                 </div>
               ))}
             </div>
-            {features.length > 4 && (
-              <button onClick={() => setShowAllFeatures(!showAllFeatures)} className="text-xs text-primary font-medium mt-1 hover:underline">
-                {showAllFeatures ? 'Voir moins' : `+${features.length - 4} autres caractéristiques`}
-              </button>
-            )}
+          </div>
+        )}
+
+        {/* Section: Équipements */}
+        {equipmentFeatures.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-accent/30 flex items-center justify-center">
+                <Zap className="h-3 w-3 text-accent-foreground" />
+              </div>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Équipements</h4>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {equipmentFeatures.map((f, i) => (
+                <span key={i} className="inline-flex items-center gap-1 bg-muted/50 rounded-full px-2.5 py-1 text-xs text-foreground">
+                  {f.emoji} {f.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Section: Sécurité & Accès */}
+        {securityFeatures.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <Shield className="h-3 w-3 text-primary" />
+              </div>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Sécurité & Accès</h4>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {securityFeatures.map((f, i) => (
+                <span key={i} className="inline-flex items-center gap-1 bg-muted/50 rounded-full px-2.5 py-1 text-xs text-foreground">
+                  {f.emoji} {f.label}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
