@@ -802,27 +802,27 @@ export default function MobileApp(props: MobileAppProps) {
       <AnimatePresence>
         {showMobileSearch && (
           <MobileSearchOverlay
-            properties={availableProperties(props.properties) as any}
+            properties={(props.filteredProperties.length > 0 ? props.filteredProperties : props.properties).filter(p => p.status !== 'rented' && p.available !== false) as any}
             onClose={() => setShowMobileSearch(false)}
             onSelectProperty={(id) => {
               const prop = props.properties.find(p => p.id === id);
-              if (prop) {
-                if (props.activeQuartier && prop.quartier !== props.activeQuartier) {
-                  props.onQuartierChange(prop.quartier);
-                } else if (!props.activeQuartier) {
-                  props.onQuartierChange(prop.quartier);
-                }
-                setMobileTab('map');
-                props.onViewDetails(prop);
-                addToRecentlyViewed(prop);
-                nav.push({
-                  screen: 'carte-niveau3',
-                  propertyId: id,
-                  propertyTitle: prop.title,
-                  propertyQuartier: prop.quartier,
-                });
+              if (!prop) { setShowMobileSearch(false); return; }
+              if (prop.quartier !== props.activeQuartier) {
+                props.onQuartierChange(prop.quartier);
               }
+              props.onViewDetails(prop);
+              addToRecentlyViewed(prop);
+              setMobileTab('map');
+              nav.push({
+                screen: 'carte-niveau3',
+                propertyId: id,
+                propertyTitle: prop.title,
+                propertyQuartier: prop.quartier,
+              });
               setShowMobileSearch(false);
+              setTimeout(() => {
+                sheetRef.current?.snapFullscreen?.();
+              }, 200);
             }}
             onSearchSubmit={props.onSearch}
             searchQuery={props.searchQuery}
