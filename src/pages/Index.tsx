@@ -377,7 +377,7 @@ const Index = () => {
   const similarProperties = detailProperty
     ? availableProperties(properties).filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
     : [];
-  const mapProperties = availableProperties(filteredProperties);
+  const mapProperties = useMemo(() => availableProperties(filteredProperties), [filteredProperties, availableProperties]);
 
   // Pagination
   const displayProperties = availableProperties(filteredProperties);
