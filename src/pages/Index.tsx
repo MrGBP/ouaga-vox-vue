@@ -335,6 +335,8 @@ const Index = () => {
       });
     } else {
       setFocusedPropertyId(id);
+      setDetailProperty(prop);
+      setActiveQuartier(prop.quartier);
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
