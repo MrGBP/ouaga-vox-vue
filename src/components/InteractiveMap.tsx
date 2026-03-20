@@ -355,7 +355,7 @@ const InteractiveMap = ({
       subClusters.forEach((cluster) => {
         if (cluster.length === 1) {
           const p = cluster[0];
-          const icon = L.divIcon({ html: propertyPinHTML(p, false), className: '', iconSize: [100, 28], iconAnchor: [50, 14] });
+          const icon = L.divIcon({ html: propertyPinHTML(p, false, favoriteIds?.has(p.id)), className: '', iconSize: [110, 28], iconAnchor: [55, 14] });
           const m = L.marker([p.latitude, p.longitude], { icon });
           m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
           propertyLayer.current!.addLayer(m);
