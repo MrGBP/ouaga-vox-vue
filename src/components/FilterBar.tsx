@@ -136,6 +136,7 @@ const FilterBar = ({
   onToggleFavoritesView,
   computeFilteredCount,
   externalFilters,
+  forceOpen = false,
 }: FilterBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
