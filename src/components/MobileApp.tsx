@@ -171,11 +171,6 @@ const CarouselWithSwipeHint = ({ properties, activeQuartier, favorites, formatDi
             >
               <div className="relative h-[100px]">
                 <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop'} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
-                {isFav && (
-                  <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
-                    <Heart className="h-3 w-3 text-secondary-foreground fill-current" />
-                  </div>
-                )}
               </div>
               <div className="p-2">
                 <p className="text-[11px] font-semibold text-foreground line-clamp-1">{p.title}</p>
