@@ -128,6 +128,8 @@ export interface MobileAppProps {
 }
 
 const ITEMS_PER_PAGE = 25;
+const INITIAL_VISIBLE = 6;
+const LOAD_MORE_INCREMENT = 6;
 
 // Carousel with first-visit swipe hint animation
 const CarouselWithSwipeHint = ({ properties, activeQuartier, favorites, formatDisplayPrice, onPropertyClick }: {
