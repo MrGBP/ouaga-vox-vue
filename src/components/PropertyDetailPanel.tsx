@@ -219,8 +219,27 @@ const PropertyDetailPanel = ({
         </div>
       )}
 
-      {/* ── Media Slider ── */}
-      <div className="relative h-56 bg-muted overflow-hidden">
+      {/* ── Media Slider — swipe only on mobile, arrows on desktop ── */}
+      <div
+        className="relative h-56 bg-muted overflow-hidden touch-pan-y"
+        onTouchStart={(e) => {
+          (e.currentTarget as any)._touchStartX = e.touches[0].clientX;
+          (e.currentTarget as any)._touchStartY = e.touches[0].clientY;
+        }}
+        onTouchEnd={(e) => {
+          const startX = (e.currentTarget as any)._touchStartX;
+          const startY = (e.currentTarget as any)._touchStartY;
+          if (startX == null) return;
+          const endX = e.changedTouches[0].clientX;
+          const endY = e.changedTouches[0].clientY;
+          const dx = endX - startX;
+          const dy = endY - startY;
+          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) && mediaItems.length > 1) {
+            if (dx < 0) setMediaIdx(i => (i + 1) % mediaItems.length);
+            else setMediaIdx(i => (i - 1 + mediaItems.length) % mediaItems.length);
+          }
+        }}
+      >
         {currentMedia?.type === 'video' ? (
           <video
             ref={videoRef}
@@ -235,8 +254,8 @@ const PropertyDetailPanel = ({
           <img src={currentMedia?.url || images[0]} alt={property.title} className="w-full h-full object-cover" />
         )}
 
-        {/* Navigation arrows */}
-        {mediaItems.length > 1 && (
+        {/* Desktop arrows (hidden on mobile) */}
+        {mediaItems.length > 1 && !isMobile && (
           <>
             <button onClick={() => setMediaIdx(i => (i - 1 + mediaItems.length) % mediaItems.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow hover:bg-card active:scale-95 transition-all">
               <ChevronLeft className="h-4 w-4" />
@@ -247,12 +266,12 @@ const PropertyDetailPanel = ({
           </>
         )}
 
-        {/* Dots */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-          {mediaItems.map((_, i) => (
-            <button key={i} onClick={() => setMediaIdx(i)} className={`rounded-full transition-all ${i === mediaIdx ? 'bg-card w-3 h-1.5' : 'bg-card/60 w-1.5 h-1.5'}`} />
-          ))}
-        </div>
+        {/* Subtle counter (no dots) */}
+        {mediaItems.length > 1 && (
+          <div className="absolute bottom-2 right-2 bg-foreground/55 text-card text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-sm">
+            {mediaIdx + 1} / {mediaItems.length}
+          </div>
+        )}
 
         {/* Video badge */}
         {currentMedia?.type === 'video' && (
