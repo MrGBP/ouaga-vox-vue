@@ -162,26 +162,23 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const [paymentType, setPaymentType] = useState<'partial' | 'full'>('partial');
   const { toast } = useToast();
 
-  // Demo calendar statuses: reserved, pending, available
-  const { bookedDates, pendingDates, availableDates } = useMemo(() => {
+  // Demo calendar statuses: reserved, available
+  const { bookedDates, availableDates } = useMemo(() => {
     const booked = new Set<string>();
-    const pending = new Set<string>();
     const available = new Set<string>();
     const now = new Date();
     const y = now.getFullYear();
     const m = now.getMonth();
     // Days 1-5 reserved
     for (let d = 1; d <= 5; d++) booked.add(new Date(y, m, d).toISOString().split('T')[0]);
-    // Days 8-10 pending
-    for (let d = 8; d <= 10; d++) pending.add(new Date(y, m, d).toISOString().split('T')[0]);
-    // Days 12-20 available
-    for (let d = 12; d <= 20; d++) available.add(new Date(y, m, d).toISOString().split('T')[0]);
+    // Days 8-20 available
+    for (let d = 8; d <= 20; d++) available.add(new Date(y, m, d).toISOString().split('T')[0]);
     // Days 21-23 reserved
     for (let d = 21; d <= 23; d++) booked.add(new Date(y, m, d).toISOString().split('T')[0]);
     // Days 25+ available
     const lastDay = new Date(y, m + 1, 0).getDate();
     for (let d = 25; d <= lastDay; d++) available.add(new Date(y, m, d).toISOString().split('T')[0]);
-    return { bookedDates: booked, pendingDates: pending, availableDates: available };
+    return { bookedDates: booked, availableDates: available };
   }, []);
 
   const isSameDay = (a: Date, b: Date) => a.toISOString().split('T')[0] === b.toISOString().split('T')[0];
