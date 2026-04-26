@@ -40,45 +40,60 @@ const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juill
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 // Simple calendar component
-const MiniCalendar = ({ 
-  month, year, 
-  checkIn, checkOut, 
+const MiniCalendar = ({
+  month, year,
+  checkIn, checkOut,
   bookedDates,
-  pendingDates,
   onSelectDate,
-  onPrevMonth, onNextMonth 
+  onPrevMonth, onNextMonth
 }: {
   month: number; year: number;
   checkIn: Date | null; checkOut: Date | null;
   bookedDates: Set<string>;
-  pendingDates?: Set<string>;
   onSelectDate: (d: Date) => void;
   onPrevMonth: () => void; onNextMonth: () => void;
 }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const startDay = (firstDay.getDay() + 6) % 7; // Monday = 0
-  
+
   const days: (Date | null)[] = [];
   for (let i = 0; i < startDay; i++) days.push(null);
   for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
 
   const dateKey = (d: Date) => d.toISOString().split('T')[0];
-  
+
   const isInRange = (d: Date) => {
     if (!checkIn || !checkOut) return false;
     return d >= checkIn && d <= checkOut;
   };
 
+  // Disable previous-month navigation if it would go into the past
+  const canGoBack = (() => {
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
+    const lastOfPrev = new Date(prevYear, prevMonth + 1, 0);
+    return lastOfPrev >= today;
+  })();
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <button onClick={onPrevMonth} className="p-1 rounded hover:bg-muted"><ChevronLeft className="h-4 w-4" /></button>
+        <button
+          onClick={onPrevMonth}
+          disabled={!canGoBack}
+          className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Mois précédent"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
         <span className="text-sm font-semibold text-foreground">{MONTHS_FR[month]} {year}</span>
-        <button onClick={onNextMonth} className="p-1 rounded hover:bg-muted"><ChevronRight className="h-4 w-4" /></button>
+        <button onClick={onNextMonth} className="p-1 rounded hover:bg-muted" aria-label="Mois suivant">
+          <ChevronRight className="h-4 w-4" />
+        </button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center">
         {DAYS_FR.map(d => (
@@ -89,12 +104,11 @@ const MiniCalendar = ({
           const key = dateKey(day);
           const isPast = day < today;
           const isBooked = bookedDates.has(key);
-          const isPending = pendingDates?.has(key) || false;
-          const isDisabled = isPast || isBooked || isPending;
+          const isDisabled = isPast || isBooked;
           const isCheckIn = checkIn && dateKey(day) === dateKey(checkIn);
           const isCheckOut = checkOut && dateKey(day) === dateKey(checkOut);
           const inRange = isInRange(day);
-          
+
           let cellStyle: React.CSSProperties = {};
           let classes = 'w-8 h-8 rounded-md text-xs font-medium transition-colors ';
 
@@ -104,18 +118,15 @@ const MiniCalendar = ({
             classes += 'bg-primary/15 text-primary';
           } else if (isPast) {
             cellStyle = { background: '#f3f4f6' };
-            classes += 'text-muted-foreground/50 cursor-not-allowed';
+            classes += 'text-muted-foreground/40 cursor-not-allowed line-through';
           } else if (isBooked) {
             cellStyle = { background: '#fee2e2' };
             classes += 'text-destructive/70 cursor-not-allowed';
-          } else if (isPending) {
-            cellStyle = { background: '#fef3c7' };
-            classes += 'text-yellow-700/70 cursor-not-allowed';
           } else {
             cellStyle = { background: '#d1fae5' };
             classes += 'hover:bg-primary/10 cursor-pointer';
           }
-          
+
           return (
             <button
               key={i}
@@ -123,16 +134,16 @@ const MiniCalendar = ({
               onClick={() => !isDisabled && onSelectDate(day)}
               className={classes}
               style={cellStyle}
+              aria-label={day.toLocaleDateString('fr-FR')}
             >
               {day.getDate()}
             </button>
           );
         })}
       </div>
-      <div className="flex gap-3 mt-3 text-[10px] text-muted-foreground">
+      <div className="flex gap-3 mt-3 text-[10px] text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#d1fae5', border: '1px solid #86efac' }} /> Disponible</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#fee2e2', border: '1px solid #fca5a5' }} /> Réservé</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#fef3c7', border: '1px solid #fcd34d' }} /> En attente</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#f3f4f6', border: '1px solid #d1d5db' }} /> Passé</span>
       </div>
     </div>
