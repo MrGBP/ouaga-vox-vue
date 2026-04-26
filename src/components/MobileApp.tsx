@@ -128,6 +128,8 @@ export interface MobileAppProps {
 }
 
 const ITEMS_PER_PAGE = 25;
+const INITIAL_VISIBLE = 6;
+const LOAD_MORE_INCREMENT = 6;
 
 // Carousel with first-visit swipe hint animation
 const CarouselWithSwipeHint = ({ properties, activeQuartier, favorites, formatDisplayPrice, onPropertyClick }: {
@@ -205,6 +207,8 @@ export default function MobileApp(props: MobileAppProps) {
   const [isExploring, setIsExploring] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageTransition, setPageTransition] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [pinPreview, setPinPreview] = useState<Property | null>(null);
   const sheetRef = useRef<UniversalSheetHandle>(null);
 
   // Body scroll lock when filters or search open
@@ -216,6 +220,9 @@ export default function MobileApp(props: MobileAppProps) {
     }
     return () => { document.body.style.overflow = ''; };
   }, [showMobileFilters, showMobileSearch]);
+
+  // Reset visible count when filters change
+  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [props.filteredProperties.length]);
 
   // Sync navigation context → visual states (swipe back / Android back)
   useEffect(() => {
@@ -295,15 +302,31 @@ export default function MobileApp(props: MobileAppProps) {
   }, [props.onFocusClear]);
 
   const handlePropertyClick = useCallback((id: string) => {
+    // On map tab → show preview first instead of full sheet
+    const prop = props.properties.find(p => p.id === id);
+    if (prop && mobileTab === 'map') {
+      setPinPreview(prop);
+      return;
+    }
     props.onPropertyClick(id);
-    // Snap to fullscreen after property opens
     setTimeout(() => {
       sheetRef.current?.snapFullscreen?.();
     }, 120);
-  }, [props.onPropertyClick]);
+  }, [props.onPropertyClick, props.properties, mobileTab]);
+
+  const openFullDetailFromPreview = useCallback(() => {
+    if (!pinPreview) return;
+    const id = pinPreview.id;
+    setPinPreview(null);
+    props.onPropertyClick(id);
+    setTimeout(() => {
+      sheetRef.current?.snapFullscreen?.();
+    }, 120);
+  }, [pinPreview, props.onPropertyClick]);
 
   // Navigation handlers
   const handleNavBack = () => {
+    setPinPreview(null);
     if (isExploring) { setIsExploring(false); return; }
     if (navLevel === 3) {
       props.onDetailClose();
@@ -315,6 +338,7 @@ export default function MobileApp(props: MobileAppProps) {
   };
 
   const handleNavHome = () => {
+    setPinPreview(null);
     props.onDetailClose();
     props.onFocusClear();
     props.onQuartierChange(null);
@@ -413,7 +437,10 @@ export default function MobileApp(props: MobileAppProps) {
               activeQuartier={props.activeQuartier}
               favorites={props.favorites}
               formatDisplayPrice={formatDisplayPrice}
-              onPropertyClick={props.onPropertyClick}
+              onPropertyClick={(id) => {
+                const p = props.properties.find(pr => pr.id === id);
+                if (p) setPinPreview(p);
+              }}
             />
           </motion.div>
         </AnimatePresence>
@@ -522,21 +549,28 @@ export default function MobileApp(props: MobileAppProps) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => setShowMobileFilters(true)}
-                  className="inline-flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2 text-sm font-medium text-foreground active:scale-[0.98] transition-all shadow-sm"
+                  aria-label="Filtres"
+                  title="Filtres"
+                  className="inline-flex items-center justify-center bg-card border border-border rounded-full w-10 h-10 text-foreground active:scale-[0.98] transition-all shadow-sm"
                 >
-                  <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
-                  ⚙️ Filtres
+                  <SlidersHorizontal className="h-4 w-4 text-primary" />
                 </button>
                 <button
                   onClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-all border active:scale-[0.98] ${
+                  aria-label="Favoris"
+                  title="Favoris"
+                  className={`relative inline-flex items-center justify-center rounded-full w-10 h-10 transition-all border active:scale-[0.98] ${
                     props.showFavoritesOnly
                       ? 'bg-secondary text-secondary-foreground border-secondary'
                       : 'bg-card text-muted-foreground border-border'
                   }`}
                 >
-                  <Heart className={`h-3.5 w-3.5 ${props.showFavoritesOnly ? 'fill-current' : ''}`} />
-                  ❤️ Favoris {props.favorites.size > 0 && `(${props.favorites.size})`}
+                  <Heart className={`h-4 w-4 ${props.showFavoritesOnly ? 'fill-current' : ''}`} />
+                  {props.favorites.size > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold flex items-center justify-center">
+                      {props.favorites.size}
+                    </span>
+                  )}
                 </button>
               </div>
               {/* IDX Tags */}
@@ -588,21 +622,24 @@ export default function MobileApp(props: MobileAppProps) {
                   <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
                 </span>
               </div>
-              {paginatedProperties.length > 0 ? (
+              {displayProperties.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 gap-4">
-                    {paginatedProperties.map(p => (
+                    {displayProperties.slice(0, visibleCount).map(p => (
                       <PropertyCard key={p.id} property={p as any} onViewDetails={props.onViewDetails as any} isFavorite={props.favorites.has(p.id)} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
                     ))}
                   </div>
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-4 mt-6">
-                      <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => handlePageChange(-1)} className="h-10 w-10 disabled:opacity-30">
-                        <ChevronLeft className="h-5 w-5" />
-                      </Button>
-                      <span className="text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
-                      <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => handlePageChange(1)} className="h-10 w-10 disabled:opacity-30">
-                        <ChevronRight className="h-5 w-5" />
+                  {visibleCount < displayProperties.length && (
+                    <div className="flex justify-center mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => setVisibleCount(c => Math.min(c + LOAD_MORE_INCREMENT, displayProperties.length))}
+                        className="rounded-full px-6 h-11 text-sm font-semibold gap-2"
+                      >
+                        Voir plus
+                        <span className="text-muted-foreground text-xs">
+                          ({Math.min(LOAD_MORE_INCREMENT, displayProperties.length - visibleCount)} de plus)
+                        </span>
                       </Button>
                     </div>
                   )}
@@ -726,6 +763,61 @@ export default function MobileApp(props: MobileAppProps) {
         )}
       </AnimatePresence>
 
+      {/* ═══ MAP PIN PREVIEW (mini-fiche) ═══ */}
+      <AnimatePresence>
+        {pinPreview && mobileTab === 'map' && !isExploring && (
+          <motion.div
+            key={`preview-${pinPreview.id}`}
+            initial={{ y: 120, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 120, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+            className="fixed left-3 right-3 z-[60] bg-card rounded-2xl shadow-lg border border-border overflow-hidden"
+            style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}
+          >
+            <button
+              onClick={openFullDetailFromPreview}
+              className="w-full flex gap-3 p-2.5 text-left active:scale-[0.99] transition-transform"
+            >
+              <img
+                src={pinPreview.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300'}
+                alt={pinPreview.title}
+                className="w-20 h-20 rounded-xl object-cover shrink-0"
+              />
+              <div className="flex-1 min-w-0 py-0.5">
+                <p className="text-[10px] font-semibold text-primary uppercase tracking-wide">
+                  {getTypeLabel(pinPreview.type)}
+                </p>
+                <p className="text-sm font-bold text-foreground line-clamp-1">{pinPreview.title}</p>
+                <p className="text-[11px] text-muted-foreground line-clamp-1">{pinPreview.quartier}</p>
+                {(() => {
+                  const dp = formatDisplayPrice(pinPreview);
+                  return (
+                    <p className="text-sm font-bold text-primary mt-0.5">
+                      {dp.nightPrice ? `${dp.nightPrice} FCFA/nuit` : `${dp.price} FCFA/mois`}
+                    </p>
+                  );
+                })()}
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setPinPreview(null); }}
+                className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 self-start mt-1"
+                aria-label="Fermer"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </button>
+            <button
+              onClick={openFullDetailFromPreview}
+              className="w-full h-10 bg-secondary text-secondary-foreground text-sm font-semibold active:scale-[0.99] transition-transform flex items-center justify-center gap-1.5"
+            >
+              Voir la fiche
+              <ChevronUp className="h-4 w-4 rotate-90" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ═══ IMMERSIVE EXPLORE OVERLAY ═══ */}
       {isExploring && navLevel === 3 && props.detailProperty && (
         <>
@@ -839,9 +931,9 @@ export default function MobileApp(props: MobileAppProps) {
       <MobileDraggableDrawer
         open={showMobileFilters}
         onClose={() => setShowMobileFilters(false)}
-        maxHeightVh={75}
-        initialHeightVh={65}
-        snapPoints={[0, 40, 60, 75]}
+        maxHeightVh={92}
+        initialHeightVh={55}
+        snapPoints={[0, 55, 92]}
         overlayZIndex={150}
         drawerZIndex={151}
       >

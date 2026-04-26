@@ -219,8 +219,27 @@ const PropertyDetailPanel = ({
         </div>
       )}
 
-      {/* ── Media Slider ── */}
-      <div className="relative h-56 bg-muted overflow-hidden">
+      {/* ── Media Slider — swipe only on mobile, arrows on desktop ── */}
+      <div
+        className="relative h-56 bg-muted overflow-hidden touch-pan-y"
+        onTouchStart={(e) => {
+          (e.currentTarget as any)._touchStartX = e.touches[0].clientX;
+          (e.currentTarget as any)._touchStartY = e.touches[0].clientY;
+        }}
+        onTouchEnd={(e) => {
+          const startX = (e.currentTarget as any)._touchStartX;
+          const startY = (e.currentTarget as any)._touchStartY;
+          if (startX == null) return;
+          const endX = e.changedTouches[0].clientX;
+          const endY = e.changedTouches[0].clientY;
+          const dx = endX - startX;
+          const dy = endY - startY;
+          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) && mediaItems.length > 1) {
+            if (dx < 0) setMediaIdx(i => (i + 1) % mediaItems.length);
+            else setMediaIdx(i => (i - 1 + mediaItems.length) % mediaItems.length);
+          }
+        }}
+      >
         {currentMedia?.type === 'video' ? (
           <video
             ref={videoRef}
@@ -235,8 +254,8 @@ const PropertyDetailPanel = ({
           <img src={currentMedia?.url || images[0]} alt={property.title} className="w-full h-full object-cover" />
         )}
 
-        {/* Navigation arrows */}
-        {mediaItems.length > 1 && (
+        {/* Desktop arrows (hidden on mobile) */}
+        {mediaItems.length > 1 && !isMobile && (
           <>
             <button onClick={() => setMediaIdx(i => (i - 1 + mediaItems.length) % mediaItems.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 rounded-full p-1.5 shadow hover:bg-card active:scale-95 transition-all">
               <ChevronLeft className="h-4 w-4" />
@@ -247,12 +266,12 @@ const PropertyDetailPanel = ({
           </>
         )}
 
-        {/* Dots */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-          {mediaItems.map((_, i) => (
-            <button key={i} onClick={() => setMediaIdx(i)} className={`rounded-full transition-all ${i === mediaIdx ? 'bg-card w-3 h-1.5' : 'bg-card/60 w-1.5 h-1.5'}`} />
-          ))}
-        </div>
+        {/* Subtle counter (no dots) */}
+        {mediaItems.length > 1 && (
+          <div className="absolute bottom-2 right-2 bg-foreground/55 text-card text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-sm">
+            {mediaIdx + 1} / {mediaItems.length}
+          </div>
+        )}
 
         {/* Video badge */}
         {currentMedia?.type === 'video' && (
@@ -388,6 +407,37 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
+        {/* Localisation — clickable map block */}
+        {onExploreOnMap && (
+          <div>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Localisation</h4>
+            <button
+              onClick={() => onExploreOnMap(property.id)}
+              className="w-full relative h-32 rounded-xl overflow-hidden border border-border bg-muted active:scale-[0.99] transition-transform group"
+              aria-label="Voir sur la carte"
+            >
+              <img
+                src={`https://staticmap.openstreetmap.de/staticmap.php?center=${property.latitude},${property.longitude}&zoom=15&size=600x256&markers=${property.latitude},${property.longitude},red-pushpin`}
+                alt="Carte"
+                className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 via-transparent to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 bg-card/95 backdrop-blur-sm rounded-full px-2.5 py-1 shadow">
+                  <MapPin className="h-3 w-3 text-secondary" />
+                  <span className="text-[11px] font-semibold text-foreground truncate max-w-[160px]">
+                    {property.address || property.quartier}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-card bg-secondary px-2 py-1 rounded-full shadow">
+                  Voir la carte →
+                </span>
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* POI */}
         {nearbyPois.length > 0 && (
           <div>
@@ -430,15 +480,16 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* Actions — sticky bottom for mobile */}
+        {/* Actions — inline (non-blocking, scrolls with content) */}
         {isMobile ? (
-          <div className="sticky bottom-0 left-0 right-0 border-t border-border bg-card px-4 py-3 flex gap-3 -mx-5 -mb-5" style={{ marginLeft: -20, marginRight: -20, marginBottom: -20, paddingLeft: 16, paddingRight: 16 }}>
+          <div className="flex gap-2.5 pt-1">
             {onExploreOnMap && (
               <button
                 onClick={() => onExploreOnMap(property.id)}
                 className="flex items-center justify-center gap-2 h-12 px-4 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform flex-shrink-0"
                 style={{ minWidth: 52 }}
                 title="Explorer sur la carte"
+                aria-label="Explorer sur la carte"
               >
                 <Map className="h-5 w-5" />
               </button>
@@ -502,17 +553,40 @@ const PropertyDetailPanel = ({
         {/* Similar */}
         {similarProperties.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Biens similaires dans ce quartier</h4>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {similarProperties.slice(0, 3).map(sp => (
-                <button key={sp.id} onClick={() => onSelectProperty?.(sp.id)} className="shrink-0 w-36 bg-muted/50 rounded-lg overflow-hidden hover:ring-1 hover:ring-primary/30 active:scale-[0.98] transition-all">
-                  <img src={sp.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300'} alt={sp.title} className="w-full h-20 object-cover" />
-                  <div className="p-2">
-                    <p className="text-[10px] font-medium text-foreground truncate">{sp.title}</p>
-                    <p className="text-xs font-bold text-primary">{fmt(sp.price)} FCFA</p>
-                  </div>
-                </button>
-              ))}
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Biens similaires</h4>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+              {similarProperties.slice(0, 5).map(sp => {
+                const spFurnished = isTypeFurnished(sp.type) || sp.furnished;
+                const spNight = spFurnished ? pricePerNight(sp.price) : 0;
+                return (
+                  <button
+                    key={sp.id}
+                    onClick={() => onSelectProperty?.(sp.id)}
+                    className="shrink-0 w-44 snap-start bg-card border border-border rounded-xl overflow-hidden hover:ring-1 hover:ring-primary/30 active:scale-[0.98] transition-all text-left shadow-sm"
+                  >
+                    <img
+                      src={sp.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300'}
+                      alt={sp.title}
+                      className="w-full h-24 object-cover"
+                    />
+                    <div className="p-2.5">
+                      <p className="text-xs font-semibold text-foreground line-clamp-2 leading-tight min-h-[2rem]">
+                        {sp.title}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{sp.quartier}</p>
+                      {spFurnished && spNight > 0 ? (
+                        <p className="text-sm font-bold text-primary mt-1 whitespace-nowrap">
+                          {fmt(spNight)} <span className="text-[10px] font-medium text-muted-foreground">FCFA/nuit</span>
+                        </p>
+                      ) : (
+                        <p className="text-sm font-bold text-primary mt-1 whitespace-nowrap">
+                          {fmt(sp.price)} <span className="text-[10px] font-medium text-muted-foreground">FCFA/mois</span>
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

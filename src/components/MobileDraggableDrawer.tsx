@@ -155,7 +155,7 @@ const MobileDraggableDrawer = forwardRef<MobileDraggableDrawerRef, MobileDraggab
       // else: stay at free position
     }, [MAX_HEIGHT, onClose, snaps]);
 
-    const isAtMax = height >= MAX_HEIGHT * 0.90;
+    const isAtMax = height >= MAX_HEIGHT * 0.85;
 
     if (!open) return null;
 
@@ -197,8 +197,8 @@ const MobileDraggableDrawer = forwardRef<MobileDraggableDrawerRef, MobileDraggab
             </div>
           </div>
 
-          {/* Content */}
-          <div className={`flex-1 min-h-0 ${isAtMax ? 'overflow-y-auto scrollable' : 'overflow-hidden'}`}>
+          {/* Content — always scrollable for fluid UX */}
+          <div className="flex-1 min-h-0 overflow-y-auto scrollable" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
             {children}
           </div>
         </div>
