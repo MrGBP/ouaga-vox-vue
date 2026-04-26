@@ -103,8 +103,10 @@ const MiniCalendar = ({
           if (!day) return <span key={`e${i}`} />;
           const key = dateKey(day);
           const isPast = day < today;
+          // Hide past dates entirely (no rendering)
+          if (isPast) return <span key={`p${i}`} />;
           const isBooked = bookedDates.has(key);
-          const isDisabled = isPast || isBooked;
+          const isDisabled = isBooked;
           const isCheckIn = checkIn && dateKey(day) === dateKey(checkIn);
           const isCheckOut = checkOut && dateKey(day) === dateKey(checkOut);
           const inRange = isInRange(day);
@@ -116,9 +118,6 @@ const MiniCalendar = ({
             classes += 'bg-primary text-primary-foreground';
           } else if (inRange) {
             classes += 'bg-primary/15 text-primary';
-          } else if (isPast) {
-            cellStyle = { background: '#f3f4f6' };
-            classes += 'text-muted-foreground/40 cursor-not-allowed line-through';
           } else if (isBooked) {
             cellStyle = { background: '#fee2e2' };
             classes += 'text-destructive/70 cursor-not-allowed';
@@ -144,7 +143,6 @@ const MiniCalendar = ({
       <div className="flex gap-3 mt-3 text-[10px] text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#d1fae5', border: '1px solid #86efac' }} /> Disponible</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#fee2e2', border: '1px solid #fca5a5' }} /> Réservé</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#f3f4f6', border: '1px solid #d1d5db' }} /> Passé</span>
       </div>
     </div>
   );
