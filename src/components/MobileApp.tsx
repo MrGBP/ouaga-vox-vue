@@ -435,7 +435,10 @@ export default function MobileApp(props: MobileAppProps) {
               activeQuartier={props.activeQuartier}
               favorites={props.favorites}
               formatDisplayPrice={formatDisplayPrice}
-              onPropertyClick={props.onPropertyClick}
+              onPropertyClick={(id) => {
+                const p = props.properties.find(pr => pr.id === id);
+                if (p) setPinPreview(p);
+              }}
             />
           </motion.div>
         </AnimatePresence>
