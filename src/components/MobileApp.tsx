@@ -544,8 +544,21 @@ export default function MobileApp(props: MobileAppProps) {
               </div>
             </section>
 
-            {/* Filter bar */}
+            {/* Search bar (top, like tablet/desktop) */}
             <section className="px-4 pt-4">
+              <button
+                onClick={() => setShowMobileSearch(true)}
+                className="w-full h-12 rounded-full bg-card border border-border shadow-sm flex items-center gap-3 px-4 text-left active:scale-[0.99] transition-transform"
+              >
+                <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-sm text-muted-foreground truncate">
+                  {props.searchQuery || 'Rechercher un bien, un quartier...'}
+                </span>
+              </button>
+            </section>
+
+            {/* Filter bar */}
+            <section className="px-4 pt-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => setShowMobileFilters(true)}
