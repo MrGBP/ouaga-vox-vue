@@ -220,6 +220,9 @@ export default function MobileApp(props: MobileAppProps) {
     return () => { document.body.style.overflow = ''; };
   }, [showMobileFilters, showMobileSearch]);
 
+  // Reset visible count when filters change
+  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [props.filteredProperties.length]);
+
   // Sync navigation context → visual states (swipe back / Android back)
   useEffect(() => {
     const screen = nav.current.screen;
