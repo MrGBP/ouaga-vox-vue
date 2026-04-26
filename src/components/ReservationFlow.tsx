@@ -103,8 +103,10 @@ const MiniCalendar = ({
           if (!day) return <span key={`e${i}`} />;
           const key = dateKey(day);
           const isPast = day < today;
+          // Hide past dates entirely (no rendering)
+          if (isPast) return <span key={`p${i}`} />;
           const isBooked = bookedDates.has(key);
-          const isDisabled = isPast || isBooked;
+          const isDisabled = isBooked;
           const isCheckIn = checkIn && dateKey(day) === dateKey(checkIn);
           const isCheckOut = checkOut && dateKey(day) === dateKey(checkOut);
           const inRange = isInRange(day);
@@ -116,9 +118,6 @@ const MiniCalendar = ({
             classes += 'bg-primary text-primary-foreground';
           } else if (inRange) {
             classes += 'bg-primary/15 text-primary';
-          } else if (isPast) {
-            cellStyle = { background: '#f3f4f6' };
-            classes += 'text-muted-foreground/40 cursor-not-allowed line-through';
           } else if (isBooked) {
             cellStyle = { background: '#fee2e2' };
             classes += 'text-destructive/70 cursor-not-allowed';
