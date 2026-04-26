@@ -761,6 +761,61 @@ export default function MobileApp(props: MobileAppProps) {
         )}
       </AnimatePresence>
 
+      {/* ═══ MAP PIN PREVIEW (mini-fiche) ═══ */}
+      <AnimatePresence>
+        {pinPreview && mobileTab === 'map' && !isExploring && (
+          <motion.div
+            key={`preview-${pinPreview.id}`}
+            initial={{ y: 120, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 120, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+            className="fixed left-3 right-3 z-[60] bg-card rounded-2xl shadow-lg border border-border overflow-hidden"
+            style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}
+          >
+            <button
+              onClick={openFullDetailFromPreview}
+              className="w-full flex gap-3 p-2.5 text-left active:scale-[0.99] transition-transform"
+            >
+              <img
+                src={pinPreview.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300'}
+                alt={pinPreview.title}
+                className="w-20 h-20 rounded-xl object-cover shrink-0"
+              />
+              <div className="flex-1 min-w-0 py-0.5">
+                <p className="text-[10px] font-semibold text-primary uppercase tracking-wide">
+                  {getTypeLabel(pinPreview.type)}
+                </p>
+                <p className="text-sm font-bold text-foreground line-clamp-1">{pinPreview.title}</p>
+                <p className="text-[11px] text-muted-foreground line-clamp-1">{pinPreview.quartier}</p>
+                {(() => {
+                  const dp = formatDisplayPrice(pinPreview);
+                  return (
+                    <p className="text-sm font-bold text-primary mt-0.5">
+                      {dp.nightPrice ? `${dp.nightPrice} FCFA/nuit` : `${dp.price} FCFA/mois`}
+                    </p>
+                  );
+                })()}
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setPinPreview(null); }}
+                className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 self-start mt-1"
+                aria-label="Fermer"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </button>
+            <button
+              onClick={openFullDetailFromPreview}
+              className="w-full h-10 bg-secondary text-secondary-foreground text-sm font-semibold active:scale-[0.99] transition-transform flex items-center justify-center gap-1.5"
+            >
+              Voir la fiche
+              <ChevronUp className="h-4 w-4 rotate-90" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ═══ IMMERSIVE EXPLORE OVERLAY ═══ */}
       {isExploring && navLevel === 3 && props.detailProperty && (
         <>
