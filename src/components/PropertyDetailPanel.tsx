@@ -449,15 +449,16 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* Actions — sticky bottom for mobile */}
+        {/* Actions — inline (non-blocking, scrolls with content) */}
         {isMobile ? (
-          <div className="sticky bottom-0 left-0 right-0 border-t border-border bg-card px-4 py-3 flex gap-3 -mx-5 -mb-5" style={{ marginLeft: -20, marginRight: -20, marginBottom: -20, paddingLeft: 16, paddingRight: 16 }}>
+          <div className="flex gap-2.5 pt-1">
             {onExploreOnMap && (
               <button
                 onClick={() => onExploreOnMap(property.id)}
                 className="flex items-center justify-center gap-2 h-12 px-4 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform flex-shrink-0"
                 style={{ minWidth: 52 }}
                 title="Explorer sur la carte"
+                aria-label="Explorer sur la carte"
               >
                 <Map className="h-5 w-5" />
               </button>
