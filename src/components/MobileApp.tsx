@@ -931,9 +931,9 @@ export default function MobileApp(props: MobileAppProps) {
       <MobileDraggableDrawer
         open={showMobileFilters}
         onClose={() => setShowMobileFilters(false)}
-        maxHeightVh={75}
-        initialHeightVh={65}
-        snapPoints={[0, 40, 60, 75]}
+        maxHeightVh={92}
+        initialHeightVh={55}
+        snapPoints={[0, 55, 92]}
         overlayZIndex={150}
         drawerZIndex={151}
       >
