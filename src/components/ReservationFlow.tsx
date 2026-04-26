@@ -143,7 +143,6 @@ const MiniCalendar = ({
       <div className="flex gap-3 mt-3 text-[10px] text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#d1fae5', border: '1px solid #86efac' }} /> Disponible</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#fee2e2', border: '1px solid #fca5a5' }} /> Réservé</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#f3f4f6', border: '1px solid #d1d5db' }} /> Passé</span>
       </div>
     </div>
   );
