@@ -407,6 +407,37 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
+        {/* Localisation — clickable map block */}
+        {onExploreOnMap && (
+          <div>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Localisation</h4>
+            <button
+              onClick={() => onExploreOnMap(property.id)}
+              className="w-full relative h-32 rounded-xl overflow-hidden border border-border bg-muted active:scale-[0.99] transition-transform group"
+              aria-label="Voir sur la carte"
+            >
+              <img
+                src={`https://staticmap.openstreetmap.de/staticmap.php?center=${property.latitude},${property.longitude}&zoom=15&size=600x256&markers=${property.latitude},${property.longitude},red-pushpin`}
+                alt="Carte"
+                className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 via-transparent to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 bg-card/95 backdrop-blur-sm rounded-full px-2.5 py-1 shadow">
+                  <MapPin className="h-3 w-3 text-secondary" />
+                  <span className="text-[11px] font-semibold text-foreground truncate max-w-[160px]">
+                    {property.address || property.quartier}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-card bg-secondary px-2 py-1 rounded-full shadow">
+                  Voir la carte →
+                </span>
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* POI */}
         {nearbyPois.length > 0 && (
           <div>
