@@ -522,21 +522,28 @@ export default function MobileApp(props: MobileAppProps) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => setShowMobileFilters(true)}
-                  className="inline-flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2 text-sm font-medium text-foreground active:scale-[0.98] transition-all shadow-sm"
+                  aria-label="Filtres"
+                  title="Filtres"
+                  className="inline-flex items-center justify-center bg-card border border-border rounded-full w-10 h-10 text-foreground active:scale-[0.98] transition-all shadow-sm"
                 >
-                  <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
-                  ⚙️ Filtres
+                  <SlidersHorizontal className="h-4 w-4 text-primary" />
                 </button>
                 <button
                   onClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-all border active:scale-[0.98] ${
+                  aria-label="Favoris"
+                  title="Favoris"
+                  className={`relative inline-flex items-center justify-center rounded-full w-10 h-10 transition-all border active:scale-[0.98] ${
                     props.showFavoritesOnly
                       ? 'bg-secondary text-secondary-foreground border-secondary'
                       : 'bg-card text-muted-foreground border-border'
                   }`}
                 >
-                  <Heart className={`h-3.5 w-3.5 ${props.showFavoritesOnly ? 'fill-current' : ''}`} />
-                  ❤️ Favoris {props.favorites.size > 0 && `(${props.favorites.size})`}
+                  <Heart className={`h-4 w-4 ${props.showFavoritesOnly ? 'fill-current' : ''}`} />
+                  {props.favorites.size > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold flex items-center justify-center">
+                      {props.favorites.size}
+                    </span>
+                  )}
                 </button>
               </div>
               {/* IDX Tags */}
