@@ -200,12 +200,12 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
         setCheckOut(checkIn);
         setCheckIn(d);
       } else {
-        // Check no booked/pending dates in range
+        // Check no booked dates in range
         const current = new Date(checkIn);
         while (current <= d) {
           const key = current.toISOString().split('T')[0];
-          if (bookedDates.has(key) || pendingDates.has(key)) {
-            toast({ title: 'Dates indisponibles', description: 'La plage sélectionnée inclut des jours occupés ou en attente.', variant: 'destructive' });
+          if (bookedDates.has(key)) {
+            toast({ title: 'Dates indisponibles', description: 'La plage sélectionnée inclut des jours déjà réservés.', variant: 'destructive' });
             return;
           }
           current.setDate(current.getDate() + 1);
