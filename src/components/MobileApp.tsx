@@ -302,12 +302,27 @@ export default function MobileApp(props: MobileAppProps) {
   }, [props.onFocusClear]);
 
   const handlePropertyClick = useCallback((id: string) => {
+    // On map tab → show preview first instead of full sheet
+    const prop = props.properties.find(p => p.id === id);
+    if (prop && mobileTab === 'map') {
+      setPinPreview(prop);
+      return;
+    }
     props.onPropertyClick(id);
-    // Snap to fullscreen after property opens
     setTimeout(() => {
       sheetRef.current?.snapFullscreen?.();
     }, 120);
-  }, [props.onPropertyClick]);
+  }, [props.onPropertyClick, props.properties, mobileTab]);
+
+  const openFullDetailFromPreview = useCallback(() => {
+    if (!pinPreview) return;
+    const id = pinPreview.id;
+    setPinPreview(null);
+    props.onPropertyClick(id);
+    setTimeout(() => {
+      sheetRef.current?.snapFullscreen?.();
+    }, 120);
+  }, [pinPreview, props.onPropertyClick]);
 
   // Navigation handlers
   const handleNavBack = () => {
