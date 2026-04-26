@@ -297,7 +297,6 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                 checkIn={checkIn}
                 checkOut={checkOut}
                 bookedDates={bookedDates}
-                pendingDates={pendingDates}
                 onSelectDate={handleSelectDate}
                 onPrevMonth={() => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else setCalMonth(m => m - 1); }}
                 onNextMonth={() => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else setCalMonth(m => m + 1); }}
