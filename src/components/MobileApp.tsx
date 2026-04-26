@@ -326,6 +326,7 @@ export default function MobileApp(props: MobileAppProps) {
 
   // Navigation handlers
   const handleNavBack = () => {
+    setPinPreview(null);
     if (isExploring) { setIsExploring(false); return; }
     if (navLevel === 3) {
       props.onDetailClose();
@@ -337,6 +338,7 @@ export default function MobileApp(props: MobileAppProps) {
   };
 
   const handleNavHome = () => {
+    setPinPreview(null);
     props.onDetailClose();
     props.onFocusClear();
     props.onQuartierChange(null);
