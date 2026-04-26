@@ -601,21 +601,24 @@ export default function MobileApp(props: MobileAppProps) {
                   <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
                 </span>
               </div>
-              {paginatedProperties.length > 0 ? (
+              {displayProperties.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 gap-4">
-                    {paginatedProperties.map(p => (
+                    {displayProperties.slice(0, visibleCount).map(p => (
                       <PropertyCard key={p.id} property={p as any} onViewDetails={props.onViewDetails as any} isFavorite={props.favorites.has(p.id)} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
                     ))}
                   </div>
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-4 mt-6">
-                      <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => handlePageChange(-1)} className="h-10 w-10 disabled:opacity-30">
-                        <ChevronLeft className="h-5 w-5" />
-                      </Button>
-                      <span className="text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
-                      <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => handlePageChange(1)} className="h-10 w-10 disabled:opacity-30">
-                        <ChevronRight className="h-5 w-5" />
+                  {visibleCount < displayProperties.length && (
+                    <div className="flex justify-center mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => setVisibleCount(c => Math.min(c + LOAD_MORE_INCREMENT, displayProperties.length))}
+                        className="rounded-full px-6 h-11 text-sm font-semibold gap-2"
+                      >
+                        Voir plus
+                        <span className="text-muted-foreground text-xs">
+                          ({Math.min(LOAD_MORE_INCREMENT, displayProperties.length - visibleCount)} de plus)
+                        </span>
                       </Button>
                     </div>
                   )}
