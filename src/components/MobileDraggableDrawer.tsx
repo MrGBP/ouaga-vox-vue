@@ -155,7 +155,7 @@ const MobileDraggableDrawer = forwardRef<MobileDraggableDrawerRef, MobileDraggab
       // else: stay at free position
     }, [MAX_HEIGHT, onClose, snaps]);
 
-    const isAtMax = height >= MAX_HEIGHT * 0.90;
+    const isAtMax = height >= MAX_HEIGHT * 0.85;
 
     if (!open) return null;
 
