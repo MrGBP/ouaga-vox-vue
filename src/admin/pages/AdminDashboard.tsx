@@ -1,9 +1,10 @@
 import { Home, Eye, Calendar, TrendingUp, Heart, Clock, MessageSquare, AlertTriangle, Check, X } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { toast } from 'sonner';
 import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import AdminKPICard from '@/admin/components/AdminKPICard';
 import { adminStats as seedStats, viewsData, typeDistribution, activityFeed } from '@/admin/data/adminMockData';
-import { useAdminStore } from '@/admin/store/adminStore';
+import { useAdminStore, adminStore } from '@/admin/store/adminStore';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   Heart: <Heart size={16} />,
