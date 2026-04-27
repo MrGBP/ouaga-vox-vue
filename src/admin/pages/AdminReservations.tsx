@@ -20,6 +20,8 @@ export default function AdminReservations() {
   const reservations = useAdminStore(s => s.reservations);
   const [view, setView] = useState<'kanban' | 'table'>('kanban');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detail = detailId ? reservations.find(r => r.id === detailId) : null;
 
   const totalRevenue = useMemo(() => reservations.reduce((s, r) => s + r.amount, 0), [reservations]);
   const totalCommission = useMemo(() => reservations.reduce((s, r) => s + r.commission, 0), [reservations]);
@@ -131,7 +133,7 @@ export default function AdminReservations() {
                     <div className="flex gap-1">
                       {r.status === 'pending' && <button onClick={() => setStatus(r.id, 'confirmed', 'Confirmée')} className="w-7 h-7 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center"><Check size={13} /></button>}
                       {r.status === 'pending' && <button onClick={() => setStatus(r.id, 'cancelled', 'Annulée')} className="w-7 h-7 rounded-md bg-red-100 text-red-700 flex items-center justify-center"><X size={13} /></button>}
-                      <button onClick={() => toast.info('Détails à venir')} className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 flex items-center justify-center"><FileText size={13} /></button>
+                      <button onClick={() => setDetailId(r.id)} title="Détails" className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200"><FileText size={13} /></button>
                       <button onClick={() => setDeleteId(r.id)} className="w-7 h-7 rounded-md bg-red-50 text-red-600 flex items-center justify-center"><Trash2 size={13} /></button>
                     </div>
                   </td>
@@ -151,6 +153,36 @@ export default function AdminReservations() {
         onConfirm={confirmDelete}
         onCancel={() => setDeleteId(null)}
       />
+
+      {detail && (
+        <div className="fixed inset-0 z-[300] bg-black/40 flex items-center justify-center p-4" onClick={() => setDetailId(null)}>
+          <div className="bg-card rounded-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+              <h3 className="text-sm font-bold">Réservation {detail.id}</h3>
+              <button onClick={() => setDetailId(null)} className="w-7 h-7 rounded-full hover:bg-muted flex items-center justify-center"><X size={14} /></button>
+            </div>
+            {detail.propertyImage && <img src={detail.propertyImage} alt="" className="w-full h-40 object-cover" onError={e => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />}
+            <div className="p-5 space-y-3 text-xs">
+              <div><p className="font-semibold text-foreground">{detail.propertyTitle}</p><p className="text-muted-foreground">{detail.propertyType}</p></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><p className="text-muted-foreground">Locataire</p><p className="font-semibold">{detail.tenantName}</p><p className="text-muted-foreground">{detail.tenantPhone}</p></div>
+                <div><p className="text-muted-foreground">Statut</p><AdminBadge variant={detail.status} /></div>
+                <div><p className="text-muted-foreground">Check-in</p><p className="font-semibold">{detail.checkIn}</p></div>
+                <div><p className="text-muted-foreground">Check-out</p><p className="font-semibold">{detail.checkOut}</p></div>
+                <div><p className="text-muted-foreground">Nuits</p><p className="font-semibold">{detail.nights}</p></div>
+                <div><p className="text-muted-foreground">Paiement</p><p className="font-semibold">{detail.paymentMethod}</p></div>
+              </div>
+              <div className="rounded-lg bg-muted p-3 flex items-center justify-between">
+                <span className="text-muted-foreground">Montant</span>
+                <span className="text-base font-bold">{detail.amount.toLocaleString('fr-FR')} FCFA</span>
+              </div>
+              <div className="flex items-center justify-between text-emerald-700">
+                <span>Commission</span><span className="font-semibold">{detail.commission.toLocaleString('fr-FR')} FCFA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
