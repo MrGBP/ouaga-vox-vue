@@ -5,6 +5,7 @@ import AdminTopbar from '@/admin/AdminTopbar';
 import AdminLogin from '@/admin/pages/AdminLogin';
 import AdminDashboard from '@/admin/pages/AdminDashboard';
 import AdminBiens from '@/admin/pages/AdminBiens';
+import AdminBiensLive from '@/admin/pages/AdminBiensLive';
 import AdminUsers from '@/admin/pages/AdminUsers';
 import AdminReservations from '@/admin/pages/AdminReservations';
 import AdminBoosts from '@/admin/pages/AdminBoosts';
@@ -29,6 +30,7 @@ function AdminProtected() {
           <Routes>
             <Route index element={<AdminDashboard />} />
             <Route path="biens" element={<AdminBiens />} />
+            <Route path="biens-live" element={<AdminBiensLive />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="reservations" element={<AdminReservations />} />
             <Route path="boosts" element={<AdminBoosts />} />
