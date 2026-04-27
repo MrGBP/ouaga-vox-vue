@@ -26,7 +26,7 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState(PROPERTY_TYPES[0].value);
+  const [type, setType] = useState<string>(PROPERTY_TYPES[0].value);
   const [price, setPrice] = useState<number | ''>('');
   const [quartier, setQuartier] = useState(mockQuartiers[0]?.name || '');
   const [address, setAddress] = useState('');
