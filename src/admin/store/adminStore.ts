@@ -20,7 +20,34 @@ import type {
   MessageItem,
 } from '@/admin/types';
 
-const STORAGE_KEY = 'sapsap_admin_state_v1';
+const STORAGE_KEY = 'sapsap_admin_state_v2';
+
+export interface AdminSettings {
+  platformName: string;
+  contactEmail: string;
+  tauxMeuble: number;
+  tauxNonMeuble: number;
+  commissionMin: number;
+  whatsappNumber: string;
+  notifications: Record<string, boolean>;
+  adminEmail: string;
+}
+
+const DEFAULT_SETTINGS: AdminSettings = {
+  platformName: 'SapSapHouse',
+  contactEmail: 'contact@sapsaphouse.bf',
+  tauxMeuble: 7,
+  tauxNonMeuble: 5,
+  commissionMin: 5000,
+  whatsappNumber: '+226 70 00 00 00',
+  notifications: {
+    'Nouveau bien soumis': true,
+    'Nouvelle réservation': true,
+    'Paiement reçu': true,
+    'Message reçu': true,
+  },
+  adminEmail: 'admin@sapsaphouse.bf',
+};
 
 export interface AdminState {
   properties: AdminProperty[];
@@ -29,23 +56,28 @@ export interface AdminState {
   owners: AdminUser[];
   messages: AdminMessage[];
   boosts: Boost[];
+  settings: AdminSettings;
 }
 
 function loadInitial(): AdminState {
-  if (typeof window === 'undefined') {
-    return {
-      properties: seedProperties, reservations: seedReservations,
-      tenants: seedTenants, owners: seedOwners, messages: seedMessages, boosts: seedBoosts,
-    };
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as AdminState;
-  } catch {/* noop */}
-  return {
+  const fallback: AdminState = {
     properties: seedProperties, reservations: seedReservations,
     tenants: seedTenants, owners: seedOwners, messages: seedMessages, boosts: seedBoosts,
+    settings: DEFAULT_SETTINGS,
   };
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<AdminState>;
+      return {
+        ...fallback,
+        ...parsed,
+        settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
+      };
+    }
+  } catch {/* noop */}
+  return fallback;
 }
 
 let state: AdminState = loadInitial();
@@ -158,6 +190,37 @@ export const adminStore = {
     setState(s => ({ ...s, reservations: s.reservations.map(r => r.id === id ? { ...r, status } : r) })),
   deleteReservation: (id: string) =>
     setState(s => ({ ...s, reservations: s.reservations.filter(r => r.id !== id) })),
+
+  // ── BOOSTS ──
+  addBoost: (b: Omit<Boost, 'id' | 'viewsGenerated' | 'status'>) => {
+    const full: Boost = {
+      ...b,
+      id: `boost-${Date.now()}`,
+      viewsGenerated: 0,
+      status: 'active',
+    };
+    setState(s => ({
+      ...s,
+      boosts: [full, ...s.boosts],
+      properties: s.properties.map(p => p.id === b.propertyId ? { ...p, boostActive: true, boostType: b.type, boostExpiresAt: b.endDate } : p),
+    }));
+    return full;
+  },
+  cancelBoost: (id: string) =>
+    setState(s => {
+      const boost = s.boosts.find(b => b.id === id);
+      return {
+        ...s,
+        boosts: s.boosts.map(b => b.id === id ? { ...b, status: 'cancelled' } : b),
+        properties: boost ? s.properties.map(p => p.id === boost.propertyId ? { ...p, boostActive: false } : p) : s.properties,
+      };
+    }),
+  deleteBoost: (id: string) =>
+    setState(s => ({ ...s, boosts: s.boosts.filter(b => b.id !== id) })),
+
+  // ── SETTINGS ──
+  updateSettings: (patch: Partial<AdminSettings>) =>
+    setState(s => ({ ...s, settings: { ...s.settings, ...patch } })),
 
   // ── RESET ──
   resetAll: () => {

@@ -1,9 +1,10 @@
 import { Home, Eye, Calendar, TrendingUp, Heart, Clock, MessageSquare, AlertTriangle, Check, X } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { toast } from 'sonner';
 import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import AdminKPICard from '@/admin/components/AdminKPICard';
 import { adminStats as seedStats, viewsData, typeDistribution, activityFeed } from '@/admin/data/adminMockData';
-import { useAdminStore } from '@/admin/store/adminStore';
+import { useAdminStore, adminStore } from '@/admin/store/adminStore';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   Heart: <Heart size={16} />,
@@ -151,10 +152,10 @@ export default function AdminDashboard() {
                       <span className="text-[11px] text-gray-500 w-6 text-right">{p.qualityScore}</span>
                     </div>
                     <div className="flex items-center gap-1 ml-1">
-                      <button className="h-7 w-7 flex items-center justify-center rounded-md bg-green-50 text-green-600 hover:bg-green-100">
+                      <button onClick={() => { adminStore.setPropertyStatus(p.id, 'published'); toast.success('Bien publié'); }} title="Publier" className="h-7 w-7 flex items-center justify-center rounded-md bg-green-50 text-green-600 hover:bg-green-100">
                         <Check size={14} />
                       </button>
-                      <button className="h-7 w-7 flex items-center justify-center rounded-md bg-red-50 text-red-600 hover:bg-red-100">
+                      <button onClick={() => { adminStore.setPropertyStatus(p.id, 'inactive'); toast.success('Bien rejeté'); }} title="Rejeter" className="h-7 w-7 flex items-center justify-center rounded-md bg-red-50 text-red-600 hover:bg-red-100">
                         <X size={14} />
                       </button>
                     </div>
