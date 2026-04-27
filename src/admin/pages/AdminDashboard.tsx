@@ -2,7 +2,8 @@ import { Home, Eye, Calendar, TrendingUp, Heart, Clock, MessageSquare, AlertTria
 import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import AdminKPICard from '@/admin/components/AdminKPICard';
-import { adminStats, adminProperties, viewsData, typeDistribution, activityFeed } from '@/admin/data/adminMockData';
+import { adminStats as seedStats, viewsData, typeDistribution, activityFeed } from '@/admin/data/adminMockData';
+import { useAdminStore } from '@/admin/store/adminStore';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   Heart: <Heart size={16} />,
@@ -15,7 +16,20 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 export default function AdminDashboard() {
+  const adminProperties = useAdminStore(s => s.properties);
+  const messages = useAdminStore(s => s.messages);
+  const reservations = useAdminStore(s => s.reservations);
   const pendingProperties = adminProperties.filter(p => p.adminStatus === 'pending');
+  const adminStats = {
+    ...seedStats,
+    biensActifs: adminProperties.filter(p => p.adminStatus === 'published').length,
+    biensEnAttente: pendingProperties.length,
+    vuesTotales30j: adminProperties.reduce((s, p) => s + (p.viewCount || 0), 0),
+    favorisTotal: adminProperties.reduce((s, p) => s + (p.favoriteCount || 0), 0),
+    reservationsActives: reservations.filter(r => r.status === 'confirmed' || r.status === 'in_progress').length,
+    reservationsEnAttente: reservations.filter(r => r.status === 'pending').length,
+    messagesNonLus: messages.reduce((s, m) => s + m.unreadCount, 0),
+  };
 
   return (
     <div className="space-y-6">
