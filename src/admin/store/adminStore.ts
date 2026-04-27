@@ -191,6 +191,37 @@ export const adminStore = {
   deleteReservation: (id: string) =>
     setState(s => ({ ...s, reservations: s.reservations.filter(r => r.id !== id) })),
 
+  // ── BOOSTS ──
+  addBoost: (b: Omit<Boost, 'id' | 'viewsGenerated' | 'status'>) => {
+    const full: Boost = {
+      ...b,
+      id: `boost-${Date.now()}`,
+      viewsGenerated: 0,
+      status: 'active',
+    };
+    setState(s => ({
+      ...s,
+      boosts: [full, ...s.boosts],
+      properties: s.properties.map(p => p.id === b.propertyId ? { ...p, boostActive: true, boostType: b.type, boostExpiresAt: b.endDate } : p),
+    }));
+    return full;
+  },
+  cancelBoost: (id: string) =>
+    setState(s => {
+      const boost = s.boosts.find(b => b.id === id);
+      return {
+        ...s,
+        boosts: s.boosts.map(b => b.id === id ? { ...b, status: 'cancelled' } : b),
+        properties: boost ? s.properties.map(p => p.id === boost.propertyId ? { ...p, boostActive: false } : p) : s.properties,
+      };
+    }),
+  deleteBoost: (id: string) =>
+    setState(s => ({ ...s, boosts: s.boosts.filter(b => b.id !== id) })),
+
+  // ── SETTINGS ──
+  updateSettings: (patch: Partial<AdminSettings>) =>
+    setState(s => ({ ...s, settings: { ...s.settings, ...patch } })),
+
   // ── RESET ──
   resetAll: () => {
     localStorage.removeItem(STORAGE_KEY);
