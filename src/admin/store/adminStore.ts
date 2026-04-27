@@ -60,20 +60,24 @@ export interface AdminState {
 }
 
 function loadInitial(): AdminState {
-  if (typeof window === 'undefined') {
-    return {
-      properties: seedProperties, reservations: seedReservations,
-      tenants: seedTenants, owners: seedOwners, messages: seedMessages, boosts: seedBoosts,
-    };
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as AdminState;
-  } catch {/* noop */}
-  return {
+  const fallback: AdminState = {
     properties: seedProperties, reservations: seedReservations,
     tenants: seedTenants, owners: seedOwners, messages: seedMessages, boosts: seedBoosts,
+    settings: DEFAULT_SETTINGS,
   };
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<AdminState>;
+      return {
+        ...fallback,
+        ...parsed,
+        settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
+      };
+    }
+  } catch {/* noop */}
+  return fallback;
 }
 
 let state: AdminState = loadInitial();
