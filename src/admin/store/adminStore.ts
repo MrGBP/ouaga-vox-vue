@@ -20,7 +20,34 @@ import type {
   MessageItem,
 } from '@/admin/types';
 
-const STORAGE_KEY = 'sapsap_admin_state_v1';
+const STORAGE_KEY = 'sapsap_admin_state_v2';
+
+export interface AdminSettings {
+  platformName: string;
+  contactEmail: string;
+  tauxMeuble: number;
+  tauxNonMeuble: number;
+  commissionMin: number;
+  whatsappNumber: string;
+  notifications: Record<string, boolean>;
+  adminEmail: string;
+}
+
+const DEFAULT_SETTINGS: AdminSettings = {
+  platformName: 'SapSapHouse',
+  contactEmail: 'contact@sapsaphouse.bf',
+  tauxMeuble: 7,
+  tauxNonMeuble: 5,
+  commissionMin: 5000,
+  whatsappNumber: '+226 70 00 00 00',
+  notifications: {
+    'Nouveau bien soumis': true,
+    'Nouvelle réservation': true,
+    'Paiement reçu': true,
+    'Message reçu': true,
+  },
+  adminEmail: 'admin@sapsaphouse.bf',
+};
 
 export interface AdminState {
   properties: AdminProperty[];
@@ -29,6 +56,7 @@ export interface AdminState {
   owners: AdminUser[];
   messages: AdminMessage[];
   boosts: Boost[];
+  settings: AdminSettings;
 }
 
 function loadInitial(): AdminState {
