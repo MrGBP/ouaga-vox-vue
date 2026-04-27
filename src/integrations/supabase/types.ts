@@ -17,30 +17,71 @@ export type Database = {
       pois: {
         Row: {
           created_at: string
+          distance_m: number | null
           id: string
           latitude: number
           longitude: number
           name: string
+          property_id: string | null
           quartier: string
           type: string
         }
         Insert: {
           created_at?: string
+          distance_m?: number | null
           id?: string
           latitude: number
           longitude: number
           name: string
+          property_id?: string | null
           quartier: string
           type: string
         }
         Update: {
           created_at?: string
+          distance_m?: number | null
           id?: string
           latitude?: number
           longitude?: number
           name?: string
+          property_id?: string | null
           quartier?: string
           type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pois_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -48,70 +89,150 @@ export type Database = {
         Row: {
           accessibility_rating: number | null
           address: string
+          admin_status: Database["public"]["Enums"]["property_admin_status"]
+          agent_name: string | null
+          agent_phone: string | null
+          agent_photo: string | null
           available: boolean | null
           bathrooms: number | null
           bedrooms: number | null
           comfort_rating: number | null
           created_at: string
           description: string | null
+          favorite_count: number
+          features: Json
+          furnished: boolean | null
           id: string
           images: string[] | null
           latitude: number
           longitude: number
+          owner_id: string | null
           price: number
+          published_at: string | null
           quartier: string
           security_rating: number | null
+          status: string | null
           surface_area: number | null
           title: string
           type: string
           updated_at: string
+          video_url: string | null
+          view_count: number
           virtual_tour_url: string | null
+          year_built: number | null
         }
         Insert: {
           accessibility_rating?: number | null
           address: string
+          admin_status?: Database["public"]["Enums"]["property_admin_status"]
+          agent_name?: string | null
+          agent_phone?: string | null
+          agent_photo?: string | null
           available?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
           comfort_rating?: number | null
           created_at?: string
           description?: string | null
+          favorite_count?: number
+          features?: Json
+          furnished?: boolean | null
           id?: string
           images?: string[] | null
           latitude: number
           longitude: number
+          owner_id?: string | null
           price: number
+          published_at?: string | null
           quartier: string
           security_rating?: number | null
+          status?: string | null
           surface_area?: number | null
           title: string
           type: string
           updated_at?: string
+          video_url?: string | null
+          view_count?: number
           virtual_tour_url?: string | null
+          year_built?: number | null
         }
         Update: {
           accessibility_rating?: number | null
           address?: string
+          admin_status?: Database["public"]["Enums"]["property_admin_status"]
+          agent_name?: string | null
+          agent_phone?: string | null
+          agent_photo?: string | null
           available?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
           comfort_rating?: number | null
           created_at?: string
           description?: string | null
+          favorite_count?: number
+          features?: Json
+          furnished?: boolean | null
           id?: string
           images?: string[] | null
           latitude?: number
           longitude?: number
+          owner_id?: string | null
           price?: number
+          published_at?: string | null
           quartier?: string
           security_rating?: number | null
+          status?: string | null
           surface_area?: number | null
           title?: string
           type?: string
           updated_at?: string
+          video_url?: string | null
+          view_count?: number
           virtual_tour_url?: string | null
+          year_built?: number | null
         }
         Relationships: []
+      }
+      property_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["media_kind"]
+          position: number
+          property_id: string
+          storage_path: string | null
+          url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["media_kind"]
+          position?: number
+          property_id: string
+          storage_path?: string | null
+          url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["media_kind"]
+          position?: number
+          property_id?: string
+          storage_path?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_media_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quartiers: {
         Row: {
@@ -143,15 +264,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      media_kind: "image" | "video" | "video_360"
+      property_admin_status:
+        | "pending"
+        | "reviewing"
+        | "corrections"
+        | "published"
+        | "rented"
+        | "inactive"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -278,6 +435,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      media_kind: ["image", "video", "video_360"],
+      property_admin_status: [
+        "pending",
+        "reviewing",
+        "corrections",
+        "published",
+        "rented",
+        "inactive",
+        "rejected",
+      ],
+    },
   },
 } as const
