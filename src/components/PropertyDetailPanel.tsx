@@ -337,41 +337,34 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* Section: Équipements */}
-        {equipmentFeatures.length > 0 && (
+        {/* Section: Caractéristiques (grille de chips compacte, style Airbnb) */}
+        {allFeatures.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full bg-accent/30 flex items-center justify-center">
-                <Zap className="h-3 w-3 text-accent-foreground" />
-              </div>
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Équipements</h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Caractéristiques
+              </h4>
+              <span className="text-[10px] text-muted-foreground">{allFeatures.length}</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {equipmentFeatures.map((f, i) => (
-                <span key={i} className="inline-flex items-center gap-1 bg-muted/50 rounded-full px-2.5 py-1 text-xs text-foreground">
-                  {f.emoji} {f.label}
+              {visibleFeatures.map((f) => (
+                <span
+                  key={f.key}
+                  className="inline-flex items-center gap-1 bg-muted/60 rounded-full px-2.5 py-1 text-xs text-foreground"
+                  title={f.label}
+                >
+                  <span aria-hidden>{f.emoji}</span> {f.label}
                 </span>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Section: Sécurité & Accès */}
-        {securityFeatures.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                <Shield className="h-3 w-3 text-primary" />
-              </div>
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Sécurité & Accès</h4>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {securityFeatures.map((f, i) => (
-                <span key={i} className="inline-flex items-center gap-1 bg-muted/50 rounded-full px-2.5 py-1 text-xs text-foreground">
-                  {f.emoji} {f.label}
-                </span>
-              ))}
-            </div>
+            {allFeatures.length > FEATURES_LIMIT && (
+              <button
+                onClick={() => setShowAllFeatures(s => !s)}
+                className="text-xs text-primary font-medium mt-2 hover:underline"
+              >
+                {showAllFeatures ? 'Voir moins' : `Voir tout (${allFeatures.length})`}
+              </button>
+            )}
           </div>
         )}
 
