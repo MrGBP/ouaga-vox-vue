@@ -193,6 +193,110 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
             </select>
           </Field>
 
+          {/* ── Caractéristiques (sélecteur à onglets catégorisés + champ libre) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-foreground">
+                Caractéristiques ({features.length + customFeatures.length})
+              </label>
+            </div>
+
+            {/* Onglets catégories */}
+            <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+              {FEATURE_CATEGORIES.map(cat => {
+                const count = featuresByCat[cat.id].filter(f => features.includes(f.key)).length;
+                const isActive = activeCat === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setActiveCat(cat.id)}
+                    className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-3 h-8 text-xs font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-card text-foreground border-border hover:bg-muted'
+                    }`}
+                  >
+                    <span>{cat.emoji}</span>
+                    <span>{cat.label}</span>
+                    {count > 0 && (
+                      <span className={`ml-1 rounded-full px-1.5 text-[10px] ${isActive ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'}`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Checkboxes de la catégorie active */}
+            <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-border p-2 bg-muted/30">
+              {featuresByCat[activeCat].map(f => {
+                const checked = features.includes(f.key);
+                return (
+                  <label
+                    key={f.key}
+                    className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs cursor-pointer border transition-colors ${
+                      checked
+                        ? 'bg-primary/10 border-primary/40 text-foreground'
+                        : 'bg-card border-border hover:bg-muted'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-primary"
+                      checked={checked}
+                      onChange={() => toggleFeature(f.key)}
+                    />
+                    <span aria-hidden>{f.emoji}</span>
+                    <span className="truncate">{f.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Champ libre */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-muted-foreground">Caractéristique personnalisée</label>
+              <div className="flex gap-2">
+                <input
+                  value={customInput}
+                  onChange={e => setCustomInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } }}
+                  className="form-input"
+                  placeholder="Ex : Vue sur le fleuve"
+                />
+                <button
+                  type="button"
+                  onClick={addCustom}
+                  className="px-3 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 hover:bg-primary/90"
+                >
+                  <Plus size={14} /> Ajouter
+                </button>
+              </div>
+              {customFeatures.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {customFeatures.map((c, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs"
+                    >
+                      ✨ {c}
+                      <button
+                        type="button"
+                        onClick={() => removeCustom(idx)}
+                        className="ml-1 hover:text-primary/70"
+                        aria-label="Supprimer"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Images */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-foreground">Images ({images.length})</label>
