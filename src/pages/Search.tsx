@@ -25,7 +25,9 @@ const SearchPage = () => {
   const initialQuery = searchParams.get('q') || '';
   const [query, setQuery] = useState(initialQuery);
   const [recent, setRecent] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const filtersRef = useRef<HTMLDivElement>(null);
 
   // Typewriter
   const [twText, setTwText] = useState('');
