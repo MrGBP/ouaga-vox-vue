@@ -18,6 +18,7 @@ import VirtualTourModal from '@/components/VirtualTourModal';
 import AIComparator from '@/components/AIComparator';
 import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
+import FocusMapBanner from '@/components/FocusMapBanner';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search } from 'lucide-react';
@@ -146,19 +147,22 @@ const Index = () => {
       const found = properties.find(p => p.id === propId);
       if (found) {
         if (exploreMap) {
-          // Ouvrir la CARTE avec ce bien focus + radius + POI (pas la fiche en sheet)
+          // Mode focus map : pin focus + radius + POI + bandeau (PAS la fiche)
+          setDetailProperty(null);
           setFocusedPropertyId(found.id);
           setActiveQuartier(found.quartier);
           setMapQuartierTrigger(found.quartier);
           if (isMobile) {
-            // S'assurer qu'on atterrit sur l'onglet carte
             sessionStorage.setItem('sapsap_force_tab', 'map');
             sessionStorage.setItem('sapsap_focus_property', found.id);
+            nav.push({ screen: 'carte-niveau3', propertyId: found.id, propertyTitle: found.title, propertyQuartier: found.quartier });
           }
         } else {
+          // Mode fiche
           setDetailProperty(found);
+          setFocusedPropertyId(null);
           if (isMobile) {
-            nav.push({ screen: 'carte-niveau3', propertyId: propId, propertyTitle: found.title, propertyQuartier: found.quartier });
+            nav.push({ screen: 'bien-detail', propertyId: propId, propertyTitle: found.title, propertyQuartier: found.quartier });
           }
         }
       }
@@ -329,42 +333,34 @@ const Index = () => {
     toast({ title: `🔄 Filtres réinitialisés — ${all.length} biens affichés` });
   };
 
+  // ─── ACTION A : "Voir la fiche" — ouvre la fiche détaillée (PAS de focus map)
   const handleViewDetails = useCallback((property: Property) => {
     setDetailProperty(property);
-    setFocusedPropertyId(property.id);
+    setFocusedPropertyId(null); // pas de focus map quand on regarde la fiche
     addToRecentlyViewed(property);
     if (isMobile) {
-      nav.push({ screen: 'carte-niveau3', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
+      nav.push({ screen: 'bien-detail', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [isMobile, nav]);
 
+  // Clic sur un pin de carte → ouvre la fiche (choix utilisateur)
   const handlePropertyClick = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
     if (prop) handleViewDetails(prop);
   }, [properties, handleViewDetails]);
 
-  const handleFocusOnMap = useCallback((id: string) => {
-    const prop = properties.find(p => p.id === id);
-    if (prop) {
-      if (isMobile) {
-        setDetailProperty(prop);
-        setFocusedPropertyId(id);
-        addToRecentlyViewed(prop);
-      } else {
-        handleViewDetails(prop);
-      }
-    }
-  }, [properties, handleViewDetails, isMobile]);
-
-  const handleExploreOnMap = (id: string) => {
+  // ─── ACTION B : "Voir sur la carte" / "Explorer sur la carte"
+  // → ferme la fiche, focus le pin avec radius + POI, affiche le bandeau flottant
+  const handleExploreOnMap = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
     if (!prop) return;
+    setDetailProperty(null);                // ferme la fiche
+    setFocusedPropertyId(id);               // active le focus map
+    setActiveQuartier(prop.quartier);
+    addToRecentlyViewed(prop);
     if (isMobile) {
-      setFocusedPropertyId(id);
-      setDetailProperty(prop);
-      setActiveQuartier(prop.quartier);
       nav.push({
         screen: 'carte-niveau3',
         propertyId: id,
@@ -372,12 +368,12 @@ const Index = () => {
         propertyQuartier: prop.quartier,
       });
     } else {
-      setFocusedPropertyId(id);
-      setDetailProperty(prop);
-      setActiveQuartier(prop.quartier);
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
-  };
+  }, [properties, isMobile, nav]);
+
+  // Alias : "Voir sur la carte" sur PropertyCard = même comportement que Explorer
+  const handleFocusOnMap = handleExploreOnMap;
 
   const handleQuartierClick = (q: any) => {
     setDetailProperty(null);
@@ -587,7 +583,7 @@ const Index = () => {
         />
 
         <div className="flex gap-0 relative">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`transition-all duration-300 ${detailProperty ? 'w-full md:w-[calc(100%-360px)] lg:w-[calc(100%-420px)]' : 'w-full'}`}>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`relative transition-all duration-300 ${detailProperty ? 'w-full md:w-[calc(100%-360px)] lg:w-[calc(100%-420px)]' : 'w-full'}`}>
             <InteractiveMap
               properties={mapProperties} pois={pois} quartiers={quartiers}
               onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
@@ -597,6 +593,17 @@ const Index = () => {
               panelOpen={!!detailProperty} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
               favoriteIds={favorites}
             />
+            {/* Bandeau flottant : visible uniquement en mode focus map (sans fiche ouverte) */}
+            {focusedPropertyId && !detailProperty && (
+              <FocusMapBanner
+                property={properties.find(p => p.id === focusedPropertyId) || null}
+                onOpenDetails={() => {
+                  const p = properties.find(pr => pr.id === focusedPropertyId);
+                  if (p) { setDetailProperty(p); }
+                }}
+                onClose={() => { setFocusedPropertyId(null); }}
+              />
+            )}
           </motion.div>
 
           {detailProperty && (
