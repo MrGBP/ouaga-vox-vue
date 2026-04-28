@@ -5,7 +5,8 @@ import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import AdminKPICard from '@/admin/components/AdminKPICard';
 import AdminBadge from '@/admin/components/AdminBadge';
 import ConfirmDialog from '@/admin/components/ConfirmDialog';
-import { CalendarDays, TrendingUp, Percent, DollarSign, Check, X, FileText, Trash2 } from 'lucide-react';
+import AdminReservationsLive from './AdminReservationsLive';
+import { CalendarDays, TrendingUp, Percent, DollarSign, Check, X, FileText, Trash2, Radio } from 'lucide-react';
 import type { ReservationStatus } from '@/admin/types';
 
 const COLUMNS: { status: ReservationStatus; label: string; headerBg: string }[] = [
@@ -18,7 +19,7 @@ const COLUMNS: { status: ReservationStatus; label: string; headerBg: string }[] 
 
 export default function AdminReservations() {
   const reservations = useAdminStore(s => s.reservations);
-  const [view, setView] = useState<'kanban' | 'table'>('kanban');
+  const [view, setView] = useState<'kanban' | 'table' | 'live'>('kanban');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const detail = detailId ? reservations.find(r => r.id === detailId) : null;
@@ -53,9 +54,12 @@ export default function AdminReservations() {
       <div className="flex gap-1 mb-4">
         <button onClick={() => setView('kanban')} className={`rounded-lg px-4 py-1.5 text-xs font-medium ${view === 'kanban' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground'}`}>📋 Kanban</button>
         <button onClick={() => setView('table')} className={`rounded-lg px-4 py-1.5 text-xs font-medium ${view === 'table' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground'}`}>📊 Tableau</button>
+        <button onClick={() => setView('live')} className={`rounded-lg px-4 py-1.5 text-xs font-medium flex items-center gap-1 ${view === 'live' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground'}`}><Radio className="h-3 w-3" /> Live</button>
       </div>
 
-      {view === 'kanban' ? (
+      {view === 'live' ? (
+        <AdminReservationsLive />
+      ) : view === 'kanban' ? (
         <div className="flex gap-3 overflow-x-auto pb-4">
           {COLUMNS.map(col => {
             const items = reservations.filter(r => r.status === col.status);
