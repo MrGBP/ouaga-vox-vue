@@ -330,24 +330,28 @@ export default function MobileApp(props: MobileAppProps) {
     props.onFocusClear();
   }, [props.onFocusClear]);
 
+  // Open the full property page (real route, fullscreen)
+  const openPropertyPage = useCallback((id: string) => {
+    navigate(`/property/${id}`);
+  }, [navigate]);
+
   const handlePropertyClick = useCallback((id: string) => {
-    // On map tab → show preview first instead of full sheet
+    // On map tab → show preview first instead of navigating away
     const prop = props.properties.find(p => p.id === id);
     if (prop && mobileTab === 'map') {
       setPinPreview(prop);
       return;
     }
-    props.onPropertyClick(id);
-    // The sheet's initialSnapVh is now level-aware (92 for navLevel 3),
-    // so it opens at fullscreen directly — no flash from 40 → 92.
-  }, [props.onPropertyClick, props.properties, mobileTab]);
+    // Anywhere else → real fullscreen page
+    openPropertyPage(id);
+  }, [openPropertyPage, props.properties, mobileTab]);
 
   const openFullDetailFromPreview = useCallback(() => {
     if (!pinPreview) return;
     const id = pinPreview.id;
     setPinPreview(null);
-    props.onPropertyClick(id);
-  }, [pinPreview, props.onPropertyClick]);
+    openPropertyPage(id);
+  }, [pinPreview, openPropertyPage]);
 
   // Navigation handlers
   const handleNavBack = () => {
