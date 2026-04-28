@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import SearchPage from "./pages/Search";
 import NotFound from "./pages/NotFound";
 
 const AdminLayout = lazy(() => import("@/admin/AdminLayout"));
