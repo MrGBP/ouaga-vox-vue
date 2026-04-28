@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          property_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          property_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          property_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          read_by_admin: boolean
+          read_by_client: boolean
+          reservation_id: string
+          sender_id: string | null
+          sender_name: string
+          sender_role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          read_by_admin?: boolean
+          read_by_client?: boolean
+          reservation_id: string
+          sender_id?: string | null
+          sender_name: string
+          sender_role?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          read_by_admin?: boolean
+          read_by_client?: boolean
+          reservation_id?: string
+          sender_id?: string | null
+          sender_name?: string
+          sender_role?: string
+        }
+        Relationships: []
+      }
       pois: {
         Row: {
           created_at: string
@@ -331,6 +388,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_searches: {
+        Row: {
+          alert_enabled: boolean
+          created_at: string
+          filters: Json
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_enabled?: boolean
+          created_at?: string
+          filters?: Json
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_enabled?: boolean
+          created_at?: string
+          filters?: Json
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

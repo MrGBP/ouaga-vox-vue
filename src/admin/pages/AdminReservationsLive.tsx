@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Phone, Mail, MessageSquare, RefreshCw, Trash2, Check, X, CalendarClock } from 'lucide-react';
+import { Loader2, Phone, Mail, MessageSquare, RefreshCw, Trash2, Check, X, CalendarClock, MessagesSquare } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ReservationChat from '@/components/ReservationChat';
 import {
   listMyReservations,
   subscribeReservations,
@@ -40,6 +42,7 @@ export default function AdminReservationsLive() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [chatRow, setChatRow] = useState<ReservationRow | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -238,6 +241,13 @@ export default function AdminReservationsLive() {
                           <Check size={12} /> Marquer terminée
                         </button>
                       )}
+                      <button
+                        onClick={() => setChatRow(r)}
+                        title="Messagerie interne"
+                        className="h-7 px-2 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 flex items-center"
+                      >
+                        <MessagesSquare size={12} />
+                      </button>
                       <a
                         href={`https://wa.me/${r.contact_phone.replace(/[^0-9+]/g, '')}?text=${encodeURIComponent(`Bonjour ${r.contact_name}, concernant votre demande sur SapSapHouse…`)}`}
                         target="_blank"
@@ -263,6 +273,15 @@ export default function AdminReservationsLive() {
           );
         })}
       </div>
+
+      <Dialog open={!!chatRow} onOpenChange={(o) => !o && setChatRow(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Conversation avec {chatRow?.contact_name}</DialogTitle>
+          </DialogHeader>
+          {chatRow && <ReservationChat reservationId={chatRow.id} viewerRole="admin" viewerName="Admin SapSapHouse" />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
