@@ -132,3 +132,12 @@ export async function deletePropertyMedia(mediaId: string, storagePath?: string 
   const { error } = await supabase.from('property_media').delete().eq('id', mediaId);
   if (error) throw error;
 }
+
+export async function updateMediaPosition(mediaId: string, position: number) {
+  const { error } = await supabase.from('property_media').update({ position }).eq('id', mediaId);
+  if (error) throw error;
+}
+
+export async function reorderPropertyMedia(items: { id: string; position: number }[]) {
+  await Promise.all(items.map(it => updateMediaPosition(it.id, it.position)));
+}

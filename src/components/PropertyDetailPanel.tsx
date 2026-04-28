@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { POI_CATALOG, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import { resolveFeatures } from '@/lib/featureCatalog';
+import { usePropertyMedia } from '@/hooks/usePropertyMedia';
 import { useToast } from '@/hooks/use-toast';
 import ReservationFlow from './ReservationFlow';
 
@@ -119,19 +120,34 @@ const PropertyDetailPanel = ({
 
   if (!property) return null;
 
-  const images = property.images?.length ? property.images : ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'];
+  const fallbackImg = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800';
   const isFurnished = isTypeFurnished(property.type) || property.furnished || false;
   const nightPrice = isFurnished ? pricePerNight(property.price) : 0;
-  const videoUrl = property.video_url || (property.has_video ? 'https://www.w3schools.com/html/mov_bbb.mp4' : null);
 
-  // Build media items
-  const mediaItems: MediaItem[] = [
-    ...images.map(url => ({ type: 'photo' as const, url })),
-    ...(videoUrl ? [{ type: 'video' as const, url: videoUrl }] : []),
-  ];
+  // Médias unifiés : Supabase property_media en priorité, sinon legacy (images[], video_url, virtual_tour_url)
+  const { items: unifiedMedia } = usePropertyMedia(property.id, {
+    images: property.images,
+    video_url: property.video_url ?? (property.has_video ? 'https://www.w3schools.com/html/mov_bbb.mp4' : null),
+    virtual_tour_url: property.virtual_tour_url,
+  });
 
-  const photoCount = images.length;
-  const videoCount = videoUrl ? 1 : 0;
+  // Pour la galerie principale on prend images + vidéos (pas le 360, qui s'ouvre en overlay)
+  const galleryItems = unifiedMedia.filter(m => m.kind === 'image' || m.kind === 'video');
+  const tour360Item = unifiedMedia.find(m => m.kind === 'video_360');
+  const videoItem = unifiedMedia.find(m => m.kind === 'video');
+
+  const images = galleryItems.filter(m => m.kind === 'image').map(m => m.url);
+  const imagesForLegacy = images.length > 0 ? images : (property.images?.length ? property.images : [fallbackImg]);
+
+  // Build media items pour le slider principal
+  const mediaItems: MediaItem[] = galleryItems.length > 0
+    ? galleryItems.map(m => ({ type: m.kind === 'video' ? 'video' as const : 'photo' as const, url: m.url }))
+    : [{ type: 'photo' as const, url: fallbackImg }];
+
+  const photoCount = images.length || imagesForLegacy.length;
+  const videoCount = videoItem ? 1 : 0;
+  const videoUrl = videoItem?.url ?? null;
+  const tour360Url = tour360Item?.url ?? property.virtual_tour_url ?? null;
 
   // Nearby POIs
   const nearbyPois = pois
@@ -232,7 +248,7 @@ const PropertyDetailPanel = ({
             playsInline
           />
         ) : (
-          <img src={currentMedia?.url || images[0]} alt={property.title} className="w-full h-full object-cover" />
+          <img src={currentMedia?.url || imagesForLegacy[0]} alt={property.title} className="w-full h-full object-cover" />
         )}
 
         {/* Desktop arrows (hidden on mobile) */}
@@ -284,7 +300,7 @@ const PropertyDetailPanel = ({
             🎥 1 vidéo
           </Badge>
         )}
-        {property.virtual_tour_url && (
+        {tour360Url && (
           <Badge className="bg-accent text-accent-foreground gap-1 px-3 py-1.5 text-xs cursor-pointer hover:bg-accent/80" onClick={() => setShow360Overlay(true)}>
             🔭 Visite 360°
           </Badge>
@@ -605,7 +621,7 @@ const PropertyDetailPanel = ({
             style={{ background: '#000' }}
           >
             <iframe
-              src={property.virtual_tour_url || ''}
+              src={tour360Url || ''}
               className="w-full h-full border-none"
               allowFullScreen
               allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; xr-spatial-tracking"
