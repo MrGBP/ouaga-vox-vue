@@ -147,19 +147,22 @@ const Index = () => {
       const found = properties.find(p => p.id === propId);
       if (found) {
         if (exploreMap) {
-          // Ouvrir la CARTE avec ce bien focus + radius + POI (pas la fiche en sheet)
+          // Mode focus map : pin focus + radius + POI + bandeau (PAS la fiche)
+          setDetailProperty(null);
           setFocusedPropertyId(found.id);
           setActiveQuartier(found.quartier);
           setMapQuartierTrigger(found.quartier);
           if (isMobile) {
-            // S'assurer qu'on atterrit sur l'onglet carte
             sessionStorage.setItem('sapsap_force_tab', 'map');
             sessionStorage.setItem('sapsap_focus_property', found.id);
+            nav.push({ screen: 'carte-niveau3', propertyId: found.id, propertyTitle: found.title, propertyQuartier: found.quartier });
           }
         } else {
+          // Mode fiche
           setDetailProperty(found);
+          setFocusedPropertyId(null);
           if (isMobile) {
-            nav.push({ screen: 'carte-niveau3', propertyId: propId, propertyTitle: found.title, propertyQuartier: found.quartier });
+            nav.push({ screen: 'bien-detail', propertyId: propId, propertyTitle: found.title, propertyQuartier: found.quartier });
           }
         }
       }
