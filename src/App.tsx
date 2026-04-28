@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import SearchPage from "./pages/Search";
+import PropertyPage from "./pages/Property";
 import NotFound from "./pages/NotFound";
 
 const AdminLayout = lazy(() => import("@/admin/AdminLayout"));
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/search" element={<SearchPage />} />
+              <Route path="/property/:id" element={<PropertyPage />} />
               <Route
                 path="/admin/*"
                 element={
