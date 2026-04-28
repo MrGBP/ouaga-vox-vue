@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useNav } from '@/contexts/NavigationContext';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
 import { isTypeFurnished, pricePerNight } from '@/lib/mockData';
