@@ -516,7 +516,7 @@ export default function MobileApp(props: MobileAppProps) {
       ) : null}
 
       {/* ═══ FULLSCREEN TAB PAGES (covers map) ═══ */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {/* HOME TAB */}
         {mobileTab === 'home' && (
           <motion.div
