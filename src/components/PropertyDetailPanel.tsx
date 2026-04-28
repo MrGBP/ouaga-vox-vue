@@ -621,7 +621,7 @@ const PropertyDetailPanel = ({
             style={{ background: '#000' }}
           >
             <iframe
-              src={property.virtual_tour_url || ''}
+              src={tour360Url || ''}
               className="w-full h-full border-none"
               allowFullScreen
               allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; xr-spatial-tracking"
