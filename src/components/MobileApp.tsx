@@ -488,10 +488,7 @@ export default function MobileApp(props: MobileAppProps) {
               onToggleFavorite={props.onToggleFavorite}
               onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
               similarProperties={similarProperties}
-              onSelectProperty={(id) => {
-                const p = props.properties.find(pr => pr.id === id);
-                if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
-              }}
+              onSelectProperty={(id) => { openPropertyPage(id); }}
               onExploreOnMap={(id) => { props.onExploreOnMap(id); setIsExploring(true); sheetRef.current?.close?.(); }}
               isMobileOverride={true}
             />
