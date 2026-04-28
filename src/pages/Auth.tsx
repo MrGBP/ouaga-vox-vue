@@ -88,8 +88,14 @@ export default function Auth() {
           </button>
         </form>
 
+        {mode === 'login' && (
+          <Link to="/forgot-password" className="block text-center text-xs mt-4 hover:underline" style={{ color: '#1a3560' }}>
+            Mot de passe oublié ?
+          </Link>
+        )}
+
         <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-          className="w-full text-center text-xs text-muted-foreground mt-4 hover:underline">
+          className="w-full text-center text-xs text-muted-foreground mt-3 hover:underline">
           {mode === 'login' ? "Pas de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
         </button>
 
