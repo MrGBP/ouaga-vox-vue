@@ -196,6 +196,7 @@ const InteractiveMap = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const labelsLayerRef = useRef<L.TileLayer | null>(null);
   const quartierLayer = useRef<L.LayerGroup | null>(null);
   const propertyLayer = useRef<L.LayerGroup | null>(null);
   const focusLayer = useRef<L.LayerGroup | null>(null);
@@ -207,6 +208,7 @@ const InteractiveMap = ({
   const [activeRadius, setActiveRadius] = useState<number | null>(null);
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
+  const [layerMode, setLayerMode] = useState<MapLayerMode>('standard');
 
   // Stable refs for callbacks to break re-render loops
   const onQuartierChangeRef = useRef(onQuartierChange);
