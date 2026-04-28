@@ -127,6 +127,8 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
       bedrooms: Number(bedrooms) || 0, bathrooms: Number(bathrooms) || 0,
       surface_area: Number(surface) || 0,
       images, adminStatus: status,
+      features,
+      customFeatures,
     };
 
     if (isEdit && initial) {
