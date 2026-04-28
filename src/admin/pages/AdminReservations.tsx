@@ -54,9 +54,12 @@ export default function AdminReservations() {
       <div className="flex gap-1 mb-4">
         <button onClick={() => setView('kanban')} className={`rounded-lg px-4 py-1.5 text-xs font-medium ${view === 'kanban' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground'}`}>📋 Kanban</button>
         <button onClick={() => setView('table')} className={`rounded-lg px-4 py-1.5 text-xs font-medium ${view === 'table' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground'}`}>📊 Tableau</button>
+        <button onClick={() => setView('live')} className={`rounded-lg px-4 py-1.5 text-xs font-medium flex items-center gap-1 ${view === 'live' ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground'}`}><Radio className="h-3 w-3" /> Live</button>
       </div>
 
-      {view === 'kanban' ? (
+      {view === 'live' ? (
+        <AdminReservationsLive />
+      ) : view === 'kanban' ? (
         <div className="flex gap-3 overflow-x-auto pb-4">
           {COLUMNS.map(col => {
             const items = reservations.filter(r => r.status === col.status);
