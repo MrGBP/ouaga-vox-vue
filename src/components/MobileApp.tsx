@@ -214,13 +214,30 @@ export default function MobileApp(props: MobileAppProps) {
   const sheetRef = useRef<UniversalSheetHandle>(null);
 
   // Open filters drawer if Search page asked for it (sessionStorage flag)
+  // Force a specific tab if requested (e.g. /property → "Voir sur la carte")
   useEffect(() => {
     try {
       if (sessionStorage.getItem('sapsap_open_filters') === '1') {
         sessionStorage.removeItem('sapsap_open_filters');
         setShowMobileFilters(true);
       }
+      const forcedTab = sessionStorage.getItem('sapsap_force_tab');
+      if (forcedTab) {
+        sessionStorage.removeItem('sapsap_force_tab');
+        setMobileTab(forcedTab);
+        props.onMobileTabChange(forcedTab);
+      }
+      const focusPid = sessionStorage.getItem('sapsap_focus_property');
+      if (focusPid) {
+        sessionStorage.removeItem('sapsap_focus_property');
+        // Show pin preview on map for that property after a short delay so map mounts
+        setTimeout(() => {
+          const p = props.properties.find(pr => pr.id === focusPid);
+          if (p) setPinPreview(p);
+        }, 350);
+      }
     } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Body scroll lock when filters or search open
