@@ -42,19 +42,25 @@ export const UniversalSheet = forwardRef<UniversalSheetHandle, UniversalSheetPro
 
     if (height <= 2) return null;
 
+    // In fullscreen mode, the sheet covers the entire viewport (including the area
+    // behind the bottom nav) to avoid the "previous screen visible at the bottom" bug.
+    // We also bump z-index above the bottom nav (z-90) so nothing peeks through.
     return (
       <div
         ref={sheetRef}
         key={sheetKey}
-        className="block lg:hidden fixed left-0 right-0 bg-card z-50 flex flex-col"
+        className={`block lg:hidden fixed left-0 right-0 bg-card flex flex-col ${isFullscreen ? 'z-[100]' : 'z-50'}`}
         style={{
-          bottom: `calc(${BOTTOM_NAV_H}px + env(safe-area-inset-bottom))`,
-          height: `${height}px`,
+          bottom: isFullscreen ? 0 : `calc(${BOTTOM_NAV_H}px + env(safe-area-inset-bottom))`,
+          height: isFullscreen
+            ? `calc(100dvh - env(safe-area-inset-top))`
+            : `${height}px`,
+          paddingBottom: isFullscreen ? 'env(safe-area-inset-bottom)' : 0,
           boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
           willChange: 'height',
           touchAction: 'none',
           borderRadius: isFullscreen ? 0 : '20px 20px 0 0',
-          transition: 'border-radius 200ms ease',
+          transition: 'border-radius 200ms ease, bottom 200ms ease',
         }}
       >
         {/* Handle — always draggable */}
