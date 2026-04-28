@@ -248,7 +248,7 @@ const PropertyDetailPanel = ({
             playsInline
           />
         ) : (
-          <img src={currentMedia?.url || images[0]} alt={property.title} className="w-full h-full object-cover" />
+          <img src={currentMedia?.url || imagesForLegacy[0]} alt={property.title} className="w-full h-full object-cover" />
         )}
 
         {/* Desktop arrows (hidden on mobile) */}
