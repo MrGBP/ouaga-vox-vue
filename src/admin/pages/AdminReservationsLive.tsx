@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Phone, Mail, MessageSquare, RefreshCw, Trash2, Check, X, CalendarClock } from 'lucide-react';
+import { Loader2, Phone, Mail, MessageSquare, RefreshCw, Trash2, Check, X, CalendarClock, MessagesSquare } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ReservationChat from '@/components/ReservationChat';
 import {
   listMyReservations,
   subscribeReservations,
