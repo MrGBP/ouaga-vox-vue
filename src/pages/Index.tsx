@@ -580,7 +580,7 @@ const Index = () => {
         />
 
         <div className="flex gap-0 relative">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`transition-all duration-300 ${detailProperty ? 'w-full md:w-[calc(100%-360px)] lg:w-[calc(100%-420px)]' : 'w-full'}`}>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`relative transition-all duration-300 ${detailProperty ? 'w-full md:w-[calc(100%-360px)] lg:w-[calc(100%-420px)]' : 'w-full'}`}>
             <InteractiveMap
               properties={mapProperties} pois={pois} quartiers={quartiers}
               onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
@@ -590,6 +590,17 @@ const Index = () => {
               panelOpen={!!detailProperty} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
               favoriteIds={favorites}
             />
+            {/* Bandeau flottant : visible uniquement en mode focus map (sans fiche ouverte) */}
+            {focusedPropertyId && !detailProperty && (
+              <FocusMapBanner
+                property={properties.find(p => p.id === focusedPropertyId) || null}
+                onOpenDetails={() => {
+                  const p = properties.find(pr => pr.id === focusedPropertyId);
+                  if (p) { setDetailProperty(p); }
+                }}
+                onClose={() => { setFocusedPropertyId(null); }}
+              />
+            )}
           </motion.div>
 
           {detailProperty && (
