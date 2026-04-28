@@ -309,9 +309,8 @@ export default function MobileApp(props: MobileAppProps) {
       return;
     }
     props.onPropertyClick(id);
-    setTimeout(() => {
-      sheetRef.current?.snapFullscreen?.();
-    }, 120);
+    // The sheet's initialSnapVh is now level-aware (92 for navLevel 3),
+    // so it opens at fullscreen directly — no flash from 40 → 92.
   }, [props.onPropertyClick, props.properties, mobileTab]);
 
   const openFullDetailFromPreview = useCallback(() => {
@@ -319,9 +318,6 @@ export default function MobileApp(props: MobileAppProps) {
     const id = pinPreview.id;
     setPinPreview(null);
     props.onPropertyClick(id);
-    setTimeout(() => {
-      sheetRef.current?.snapFullscreen?.();
-    }, 120);
   }, [pinPreview, props.onPropertyClick]);
 
   // Navigation handlers
@@ -520,7 +516,7 @@ export default function MobileApp(props: MobileAppProps) {
       ) : null}
 
       {/* ═══ FULLSCREEN TAB PAGES (covers map) ═══ */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {/* HOME TAB */}
         {mobileTab === 'home' && (
           <motion.div
@@ -863,7 +859,7 @@ export default function MobileApp(props: MobileAppProps) {
 
           {/* "Voir la fiche" button */}
           <button
-            onClick={() => { setIsExploring(false); sheetRef.current?.snapFullscreen?.(); }}
+            onClick={() => { setIsExploring(false); setTimeout(() => sheetRef.current?.snapFullscreen?.(), 50); }}
             style={{
               position: 'fixed', bottom: 'calc(68px + env(safe-area-inset-bottom))',
               left: '50%', transform: 'translateX(-50%)', zIndex: 26,
@@ -885,7 +881,7 @@ export default function MobileApp(props: MobileAppProps) {
         <UniversalSheet
           ref={sheetRef}
           sheetKey={`map-${navLevel}-${props.activeQuartier || ''}-${props.detailProperty?.id || ''}`}
-          initialSnapVh={40}
+          initialSnapVh={navLevel === 3 ? 92 : 40}
           headerContent={getSheetHeader()}
           onHeightChange={handleSheetHeightChange}
         >
@@ -925,9 +921,7 @@ export default function MobileApp(props: MobileAppProps) {
                 propertyQuartier: prop.quartier,
               });
               setShowMobileSearch(false);
-              setTimeout(() => {
-                sheetRef.current?.snapFullscreen?.();
-              }, 200);
+              // Sheet opens at fullscreen directly via initialSnapVh — no setTimeout needed.
             }}
             onSearchSubmit={props.onSearch}
             searchQuery={props.searchQuery}
@@ -947,8 +941,8 @@ export default function MobileApp(props: MobileAppProps) {
         maxHeightVh={92}
         initialHeightVh={55}
         snapPoints={[0, 55, 92]}
-        overlayZIndex={150}
-        drawerZIndex={151}
+        overlayZIndex={210}
+        drawerZIndex={211}
       >
         <div className="px-4 pb-4">
           <FilterBar
