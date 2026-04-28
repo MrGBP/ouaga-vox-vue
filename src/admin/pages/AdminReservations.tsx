@@ -5,7 +5,8 @@ import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import AdminKPICard from '@/admin/components/AdminKPICard';
 import AdminBadge from '@/admin/components/AdminBadge';
 import ConfirmDialog from '@/admin/components/ConfirmDialog';
-import { CalendarDays, TrendingUp, Percent, DollarSign, Check, X, FileText, Trash2 } from 'lucide-react';
+import AdminReservationsLive from './AdminReservationsLive';
+import { CalendarDays, TrendingUp, Percent, DollarSign, Check, X, FileText, Trash2, Radio } from 'lucide-react';
 import type { ReservationStatus } from '@/admin/types';
 
 const COLUMNS: { status: ReservationStatus; label: string; headerBg: string }[] = [
