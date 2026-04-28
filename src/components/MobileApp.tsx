@@ -539,7 +539,25 @@ export default function MobileApp(props: MobileAppProps) {
         </div>
       </div>
 
-      {/* ═══ NAVBAR ═══ */}
+      {/* ═══ BANDEAU FLOTTANT (mode focus map sans fiche ouverte) ═══ */}
+      {(mobileTab === 'map') && props.focusedPropertyId && !props.detailProperty && (
+        <div
+          className="fixed left-0 right-0 z-30 pointer-events-none"
+          style={{ top: 'calc(56px + env(safe-area-inset-top))', paddingLeft: 12, paddingRight: 12 }}
+        >
+          <div className="relative pointer-events-auto">
+            <FocusMapBanner
+              property={props.properties.find(p => p.id === props.focusedPropertyId) || null}
+              onOpenDetails={() => {
+                const p = props.properties.find(pr => pr.id === props.focusedPropertyId);
+                if (p) props.onViewDetails(p);
+              }}
+              onClose={() => props.onFocusClear()}
+            />
+          </div>
+        </div>
+      )}
+
       {mobileTab === 'map' ? (
         <MobileNavbar
           level={navLevel}
