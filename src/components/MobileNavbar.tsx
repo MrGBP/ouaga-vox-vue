@@ -92,11 +92,12 @@ const MobileNavbar = ({
                   {quartierName} · <span className={isExploring ? '' : 'text-muted-foreground font-normal'}>{quartierCount} bien{(quartierCount || 0) > 1 ? 's' : ''}</span>
                 </span>
               ) : (
+                /* Level 3 (fiche bien): pas de titre dupliqué — déjà visible sur la fiche */
                 <span
-                  className="text-sm font-semibold truncate"
+                  className="text-xs font-medium text-muted-foreground truncate"
                   style={isExploring ? { color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' } : undefined}
                 >
-                  {propertyTitle} · <span className={`text-xs ${isExploring ? '' : 'text-muted-foreground font-normal'}`}>{propertyQuartier}</span>
+                  Retour
                 </span>
               )}
             </>
