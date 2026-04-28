@@ -160,7 +160,39 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const [upgradeShown, setUpgradeShown] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [paymentType, setPaymentType] = useState<'partial' | 'full'>('partial');
+
+  // Contact info (prefilled from profile when signed in, editable for guests)
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [isAuthed, setIsAuthed] = useState(false);
+
   const { toast } = useToast();
+
+  // Prefill contact info from auth profile
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled || !user) return;
+      setIsAuthed(true);
+      // Default to auth metadata
+      setContactEmail(user.email ?? '');
+      const meta = (user.user_metadata ?? {}) as Record<string, any>;
+      if (meta.full_name) setContactName(meta.full_name);
+      if (meta.phone) setContactPhone(meta.phone);
+      // Try profiles table for richer data
+      const { data: profile } = await supabase
+        .from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle();
+      if (cancelled || !profile) return;
+      if (profile.full_name) setContactName(profile.full_name);
+      if (profile.phone) setContactPhone(profile.phone);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Demo calendar statuses: reserved, available
   const { bookedDates, availableDates } = useMemo(() => {
