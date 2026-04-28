@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Public can read property media files" ON storage.objects;
