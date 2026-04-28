@@ -42,6 +42,10 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
   const [status, setStatus] = useState<AdminPropertyStatus>('pending');
   const [images, setImages] = useState<string[]>([]);
   const [imageUrlInput, setImageUrlInput] = useState('');
+  const [features, setFeatures] = useState<string[]>([]);
+  const [customFeatures, setCustomFeatures] = useState<string[]>([]);
+  const [customInput, setCustomInput] = useState('');
+  const [activeCat, setActiveCat] = useState<FeatureCategoryId>(FEATURE_CATEGORIES[0].id);
 
   useEffect(() => {
     if (!open) return;
@@ -52,14 +56,42 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
       setBedrooms(initial.bedrooms ?? 1); setBathrooms(initial.bathrooms ?? 1);
       setSurface(initial.surface_area ?? 50); setStatus(initial.adminStatus);
       setImages(initial.images || []);
+      // Pré-coche depuis features[] + anciens has_*
+      setFeatures(extractActiveFeatureKeys(initial as any));
+      setCustomFeatures(Array.isArray((initial as any).customFeatures) ? (initial as any).customFeatures : []);
     } else {
       setTitle(''); setDescription(''); setType(PROPERTY_TYPES[0].value);
       setPrice(''); setQuartier(mockQuartiers[0]?.name || '');
       setAddress(''); setBedrooms(1); setBathrooms(1); setSurface(50);
       setStatus('pending'); setImages([]);
+      setFeatures([]); setCustomFeatures([]);
     }
     setImageUrlInput('');
+    setCustomInput('');
+    setActiveCat(FEATURE_CATEGORIES[0].id);
   }, [open, initial]);
+
+  const featuresByCat = useMemo(() => {
+    const map: Record<string, typeof FEATURE_CATALOG> = {};
+    FEATURE_CATEGORIES.forEach(c => { map[c.id] = []; });
+    FEATURE_CATALOG.forEach(f => { map[f.category].push(f); });
+    return map;
+  }, []);
+
+  const toggleFeature = (key: string) =>
+    setFeatures(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+
+  const addCustom = () => {
+    const v = customInput.trim();
+    if (!v) return;
+    if (customFeatures.some(c => c.toLowerCase() === v.toLowerCase())) {
+      toast.error('Déjà ajoutée'); return;
+    }
+    setCustomFeatures(prev => [...prev, v]);
+    setCustomInput('');
+  };
+  const removeCustom = (idx: number) =>
+    setCustomFeatures(prev => prev.filter((_, i) => i !== idx));
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
