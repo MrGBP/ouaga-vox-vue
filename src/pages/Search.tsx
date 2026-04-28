@@ -186,7 +186,7 @@ const SearchPage = () => {
             <p className="text-4xl mb-3">🔍</p>
             <p className="text-sm text-muted-foreground">Aucun résultat pour « {query} »</p>
             <button
-              onClick={() => navigate('/?openFilters=1')}
+              onClick={() => { try { sessionStorage.setItem('sapsap_open_filters', '1'); } catch {} navigate(-1); }}
               className="mt-5 inline-flex items-center gap-2 px-4 h-10 rounded-full bg-muted text-sm font-medium text-foreground active:scale-[0.98]"
             >
               <SlidersHorizontal className="h-4 w-4" /> Ouvrir les filtres avancés
@@ -237,7 +237,7 @@ const SearchPage = () => {
             </section>
 
             <button
-              onClick={() => navigate('/?openFilters=1')}
+              onClick={() => { try { sessionStorage.setItem('sapsap_open_filters', '1'); } catch {} navigate(-1); }}
               className="w-full mt-6 h-12 rounded-xl bg-card border border-border text-sm font-medium text-foreground flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               <SlidersHorizontal className="h-4 w-4 text-primary" /> Filtres avancés
