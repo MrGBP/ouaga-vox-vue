@@ -19,7 +19,7 @@ const COLUMNS: { status: ReservationStatus; label: string; headerBg: string }[] 
 
 export default function AdminReservations() {
   const reservations = useAdminStore(s => s.reservations);
-  const [view, setView] = useState<'kanban' | 'table'>('kanban');
+  const [view, setView] = useState<'kanban' | 'table' | 'live'>('kanban');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const detail = detailId ? reservations.find(r => r.id === detailId) : null;
