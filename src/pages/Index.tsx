@@ -329,42 +329,34 @@ const Index = () => {
     toast({ title: `🔄 Filtres réinitialisés — ${all.length} biens affichés` });
   };
 
+  // ─── ACTION A : "Voir la fiche" — ouvre la fiche détaillée (PAS de focus map)
   const handleViewDetails = useCallback((property: Property) => {
     setDetailProperty(property);
-    setFocusedPropertyId(property.id);
+    setFocusedPropertyId(null); // pas de focus map quand on regarde la fiche
     addToRecentlyViewed(property);
     if (isMobile) {
-      nav.push({ screen: 'carte-niveau3', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
+      nav.push({ screen: 'bien-detail', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
     } else {
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [isMobile, nav]);
 
+  // Clic sur un pin de carte → ouvre la fiche (choix utilisateur)
   const handlePropertyClick = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
     if (prop) handleViewDetails(prop);
   }, [properties, handleViewDetails]);
 
-  const handleFocusOnMap = useCallback((id: string) => {
-    const prop = properties.find(p => p.id === id);
-    if (prop) {
-      if (isMobile) {
-        setDetailProperty(prop);
-        setFocusedPropertyId(id);
-        addToRecentlyViewed(prop);
-      } else {
-        handleViewDetails(prop);
-      }
-    }
-  }, [properties, handleViewDetails, isMobile]);
-
-  const handleExploreOnMap = (id: string) => {
+  // ─── ACTION B : "Voir sur la carte" / "Explorer sur la carte"
+  // → ferme la fiche, focus le pin avec radius + POI, affiche le bandeau flottant
+  const handleExploreOnMap = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
     if (!prop) return;
+    setDetailProperty(null);                // ferme la fiche
+    setFocusedPropertyId(id);               // active le focus map
+    setActiveQuartier(prop.quartier);
+    addToRecentlyViewed(prop);
     if (isMobile) {
-      setFocusedPropertyId(id);
-      setDetailProperty(prop);
-      setActiveQuartier(prop.quartier);
       nav.push({
         screen: 'carte-niveau3',
         propertyId: id,
@@ -372,12 +364,12 @@ const Index = () => {
         propertyQuartier: prop.quartier,
       });
     } else {
-      setFocusedPropertyId(id);
-      setDetailProperty(prop);
-      setActiveQuartier(prop.quartier);
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
-  };
+  }, [properties, isMobile, nav]);
+
+  // Alias : "Voir sur la carte" sur PropertyCard = même comportement que Explorer
+  const handleFocusOnMap = handleExploreOnMap;
 
   const handleQuartierClick = (q: any) => {
     setDetailProperty(null);
