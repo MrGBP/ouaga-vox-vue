@@ -264,6 +264,74 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          admin_notes: string | null
+          contact_email: string | null
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          end_date: string | null
+          guests_count: number
+          id: string
+          kind: Database["public"]["Enums"]["reservation_kind"]
+          message: string | null
+          property_id: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["reservation_status"]
+          total_price: number | null
+          updated_at: string
+          user_id: string | null
+          visit_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          contact_email?: string | null
+          contact_name: string
+          contact_phone: string
+          created_at?: string
+          end_date?: string | null
+          guests_count?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["reservation_kind"]
+          message?: string | null
+          property_id: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["reservation_status"]
+          total_price?: number | null
+          updated_at?: string
+          user_id?: string | null
+          visit_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          contact_email?: string | null
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          end_date?: string | null
+          guests_count?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["reservation_kind"]
+          message?: string | null
+          property_id?: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["reservation_status"]
+          total_price?: number | null
+          updated_at?: string
+          user_id?: string | null
+          visit_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -309,6 +377,8 @@ export type Database = {
         | "rented"
         | "inactive"
         | "rejected"
+      reservation_kind: "visit" | "booking" | "rental_request"
+      reservation_status: "pending" | "confirmed" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -447,6 +517,8 @@ export const Constants = {
         "inactive",
         "rejected",
       ],
+      reservation_kind: ["visit", "booking", "rental_request"],
+      reservation_status: ["pending", "confirmed", "completed", "cancelled"],
     },
   },
 } as const
