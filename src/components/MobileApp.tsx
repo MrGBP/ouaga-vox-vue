@@ -343,16 +343,18 @@ export default function MobileApp(props: MobileAppProps) {
     nav.popToRoot();
   };
 
-  const handleMobileTabChange = (tab: string) => {
-    props.onDetailClose();
-    props.onFocusClear();
+  const openSearchPage = useCallback(() => {
+    const q = props.searchQuery?.trim();
+    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
+  }, [navigate, props.searchQuery]);
 
+  const handleMobileTabChange = (tab: string) => {
     if (tab === 'search') {
-      setShowMobileSearch(true);
-      setMobileTab('map');
+      openSearchPage();
       return;
     }
-
+    props.onDetailClose();
+    props.onFocusClear();
     setMobileTab(tab);
     setShowMobileSearch(false);
     props.onMobileTabChange(tab);
