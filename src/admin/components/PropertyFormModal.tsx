@@ -1,7 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, Upload, Link2, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { mockQuartiers, PROPERTY_TYPES } from '@/lib/mockData';
+import {
+  FEATURE_CATALOG,
+  FEATURE_CATEGORIES,
+  type FeatureCategoryId,
+  extractActiveFeatureKeys,
+} from '@/lib/featureCatalog';
 import type { AdminProperty, AdminPropertyStatus } from '@/admin/types';
 import { adminStore } from '@/admin/store/adminStore';
 
@@ -36,6 +42,10 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
   const [status, setStatus] = useState<AdminPropertyStatus>('pending');
   const [images, setImages] = useState<string[]>([]);
   const [imageUrlInput, setImageUrlInput] = useState('');
+  const [features, setFeatures] = useState<string[]>([]);
+  const [customFeatures, setCustomFeatures] = useState<string[]>([]);
+  const [customInput, setCustomInput] = useState('');
+  const [activeCat, setActiveCat] = useState<FeatureCategoryId>(FEATURE_CATEGORIES[0].id);
 
   useEffect(() => {
     if (!open) return;
@@ -46,14 +56,42 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
       setBedrooms(initial.bedrooms ?? 1); setBathrooms(initial.bathrooms ?? 1);
       setSurface(initial.surface_area ?? 50); setStatus(initial.adminStatus);
       setImages(initial.images || []);
+      // Pré-coche depuis features[] + anciens has_*
+      setFeatures(extractActiveFeatureKeys(initial as any));
+      setCustomFeatures(Array.isArray((initial as any).customFeatures) ? (initial as any).customFeatures : []);
     } else {
       setTitle(''); setDescription(''); setType(PROPERTY_TYPES[0].value);
       setPrice(''); setQuartier(mockQuartiers[0]?.name || '');
       setAddress(''); setBedrooms(1); setBathrooms(1); setSurface(50);
       setStatus('pending'); setImages([]);
+      setFeatures([]); setCustomFeatures([]);
     }
     setImageUrlInput('');
+    setCustomInput('');
+    setActiveCat(FEATURE_CATEGORIES[0].id);
   }, [open, initial]);
+
+  const featuresByCat = useMemo(() => {
+    const map: Record<string, typeof FEATURE_CATALOG> = {};
+    FEATURE_CATEGORIES.forEach(c => { map[c.id] = []; });
+    FEATURE_CATALOG.forEach(f => { map[f.category].push(f); });
+    return map;
+  }, []);
+
+  const toggleFeature = (key: string) =>
+    setFeatures(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+
+  const addCustom = () => {
+    const v = customInput.trim();
+    if (!v) return;
+    if (customFeatures.some(c => c.toLowerCase() === v.toLowerCase())) {
+      toast.error('Déjà ajoutée'); return;
+    }
+    setCustomFeatures(prev => [...prev, v]);
+    setCustomInput('');
+  };
+  const removeCustom = (idx: number) =>
+    setCustomFeatures(prev => prev.filter((_, i) => i !== idx));
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
@@ -89,6 +127,8 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
       bedrooms: Number(bedrooms) || 0, bathrooms: Number(bathrooms) || 0,
       surface_area: Number(surface) || 0,
       images, adminStatus: status,
+      features,
+      customFeatures,
     };
 
     if (isEdit && initial) {
@@ -152,6 +192,110 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
               {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </Field>
+
+          {/* ── Caractéristiques (sélecteur à onglets catégorisés + champ libre) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-foreground">
+                Caractéristiques ({features.length + customFeatures.length})
+              </label>
+            </div>
+
+            {/* Onglets catégories */}
+            <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+              {FEATURE_CATEGORIES.map(cat => {
+                const count = featuresByCat[cat.id].filter(f => features.includes(f.key)).length;
+                const isActive = activeCat === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setActiveCat(cat.id)}
+                    className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-3 h-8 text-xs font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-card text-foreground border-border hover:bg-muted'
+                    }`}
+                  >
+                    <span>{cat.emoji}</span>
+                    <span>{cat.label}</span>
+                    {count > 0 && (
+                      <span className={`ml-1 rounded-full px-1.5 text-[10px] ${isActive ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'}`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Checkboxes de la catégorie active */}
+            <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-border p-2 bg-muted/30">
+              {featuresByCat[activeCat].map(f => {
+                const checked = features.includes(f.key);
+                return (
+                  <label
+                    key={f.key}
+                    className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs cursor-pointer border transition-colors ${
+                      checked
+                        ? 'bg-primary/10 border-primary/40 text-foreground'
+                        : 'bg-card border-border hover:bg-muted'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-primary"
+                      checked={checked}
+                      onChange={() => toggleFeature(f.key)}
+                    />
+                    <span aria-hidden>{f.emoji}</span>
+                    <span className="truncate">{f.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Champ libre */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-muted-foreground">Caractéristique personnalisée</label>
+              <div className="flex gap-2">
+                <input
+                  value={customInput}
+                  onChange={e => setCustomInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } }}
+                  className="form-input"
+                  placeholder="Ex : Vue sur le fleuve"
+                />
+                <button
+                  type="button"
+                  onClick={addCustom}
+                  className="px-3 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 hover:bg-primary/90"
+                >
+                  <Plus size={14} /> Ajouter
+                </button>
+              </div>
+              {customFeatures.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {customFeatures.map((c, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs"
+                    >
+                      ✨ {c}
+                      <button
+                        type="button"
+                        onClick={() => removeCustom(idx)}
+                        className="ml-1 hover:text-primary/70"
+                        aria-label="Supprimer"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Images */}
           <div className="space-y-2">

@@ -9,6 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { POI_CATALOG, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
+import { resolveFeatures } from '@/lib/featureCatalog';
 import { useToast } from '@/hooks/use-toast';
 import ReservationFlow from './ReservationFlow';
 
@@ -150,30 +151,10 @@ const PropertyDetailPanel = ({
     property.year_built && { icon: Calendar, label: 'Année', value: property.year_built },
   ].filter(Boolean) as { icon: any; label: string; value: any }[];
 
-  // Equipment features
-  const equipmentFeatures = [
-    property.has_ac && { emoji: '❄️', label: 'Climatisation' },
-    property.has_internet && { emoji: '📶', label: 'WiFi' },
-    property.has_kitchen && { emoji: '🍳', label: 'Cuisine' },
-    property.has_tv && { emoji: '📺', label: 'TV' },
-    property.has_generator && { emoji: '⚡', label: 'Groupe élec.' },
-    property.has_water && { emoji: '💧', label: 'Eau' },
-    property.has_fridge && { emoji: '🧊', label: 'Frigo' },
-    property.has_garden && { emoji: '🌳', label: 'Jardin' },
-    property.has_terrace && { emoji: '🏖️', label: 'Terrasse' },
-    property.has_pool && { emoji: '🏊', label: 'Piscine' },
-  ].filter(Boolean) as { emoji: string; label: string }[];
-
-  // Security & access features
-  const securityFeatures = [
-    property.has_guardian && { emoji: '🛡️', label: 'Gardien' },
-    property.has_fence && { emoji: '🔒', label: 'Clôture' },
-    property.has_cameras && { emoji: '📹', label: 'Caméras' },
-    property.has_paved_road && { emoji: '🛣️', label: 'Goudronnée' },
-    property.has_parking_int && { emoji: '🚗', label: 'Parking int.' },
-    property.has_parking_ext && { emoji: '🅿️', label: 'Parking ext.' },
-    property.has_water_tower && { emoji: '🗼', label: 'Château d\'eau' },
-  ].filter(Boolean) as { emoji: string; label: string }[];
+  // Toutes les caractéristiques (catalogue + customs + legacy has_*)
+  const allFeatures = resolveFeatures(property as any);
+  const FEATURES_LIMIT = 8;
+  const visibleFeatures = showAllFeatures ? allFeatures : allFeatures.slice(0, FEATURES_LIMIT);
 
   const features = [
     property.bedrooms && property.bedrooms > 0 && { icon: Bed, label: 'Chambres', value: property.bedrooms },
@@ -356,41 +337,34 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* Section: Équipements */}
-        {equipmentFeatures.length > 0 && (
+        {/* Section: Caractéristiques (grille de chips compacte, style Airbnb) */}
+        {allFeatures.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full bg-accent/30 flex items-center justify-center">
-                <Zap className="h-3 w-3 text-accent-foreground" />
-              </div>
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Équipements</h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Caractéristiques
+              </h4>
+              <span className="text-[10px] text-muted-foreground">{allFeatures.length}</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {equipmentFeatures.map((f, i) => (
-                <span key={i} className="inline-flex items-center gap-1 bg-muted/50 rounded-full px-2.5 py-1 text-xs text-foreground">
-                  {f.emoji} {f.label}
+              {visibleFeatures.map((f) => (
+                <span
+                  key={f.key}
+                  className="inline-flex items-center gap-1 bg-muted/60 rounded-full px-2.5 py-1 text-xs text-foreground"
+                  title={f.label}
+                >
+                  <span aria-hidden>{f.emoji}</span> {f.label}
                 </span>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Section: Sécurité & Accès */}
-        {securityFeatures.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                <Shield className="h-3 w-3 text-primary" />
-              </div>
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Sécurité & Accès</h4>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {securityFeatures.map((f, i) => (
-                <span key={i} className="inline-flex items-center gap-1 bg-muted/50 rounded-full px-2.5 py-1 text-xs text-foreground">
-                  {f.emoji} {f.label}
-                </span>
-              ))}
-            </div>
+            {allFeatures.length > FEATURES_LIMIT && (
+              <button
+                onClick={() => setShowAllFeatures(s => !s)}
+                className="text-xs text-primary font-medium mt-2 hover:underline"
+              >
+                {showAllFeatures ? 'Voir moins' : `Voir tout (${allFeatures.length})`}
+              </button>
+            )}
           </div>
         )}
 

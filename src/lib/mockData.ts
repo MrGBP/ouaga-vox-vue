@@ -50,6 +50,10 @@ export interface Property {
   agent_phone?: string;
   agent_photo?: string;
   furnished?: boolean;
+  /** Nouvelles features catégorisées (clés du featureCatalog) */
+  features?: string[];
+  /** Caractéristiques libres saisies par l'admin */
+  customFeatures?: string[];
   created_at?: string;
 }
 
