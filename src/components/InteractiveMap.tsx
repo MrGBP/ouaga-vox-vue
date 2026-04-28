@@ -660,6 +660,34 @@ const InteractiveMap = ({
         )}
       </div>
 
+      {/* Layer switcher (always visible, top-right) */}
+      <div
+        className={`absolute z-[600] ${viewLevel === 'focus' ? 'top-14 right-3' : 'top-3 right-3'}`}
+      >
+        <div className="bg-card/92 backdrop-blur-sm border border-border rounded-xl p-1 shadow-card flex items-center gap-0.5">
+          {([
+            { id: 'standard', label: 'Plan', emoji: '🗺️' },
+            { id: 'satellite', label: 'Satellite', emoji: '🛰️' },
+            { id: 'hybrid', label: 'Hybride', emoji: '🌐' },
+          ] as { id: MapLayerMode; label: string; emoji: string }[]).map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => setLayerMode(opt.id)}
+              title={opt.label}
+              aria-label={opt.label}
+              className={`text-[11px] px-2 py-1 rounded-lg font-semibold transition-colors active:scale-95 ${
+                layerMode === opt.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              <span aria-hidden>{opt.emoji}</span>
+              <span className="ml-1 hidden sm:inline">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Radius controls */}
       {viewLevel === 'focus' && (
         <div className="absolute top-3 right-3 z-[600]">
