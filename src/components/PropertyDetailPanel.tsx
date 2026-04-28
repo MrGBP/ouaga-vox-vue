@@ -11,8 +11,25 @@ import { Button } from '@/components/ui/button';
 import { POI_CATALOG, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import { resolveFeatures } from '@/lib/featureCatalog';
 import { usePropertyMedia } from '@/hooks/usePropertyMedia';
+import { useNearbyPOI } from '@/hooks/useNearbyPOI';
 import { useToast } from '@/hooks/use-toast';
 import ReservationFlow from './ReservationFlow';
+
+// ─── POI category groups (UI filter chips) ───────────────────────────────────
+const POI_CATEGORIES: { id: string; label: string; emoji: string; types: string[] }[] = [
+  { id: 'all',       label: 'Tout',      emoji: '✨', types: [] },
+  { id: 'school',    label: 'École',     emoji: '🎓', types: ['school', 'university', 'college', 'universite', 'lycee', 'ecole_primaire'] },
+  { id: 'health',    label: 'Santé',     emoji: '⚕️', types: ['hospital', 'clinic', 'pharmacy', 'doctors', 'hopital', 'clinique', 'pharmacie'] },
+  { id: 'shopping',  label: 'Commerce',  emoji: '🛒', types: ['marketplace', 'grand_marche', 'marche_quartier', 'supermarket', 'supermarche', 'convenience', 'mall'] },
+  { id: 'transport', label: 'Transport', emoji: '🚌', types: ['bus_station', 'taxi', 'gare_routiere', 'arret_sotraco', 'fuel', 'station_total', 'station_oilibya', 'aeroport'] },
+  { id: 'food',      label: 'Restos',    emoji: '🍽️', types: ['restaurant', 'cafe', 'fast_food', 'bar'] },
+  { id: 'leisure',   label: 'Loisirs',   emoji: '🌳', types: ['park', 'parc', 'playground', 'sports_centre', 'attraction', 'monument', 'hotel', 'place_publique'] },
+  { id: 'services',  label: 'Services',  emoji: '🏦', types: ['bank', 'banque', 'atm', 'police', 'fire_station', 'mairie', 'place_of_worship', 'grande_mosquee', 'mosquee_quartier', 'cathedrale', 'eglise'] },
+];
+
+// Walking ~5 km/h, driving ~30 km/h (urban Ouaga)
+const walkMin = (m: number) => Math.max(1, Math.round(m / (5000 / 60)));
+const driveMin = (m: number) => Math.max(1, Math.round(m / (30000 / 60)));
 
 interface Property {
   id: string;
@@ -111,12 +128,13 @@ const PropertyDetailPanel = ({
   const [callbackPhone, setCallbackPhone] = useState('');
   const [show360Overlay, setShow360Overlay] = useState(false);
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
+  const [poiCategory, setPoiCategory] = useState<string>('all');
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const isMobile = isMobileOverride ?? false;
 
   // Reset media index when property changes
-  useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); setShowAllFeatures(false); }, [property?.id]);
+  useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); setShowAllFeatures(false); setPoiCategory('all'); }, [property?.id]);
 
   if (!property) return null;
 
@@ -149,14 +167,32 @@ const PropertyDetailPanel = ({
   const videoUrl = videoItem?.url ?? null;
   const tour360Url = tour360Item?.url ?? property.virtual_tour_url ?? null;
 
-  // Nearby POIs
-  const nearbyPois = pois
-    .map(poi => ({ ...poi, distance: distanceM(property.latitude, property.longitude, poi.latitude, poi.longitude) }))
+  // Nearby POIs — Supabase first, Overpass fallback
+  const { pois: hybridPois } = useNearbyPOI(property.id, property.latitude, property.longitude, 1500, true);
+
+  // Merge: prefer hybrid (richer), fall back to incoming `pois` prop with distance computed
+  const sourcePois = hybridPois.length > 0
+    ? hybridPois.map(p => ({ id: p.id, name: p.name, type: p.type, latitude: p.latitude, longitude: p.longitude, distance: p.distance_m }))
+    : pois.map(poi => ({ ...poi, distance: distanceM(property.latitude, property.longitude, poi.latitude, poi.longitude) }));
+
+  const nearbyPoisAll = sourcePois
     .filter(p => p.distance < 1500)
     .sort((a, b) => a.distance - b.distance)
-    .slice(0, 25);
+    .slice(0, 30);
 
-  const visiblePois = showAllPois ? nearbyPois : nearbyPois.slice(0, 3);
+  // Apply category filter
+  const activeCat = POI_CATEGORIES.find(c => c.id === poiCategory);
+  const nearbyPois = !activeCat || activeCat.id === 'all'
+    ? nearbyPoisAll
+    : nearbyPoisAll.filter(p => activeCat.types.includes(p.type));
+
+  // Counts per category for chip badges
+  const catCounts: Record<string, number> = {};
+  POI_CATEGORIES.forEach(c => {
+    catCounts[c.id] = c.id === 'all' ? nearbyPoisAll.length : nearbyPoisAll.filter(p => c.types.includes(p.type)).length;
+  });
+
+  const visiblePois = showAllPois ? nearbyPois : nearbyPois.slice(0, 4);
 
   // Features
   // Essential features
@@ -428,28 +464,68 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* POI */}
-        {nearbyPois.length > 0 && (
+        {/* POI — categorized chips + walking/driving time */}
+        {nearbyPoisAll.length > 0 && (
           <div>
-            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Proches du bien</h4>
-            <div className="space-y-1.5">
-              {visiblePois.map(poi => {
-                const cat = POI_CATALOG[poi.type] || { emoji: '📍', color: '#666', label: poi.type, bg: '#f5f5f5' };
-                return (
-                  <button key={poi.id} onClick={() => onHighlightPoi?.(poi.id)} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 active:bg-muted transition-colors text-left">
-                    <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0" style={{ background: cat.bg, color: cat.color }}>{cat.emoji}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-foreground truncate">{poi.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{cat.label}</p>
-                    </div>
-                    <span className="text-xs font-semibold text-muted-foreground">{fmtDist(poi.distance)}</span>
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Proches du bien</h4>
+              <span className="text-[10px] text-muted-foreground">{nearbyPoisAll.length} à proximité</span>
             </div>
-            {nearbyPois.length > 3 && (
+
+            {/* Category chips */}
+            <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-2" style={{ scrollbarWidth: 'none' }}>
+              {POI_CATEGORIES.filter(c => catCounts[c.id] > 0).map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => { setPoiCategory(c.id); setShowAllPois(false); }}
+                  className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors active:scale-95 border ${
+                    poiCategory === c.id
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted/60 text-foreground border-transparent hover:bg-muted'
+                  }`}
+                >
+                  <span aria-hidden>{c.emoji}</span>
+                  {c.label}
+                  <span className={`ml-0.5 text-[9px] font-bold ${poiCategory === c.id ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    {catCounts[c.id]}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {nearbyPois.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic px-2 py-3">Aucun lieu de cette catégorie à moins de 1,5 km.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {visiblePois.map(poi => {
+                  const cat = POI_CATALOG[poi.type] || { emoji: '📍', color: '#666', label: poi.type, bg: '#f5f5f5' };
+                  const walk = walkMin(poi.distance);
+                  const drive = driveMin(poi.distance);
+                  return (
+                    <button
+                      key={poi.id}
+                      onClick={() => onHighlightPoi?.(poi.id)}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/50 active:bg-muted transition-colors text-left"
+                    >
+                      <span className="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style={{ background: cat.bg, color: cat.color }}>
+                        {cat.emoji}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-foreground truncate">{poi.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {cat.label} · 🚶 {walk} min · 🚗 {drive} min
+                        </p>
+                      </div>
+                      <span className="text-xs font-semibold text-muted-foreground tabular-nums">{fmtDist(poi.distance)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {nearbyPois.length > 4 && (
               <button onClick={() => setShowAllPois(!showAllPois)} className="text-xs text-primary font-medium mt-1 hover:underline">
-                {showAllPois ? 'Voir moins' : `+${nearbyPois.length - 3} autres`}
+                {showAllPois ? 'Voir moins' : `+${nearbyPois.length - 4} autres`}
               </button>
             )}
           </div>

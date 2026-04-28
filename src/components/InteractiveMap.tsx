@@ -81,6 +81,10 @@ const RADIUS_OPTIONS = [
 
 const TILE_DEFAULT = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_FOCUS = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const TILE_SATELLITE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+const TILE_HYBRID_LABELS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
+
+type MapLayerMode = 'standard' | 'satellite' | 'hybrid';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (n: number) =>
@@ -192,6 +196,7 @@ const InteractiveMap = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const labelsLayerRef = useRef<L.TileLayer | null>(null);
   const quartierLayer = useRef<L.LayerGroup | null>(null);
   const propertyLayer = useRef<L.LayerGroup | null>(null);
   const focusLayer = useRef<L.LayerGroup | null>(null);
@@ -203,6 +208,7 @@ const InteractiveMap = ({
   const [activeRadius, setActiveRadius] = useState<number | null>(null);
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
+  const [layerMode, setLayerMode] = useState<MapLayerMode>('standard');
 
   // Stable refs for callbacks to break re-render loops
   const onQuartierChangeRef = useRef(onQuartierChange);
@@ -262,13 +268,47 @@ const InteractiveMap = ({
     return () => { map.remove(); mapInst.current = null; style.remove(); };
   }, []);
 
-  // Tile switch
+  // Tile switch — handles layer mode (standard/satellite/hybrid) + focus styling
   useEffect(() => {
     if (!tileLayerRef.current || !mapInst.current) return;
-    tileLayerRef.current.setUrl(viewLevel === 'focus' ? TILE_FOCUS : TILE_DEFAULT);
-    const tilePane = mapInst.current.getPane('tilePane');
-    if (tilePane) tilePane.style.filter = viewLevel === 'focus' ? 'grayscale(60%) brightness(0.88) saturate(0.4)' : 'none';
-  }, [viewLevel]);
+    const map = mapInst.current;
+
+    // Choose base tile URL based on layer mode
+    let baseUrl: string;
+    let attribution = '© <a href="https://openstreetmap.org">OSM</a>';
+    if (layerMode === 'satellite' || layerMode === 'hybrid') {
+      baseUrl = TILE_SATELLITE;
+      attribution = 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics';
+    } else {
+      baseUrl = viewLevel === 'focus' ? TILE_FOCUS : TILE_DEFAULT;
+    }
+
+    tileLayerRef.current.setUrl(baseUrl);
+    tileLayerRef.current.options.attribution = attribution;
+
+    // Manage hybrid labels overlay
+    if (layerMode === 'hybrid') {
+      if (!labelsLayerRef.current) {
+        labelsLayerRef.current = L.tileLayer(TILE_HYBRID_LABELS, {
+          maxZoom: 18,
+          pane: 'overlayPane',
+        }).addTo(map);
+      } else if (!map.hasLayer(labelsLayerRef.current)) {
+        labelsLayerRef.current.addTo(map);
+      }
+    } else if (labelsLayerRef.current && map.hasLayer(labelsLayerRef.current)) {
+      map.removeLayer(labelsLayerRef.current);
+    }
+
+    // Focus styling only applies to standard tiles (satellite stays vivid)
+    const tilePane = map.getPane('tilePane');
+    if (tilePane) {
+      tilePane.style.filter =
+        layerMode === 'standard' && viewLevel === 'focus'
+          ? 'grayscale(60%) brightness(0.88) saturate(0.4)'
+          : 'none';
+    }
+  }, [viewLevel, layerMode]);
 
   // LEVEL 1: Global
   const renderGlobal = useCallback(() => {
@@ -618,6 +658,34 @@ const InteractiveMap = ({
             ← {selectedQuartier}
           </button>
         )}
+      </div>
+
+      {/* Layer switcher (always visible, top-right) */}
+      <div
+        className={`absolute z-[600] ${viewLevel === 'focus' ? 'top-14 right-3' : 'top-3 right-3'}`}
+      >
+        <div className="bg-card/92 backdrop-blur-sm border border-border rounded-xl p-1 shadow-card flex items-center gap-0.5">
+          {([
+            { id: 'standard', label: 'Plan', emoji: '🗺️' },
+            { id: 'satellite', label: 'Satellite', emoji: '🛰️' },
+            { id: 'hybrid', label: 'Hybride', emoji: '🌐' },
+          ] as { id: MapLayerMode; label: string; emoji: string }[]).map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => setLayerMode(opt.id)}
+              title={opt.label}
+              aria-label={opt.label}
+              className={`text-[11px] px-2 py-1 rounded-lg font-semibold transition-colors active:scale-95 ${
+                layerMode === opt.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              <span aria-hidden>{opt.emoji}</span>
+              <span className="ml-1 hidden sm:inline">{opt.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Radius controls */}
