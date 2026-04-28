@@ -396,8 +396,7 @@ export default function MobileApp(props: MobileAppProps) {
   }, []);
 
   const handleRecentlyViewedClick = (id: string) => {
-    const prop = props.properties.find(p => p.id === id);
-    if (prop) props.onViewDetails(prop);
+    openPropertyPage(id);
   };
 
   // Sheet header content based on level
@@ -639,7 +638,7 @@ export default function MobileApp(props: MobileAppProps) {
                 {availableProperties(props.properties).slice(0, 8).map(p => {
                   const dp = formatDisplayPrice(p);
                   return (
-                    <button key={p.id} onClick={() => props.onViewDetails(p)}
+                    <button key={p.id} onClick={() => openPropertyPage(p.id)}
                       className="shrink-0 w-56 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card text-left active:scale-[0.97] transition-transform"
                     >
                       <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'} alt={p.title} className="w-full h-32 object-cover" loading="lazy" />
@@ -670,7 +669,7 @@ export default function MobileApp(props: MobileAppProps) {
                 <>
                   <div className="grid grid-cols-1 gap-4">
                     {displayProperties.slice(0, visibleCount).map(p => (
-                      <PropertyCard key={p.id} property={p as any} onViewDetails={props.onViewDetails as any} isFavorite={props.favorites.has(p.id)} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
+                      <PropertyCard key={p.id} property={p as any} onViewDetails={(pp: any) => openPropertyPage(pp.id)} isFavorite={props.favorites.has(p.id)} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
                     ))}
                   </div>
                   {visibleCount < displayProperties.length && (
@@ -733,7 +732,7 @@ export default function MobileApp(props: MobileAppProps) {
                 <>
                   <div className="grid grid-cols-1 gap-4">
                     {favoriteProperties.map(p => (
-                      <PropertyCard key={p.id} property={p as any} onViewDetails={props.onViewDetails as any} isFavorite={true} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
+                      <PropertyCard key={p.id} property={p as any} onViewDetails={(pp: any) => openPropertyPage(pp.id)} isFavorite={true} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
                     ))}
                   </div>
                   <div className="mt-6 bg-card border border-border rounded-xl p-4 space-y-2">
@@ -1089,7 +1088,7 @@ export default function MobileApp(props: MobileAppProps) {
                 return (
                   <button
                     key={p.id}
-                    onClick={() => props.onPropertyClick(p.id)}
+                    onClick={() => openPropertyPage(p.id)}
                     className="shrink-0 bg-card rounded-[14px] overflow-hidden shadow-card border border-border text-left active:scale-[0.97] transition-transform"
                     style={{ width: 220, height: 160, scrollSnapAlign: 'start' }}
                   >
