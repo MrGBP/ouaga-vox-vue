@@ -11,8 +11,25 @@ import { Button } from '@/components/ui/button';
 import { POI_CATALOG, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import { resolveFeatures } from '@/lib/featureCatalog';
 import { usePropertyMedia } from '@/hooks/usePropertyMedia';
+import { useNearbyPOI } from '@/hooks/useNearbyPOI';
 import { useToast } from '@/hooks/use-toast';
 import ReservationFlow from './ReservationFlow';
+
+// ─── POI category groups (UI filter chips) ───────────────────────────────────
+const POI_CATEGORIES: { id: string; label: string; emoji: string; types: string[] }[] = [
+  { id: 'all',       label: 'Tout',      emoji: '✨', types: [] },
+  { id: 'school',    label: 'École',     emoji: '🎓', types: ['school', 'university', 'college', 'universite', 'lycee', 'ecole_primaire'] },
+  { id: 'health',    label: 'Santé',     emoji: '⚕️', types: ['hospital', 'clinic', 'pharmacy', 'doctors', 'hopital', 'clinique', 'pharmacie'] },
+  { id: 'shopping',  label: 'Commerce',  emoji: '🛒', types: ['marketplace', 'grand_marche', 'marche_quartier', 'supermarket', 'supermarche', 'convenience', 'mall'] },
+  { id: 'transport', label: 'Transport', emoji: '🚌', types: ['bus_station', 'taxi', 'gare_routiere', 'arret_sotraco', 'fuel', 'station_total', 'station_oilibya', 'aeroport'] },
+  { id: 'food',      label: 'Restos',    emoji: '🍽️', types: ['restaurant', 'cafe', 'fast_food', 'bar'] },
+  { id: 'leisure',   label: 'Loisirs',   emoji: '🌳', types: ['park', 'parc', 'playground', 'sports_centre', 'attraction', 'monument', 'hotel', 'place_publique'] },
+  { id: 'services',  label: 'Services',  emoji: '🏦', types: ['bank', 'banque', 'atm', 'police', 'fire_station', 'mairie', 'place_of_worship', 'grande_mosquee', 'mosquee_quartier', 'cathedrale', 'eglise'] },
+];
+
+// Walking ~5 km/h, driving ~30 km/h (urban Ouaga)
+const walkMin = (m: number) => Math.max(1, Math.round(m / (5000 / 60)));
+const driveMin = (m: number) => Math.max(1, Math.round(m / (30000 / 60)));
 
 interface Property {
   id: string;
