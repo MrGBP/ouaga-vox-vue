@@ -261,13 +261,52 @@ const SearchPage = () => {
             </section>
 
             <button
-              onClick={() => { try { sessionStorage.setItem('sapsap_open_filters', '1'); } catch {} navigate(-1); }}
+              onClick={openFilters}
               className="w-full mt-6 h-12 rounded-xl bg-card border border-border text-sm font-medium text-foreground flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               <SlidersHorizontal className="h-4 w-4 text-primary" /> Filtres avancés
+              {showFilters && <ChevronUp className="h-4 w-4 ml-1 text-muted-foreground" />}
             </button>
           </div>
         )}
+
+        {/* ═══ Panneau Filtres avancés (inline, déroulant — reste sur la page) ═══ */}
+        <AnimatePresence initial={false}>
+          {showFilters && (
+            <motion.section
+              key="filters-panel"
+              ref={filtersRef}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              className="overflow-hidden border-t border-border bg-card"
+            >
+              <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Filtres avancés
+                </p>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  aria-label="Fermer les filtres"
+                  className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-full active:bg-muted"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="px-4 pb-4">
+                <FilterBar
+                  forceOpen
+                  onFilterChange={handleApplyFilters}
+                  onReset={handleResetFilters}
+                  quartiers={quartierNames}
+                  totalCount={properties.length}
+                  filteredCount={properties.length}
+                />
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
