@@ -885,7 +885,7 @@ export default function MobileApp(props: MobileAppProps) {
         <UniversalSheet
           ref={sheetRef}
           sheetKey={`map-${navLevel}-${props.activeQuartier || ''}-${props.detailProperty?.id || ''}`}
-          initialSnapVh={40}
+          initialSnapVh={navLevel === 3 ? 92 : 40}
           headerContent={getSheetHeader()}
           onHeightChange={handleSheetHeightChange}
         >
