@@ -275,7 +275,9 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     }
   };
 
-  const reservationNumber = `RES-${Date.now().toString(36).toUpperCase().slice(-5)}`;
+  const reservationNumber = submittedId
+    ? `RES-${submittedId.split('-')[0].toUpperCase()}`
+    : `RES-${Date.now().toString(36).toUpperCase().slice(-5)}`;
   const formatDate = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
 
   return (
