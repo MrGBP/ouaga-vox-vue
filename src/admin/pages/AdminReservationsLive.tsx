@@ -42,6 +42,7 @@ export default function AdminReservationsLive() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [chatRow, setChatRow] = useState<ReservationRow | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
