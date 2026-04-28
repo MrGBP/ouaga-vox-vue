@@ -876,12 +876,13 @@ export default function MobileApp(props: MobileAppProps) {
         </>
       )}
 
-      {/* ═══ MAP TAB — Universal Sheet (hidden in explore mode) ═══ */}
-      {mobileTab === 'map' && (props.activeQuartier || props.detailProperty) && !isExploring && (
+      {/* ═══ MAP TAB — Universal Sheet UNIQUEMENT pour la fiche bien (niv 3). 
+           En niv 2 (quartier), on ne montre QUE les pins sur la carte + pinPreview au clic. ═══ */}
+      {mobileTab === 'map' && props.detailProperty && !isExploring && (
         <UniversalSheet
           ref={sheetRef}
           sheetKey={`map-${navLevel}-${props.activeQuartier || ''}-${props.detailProperty?.id || ''}`}
-          initialSnapVh={navLevel === 3 ? 92 : 40}
+          initialSnapVh={92}
           headerContent={getSheetHeader()}
           onHeightChange={handleSheetHeightChange}
         >
