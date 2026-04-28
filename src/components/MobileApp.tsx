@@ -859,7 +859,7 @@ export default function MobileApp(props: MobileAppProps) {
 
           {/* "Voir la fiche" button */}
           <button
-            onClick={() => { setIsExploring(false); sheetRef.current?.snapFullscreen?.(); }}
+            onClick={() => { setIsExploring(false); setTimeout(() => sheetRef.current?.snapFullscreen?.(), 50); }}
             style={{
               position: 'fixed', bottom: 'calc(68px + env(safe-area-inset-bottom))',
               left: '50%', transform: 'translateX(-50%)', zIndex: 26,
