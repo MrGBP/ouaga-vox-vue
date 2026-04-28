@@ -13,6 +13,7 @@ import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
 import FilterBar from '@/components/FilterBar';
 import InteractiveMap from '@/components/InteractiveMap';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
+import FocusMapBanner from '@/components/FocusMapBanner';
 import PropertyCard from '@/components/PropertyCard';
 import VirtualTourModal from '@/components/VirtualTourModal';
 import TestimonialsSection from '@/components/TestimonialsSection';
