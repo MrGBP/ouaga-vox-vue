@@ -128,12 +128,13 @@ const PropertyDetailPanel = ({
   const [callbackPhone, setCallbackPhone] = useState('');
   const [show360Overlay, setShow360Overlay] = useState(false);
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
+  const [poiCategory, setPoiCategory] = useState<string>('all');
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const isMobile = isMobileOverride ?? false;
 
   // Reset media index when property changes
-  useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); setShowAllFeatures(false); }, [property?.id]);
+  useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); setShowAllFeatures(false); setPoiCategory('all'); }, [property?.id]);
 
   if (!property) return null;
 
