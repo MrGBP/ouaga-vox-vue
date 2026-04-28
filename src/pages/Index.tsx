@@ -130,6 +130,33 @@ const Index = () => {
   useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { fetchData(); }, []);
 
+  // Sync depuis l'URL (?q=, ?property=, ?openFilters=) — venant ex. de la page /search
+  const urlSyncDoneRef = useRef(false);
+  useEffect(() => {
+    if (urlSyncDoneRef.current || properties.length === 0) return;
+    urlSyncDoneRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    const propId = params.get('property');
+    if (q && q.trim()) {
+      handleSearch(q.trim());
+    }
+    if (propId) {
+      const found = properties.find(p => p.id === propId);
+      if (found) {
+        setDetailProperty(found);
+        if (isMobile) {
+          nav.push({ screen: 'carte-niveau3', propertyId: propId, propertyTitle: found.title, propertyQuartier: found.quartier });
+        }
+      }
+    }
+    // Nettoyer l'URL pour ne pas re-déclencher au refresh involontaire
+    if (q || propId || params.get('openFilters')) {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  }, [properties]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
