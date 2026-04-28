@@ -214,13 +214,30 @@ export default function MobileApp(props: MobileAppProps) {
   const sheetRef = useRef<UniversalSheetHandle>(null);
 
   // Open filters drawer if Search page asked for it (sessionStorage flag)
+  // Force a specific tab if requested (e.g. /property → "Voir sur la carte")
   useEffect(() => {
     try {
       if (sessionStorage.getItem('sapsap_open_filters') === '1') {
         sessionStorage.removeItem('sapsap_open_filters');
         setShowMobileFilters(true);
       }
+      const forcedTab = sessionStorage.getItem('sapsap_force_tab');
+      if (forcedTab) {
+        sessionStorage.removeItem('sapsap_force_tab');
+        setMobileTab(forcedTab);
+        props.onMobileTabChange(forcedTab);
+      }
+      const focusPid = sessionStorage.getItem('sapsap_focus_property');
+      if (focusPid) {
+        sessionStorage.removeItem('sapsap_focus_property');
+        // Show pin preview on map for that property after a short delay so map mounts
+        setTimeout(() => {
+          const p = props.properties.find(pr => pr.id === focusPid);
+          if (p) setPinPreview(p);
+        }, 350);
+      }
     } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Body scroll lock when filters or search open
@@ -313,24 +330,28 @@ export default function MobileApp(props: MobileAppProps) {
     props.onFocusClear();
   }, [props.onFocusClear]);
 
+  // Open the full property page (real route, fullscreen)
+  const openPropertyPage = useCallback((id: string) => {
+    navigate(`/property/${id}`);
+  }, [navigate]);
+
   const handlePropertyClick = useCallback((id: string) => {
-    // On map tab → show preview first instead of full sheet
+    // On map tab → show preview first instead of navigating away
     const prop = props.properties.find(p => p.id === id);
     if (prop && mobileTab === 'map') {
       setPinPreview(prop);
       return;
     }
-    props.onPropertyClick(id);
-    // The sheet's initialSnapVh is now level-aware (92 for navLevel 3),
-    // so it opens at fullscreen directly — no flash from 40 → 92.
-  }, [props.onPropertyClick, props.properties, mobileTab]);
+    // Anywhere else → real fullscreen page
+    openPropertyPage(id);
+  }, [openPropertyPage, props.properties, mobileTab]);
 
   const openFullDetailFromPreview = useCallback(() => {
     if (!pinPreview) return;
     const id = pinPreview.id;
     setPinPreview(null);
-    props.onPropertyClick(id);
-  }, [pinPreview, props.onPropertyClick]);
+    openPropertyPage(id);
+  }, [pinPreview, openPropertyPage]);
 
   // Navigation handlers
   const handleNavBack = () => {
@@ -375,8 +396,7 @@ export default function MobileApp(props: MobileAppProps) {
   }, []);
 
   const handleRecentlyViewedClick = (id: string) => {
-    const prop = props.properties.find(p => p.id === id);
-    if (prop) props.onViewDetails(prop);
+    openPropertyPage(id);
   };
 
   // Sheet header content based on level
@@ -468,10 +488,7 @@ export default function MobileApp(props: MobileAppProps) {
               onToggleFavorite={props.onToggleFavorite}
               onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
               similarProperties={similarProperties}
-              onSelectProperty={(id) => {
-                const p = props.properties.find(pr => pr.id === id);
-                if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
-              }}
+              onSelectProperty={(id) => { openPropertyPage(id); }}
               onExploreOnMap={(id) => { props.onExploreOnMap(id); setIsExploring(true); sheetRef.current?.close?.(); }}
               isMobileOverride={true}
             />
@@ -618,7 +635,7 @@ export default function MobileApp(props: MobileAppProps) {
                 {availableProperties(props.properties).slice(0, 8).map(p => {
                   const dp = formatDisplayPrice(p);
                   return (
-                    <button key={p.id} onClick={() => props.onViewDetails(p)}
+                    <button key={p.id} onClick={() => openPropertyPage(p.id)}
                       className="shrink-0 w-56 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card text-left active:scale-[0.97] transition-transform"
                     >
                       <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'} alt={p.title} className="w-full h-32 object-cover" loading="lazy" />
@@ -649,7 +666,7 @@ export default function MobileApp(props: MobileAppProps) {
                 <>
                   <div className="grid grid-cols-1 gap-4">
                     {displayProperties.slice(0, visibleCount).map(p => (
-                      <PropertyCard key={p.id} property={p as any} onViewDetails={props.onViewDetails as any} isFavorite={props.favorites.has(p.id)} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
+                      <PropertyCard key={p.id} property={p as any} onViewDetails={(pp: any) => openPropertyPage(pp.id)} isFavorite={props.favorites.has(p.id)} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
                     ))}
                   </div>
                   {visibleCount < displayProperties.length && (
@@ -712,7 +729,7 @@ export default function MobileApp(props: MobileAppProps) {
                 <>
                   <div className="grid grid-cols-1 gap-4">
                     {favoriteProperties.map(p => (
-                      <PropertyCard key={p.id} property={p as any} onViewDetails={props.onViewDetails as any} isFavorite={true} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
+                      <PropertyCard key={p.id} property={p as any} onViewDetails={(pp: any) => openPropertyPage(pp.id)} isFavorite={true} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
                     ))}
                   </div>
                   <div className="mt-6 bg-card border border-border rounded-xl p-4 space-y-2">
@@ -1015,40 +1032,7 @@ export default function MobileApp(props: MobileAppProps) {
         </div>
       </MobileDraggableDrawer>
 
-      {/* ═══ HOME TAB — Property detail as UniversalSheet (fullscreen) ═══ */}
-      {mobileTab === 'home' && props.detailProperty && (
-        <UniversalSheet
-          sheetKey={`home-detail-${props.detailProperty.id}`}
-          initialSnapVh={92}
-          headerContent={
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => { props.onDetailClose(); props.onFocusClear(); }}
-                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center min-h-[44px] min-w-[44px]"
-              >
-                <ChevronLeft className="h-4 w-4 text-primary-foreground" />
-              </button>
-              <span className="text-sm font-semibold text-foreground truncate flex-1">{props.detailProperty.title}</span>
-            </div>
-          }
-        >
-          <PropertyDetailPanel
-            property={props.detailProperty}
-            onClose={() => { props.onDetailClose(); props.onFocusClear(); }}
-            pois={props.pois}
-            isFavorite={props.favorites.has(props.detailProperty.id)}
-            onToggleFavorite={props.onToggleFavorite}
-            onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
-            similarProperties={similarProperties}
-            onSelectProperty={(id) => {
-              const p = props.properties.find(pr => pr.id === id);
-              if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
-            }}
-            onExploreOnMap={props.onFocusOnMap}
-            isMobileOverride={true}
-          />
-        </UniversalSheet>
-      )}
+      {/* ═══ HOME TAB — La fiche d'un bien ouvre désormais la page dédiée /property/:id (plein écran) ═══ */}
 
       {/* ═══ FAVORITES MAP — UniversalSheet with favorite cards ═══ */}
       {mobileTab === 'favorites' && favViewMode === 'map' && favoriteProperties.length > 0 && (
@@ -1068,7 +1052,7 @@ export default function MobileApp(props: MobileAppProps) {
                 return (
                   <button
                     key={p.id}
-                    onClick={() => props.onPropertyClick(p.id)}
+                    onClick={() => openPropertyPage(p.id)}
                     className="shrink-0 bg-card rounded-[14px] overflow-hidden shadow-card border border-border text-left active:scale-[0.97] transition-transform"
                     style={{ width: 220, height: 160, scrollSnapAlign: 'start' }}
                   >
