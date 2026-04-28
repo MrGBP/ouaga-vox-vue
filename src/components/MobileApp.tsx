@@ -383,7 +383,7 @@ export default function MobileApp(props: MobileAppProps) {
             Ouagadougou › {props.activeQuartier} · {count} bien{count > 1 ? 's' : ''}
           </button>
           <div className="flex items-center gap-1.5">
-            <button onClick={() => setShowMobileSearch(true)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
+            <button onClick={() => openSearchPage()} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
               <Search className="h-4 w-4 text-muted-foreground" />
             </button>
             <button onClick={handleNavHome} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
@@ -415,7 +415,7 @@ export default function MobileApp(props: MobileAppProps) {
             >
               <Maximize2 size={16} color="#1a3560" />
             </button>
-            <button onClick={() => setShowMobileSearch(true)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
+            <button onClick={() => openSearchPage()} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
               <Search className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
@@ -547,7 +547,7 @@ export default function MobileApp(props: MobileAppProps) {
             {/* Search bar (top, like tablet/desktop) */}
             <section className="px-4 pt-4">
               <button
-                onClick={() => setShowMobileSearch(true)}
+                onClick={() => openSearchPage()}
                 className="w-full h-12 rounded-full bg-card border border-border shadow-sm flex items-center gap-3 px-4 text-left active:scale-[0.99] transition-transform"
               >
                 <Search className="h-4 w-4 text-muted-foreground shrink-0" />
