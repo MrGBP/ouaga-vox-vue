@@ -196,6 +196,7 @@ const CarouselWithSwipeHint = ({ properties, activeQuartier, favorites, formatDi
 
 export default function MobileApp(props: MobileAppProps) {
   const nav = useNav();
+  const navigate = useNavigate();
   useSwipeBack();
 
   const [mobileTab, setMobileTab] = useState('home');
