@@ -941,8 +941,8 @@ export default function MobileApp(props: MobileAppProps) {
         maxHeightVh={92}
         initialHeightVh={55}
         snapPoints={[0, 55, 92]}
-        overlayZIndex={150}
-        drawerZIndex={151}
+        overlayZIndex={210}
+        drawerZIndex={211}
       >
         <div className="px-4 pb-4">
           <FilterBar
