@@ -63,6 +63,27 @@ const SearchPage = () => {
     []
   );
 
+  const quartierNames = useMemo(
+    () => Array.from(new Set(properties.map(p => p.quartier))).sort(),
+    [properties]
+  );
+
+  const openFilters = () => {
+    setShowFilters(true);
+    setTimeout(() => filtersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  };
+
+  const handleApplyFilters = (f: FilterState) => {
+    try { sessionStorage.setItem('sapsap_apply_filters', JSON.stringify(f)); } catch {}
+    navigate(-1);
+  };
+
+  const handleResetFilters = () => {
+    // Reset local — l'utilisateur reste sur la page de recherche
+    setShowFilters(false);
+    setTimeout(() => setShowFilters(true), 50);
+  };
+
   const fuzzy = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (q.length === 0) return [];
