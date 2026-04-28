@@ -221,6 +221,15 @@ export default function MobileApp(props: MobileAppProps) {
         sessionStorage.removeItem('sapsap_open_filters');
         setShowMobileFilters(true);
       }
+      // Filtres appliqués depuis la page de recherche (inline)
+      const applyFiltersRaw = sessionStorage.getItem('sapsap_apply_filters');
+      if (applyFiltersRaw) {
+        sessionStorage.removeItem('sapsap_apply_filters');
+        try {
+          const parsed = JSON.parse(applyFiltersRaw);
+          props.onFilterChange(parsed);
+        } catch { /* noop */ }
+      }
       const forcedTab = sessionStorage.getItem('sapsap_force_tab');
       if (forcedTab) {
         sessionStorage.removeItem('sapsap_force_tab');

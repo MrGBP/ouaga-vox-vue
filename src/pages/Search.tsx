@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Search as SearchIcon, X, ArrowLeft, SlidersHorizontal, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search as SearchIcon, X, ArrowLeft, SlidersHorizontal, Clock, ChevronUp } from 'lucide-react';
 import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
+import FilterBar, { type FilterState } from '@/components/FilterBar';
 
 const TYPEWRITER_PHRASES = [
   "Villa meublée 4 chambres à Tampouy...",
@@ -24,7 +25,9 @@ const SearchPage = () => {
   const initialQuery = searchParams.get('q') || '';
   const [query, setQuery] = useState(initialQuery);
   const [recent, setRecent] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const filtersRef = useRef<HTMLDivElement>(null);
 
   // Typewriter
   const [twText, setTwText] = useState('');
@@ -59,6 +62,27 @@ const SearchPage = () => {
     () => mockProperties.filter(p => p.status !== 'rented' && p.available !== false),
     []
   );
+
+  const quartierNames = useMemo(
+    () => Array.from(new Set(properties.map(p => p.quartier))).sort(),
+    [properties]
+  );
+
+  const openFilters = () => {
+    setShowFilters(true);
+    setTimeout(() => filtersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  };
+
+  const handleApplyFilters = (f: FilterState) => {
+    try { sessionStorage.setItem('sapsap_apply_filters', JSON.stringify(f)); } catch {}
+    navigate(-1);
+  };
+
+  const handleResetFilters = () => {
+    // Reset local — l'utilisateur reste sur la page de recherche
+    setShowFilters(false);
+    setTimeout(() => setShowFilters(true), 50);
+  };
 
   const fuzzy = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -186,7 +210,7 @@ const SearchPage = () => {
             <p className="text-4xl mb-3">🔍</p>
             <p className="text-sm text-muted-foreground">Aucun résultat pour « {query} »</p>
             <button
-              onClick={() => { try { sessionStorage.setItem('sapsap_open_filters', '1'); } catch {} navigate(-1); }}
+              onClick={openFilters}
               className="mt-5 inline-flex items-center gap-2 px-4 h-10 rounded-full bg-muted text-sm font-medium text-foreground active:scale-[0.98]"
             >
               <SlidersHorizontal className="h-4 w-4" /> Ouvrir les filtres avancés
@@ -237,13 +261,52 @@ const SearchPage = () => {
             </section>
 
             <button
-              onClick={() => { try { sessionStorage.setItem('sapsap_open_filters', '1'); } catch {} navigate(-1); }}
+              onClick={openFilters}
               className="w-full mt-6 h-12 rounded-xl bg-card border border-border text-sm font-medium text-foreground flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               <SlidersHorizontal className="h-4 w-4 text-primary" /> Filtres avancés
+              {showFilters && <ChevronUp className="h-4 w-4 ml-1 text-muted-foreground" />}
             </button>
           </div>
         )}
+
+        {/* ═══ Panneau Filtres avancés (inline, déroulant — reste sur la page) ═══ */}
+        <AnimatePresence initial={false}>
+          {showFilters && (
+            <motion.section
+              key="filters-panel"
+              ref={filtersRef}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              className="overflow-hidden border-t border-border bg-card"
+            >
+              <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Filtres avancés
+                </p>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  aria-label="Fermer les filtres"
+                  className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-full active:bg-muted"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="px-4 pb-4">
+                <FilterBar
+                  forceOpen
+                  onFilterChange={handleApplyFilters}
+                  onReset={handleResetFilters}
+                  quartiers={quartierNames}
+                  totalCount={properties.length}
+                  filteredCount={properties.length}
+                />
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

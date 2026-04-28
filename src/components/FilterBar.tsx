@@ -305,8 +305,18 @@ const FilterBar = ({
         </button>
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-3 pt-2">
+      {/* Spacer pour ne pas que le contenu soit caché derrière la barre d'actions sticky */}
+      {forceOpen && <div aria-hidden className="h-20" />}
+
+      {/* Actions — sticky en bas dans le drawer mobile (forceOpen) */}
+      <div
+        className={
+          forceOpen
+            ? 'sticky bottom-0 left-0 right-0 -mx-4 px-4 pt-3 pb-3 bg-card border-t border-border flex gap-3 z-10'
+            : 'flex gap-3 pt-2'
+        }
+        style={forceOpen ? { paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))', boxShadow: '0 -8px 16px -8px rgba(0,0,0,0.08)' } : undefined}
+      >
         <Button variant="outline" onClick={handleReset} className="flex-1 gap-2 hover:bg-muted active:scale-[0.98]">
           <RotateCcw className="h-3.5 w-3.5" />
           Réinitialiser
