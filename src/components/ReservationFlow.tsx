@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight, X, Check, Download, Share2, Mail } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, X, Check, Download, Share2, Mail, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { createReservation } from '@/lib/reservationsService';
 
 interface Property {
   id: string;
