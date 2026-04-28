@@ -1,10 +1,13 @@
-import { Building2, MapPin, Phone, Menu, X } from 'lucide-react';
+import { Building2, MapPin, Phone, Menu, X, User } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-soft">
@@ -34,6 +37,12 @@ const Header = () => {
               <MapPin className="h-3.5 w-3.5" />
               <span>Ouagadougou, BF</span>
             </div>
+            <Link to={user ? '/mon-compte' : '/auth'}>
+              <Button size="sm" variant="outline" className="gap-2">
+                <User className="h-3.5 w-3.5" />
+                {user ? 'Mon compte' : 'Connexion'}
+              </Button>
+            </Link>
             <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground gap-2">
               <Phone className="h-3.5 w-3.5" />
               Contact
