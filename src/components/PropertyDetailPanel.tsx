@@ -300,7 +300,7 @@ const PropertyDetailPanel = ({
             🎥 1 vidéo
           </Badge>
         )}
-        {property.virtual_tour_url && (
+        {tour360Url && (
           <Badge className="bg-accent text-accent-foreground gap-1 px-3 py-1.5 text-xs cursor-pointer hover:bg-accent/80" onClick={() => setShow360Overlay(true)}>
             🔭 Visite 360°
           </Badge>
