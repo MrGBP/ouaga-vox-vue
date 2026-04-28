@@ -151,30 +151,10 @@ const PropertyDetailPanel = ({
     property.year_built && { icon: Calendar, label: 'Année', value: property.year_built },
   ].filter(Boolean) as { icon: any; label: string; value: any }[];
 
-  // Equipment features
-  const equipmentFeatures = [
-    property.has_ac && { emoji: '❄️', label: 'Climatisation' },
-    property.has_internet && { emoji: '📶', label: 'WiFi' },
-    property.has_kitchen && { emoji: '🍳', label: 'Cuisine' },
-    property.has_tv && { emoji: '📺', label: 'TV' },
-    property.has_generator && { emoji: '⚡', label: 'Groupe élec.' },
-    property.has_water && { emoji: '💧', label: 'Eau' },
-    property.has_fridge && { emoji: '🧊', label: 'Frigo' },
-    property.has_garden && { emoji: '🌳', label: 'Jardin' },
-    property.has_terrace && { emoji: '🏖️', label: 'Terrasse' },
-    property.has_pool && { emoji: '🏊', label: 'Piscine' },
-  ].filter(Boolean) as { emoji: string; label: string }[];
-
-  // Security & access features
-  const securityFeatures = [
-    property.has_guardian && { emoji: '🛡️', label: 'Gardien' },
-    property.has_fence && { emoji: '🔒', label: 'Clôture' },
-    property.has_cameras && { emoji: '📹', label: 'Caméras' },
-    property.has_paved_road && { emoji: '🛣️', label: 'Goudronnée' },
-    property.has_parking_int && { emoji: '🚗', label: 'Parking int.' },
-    property.has_parking_ext && { emoji: '🅿️', label: 'Parking ext.' },
-    property.has_water_tower && { emoji: '🗼', label: 'Château d\'eau' },
-  ].filter(Boolean) as { emoji: string; label: string }[];
+  // Toutes les caractéristiques (catalogue + customs + legacy has_*)
+  const allFeatures = resolveFeatures(property as any);
+  const FEATURES_LIMIT = 8;
+  const visibleFeatures = showAllFeatures ? allFeatures : allFeatures.slice(0, FEATURES_LIMIT);
 
   const features = [
     property.bedrooms && property.bedrooms > 0 && { icon: Bed, label: 'Chambres', value: property.bedrooms },
