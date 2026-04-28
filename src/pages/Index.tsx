@@ -130,7 +130,7 @@ const Index = () => {
   useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { fetchData(); }, []);
 
-  // Sync depuis l'URL (?q=, ?property=, ?openFilters=) — venant ex. de la page /search
+  // Sync depuis l'URL (?q=, ?property=, ?openFilters=, ?exploreMap=) — venant ex. de la page /search ou /property/:id
   const urlSyncDoneRef = useRef(false);
   useEffect(() => {
     if (urlSyncDoneRef.current || properties.length === 0) return;
@@ -138,20 +138,33 @@ const Index = () => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q');
     const propId = params.get('property');
+    const exploreMap = params.get('exploreMap') === '1';
     if (q && q.trim()) {
       handleSearch(q.trim());
     }
     if (propId) {
       const found = properties.find(p => p.id === propId);
       if (found) {
-        setDetailProperty(found);
-        if (isMobile) {
-          nav.push({ screen: 'carte-niveau3', propertyId: propId, propertyTitle: found.title, propertyQuartier: found.quartier });
+        if (exploreMap) {
+          // Ouvrir la CARTE avec ce bien focus + radius + POI (pas la fiche en sheet)
+          setFocusedPropertyId(found.id);
+          setActiveQuartier(found.quartier);
+          setMapQuartierTrigger(found.quartier);
+          if (isMobile) {
+            // S'assurer qu'on atterrit sur l'onglet carte
+            sessionStorage.setItem('sapsap_force_tab', 'map');
+            sessionStorage.setItem('sapsap_focus_property', found.id);
+          }
+        } else {
+          setDetailProperty(found);
+          if (isMobile) {
+            nav.push({ screen: 'carte-niveau3', propertyId: propId, propertyTitle: found.title, propertyQuartier: found.quartier });
+          }
         }
       }
     }
     // Nettoyer l'URL pour ne pas re-déclencher au refresh involontaire
-    if (q || propId || params.get('openFilters')) {
+    if (q || propId || params.get('openFilters') || params.get('exploreMap')) {
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, '', cleanUrl);
     }
