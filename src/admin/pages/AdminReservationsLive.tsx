@@ -241,6 +241,13 @@ export default function AdminReservationsLive() {
                           <Check size={12} /> Marquer terminée
                         </button>
                       )}
+                      <button
+                        onClick={() => setChatRow(r)}
+                        title="Messagerie interne"
+                        className="h-7 px-2 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 flex items-center"
+                      >
+                        <MessagesSquare size={12} />
+                      </button>
                       <a
                         href={`https://wa.me/${r.contact_phone.replace(/[^0-9+]/g, '')}?text=${encodeURIComponent(`Bonjour ${r.contact_name}, concernant votre demande sur SapSapHouse…`)}`}
                         target="_blank"
@@ -266,6 +273,15 @@ export default function AdminReservationsLive() {
           );
         })}
       </div>
+
+      <Dialog open={!!chatRow} onOpenChange={(o) => !o && setChatRow(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Conversation avec {chatRow?.contact_name}</DialogTitle>
+          </DialogHeader>
+          {chatRow && <ReservationChat reservationId={chatRow.id} viewerRole="admin" viewerName="Admin SapSapHouse" />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
