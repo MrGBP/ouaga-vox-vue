@@ -167,14 +167,32 @@ const PropertyDetailPanel = ({
   const videoUrl = videoItem?.url ?? null;
   const tour360Url = tour360Item?.url ?? property.virtual_tour_url ?? null;
 
-  // Nearby POIs
-  const nearbyPois = pois
-    .map(poi => ({ ...poi, distance: distanceM(property.latitude, property.longitude, poi.latitude, poi.longitude) }))
+  // Nearby POIs — Supabase first, Overpass fallback
+  const { pois: hybridPois } = useNearbyPOI(property.id, property.latitude, property.longitude, 1500, true);
+
+  // Merge: prefer hybrid (richer), fall back to incoming `pois` prop with distance computed
+  const sourcePois = hybridPois.length > 0
+    ? hybridPois.map(p => ({ id: p.id, name: p.name, type: p.type, latitude: p.latitude, longitude: p.longitude, distance: p.distance_m }))
+    : pois.map(poi => ({ ...poi, distance: distanceM(property.latitude, property.longitude, poi.latitude, poi.longitude) }));
+
+  const nearbyPoisAll = sourcePois
     .filter(p => p.distance < 1500)
     .sort((a, b) => a.distance - b.distance)
-    .slice(0, 25);
+    .slice(0, 30);
 
-  const visiblePois = showAllPois ? nearbyPois : nearbyPois.slice(0, 3);
+  // Apply category filter
+  const activeCat = POI_CATEGORIES.find(c => c.id === poiCategory);
+  const nearbyPois = !activeCat || activeCat.id === 'all'
+    ? nearbyPoisAll
+    : nearbyPoisAll.filter(p => activeCat.types.includes(p.type));
+
+  // Counts per category for chip badges
+  const catCounts: Record<string, number> = {};
+  POI_CATEGORIES.forEach(c => {
+    catCounts[c.id] = c.id === 'all' ? nearbyPoisAll.length : nearbyPoisAll.filter(p => c.types.includes(p.type)).length;
+  });
+
+  const visiblePois = showAllPois ? nearbyPois : nearbyPois.slice(0, 4);
 
   // Features
   // Essential features
