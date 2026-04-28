@@ -213,6 +213,16 @@ export default function MobileApp(props: MobileAppProps) {
   const [pinPreview, setPinPreview] = useState<Property | null>(null);
   const sheetRef = useRef<UniversalSheetHandle>(null);
 
+  // Open filters drawer if Search page asked for it (sessionStorage flag)
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('sapsap_open_filters') === '1') {
+        sessionStorage.removeItem('sapsap_open_filters');
+        setShowMobileFilters(true);
+      }
+    } catch { /* noop */ }
+  }, []);
+
   // Body scroll lock when filters or search open
   useEffect(() => {
     if (showMobileFilters || showMobileSearch) {
@@ -1005,11 +1015,11 @@ export default function MobileApp(props: MobileAppProps) {
         </div>
       </MobileDraggableDrawer>
 
-      {/* ═══ HOME TAB — Property detail as UniversalSheet ═══ */}
+      {/* ═══ HOME TAB — Property detail as UniversalSheet (fullscreen) ═══ */}
       {mobileTab === 'home' && props.detailProperty && (
         <UniversalSheet
           sheetKey={`home-detail-${props.detailProperty.id}`}
-          initialSnapVh={40}
+          initialSnapVh={92}
           headerContent={
             <div className="flex items-center gap-2">
               <button
