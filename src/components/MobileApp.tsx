@@ -1035,40 +1035,7 @@ export default function MobileApp(props: MobileAppProps) {
         </div>
       </MobileDraggableDrawer>
 
-      {/* ═══ HOME TAB — Property detail as UniversalSheet (fullscreen) ═══ */}
-      {mobileTab === 'home' && props.detailProperty && (
-        <UniversalSheet
-          sheetKey={`home-detail-${props.detailProperty.id}`}
-          initialSnapVh={92}
-          headerContent={
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => { props.onDetailClose(); props.onFocusClear(); }}
-                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center min-h-[44px] min-w-[44px]"
-              >
-                <ChevronLeft className="h-4 w-4 text-primary-foreground" />
-              </button>
-              <span className="text-sm font-semibold text-foreground truncate flex-1">{props.detailProperty.title}</span>
-            </div>
-          }
-        >
-          <PropertyDetailPanel
-            property={props.detailProperty}
-            onClose={() => { props.onDetailClose(); props.onFocusClear(); }}
-            pois={props.pois}
-            isFavorite={props.favorites.has(props.detailProperty.id)}
-            onToggleFavorite={props.onToggleFavorite}
-            onViewTour={(p) => { setSelectedProperty(p); setModalOpen(true); }}
-            similarProperties={similarProperties}
-            onSelectProperty={(id) => {
-              const p = props.properties.find(pr => pr.id === id);
-              if (p) { props.onViewDetails(p); addToRecentlyViewed(p); }
-            }}
-            onExploreOnMap={props.onFocusOnMap}
-            isMobileOverride={true}
-          />
-        </UniversalSheet>
-      )}
+      {/* ═══ HOME TAB — La fiche d'un bien ouvre désormais la page dédiée /property/:id (plein écran) ═══ */}
 
       {/* ═══ FAVORITES MAP — UniversalSheet with favorite cards ═══ */}
       {mobileTab === 'favorites' && favViewMode === 'map' && favoriteProperties.length > 0 && (
