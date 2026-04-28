@@ -309,9 +309,8 @@ export default function MobileApp(props: MobileAppProps) {
       return;
     }
     props.onPropertyClick(id);
-    setTimeout(() => {
-      sheetRef.current?.snapFullscreen?.();
-    }, 120);
+    // The sheet's initialSnapVh is now level-aware (92 for navLevel 3),
+    // so it opens at fullscreen directly — no flash from 40 → 92.
   }, [props.onPropertyClick, props.properties, mobileTab]);
 
   const openFullDetailFromPreview = useCallback(() => {
@@ -319,9 +318,6 @@ export default function MobileApp(props: MobileAppProps) {
     const id = pinPreview.id;
     setPinPreview(null);
     props.onPropertyClick(id);
-    setTimeout(() => {
-      sheetRef.current?.snapFullscreen?.();
-    }, 120);
   }, [pinPreview, props.onPropertyClick]);
 
   // Navigation handlers
