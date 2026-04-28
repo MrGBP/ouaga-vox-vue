@@ -489,21 +489,109 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                 </div>
               </div>
 
+              {/* ── Vos coordonnées (invité ou pré-rempli si connecté) ── */}
+              <div>
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                  Vos coordonnées
+                  {!isAuthed && <span className="ml-2 text-[10px] font-normal text-muted-foreground">(en tant qu'invité)</span>}
+                </h4>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Nom complet *"
+                    value={contactName}
+                    onChange={e => setContactName(e.target.value.slice(0, 100))}
+                    className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background text-foreground"
+                    maxLength={100}
+                    required
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Téléphone *"
+                    value={contactPhone}
+                    onChange={e => setContactPhone(e.target.value.slice(0, 30))}
+                    className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background text-foreground"
+                    maxLength={30}
+                    required
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email (optionnel)"
+                    value={contactEmail}
+                    onChange={e => setContactEmail(e.target.value.slice(0, 255))}
+                    className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background text-foreground"
+                    maxLength={255}
+                  />
+                  <textarea
+                    placeholder="Message à l'agent (optionnel)"
+                    value={contactMessage}
+                    onChange={e => setContactMessage(e.target.value.slice(0, 500))}
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background text-foreground resize-none"
+                    maxLength={500}
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
+                <Button variant="outline" onClick={() => setStep(2)} className="flex-1" disabled={submitting}>
                   <ChevronLeft className="h-4 w-4 mr-1" /> Retour
                 </Button>
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!paymentMethod) {
                       toast({ title: 'Choisissez un mode de paiement', variant: 'destructive' });
                       return;
                     }
-                    setStep(4);
+                    if (!contactName.trim() || contactName.trim().length < 2) {
+                      toast({ title: 'Nom requis', description: 'Merci d\'indiquer votre nom complet.', variant: 'destructive' });
+                      return;
+                    }
+                    if (!contactPhone.trim() || contactPhone.trim().length < 6) {
+                      toast({ title: 'Téléphone requis', description: 'Merci d\'indiquer un numéro joignable.', variant: 'destructive' });
+                      return;
+                    }
+                    setSubmitting(true);
+                    try {
+                      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(property.id);
+                      if (isUuid) {
+                        const row = await createReservation({
+                          property_id: property.id,
+                          kind: 'booking',
+                          start_date: checkIn ? checkIn.toISOString().split('T')[0] : null,
+                          end_date: checkOut ? checkOut.toISOString().split('T')[0] : null,
+                          guests_count: 1,
+                          total_price: totalPrice,
+                          contact_name: contactName,
+                          contact_phone: contactPhone,
+                          contact_email: contactEmail || null,
+                          message: contactMessage || null,
+                        });
+                        setSubmittedId(row.id);
+                      } else {
+                        // Mock property (not in Supabase) — skip persistence, keep flow
+                        console.info('[Reservation] Skipping Supabase persist for mock property', property.id);
+                      }
+                      setStep(4);
+                    } catch (err: any) {
+                      console.error('Reservation insert failed:', err);
+                      toast({
+                        title: 'Erreur d\'enregistrement',
+                        description: err?.message ?? 'Réessayez dans un instant.',
+                        variant: 'destructive',
+                      });
+                    } finally {
+                      setSubmitting(false);
+                    }
                   }}
+                  disabled={submitting}
                   className="flex-1 bg-primary text-primary-foreground"
                 >
-                  Confirmer {fmt(paymentType === 'partial' ? Math.round(totalPrice * 0.3) : totalPrice)} FCFA
+                  {submitting ? (
+                    <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Envoi…</>
+                  ) : (
+                    <>Confirmer {fmt(paymentType === 'partial' ? Math.round(totalPrice * 0.3) : totalPrice)} FCFA</>
+                  )}
                 </Button>
               </div>
             </>
