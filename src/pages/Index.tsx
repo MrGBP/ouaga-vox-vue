@@ -146,22 +146,19 @@ const Index = () => {
       const found = properties.find(p => p.id === propId);
       if (found) {
         if (exploreMap) {
-          // Mode focus map : pin focus + radius + POI + bandeau (PAS la fiche)
-          setDetailProperty(null);
+          // Ouvrir la CARTE avec ce bien focus + radius + POI (pas la fiche en sheet)
           setFocusedPropertyId(found.id);
           setActiveQuartier(found.quartier);
           setMapQuartierTrigger(found.quartier);
           if (isMobile) {
+            // S'assurer qu'on atterrit sur l'onglet carte
             sessionStorage.setItem('sapsap_force_tab', 'map');
             sessionStorage.setItem('sapsap_focus_property', found.id);
-            nav.push({ screen: 'carte-niveau3', propertyId: found.id, propertyTitle: found.title, propertyQuartier: found.quartier });
           }
         } else {
-          // Mode fiche
           setDetailProperty(found);
-          setFocusedPropertyId(null);
           if (isMobile) {
-            nav.push({ screen: 'bien-detail', propertyId: propId, propertyTitle: found.title, propertyQuartier: found.quartier });
+            nav.push({ screen: 'carte-niveau3', propertyId: propId, propertyTitle: found.title, propertyQuartier: found.quartier });
           }
         }
       }
@@ -334,15 +331,11 @@ const Index = () => {
 
   const handleViewDetails = useCallback((property: Property) => {
     setDetailProperty(property);
+    setFocusedPropertyId(property.id);
+    addToRecentlyViewed(property);
     if (isMobile) {
-      // Mobile : pas de focus map quand on ouvre la fiche
-      setFocusedPropertyId(null);
-      addToRecentlyViewed(property);
-      nav.push({ screen: 'bien-detail', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
+      nav.push({ screen: 'carte-niveau3', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
     } else {
-      // Desktop : comportement d'origine (fiche + focus map)
-      setFocusedPropertyId(property.id);
-      addToRecentlyViewed(property);
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [isMobile, nav]);
@@ -354,37 +347,37 @@ const Index = () => {
 
   const handleFocusOnMap = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
-    if (!prop) return;
-    if (isMobile) {
-      // Mobile : mode focus map pur (fiche fermée, bandeau flottant)
-      setDetailProperty(null);
-      setFocusedPropertyId(id);
-      setActiveQuartier(prop.quartier);
-      addToRecentlyViewed(prop);
-      nav.push({ screen: 'carte-niveau3', propertyId: id, propertyTitle: prop.title, propertyQuartier: prop.quartier });
-    } else {
-      // Desktop : comportement d'origine (ouvre la fiche + focus)
-      handleViewDetails(prop);
+    if (prop) {
+      if (isMobile) {
+        setDetailProperty(prop);
+        setFocusedPropertyId(id);
+        addToRecentlyViewed(prop);
+      } else {
+        handleViewDetails(prop);
+      }
     }
-  }, [properties, isMobile, nav, handleViewDetails]);
+  }, [properties, handleViewDetails, isMobile]);
 
-  const handleExploreOnMap = useCallback((id: string) => {
+  const handleExploreOnMap = (id: string) => {
     const prop = properties.find(p => p.id === id);
     if (!prop) return;
     if (isMobile) {
-      // Mobile : mode focus map pur
-      setDetailProperty(null);
       setFocusedPropertyId(id);
+      setDetailProperty(prop);
       setActiveQuartier(prop.quartier);
-      nav.push({ screen: 'carte-niveau3', propertyId: id, propertyTitle: prop.title, propertyQuartier: prop.quartier });
+      nav.push({
+        screen: 'carte-niveau3',
+        propertyId: id,
+        propertyTitle: prop.title,
+        propertyQuartier: prop.quartier,
+      });
     } else {
-      // Desktop : comportement d'origine (fiche + focus côte à côte)
       setFocusedPropertyId(id);
       setDetailProperty(prop);
       setActiveQuartier(prop.quartier);
       document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [properties, isMobile, nav]);
+  };
 
   const handleQuartierClick = (q: any) => {
     setDetailProperty(null);

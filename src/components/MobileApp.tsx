@@ -13,7 +13,6 @@ import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
 import FilterBar from '@/components/FilterBar';
 import InteractiveMap from '@/components/InteractiveMap';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
-import FocusMapBanner from '@/components/FocusMapBanner';
 import PropertyCard from '@/components/PropertyCard';
 import VirtualTourModal from '@/components/VirtualTourModal';
 import TestimonialsSection from '@/components/TestimonialsSection';
@@ -539,25 +538,7 @@ export default function MobileApp(props: MobileAppProps) {
         </div>
       </div>
 
-      {/* ═══ BANDEAU FLOTTANT (mode focus map sans fiche ouverte) ═══ */}
-      {(mobileTab === 'map') && props.focusedPropertyId && !props.detailProperty && (
-        <div
-          className="fixed left-0 right-0 z-30 pointer-events-none"
-          style={{ top: 'calc(56px + env(safe-area-inset-top))', paddingLeft: 12, paddingRight: 12 }}
-        >
-          <div className="relative pointer-events-auto">
-            <FocusMapBanner
-              property={props.properties.find(p => p.id === props.focusedPropertyId) || null}
-              onOpenDetails={() => {
-                const p = props.properties.find(pr => pr.id === props.focusedPropertyId);
-                if (p) props.onViewDetails(p);
-              }}
-              onClose={() => props.onFocusClear()}
-            />
-          </div>
-        </div>
-      )}
-
+      {/* ═══ NAVBAR ═══ */}
       {mobileTab === 'map' ? (
         <MobileNavbar
           level={navLevel}
