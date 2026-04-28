@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { POI_CATALOG, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import { resolveFeatures } from '@/lib/featureCatalog';
+import { usePropertyMedia } from '@/hooks/usePropertyMedia';
 import { useToast } from '@/hooks/use-toast';
 import ReservationFlow from './ReservationFlow';
 
