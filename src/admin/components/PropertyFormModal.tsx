@@ -1,7 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, Upload, Link2, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { mockQuartiers, PROPERTY_TYPES } from '@/lib/mockData';
+import {
+  FEATURE_CATALOG,
+  FEATURE_CATEGORIES,
+  type FeatureCategoryId,
+  extractActiveFeatureKeys,
+} from '@/lib/featureCatalog';
 import type { AdminProperty, AdminPropertyStatus } from '@/admin/types';
 import { adminStore } from '@/admin/store/adminStore';
 
