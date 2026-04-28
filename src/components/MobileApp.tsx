@@ -921,9 +921,7 @@ export default function MobileApp(props: MobileAppProps) {
                 propertyQuartier: prop.quartier,
               });
               setShowMobileSearch(false);
-              setTimeout(() => {
-                sheetRef.current?.snapFullscreen?.();
-              }, 200);
+              // Sheet opens at fullscreen directly via initialSnapVh — no setTimeout needed.
             }}
             onSearchSubmit={props.onSearch}
             searchQuery={props.searchQuery}
