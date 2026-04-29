@@ -945,39 +945,7 @@ export default function MobileApp(props: MobileAppProps) {
               </button>
             </button>
 
-            {/* Biens similaires du même quartier */}
-            {similarsInQuartier.length > 0 && (
-              <div className="border-t border-border/60 px-2.5 pt-2 pb-2.5">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
-                  Aussi à {pinPreview.quartier}
-                </p>
-                <div className="flex gap-2 overflow-x-auto scrollable" style={{ scrollbarWidth: 'none' }}>
-                  {similarsInQuartier.map(p => {
-                    const dp = formatDisplayPrice(p);
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => setPinPreview(p)}
-                        className="shrink-0 w-[130px] bg-muted/40 rounded-lg overflow-hidden text-left active:scale-[0.97] transition-transform"
-                      >
-                        <img
-                          src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=200'}
-                          alt={p.title}
-                          className="w-full h-16 object-cover"
-                          loading="lazy"
-                        />
-                        <div className="px-1.5 py-1">
-                          <p className="text-[10px] font-semibold text-foreground line-clamp-1">{p.title}</p>
-                          <p className="text-[10px] font-bold text-primary mt-0.5">
-                            {dp.nightPrice ? `${dp.nightPrice} /n` : `${dp.price} /m`}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* "Aussi à {quartier}" section removed per user request */}
 
             <button
               onClick={openFullDetailFromPreview}
