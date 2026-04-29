@@ -1,6 +1,7 @@
 import type { Property } from '@/lib/mockData';
-import { getTypeLabel, CHAR_CHECKS } from '@/lib/mockData';
+import { getTypeLabel, CHAR_CHECKS, mockQuartiers } from '@/lib/mockData';
 import type { FilterState } from '@/components/FilterBar';
+import { smartFilter } from '@/lib/smartMatch';
 
 const OR_GROUPS = [
   ['bed_1', 'bed_2', 'bed_3', 'bed_4plus'],
@@ -10,7 +11,10 @@ const OR_GROUPS = [
 /**
  * Shared property filtering — single source of truth used by both the home
  * controller (Index.tsx) and the dedicated results page (Resultats.tsx).
- * Keep the logic here in sync if you ever need to tweak how filters work.
+ *
+ * The text query is interpreted via smartFilter (typo tolerance, synonyms,
+ * multi-token AND logic) so that "Bureau climatisé Zogona" or even
+ * "burau climatize zogna" returns the right properties.
  */
 export function filterProperties(
   source: Property[],
@@ -23,15 +27,8 @@ export function filterProperties(
   if (favsOnly) result = result.filter(p => favSet.has(p.id));
 
   if (query.trim()) {
-    const q = query.toLowerCase();
-    result = result.filter(p =>
-      p.title.toLowerCase().includes(q) ||
-      p.quartier.toLowerCase().includes(q) ||
-      p.type.toLowerCase().includes(q) ||
-      getTypeLabel(p.type).toLowerCase().includes(q) ||
-      (p.description || '').toLowerCase().includes(q) ||
-      p.price.toString().includes(q)
-    );
+    const quartierNames = mockQuartiers.map(q => q.name);
+    result = smartFilter(result, query, quartierNames);
   }
 
   if (f.type !== 'all') result = result.filter(p => p.type === f.type);
