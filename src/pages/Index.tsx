@@ -13,6 +13,7 @@ import MobileApp from '@/components/MobileApp';
 
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import { filterProperties } from '@/lib/filterProperties';
+import { computeFilterOptions } from '@/lib/filterOptions';
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
 import VirtualTourModal from '@/components/VirtualTourModal';
@@ -432,6 +433,7 @@ const Index = () => {
 
   const favoriteProperties = properties.filter(p => favorites.has(p.id));
   const quartierNames = [...new Set(properties.map(p => p.quartier))].sort();
+  const filterOpts = useMemo(() => computeFilterOptions(properties as any), [properties]);
   const similarProperties = detailProperty
     ? availableProperties(properties).filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
     : [];
@@ -600,7 +602,7 @@ const Index = () => {
         <FilterBar
           onFilterChange={handleFilterChange}
           onReset={handleFullReset}
-          quartiers={quartierNames}
+          quartiers={filterOpts.quartiers}
           totalCount={availableProperties(properties).length}
           filteredCount={displayProperties.length}
           favoritesCount={favorites.size}
@@ -608,6 +610,8 @@ const Index = () => {
           onToggleFavoritesView={toggleFavoritesView}
           computeFilteredCount={computeFilteredCount}
           externalFilters={filters}
+          priceBounds={{ min: filterOpts.priceMin, max: filterOpts.priceMax }}
+          availableTypeValues={filterOpts.typeValues}
         />
 
         <div className="flex gap-0 relative">

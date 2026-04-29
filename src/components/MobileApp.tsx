@@ -11,6 +11,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import MobileSearchOverlay from '@/components/MobileSearchOverlay';
 import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
 import FilterBar from '@/components/FilterBar';
+import { computeFilterOptions } from '@/lib/filterOptions';
 import InteractiveMap from '@/components/InteractiveMap';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import PropertyCard from '@/components/PropertyCard';
@@ -572,6 +573,7 @@ export default function MobileApp(props: MobileAppProps) {
   };
 
   const quartierNames = [...new Set(props.properties.map(p => p.quartier))].sort();
+  const mobileFilterOpts = useMemo(() => computeFilterOptions(props.properties as any), [props.properties]);
 
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-background">
@@ -1083,6 +1085,8 @@ export default function MobileApp(props: MobileAppProps) {
             showFavoritesOnly={props.showFavoritesOnly}
             computeFilteredCount={props.computeFilteredCount}
             externalFilters={props.filters}
+            priceBounds={mobileFilterOpts ? { min: mobileFilterOpts.priceMin, max: mobileFilterOpts.priceMax } : undefined}
+            availableTypeValues={mobileFilterOpts?.typeValues}
             forceOpen={true}
           />
         </div>

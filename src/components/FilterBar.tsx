@@ -36,6 +36,10 @@ interface FilterBarProps {
   computeFilteredCount?: (filters: FilterState) => number;
   externalFilters?: FilterState;
   forceOpen?: boolean;
+  /** Real price bounds derived from the current dataset. Optional — falls back to defaults. */
+  priceBounds?: { min: number; max: number };
+  /** Property type values that actually have at least one matching property. */
+  availableTypeValues?: string[];
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -137,10 +141,26 @@ const FilterBar = ({
   computeFilteredCount,
   externalFilters,
   forceOpen = false,
+  priceBounds,
+  availableTypeValues,
 }: FilterBarProps) => {
+  // Real bounds from the dataset, with safe fallbacks.
+  const PRICE_MIN = priceBounds?.min ?? 20000;
+  const PRICE_MAX = priceBounds?.max ?? 2000000;
+  // Only show types that actually have at least one matching property.
+  const visibleTypes = availableTypeValues
+    ? PROPERTY_TYPES.filter(t => availableTypeValues.includes(t.value))
+    : PROPERTY_TYPES;
+
+  // Build a defaults object that respects the real dataset bounds.
+  const dynamicDefaults: FilterState = {
+    ...DEFAULT_FILTERS,
+    minPrice: PRICE_MIN,
+    maxPrice: PRICE_MAX,
+  };
   const [isOpen, setIsOpen] = useState(false);
-  const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
-  const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
+  const [draft, setDraft] = useState<FilterState>(dynamicDefaults);
+  const [applied, setApplied] = useState<FilterState>(dynamicDefaults);
   const isMobile = useIsMobile();
 
   // Sync with external filters (from IDX tags, quartier clicks, etc.)
@@ -161,7 +181,7 @@ const FilterBar = ({
   const activeCount = [
     applied.type !== 'all',
     applied.quartier !== 'all',
-    applied.minPrice > 20000 || applied.maxPrice < 2000000,
+    applied.minPrice > PRICE_MIN || applied.maxPrice < PRICE_MAX,
     applied.minBedrooms > 0,
     applied.hasVirtualTour,
     applied.onlyAvailable,
@@ -196,11 +216,11 @@ const FilterBar = ({
   };
 
   const handleReset = () => {
-    setDraft(DEFAULT_FILTERS);
-    setApplied(DEFAULT_FILTERS);
+    setDraft(dynamicDefaults);
+    setApplied(dynamicDefaults);
     setIsOpen(false);
     if (onReset) onReset();
-    else onFilterChange(DEFAULT_FILTERS);
+    else onFilterChange(dynamicDefaults);
   };
 
   const handleClose = () => setIsOpen(false);
@@ -224,7 +244,7 @@ const FilterBar = ({
       <div>
         <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Type de bien</h4>
         <div className="grid grid-cols-2 gap-2">
-          {PROPERTY_TYPES.map(t => (
+          {visibleTypes.map(t => (
             <button
               key={t.value}
               onClick={() => toggleType(t.value)}
@@ -249,11 +269,14 @@ const FilterBar = ({
           {fmt(draft.minPrice)} — {fmt(draft.maxPrice)}
         </p>
         <Slider
-          value={[draft.minPrice, draft.maxPrice]}
+          value={[
+            Math.max(PRICE_MIN, Math.min(PRICE_MAX, draft.minPrice)),
+            Math.max(PRICE_MIN, Math.min(PRICE_MAX, draft.maxPrice)),
+          ]}
           onValueChange={([min, max]) => setDraft(d => ({ ...d, minPrice: min, maxPrice: max }))}
-          min={20000}
-          max={2000000}
-          step={10000}
+          min={PRICE_MIN}
+          max={PRICE_MAX}
+          step={Math.max(1000, Math.round((PRICE_MAX - PRICE_MIN) / 200 / 1000) * 1000)}
         />
       </div>
 
