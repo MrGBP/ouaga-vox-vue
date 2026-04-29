@@ -433,7 +433,7 @@ const Index = () => {
 
   const favoriteProperties = properties.filter(p => favorites.has(p.id));
   const quartierNames = [...new Set(properties.map(p => p.quartier))].sort();
-  const filterOpts = useMemo(() => computeFilterOptions(properties), [properties]);
+  const filterOpts = useMemo(() => computeFilterOptions(properties as any), [properties]);
   const similarProperties = detailProperty
     ? availableProperties(properties).filter(p => p.id !== detailProperty.id && (p.quartier === detailProperty.quartier || p.type === detailProperty.type)).slice(0, 3)
     : [];
