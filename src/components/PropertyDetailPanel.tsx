@@ -601,46 +601,7 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* Similar */}
-        {similarProperties.length > 0 && (
-          <div>
-            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Biens similaires</h4>
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
-              {similarProperties.slice(0, 5).map(sp => {
-                const spFurnished = isTypeFurnished(sp.type) || sp.furnished;
-                const spNight = spFurnished ? pricePerNight(sp.price) : 0;
-                return (
-                  <button
-                    key={sp.id}
-                    onClick={() => onSelectProperty?.(sp.id)}
-                    className="shrink-0 w-44 snap-start bg-card border border-border rounded-xl overflow-hidden hover:ring-1 hover:ring-primary/30 active:scale-[0.98] transition-all text-left shadow-sm"
-                  >
-                    <img
-                      src={sp.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300'}
-                      alt={sp.title}
-                      className="w-full h-24 object-cover"
-                    />
-                    <div className="p-2.5">
-                      <p className="text-xs font-semibold text-foreground line-clamp-2 leading-tight min-h-[2rem]">
-                        {sp.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{sp.quartier}</p>
-                      {spFurnished && spNight > 0 ? (
-                        <p className="text-sm font-bold text-primary mt-1 whitespace-nowrap">
-                          {fmt(spNight)} <span className="text-[10px] font-medium text-muted-foreground">FCFA/nuit</span>
-                        </p>
-                      ) : (
-                        <p className="text-sm font-bold text-primary mt-1 whitespace-nowrap">
-                          {fmt(sp.price)} <span className="text-[10px] font-medium text-muted-foreground">FCFA/mois</span>
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* "Biens similaires" section removed per user request */}
       </div>
 
       {/* Callback Modal */}
