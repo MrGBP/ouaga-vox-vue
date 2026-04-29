@@ -121,6 +121,11 @@ const Index = () => {
   const [idxTags, setIdxTags] = useState<{ characteristic: string; emoji: string; label: string }[]>([]);
   const [searchFallbackHint, setSearchFallbackHint] = useState<string | null>(null);
 
+  // Memoize previous context when user clicks "Voir sur la carte" so the
+  // back button can restore exactly the previous view (detail panel + scroll).
+  const focusReturnRef = useRef<{ detail: Property | null; scrollY: number } | null>(null);
+  const [hasFocusReturn, setHasFocusReturn] = useState(false);
+
   // Mobile state
   const isMobile = useIsMobile();
   const nav = useNav();
