@@ -141,7 +141,17 @@ const FilterBar = ({
   computeFilteredCount,
   externalFilters,
   forceOpen = false,
+  priceBounds,
+  availableTypeValues,
 }: FilterBarProps) => {
+  // Real bounds from the dataset, with safe fallbacks.
+  const PRICE_MIN = priceBounds?.min ?? 20000;
+  const PRICE_MAX = priceBounds?.max ?? 2000000;
+  // Only show types that actually have at least one matching property.
+  const visibleTypes = availableTypeValues
+    ? PROPERTY_TYPES.filter(t => availableTypeValues.includes(t.value))
+    : PROPERTY_TYPES;
+
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
   const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
