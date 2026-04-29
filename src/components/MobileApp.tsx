@@ -262,18 +262,29 @@ export default function MobileApp(props: MobileAppProps) {
   // Reset visible count when filters change
   useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [props.filteredProperties.length]);
 
-  // Sync navigation context → visual states (swipe back / Android back)
+  // Sync navigation context → visual states (swipe back / Android back / nav.pop()).
+  // The nav stack is the source of truth: when we land on a screen, we restore
+  // the state that screen represents instead of clearing everything.
   useEffect(() => {
-    const screen = nav.current.screen;
+    const state = nav.current;
+    const screen = state.screen;
     if (screen === 'carte-niveau1') {
       props.onDetailClose();
       props.onFocusClear();
       props.onQuartierChange(null);
     } else if (screen === 'carte-niveau2') {
+      // Back to a quartier list/map → close any open property but KEEP quartier.
       props.onDetailClose();
       props.onFocusClear();
+      if (state.quartierName && state.quartierName !== props.activeQuartier) {
+        props.onQuartierChange(state.quartierName);
+      }
+    } else if (screen === 'carte-niveau3') {
+      // Back to a property focus → keep both quartier and property as they are.
+      // (Don't clear anything; the state was pushed when the property was opened.)
     }
   }, [nav.current.screen]);
+
 
   // Helpers
   const availableProperties = useCallback((list: Property[]) => {
