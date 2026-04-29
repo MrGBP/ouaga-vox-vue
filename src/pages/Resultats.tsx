@@ -122,71 +122,20 @@ const ResultatsPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* === Sticky compact header (no logo, no slogan, no hero) === */}
+      {/* === Minimal header: just a back button. No search, no filters,
+              no counter — focus stays on the property cards.
+              The user re-opens the search via the navbar "Chercher" tab. === */}
       <header
-        className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border"
+        className="sticky top-0 z-30 bg-background/80 backdrop-blur"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 flex items-center gap-2">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 h-12 flex items-center">
           <button
             onClick={() => navigate(-1)}
             aria-label="Retour"
-            className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full hover:bg-muted active:bg-muted shrink-0"
+            className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full hover:bg-muted active:bg-muted"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
-
-          <div className="flex-1 relative">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && submitSearch(query)}
-              placeholder="Modifier la recherche…"
-              className="w-full h-10 rounded-full bg-muted border-none pl-10 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-              style={{ fontSize: 16 }}
-            />
-            {query && (
-              <button
-                onClick={() => { setQuery(''); submitSearch(''); }}
-                className="absolute right-1 top-1/2 -translate-y-1/2 min-h-[32px] min-w-[32px] flex items-center justify-center"
-                aria-label="Effacer"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            )}
-          </div>
-
-          {/* FilterBar already renders its own trigger button + drawer */}
-          <div className="shrink-0">
-            <FilterBar
-              quartiers={quartierNames}
-              totalCount={totalAvailable}
-              filteredCount={results.length}
-              onFilterChange={(f) => setFilters(f)}
-              onReset={() => setFilters(DEFAULT_FILTERS)}
-              externalFilters={filters}
-              computeFilteredCount={computeDraftCount}
-              allProperties={mockProperties}
-            />
-          </div>
-        </div>
-
-        {/* Counter row */}
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 pb-2 flex items-center justify-between gap-2">
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">
-            <span className="font-semibold text-foreground">{results.length}</span>{' '}
-            bien{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}
-            {appliedQuery && (
-              <> pour « <span className="text-foreground font-medium">{appliedQuery}</span> »</>
-            )}
-          </p>
-          <button
-            onClick={() => navigate('/')}
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs text-primary hover:underline shrink-0"
-          >
-            <MapIcon className="h-3.5 w-3.5" /> Voir sur la carte
           </button>
         </div>
       </header>
