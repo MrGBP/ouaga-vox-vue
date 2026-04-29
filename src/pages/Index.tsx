@@ -119,6 +119,7 @@ const Index = () => {
   const [activeQuartier, setActiveQuartier] = useState<string | null>(null);
   const [mapResetTrigger, setMapResetTrigger] = useState(0);
   const [idxTags, setIdxTags] = useState<{ characteristic: string; emoji: string; label: string }[]>([]);
+  const [searchFallbackHint, setSearchFallbackHint] = useState<string | null>(null);
 
   // Mobile state
   const isMobile = useIsMobile();
