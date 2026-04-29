@@ -129,6 +129,41 @@ export default function MonCompte() {
           <h2 className="text-2xl font-bold text-foreground">{profile.full_name || user.email}</h2>
         </div>
 
+        {/* Espace propriétaire */}
+        {isOwner ? (
+          <Card className="p-4 mb-6 flex items-center justify-between gap-3 border-primary/30 bg-primary/5">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-primary text-primary-foreground flex-shrink-0">
+                <HomeIcon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm text-foreground">Espace propriétaire</h3>
+                <p className="text-xs text-muted-foreground">Gère tes biens, tes réservations et tes statistiques.</p>
+              </div>
+            </div>
+            <Link to="/proprietaire">
+              <Button size="sm" className="gap-1.5 flex-shrink-0">
+                Accéder <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </Card>
+        ) : (
+          <Card className="p-4 mb-6 flex items-center justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-muted flex-shrink-0">
+                <HomeIcon className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm text-foreground">Tu as un bien à publier ?</h3>
+                <p className="text-xs text-muted-foreground">Active ton espace propriétaire pour publier et suivre tes biens.</p>
+              </div>
+            </div>
+            <Button size="sm" onClick={becomeOwner} disabled={becomingOwner} className="flex-shrink-0">
+              {becomingOwner ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Devenir propriétaire'}
+            </Button>
+          </Card>
+        )}
+
         <Tabs defaultValue="reservations" className="w-full">
           <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="reservations" className="gap-1.5"><Calendar className="h-4 w-4" /><span className="hidden sm:inline">Demandes</span></TabsTrigger>
