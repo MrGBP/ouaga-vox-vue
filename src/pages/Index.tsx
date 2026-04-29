@@ -519,6 +519,7 @@ const Index = () => {
         mapQuartierTrigger={mapQuartierTrigger}
         showFavoritesOnly={showFavoritesOnly}
         idxTags={idxTags}
+        searchFallbackHint={searchFallbackHint}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
         onSearchQueryChange={setSearchQuery}
