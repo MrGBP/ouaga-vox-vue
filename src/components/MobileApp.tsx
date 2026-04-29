@@ -437,25 +437,20 @@ export default function MobileApp(props: MobileAppProps) {
       return;
     }
     if (tab === 'map') {
-      // Contextual map:
-      // - if a property is open  → keep it focused (carte-niveau3)
-      // - else if a quartier is active → keep it (carte-niveau2)
-      // - else → global map (carte-niveau1)
+      // Click on Carte in the navbar → ALWAYS reset to global Ouagadougou view
+      // (niveau 1) with all pins. Keeps filters/search intact, just recenters
+      // the map and closes any open property / active quartier. The normal
+      // quartier-tap → niveau 2 logic still works after that.
       setMobileTab('map');
       setShowMobileSearch(false);
       props.onMobileTabChange('map');
-      // Push a nav state matching the current context so back works.
-      const screen = props.detailProperty
-        ? 'carte-niveau3'
-        : props.activeQuartier ? 'carte-niveau2' : 'carte-niveau1';
-      if (nav.current.screen !== screen) {
-        nav.push({
-          screen,
-          quartierName: props.activeQuartier ?? undefined,
-          propertyId: props.detailProperty?.id,
-          propertyTitle: props.detailProperty?.title,
-          propertyQuartier: props.detailProperty?.quartier,
-        });
+      // Close any open property + leave the active quartier so we go back to N1.
+      if (props.detailProperty) props.onDetailClose();
+      props.onFocusClear();
+      props.onQuartierChange(null); // also bumps mapResetTrigger → recenters Ouaga
+      // Reset the nav stack to a clean carte-niveau1 entry.
+      if (nav.current.screen !== 'carte-niveau1') {
+        nav.push({ screen: 'carte-niveau1' });
       }
       return;
     }
