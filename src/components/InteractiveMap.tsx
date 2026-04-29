@@ -330,7 +330,7 @@ const InteractiveMap = ({
       if (qProps.length === 0) return;
       const icon = L.divIcon({ html: quartierClusterHTML(q.name, qProps.length), className: '', iconSize: [80, 80], iconAnchor: [40, 40] });
       const m = L.marker([q.latitude, q.longitude], { icon, zIndexOffset: 100 });
-      m.bindTooltip(`<div style="font-family:system-ui;min-width:130px;"><strong style="color:#1a3560">${q.name}</strong><br/><span style="font-size:11px;color:#555;">${qProps.length} biens disponibles</span></div>`, { direction: 'top', offset: [0, -44] });
+      m.bindTooltip(`<div style="font-family:system-ui;"><strong style="color:#1a3560">${q.name}</strong></div>`, { direction: 'top', offset: [0, -44] });
       m.on('click', (e) => { L.DomEvent.stopPropagation(e); setSelectedQuartier(q.name); });
       quartierLayer.current!.addLayer(m);
     });
@@ -420,7 +420,7 @@ const InteractiveMap = ({
         const isFurnished = isTypeFurnished(prop.type) || prop.furnished;
         const displayPrice = isFurnished ? pricePerNight(prop.price) : prop.price;
         const suffix = isFurnished ? '/nuit' : '/mois';
-        m.bindTooltip(`<div style="font-family:system-ui;min-width:140px;"><strong style="color:#1a3560;font-size:12px;">${prop.title}</strong><br/><span style="font-size:11px;font-weight:700;color:#1a3560;">${new Intl.NumberFormat('fr-FR').format(displayPrice)} FCFA${suffix}</span><br/><span style="font-size:10px;color:#666;">${prop.bedrooms || '–'} ch. · ${prop.surface_area || '–'} m²</span></div>`, { direction: 'top', offset: [0, -8] });
+        m.bindTooltip(`<div style="font-family:system-ui;"><span style="font-size:11px;font-weight:700;color:#1a3560;">${new Intl.NumberFormat('fr-FR').format(displayPrice)} FCFA${suffix}</span></div>`, { direction: 'top', offset: [0, -8] });
         m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(prop.id); });
         propertyLayer.current!.addLayer(m);
       });
