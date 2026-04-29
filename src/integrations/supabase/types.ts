@@ -40,9 +40,10 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          property_id: string | null
           read_by_admin: boolean
           read_by_client: boolean
-          reservation_id: string
+          reservation_id: string | null
           sender_id: string | null
           sender_name: string
           sender_role: string
@@ -51,9 +52,10 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          property_id?: string | null
           read_by_admin?: boolean
           read_by_client?: boolean
-          reservation_id: string
+          reservation_id?: string | null
           sender_id?: string | null
           sender_name: string
           sender_role?: string
@@ -62,9 +64,10 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          property_id?: string | null
           read_by_admin?: boolean
           read_by_client?: boolean
-          reservation_id?: string
+          reservation_id?: string | null
           sender_id?: string | null
           sender_name?: string
           sender_role?: string
@@ -452,9 +455,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_property_owner: {
+        Args: { _property_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "owner"
       media_kind: "image" | "video" | "video_360"
       property_admin_status:
         | "pending"
@@ -593,7 +600,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "owner"],
       media_kind: ["image", "video", "video_360"],
       property_admin_status: [
         "pending",
