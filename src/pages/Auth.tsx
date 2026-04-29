@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Building2 } from 'lucide-react';
+import { Building2, Home as HomeIcon } from 'lucide-react';
 
 const signupSchema = z.object({
   full_name: z.string().trim().min(2, 'Nom trop court').max(80),
@@ -22,6 +22,7 @@ export default function Auth() {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
+  const [asOwner, setAsOwner] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (!loading && user) navigate('/'); }, [user, loading, navigate]);
@@ -33,7 +34,7 @@ export default function Auth() {
       if (mode === 'signup') {
         const parsed = signupSchema.safeParse(form);
         if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: parsed.data.email, password: parsed.data.password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
@@ -41,7 +42,22 @@ export default function Auth() {
           },
         });
         if (error) throw error;
-        toast.success('Compte créé. Vérifie ta boîte mail si la confirmation est activée.');
+        // Si l'utilisateur s'inscrit en tant que propriétaire, on ajoute ce rôle
+        // (le trigger handle_new_user a déjà créé le rôle 'user' par défaut).
+        const newUserId = signUpData.user?.id;
+        if (asOwner && newUserId) {
+          const { error: roleErr } = await supabase
+            .from('user_roles')
+            .insert({ user_id: newUserId, role: 'owner' });
+          // En cas d'email confirmation activée, l'INSERT peut échouer car pas encore authentifié.
+          // On stocke alors l'intention pour le faire après la connexion.
+          if (roleErr) {
+            localStorage.setItem('sapsap_pending_owner_role', '1');
+          }
+        }
+        toast.success(asOwner
+          ? 'Compte propriétaire créé. Vérifie ta boîte mail si la confirmation est activée.'
+          : 'Compte créé. Vérifie ta boîte mail si la confirmation est activée.');
       } else {
         const parsed = loginSchema.safeParse(form);
         if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
@@ -81,6 +97,17 @@ export default function Auth() {
             value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
           <input type="password" className="w-full rounded-lg border px-3 py-2.5 text-sm" placeholder="Mot de passe"
             value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+
+          {mode === 'signup' && (
+            <label className="flex items-start gap-2.5 mt-1 px-3 py-2.5 rounded-lg border cursor-pointer hover:bg-slate-50 transition">
+              <input type="checkbox" checked={asOwner} onChange={e => setAsOwner(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[#1a3560]" />
+              <span className="text-xs leading-relaxed">
+                <span className="font-semibold flex items-center gap-1.5"><HomeIcon size={13} /> Je suis propriétaire</span>
+                <span className="text-muted-foreground">Je veux publier mes biens. Tu pourras aussi l'activer plus tard.</span>
+              </span>
+            </label>
+          )}
 
           <button disabled={busy} type="submit" className="w-full h-11 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
             style={{ background: '#1a3560' }}>

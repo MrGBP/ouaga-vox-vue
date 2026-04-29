@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Search as SearchIcon, Calendar, User as UserIcon, MessageSquare, LogOut, Trash2, Bell, BellOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Heart, Search as SearchIcon, Calendar, User as UserIcon, MessageSquare, LogOut, Trash2, Bell, BellOff, Loader2, Home as HomeIcon, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,8 @@ import ReservationChat from '@/components/ReservationChat';
 import { toast } from 'sonner';
 
 export default function MonCompte() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isOwner, refreshRoles } = useAuth();
+  const [becomingOwner, setBecomingOwner] = useState(false);
   const { ids: favIds, toggle: toggleFav } = useFavorites();
   const [reservations, setReservations] = useState<ReservationRow[]>([]);
   const [searches, setSearches] = useState<SavedSearchRow[]>([]);
@@ -31,6 +32,14 @@ export default function MonCompte() {
     (async () => {
       setDataLoading(true);
       try {
+        // Si une intention "owner" était en attente (signup avec confirm email), on la finalise
+        if (localStorage.getItem('sapsap_pending_owner_role') === '1') {
+          const { error } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'owner' as any });
+          if (!error || error.code === '23505') {
+            localStorage.removeItem('sapsap_pending_owner_role');
+            await refreshRoles();
+          }
+        }
         const [res, sav, prof] = await Promise.all([
           listMyReservations().catch(() => []),
           listSavedSearches().catch(() => []),
@@ -42,6 +51,19 @@ export default function MonCompte() {
       } finally { setDataLoading(false); }
     })();
   }, [user]);
+
+  const becomeOwner = async () => {
+    if (!user) return;
+    setBecomingOwner(true);
+    try {
+      const { error } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'owner' as any });
+      if (error && error.code !== '23505') throw error;
+      await refreshRoles();
+      toast.success('Tu es maintenant propriétaire 🎉');
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Erreur');
+    } finally { setBecomingOwner(false); }
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
@@ -106,6 +128,41 @@ export default function MonCompte() {
           <p className="text-sm text-muted-foreground">Bonjour</p>
           <h2 className="text-2xl font-bold text-foreground">{profile.full_name || user.email}</h2>
         </div>
+
+        {/* Espace propriétaire */}
+        {isOwner ? (
+          <Card className="p-4 mb-6 flex items-center justify-between gap-3 border-primary/30 bg-primary/5">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-primary text-primary-foreground flex-shrink-0">
+                <HomeIcon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm text-foreground">Espace propriétaire</h3>
+                <p className="text-xs text-muted-foreground">Gère tes biens, tes réservations et tes statistiques.</p>
+              </div>
+            </div>
+            <Link to="/proprietaire">
+              <Button size="sm" className="gap-1.5 flex-shrink-0">
+                Accéder <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </Card>
+        ) : (
+          <Card className="p-4 mb-6 flex items-center justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-muted flex-shrink-0">
+                <HomeIcon className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm text-foreground">Tu as un bien à publier ?</h3>
+                <p className="text-xs text-muted-foreground">Active ton espace propriétaire pour publier et suivre tes biens.</p>
+              </div>
+            </div>
+            <Button size="sm" onClick={becomeOwner} disabled={becomingOwner} className="flex-shrink-0">
+              {becomingOwner ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Devenir propriétaire'}
+            </Button>
+          </Card>
+        )}
 
         <Tabs defaultValue="reservations" className="w-full">
           <TabsList className="grid grid-cols-4 w-full">
