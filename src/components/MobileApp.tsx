@@ -119,6 +119,8 @@ export interface MobileAppProps {
   onViewDetails: (p: Property) => void;
   onExploreOnMap: (id: string) => void;
   onFocusOnMap: (id: string) => void;
+  onFocusReturn?: () => void;
+  hasFocusReturn?: boolean;
   onFullReset: () => void;
   onQuartierChange: (q: string | null) => void;
   onExternalQuartierHandled: () => void;
