@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, ArrowLeft, SlidersHorizontal, Clock, ChevronUp } from 'lucide-react';
 import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import FilterBar, { type FilterState } from '@/components/FilterBar';
+import { parseQuery, describeParsed, smartFilter } from '@/lib/smartMatch';
 
 const TYPEWRITER_PHRASES = [
   "Villa meublée 4 chambres à Tampouy...",
@@ -74,8 +75,11 @@ const SearchPage = () => {
   };
 
   const handleApplyFilters = (f: FilterState) => {
-    try { sessionStorage.setItem('sapsap_apply_filters', JSON.stringify(f)); } catch {}
-    navigate(-1);
+    // Persiste les filtres pour la page Résultats (même clé que partout)
+    try { localStorage.setItem('sapsap_filters_v1', JSON.stringify(f)); } catch {}
+    // Va vers la page dédiée /resultats (PAS la home avec hero)
+    setShowFilters(false);
+    navigate(`/resultats?q=${encodeURIComponent(query.trim())}`);
   };
 
   const handleResetFilters = () => {
@@ -84,17 +88,21 @@ const SearchPage = () => {
     setTimeout(() => setShowFilters(true), 50);
   };
 
+  // Smart matching : tolère les fautes, comprend les synonymes (clim/climatisé,
+  // bureau/office, meublé/equipé...) et combine plusieurs critères.
   const fuzzy = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (q.length === 0) return [];
-    return properties.filter(p =>
-      p.title.toLowerCase().includes(q) ||
-      p.quartier.toLowerCase().includes(q) ||
-      p.type.toLowerCase().includes(q) ||
-      getTypeLabel(p.type).toLowerCase().includes(q) ||
-      String(p.price).includes(q)
-    ).slice(0, 12);
-  }, [query, properties]);
+    if (query.trim().length === 0) return [];
+    return smartFilter(properties, query, quartierNames).slice(0, 12);
+  }, [query, properties, quartierNames]);
+
+  // Récap humain "J'ai compris : ..." — n'apparaît que si on a vraiment
+  // identifié au moins un critère (sinon on reste discret).
+  const understood = useMemo(() => {
+    if (query.trim().length < 3) return '';
+    const parsed = parseQuery(query, quartierNames);
+    return describeParsed(parsed);
+  }, [query, quartierNames]);
+  
 
   const saveRecent = (q: string) => {
     if (!q.trim()) return;
@@ -164,6 +172,32 @@ const SearchPage = () => {
           )}
         </div>
       </div>
+
+      {/* Récap "J'ai compris" — visible uniquement quand l'IA-locale a
+          reconnu au moins un critère métier (équipement, quartier, prix...) */}
+      <AnimatePresence>
+        {understood && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18 }}
+            className="px-3 py-2 border-b border-border bg-primary/5 flex items-start gap-2"
+          >
+            <span className="text-base leading-tight">🧠</span>
+            <p className="text-xs text-foreground leading-snug flex-1">
+              <span className="font-semibold">J'ai compris :</span>{' '}
+              <span className="text-muted-foreground">{understood}</span>
+              <button
+                onClick={() => submit()}
+                className="ml-2 text-primary font-semibold underline-offset-2 hover:underline active:opacity-70"
+              >
+                Valider
+              </button>
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto scrollable">
