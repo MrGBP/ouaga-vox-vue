@@ -88,16 +88,20 @@ const SearchPage = () => {
     setTimeout(() => setShowFilters(true), 50);
   };
 
+  // Smart matching : tolère les fautes, comprend les synonymes (clim/climatisé,
+  // bureau/office, meublé/equipé...) et combine plusieurs critères.
   const fuzzy = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (q.length === 0) return [];
-    return properties.filter(p =>
-      p.title.toLowerCase().includes(q) ||
-      p.quartier.toLowerCase().includes(q) ||
-      p.type.toLowerCase().includes(q) ||
-      getTypeLabel(p.type).toLowerCase().includes(q) ||
-      String(p.price).includes(q)
-    ).slice(0, 12);
+    if (query.trim().length === 0) return [];
+    return smartFilter(properties, query, quartierNames).slice(0, 12);
+  }, [query, properties, quartierNames]);
+
+  // Récap humain "J'ai compris : ..." — n'apparaît que si on a vraiment
+  // identifié au moins un critère (sinon on reste discret).
+  const understood = useMemo(() => {
+    if (query.trim().length < 3) return '';
+    const parsed = parseQuery(query, quartierNames);
+    return describeParsed(parsed);
+  }, [query, quartierNames]);
   }, [query, properties]);
 
   const saveRecent = (q: string) => {
