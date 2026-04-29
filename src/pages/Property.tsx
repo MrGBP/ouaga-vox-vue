@@ -22,7 +22,18 @@ const PropertyPage = () => {
   });
 
   useEffect(() => {
-    if (property) addToRecentlyViewed(property);
+    if (!property) return;
+    addToRecentlyViewed(property);
+    // Bump view counter (best-effort, ignore errors). One bump per session/property.
+    try {
+      const key = `sapsap_viewed_${property.id}`;
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        import('@/integrations/supabase/client').then(({ supabase }) => {
+          supabase.rpc('increment_property_view', { _property_id: property.id });
+        });
+      }
+    } catch {}
   }, [property]);
 
   useEffect(() => {
