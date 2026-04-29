@@ -53,10 +53,10 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           setBedrooms(data.bedrooms ?? 1); setBathrooms(data.bathrooms ?? 1);
           setSurface(data.surface_area ?? 50); setFurnished(!!data.furnished);
           setLat(Number(data.latitude)); setLng(Number(data.longitude));
-          const f = data.features ?? {};
+          const f: Record<string, any> = (data.features ?? {}) as Record<string, any>;
           const active = FEATURE_CATALOG.filter(c => f[c.key]).map(c => c.key);
           setFeatures(active);
-          setCustomFeatures(Array.isArray(f.__custom) ? f.__custom : []);
+          setCustomFeatures(Array.isArray(f.__custom) ? (f.__custom as string[]) : []);
           setSavedId(initial.id);
         }
       })();
