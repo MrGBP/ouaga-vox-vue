@@ -102,7 +102,7 @@ const SearchPage = () => {
     const parsed = parseQuery(query, quartierNames);
     return describeParsed(parsed);
   }, [query, quartierNames]);
-  }, [query, properties]);
+  
 
   const saveRecent = (q: string) => {
     if (!q.trim()) return;
