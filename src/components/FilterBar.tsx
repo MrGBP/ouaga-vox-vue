@@ -263,11 +263,14 @@ const FilterBar = ({
           {fmt(draft.minPrice)} — {fmt(draft.maxPrice)}
         </p>
         <Slider
-          value={[draft.minPrice, draft.maxPrice]}
+          value={[
+            Math.max(PRICE_MIN, Math.min(PRICE_MAX, draft.minPrice)),
+            Math.max(PRICE_MIN, Math.min(PRICE_MAX, draft.maxPrice)),
+          ]}
           onValueChange={([min, max]) => setDraft(d => ({ ...d, minPrice: min, maxPrice: max }))}
-          min={20000}
-          max={2000000}
-          step={10000}
+          min={PRICE_MIN}
+          max={PRICE_MAX}
+          step={Math.max(1000, Math.round((PRICE_MAX - PRICE_MIN) / 200 / 1000) * 1000)}
         />
       </div>
 
