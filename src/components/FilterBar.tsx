@@ -36,6 +36,10 @@ interface FilterBarProps {
   computeFilteredCount?: (filters: FilterState) => number;
   externalFilters?: FilterState;
   forceOpen?: boolean;
+  /** Real price bounds derived from the current dataset. Optional — falls back to defaults. */
+  priceBounds?: { min: number; max: number };
+  /** Property type values that actually have at least one matching property. */
+  availableTypeValues?: string[];
 }
 
 export const DEFAULT_FILTERS: FilterState = {
