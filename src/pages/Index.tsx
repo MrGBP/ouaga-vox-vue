@@ -276,7 +276,28 @@ const Index = () => {
     const autoChars = tags.map(t => t.characteristic);
     const newFilters = { ...filters, characteristics: [...new Set([...filters.characteristics, ...autoChars])] };
     setFilters(newFilters);
-    const filtered = applyFilters(properties, query, newFilters, showFavoritesOnly, favorites);
+    let filtered = applyFilters(properties, query, newFilters, showFavoritesOnly, favorites);
+    let usedFallback = false;
+
+    // Smart fallback (Lot C): if 0 exact results, show closest matches
+    // (same quartier OR same type as the query terms) so the user always
+    // sees something useful rather than an empty screen.
+    if (filtered.length === 0 && query.trim()) {
+      const q = query.toLowerCase();
+      const allAvailable = properties.filter(p => p.status !== 'rented' && p.available !== false);
+      const matchedQuartiers = new Set(
+        allAvailable.filter(p => p.quartier.toLowerCase().includes(q) || q.includes(p.quartier.toLowerCase())).map(p => p.quartier)
+      );
+      const matchedTypes = new Set(
+        allAvailable.filter(p => p.type.toLowerCase().includes(q) || getTypeLabel(p.type).toLowerCase().includes(q)).map(p => p.type)
+      );
+      const near = allAvailable.filter(p => matchedQuartiers.has(p.quartier) || matchedTypes.has(p.type)).slice(0, 12);
+      if (near.length > 0) {
+        filtered = near;
+        usedFallback = true;
+      }
+    }
+
     setFilteredProperties(filtered);
     // Save recent search
     try {
@@ -285,7 +306,11 @@ const Index = () => {
       localStorage.setItem('sapsap_recent_searches', JSON.stringify(updated));
     } catch {}
     if (filtered.length > 0) {
-      toast({ title: '🔍 Résultats', description: `${filtered.length} bien(s) trouvé(s)` });
+      if (usedFallback) {
+        toast({ title: '💡 Aucun résultat exact', description: `Voici ${filtered.length} bien(s) proche(s) de votre recherche.` });
+      } else {
+        toast({ title: '🔍 Résultats', description: `${filtered.length} bien(s) trouvé(s)` });
+      }
     } else {
       toast({ title: 'Aucun résultat', description: 'Élargissez votre recherche.', variant: 'destructive' });
     }
