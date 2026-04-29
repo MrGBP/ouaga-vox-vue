@@ -75,8 +75,11 @@ const SearchPage = () => {
   };
 
   const handleApplyFilters = (f: FilterState) => {
-    try { sessionStorage.setItem('sapsap_apply_filters', JSON.stringify(f)); } catch {}
-    navigate(-1);
+    // Persiste les filtres pour la page Résultats (même clé que partout)
+    try { localStorage.setItem('sapsap_filters_v1', JSON.stringify(f)); } catch {}
+    // Va vers la page dédiée /resultats (PAS la home avec hero)
+    setShowFilters(false);
+    navigate(`/resultats?q=${encodeURIComponent(query.trim())}`);
   };
 
   const handleResetFilters = () => {
