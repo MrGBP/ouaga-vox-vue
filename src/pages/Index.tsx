@@ -125,6 +125,7 @@ const Index = () => {
   // back button can restore exactly the previous view (detail panel + scroll).
   const focusReturnRef = useRef<{ detail: Property | null; scrollY: number } | null>(null);
   const [hasFocusReturn, setHasFocusReturn] = useState(false);
+  const [forceMapTabTrigger, setForceMapTabTrigger] = useState(0);
 
   // Mobile state
   const isMobile = useIsMobile();
@@ -397,6 +398,9 @@ const Index = () => {
     // Close the side detail panel so the map (POI + radius) is fully visible.
     setDetailProperty(null);
     if (isMobile) {
+      // Force switch to the map tab so the user actually sees the focused
+      // property + POI + radius (same outcome as Desktop scroll-to-map).
+      setForceMapTabTrigger(t => t + 1);
       nav.push({
         screen: 'carte-niveau3',
         propertyId: id,
@@ -561,6 +565,7 @@ const Index = () => {
         onFocusOnMap={handleFocusOnMap}
         onFocusReturn={handleFocusReturn}
         hasFocusReturn={hasFocusReturn}
+        forceMapTabTrigger={forceMapTabTrigger}
         onFullReset={handleFullReset}
         onQuartierChange={(q) => {
           setActiveQuartier(q);

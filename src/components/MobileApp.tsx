@@ -121,6 +121,7 @@ export interface MobileAppProps {
   onFocusOnMap: (id: string) => void;
   onFocusReturn?: () => void;
   hasFocusReturn?: boolean;
+  forceMapTabTrigger?: number;
   onFullReset: () => void;
   onQuartierChange: (q: string | null) => void;
   onExternalQuartierHandled: () => void;
@@ -264,6 +265,19 @@ export default function MobileApp(props: MobileAppProps) {
 
   // Reset visible count when filters change
   useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [props.filteredProperties.length]);
+
+  // Force switch to map tab when parent triggers a "focus on map" action
+  // (e.g. user tapped the map icon on a PropertyCard from the home/favorites tab).
+  const lastForceMapRef = useRef<number | undefined>(props.forceMapTabTrigger);
+  useEffect(() => {
+    if (props.forceMapTabTrigger === undefined) return;
+    if (props.forceMapTabTrigger === lastForceMapRef.current) return;
+    lastForceMapRef.current = props.forceMapTabTrigger;
+    setMobileTab('map');
+    setShowMobileSearch(false);
+    setShowMobileFilters(false);
+    props.onMobileTabChange('map');
+  }, [props.forceMapTabTrigger]);
 
   // Sync navigation context → visual states (swipe back / Android back / nav.pop()).
   // The nav stack is the source of truth: when we land on a screen, we restore
