@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Building2, LayoutDashboard, Home, Users, CalendarDays, Zap, MessageSquare, BarChart3, Settings, LogOut, ExternalLink, X, Database } from 'lucide-react';
+import { Building2, LayoutDashboard, Home, Users, CalendarDays, Zap, MessageSquare, BarChart3, Settings, LogOut, ExternalLink, X, Database, ShieldCheck } from 'lucide-react';
 import { adminProperties, mockReservations, mockMessages } from '@/admin/data/adminMockData';
 
 const NAV_ITEMS = [
   { label: 'Tableau de bord', icon: LayoutDashboard, path: '/admin', end: true },
   { label: 'Biens (démo)', icon: Home, path: '/admin/biens', badge: () => adminProperties.filter(p => p.adminStatus === 'pending').length },
   { label: 'Biens (production)', icon: Database, path: '/admin/biens-live' },
+  { label: 'Modération', icon: ShieldCheck, path: '/admin/moderation' },
   { label: 'Utilisateurs', icon: Users, path: '/admin/users' },
   { label: 'Réservations', icon: CalendarDays, path: '/admin/reservations', badge: () => mockReservations.filter(r => r.status === 'pending').length },
   { label: 'Boosts', icon: Zap, path: '/admin/boosts' },
