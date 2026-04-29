@@ -121,6 +121,7 @@ export interface MobileAppProps {
   onFocusOnMap: (id: string) => void;
   onFocusReturn?: () => void;
   hasFocusReturn?: boolean;
+  forceMapTabTrigger?: number;
   onFullReset: () => void;
   onQuartierChange: (q: string | null) => void;
   onExternalQuartierHandled: () => void;
