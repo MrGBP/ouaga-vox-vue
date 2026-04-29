@@ -1083,6 +1083,8 @@ export default function MobileApp(props: MobileAppProps) {
             showFavoritesOnly={props.showFavoritesOnly}
             computeFilteredCount={props.computeFilteredCount}
             externalFilters={props.filters}
+            priceBounds={mobileFilterOpts ? { min: mobileFilterOpts.priceMin, max: mobileFilterOpts.priceMax } : undefined}
+            availableTypeValues={mobileFilterOpts?.typeValues}
             forceOpen={true}
           />
         </div>
