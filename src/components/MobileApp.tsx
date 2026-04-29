@@ -110,6 +110,7 @@ export interface MobileAppProps {
   mapQuartierTrigger: string | null;
   showFavoritesOnly: boolean;
   idxTags: { characteristic: string; emoji: string; label: string }[];
+  searchFallbackHint?: string | null;
   onFilterChange: (f: FilterState) => void;
   onSearch: (q: string) => void;
   onSearchQueryChange: (q: string) => void;
@@ -715,6 +716,11 @@ export default function MobileApp(props: MobileAppProps) {
                   <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
                 </span>
               </div>
+              {props.searchFallbackHint && (
+                <p className="text-xs italic text-muted-foreground mb-3">
+                  {props.searchFallbackHint}
+                </p>
+              )}
               {displayProperties.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 gap-4">
