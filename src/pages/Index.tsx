@@ -602,7 +602,7 @@ const Index = () => {
         <FilterBar
           onFilterChange={handleFilterChange}
           onReset={handleFullReset}
-          quartiers={quartierNames}
+          quartiers={filterOpts.quartiers}
           totalCount={availableProperties(properties).length}
           filteredCount={displayProperties.length}
           favoritesCount={favorites.size}
@@ -610,6 +610,8 @@ const Index = () => {
           onToggleFavoritesView={toggleFavoritesView}
           computeFilteredCount={computeFilteredCount}
           externalFilters={filters}
+          priceBounds={{ min: filterOpts.priceMin, max: filterOpts.priceMax }}
+          availableTypeValues={filterOpts.typeValues}
         />
 
         <div className="flex gap-0 relative">
