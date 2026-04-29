@@ -40,6 +40,8 @@ interface FilterBarProps {
   priceBounds?: { min: number; max: number };
   /** Property type values that actually have at least one matching property. */
   availableTypeValues?: string[];
+  /** Optional callback fired after Apply, e.g. to navigate to a results page. */
+  onAfterApply?: (filters: FilterState) => void;
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -143,6 +145,7 @@ const FilterBar = ({
   forceOpen = false,
   priceBounds,
   availableTypeValues,
+  onAfterApply,
 }: FilterBarProps) => {
   // Real bounds from the dataset, with safe fallbacks.
   const PRICE_MIN = priceBounds?.min ?? 20000;
@@ -213,6 +216,7 @@ const FilterBar = ({
     setApplied(draft);
     onFilterChange(draft);
     setIsOpen(false);
+    if (onAfterApply) onAfterApply(draft);
   };
 
   const handleReset = () => {
