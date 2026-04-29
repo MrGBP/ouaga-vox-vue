@@ -4,7 +4,7 @@ import {
   X, Heart, ChevronLeft, ChevronRight, MapPin, Bed, Bath,
   Maximize, Calendar, Phone, MessageCircle, Mail, Camera,
   Thermometer, Shield, Zap, TreePine, Droplets, Wifi,
-  Map, Accessibility, Share2, PhoneCall, Play,
+  Accessibility, Share2, PhoneCall, Play,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -547,19 +547,9 @@ const PropertyDetailPanel = ({
         )}
 
         {/* Actions — inline (non-blocking, scrolls with content) */}
+        {/* NOTE: Map icon button removed (Lot A) — the "Localisation" block above already opens the map context. */}
         {isMobile ? (
           <div className="flex gap-2.5 pt-1">
-            {onExploreOnMap && (
-              <button
-                onClick={() => onExploreOnMap(property.id)}
-                className="flex items-center justify-center gap-2 h-12 px-4 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform flex-shrink-0"
-                style={{ minWidth: 52 }}
-                title="Explorer sur la carte"
-                aria-label="Explorer sur la carte"
-              >
-                <Map className="h-5 w-5" />
-              </button>
-            )}
             <button
               onClick={() => setShowReservation(true)}
               className="flex-1 h-12 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
@@ -578,11 +568,6 @@ const PropertyDetailPanel = ({
             ) : (
               <Button onClick={() => setShowReservation(true)} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
                 <Calendar className="h-4 w-4" /> Réserver
-              </Button>
-            )}
-            {onExploreOnMap && (
-              <Button variant="outline" size="icon" onClick={() => onExploreOnMap(property.id)} className="shrink-0 h-10 w-10 hover:bg-muted active:scale-[0.98] transition-all" title="Explorer sur la carte">
-                <Map className="h-4 w-4" />
               </Button>
             )}
           </div>

@@ -110,6 +110,7 @@ export interface MobileAppProps {
   mapQuartierTrigger: string | null;
   showFavoritesOnly: boolean;
   idxTags: { characteristic: string; emoji: string; label: string }[];
+  searchFallbackHint?: string | null;
   onFilterChange: (f: FilterState) => void;
   onSearch: (q: string) => void;
   onSearchQueryChange: (q: string) => void;
@@ -262,18 +263,29 @@ export default function MobileApp(props: MobileAppProps) {
   // Reset visible count when filters change
   useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [props.filteredProperties.length]);
 
-  // Sync navigation context → visual states (swipe back / Android back)
+  // Sync navigation context → visual states (swipe back / Android back / nav.pop()).
+  // The nav stack is the source of truth: when we land on a screen, we restore
+  // the state that screen represents instead of clearing everything.
   useEffect(() => {
-    const screen = nav.current.screen;
+    const state = nav.current;
+    const screen = state.screen;
     if (screen === 'carte-niveau1') {
       props.onDetailClose();
       props.onFocusClear();
       props.onQuartierChange(null);
     } else if (screen === 'carte-niveau2') {
+      // Back to a quartier list/map → close any open property but KEEP quartier.
       props.onDetailClose();
       props.onFocusClear();
+      if (state.quartierName && state.quartierName !== props.activeQuartier) {
+        props.onQuartierChange(state.quartierName);
+      }
+    } else if (screen === 'carte-niveau3') {
+      // Back to a property focus → keep both quartier and property as they are.
+      // (Don't clear anything; the state was pushed when the property was opened.)
     }
   }, [nav.current.screen]);
+
 
   // Helpers
   const availableProperties = useCallback((list: Property[]) => {
@@ -363,16 +375,21 @@ export default function MobileApp(props: MobileAppProps) {
   }, [pinPreview, openPropertyPage]);
 
   // Navigation handlers
+  // Back: rely on the nav stack to restore the previous screen.
+  // The useEffect on `nav.current.screen` (above) will sync visual states
+  // (detail / focus / quartier) to match wherever we land — so we don't
+  // arbitrarily clear states here based on visual `navLevel`.
   const handleNavBack = () => {
     setPinPreview(null);
     if (isExploring) { setIsExploring(false); return; }
-    if (navLevel === 3) {
-      props.onDetailClose();
-      props.onFocusClear();
-    } else if (navLevel === 2) {
-      props.onQuartierChange(null);
+    if (nav.canGoBack) {
+      nav.pop();
+      return;
     }
-    if (nav.canGoBack) nav.pop();
+    // Hard fallback if stack is empty: clear everything to land on N1.
+    props.onDetailClose();
+    props.onFocusClear();
+    props.onQuartierChange(null);
   };
 
   const handleNavHome = () => {
@@ -388,17 +405,45 @@ export default function MobileApp(props: MobileAppProps) {
     navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
   }, [navigate, props.searchQuery]);
 
+  // Tab change: 'map' keeps context (current property/quartier visible on map).
+  // Other tabs (home, favorites, profile) clear contextual selections so the
+  // user gets a fresh view of that section.
   const handleMobileTabChange = (tab: string) => {
     if (tab === 'search') {
       openSearchPage();
       return;
     }
+    if (tab === 'map') {
+      // Contextual map:
+      // - if a property is open  → keep it focused (carte-niveau3)
+      // - else if a quartier is active → keep it (carte-niveau2)
+      // - else → global map (carte-niveau1)
+      setMobileTab('map');
+      setShowMobileSearch(false);
+      props.onMobileTabChange('map');
+      // Push a nav state matching the current context so back works.
+      const screen = props.detailProperty
+        ? 'carte-niveau3'
+        : props.activeQuartier ? 'carte-niveau2' : 'carte-niveau1';
+      if (nav.current.screen !== screen) {
+        nav.push({
+          screen,
+          quartierName: props.activeQuartier ?? undefined,
+          propertyId: props.detailProperty?.id,
+          propertyTitle: props.detailProperty?.title,
+          propertyQuartier: props.detailProperty?.quartier,
+        });
+      }
+      return;
+    }
+    // home / favorites / profile → fresh section
     props.onDetailClose();
     props.onFocusClear();
     setMobileTab(tab);
     setShowMobileSearch(false);
     props.onMobileTabChange(tab);
   };
+
 
   const handleSheetHeightChange = useCallback((h: number) => {
     setSheetHeight(h);
@@ -671,6 +716,11 @@ export default function MobileApp(props: MobileAppProps) {
                   <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
                 </span>
               </div>
+              {props.searchFallbackHint && (
+                <p className="text-xs italic text-muted-foreground mb-3">
+                  {props.searchFallbackHint}
+                </p>
+              )}
               {displayProperties.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 gap-4">
