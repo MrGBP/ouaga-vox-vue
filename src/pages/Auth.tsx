@@ -98,6 +98,17 @@ export default function Auth() {
           <input type="password" className="w-full rounded-lg border px-3 py-2.5 text-sm" placeholder="Mot de passe"
             value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
 
+          {mode === 'signup' && (
+            <label className="flex items-start gap-2.5 mt-1 px-3 py-2.5 rounded-lg border cursor-pointer hover:bg-slate-50 transition">
+              <input type="checkbox" checked={asOwner} onChange={e => setAsOwner(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[#1a3560]" />
+              <span className="text-xs leading-relaxed">
+                <span className="font-semibold flex items-center gap-1.5"><HomeIcon size={13} /> Je suis propriétaire</span>
+                <span className="text-muted-foreground">Je veux publier mes biens. Tu pourras aussi l'activer plus tard.</span>
+              </span>
+            </label>
+          )}
+
           <button disabled={busy} type="submit" className="w-full h-11 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
             style={{ background: '#1a3560' }}>
             {busy ? '…' : mode === 'login' ? 'Se connecter' : 'Créer le compte'}
