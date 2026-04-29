@@ -300,6 +300,9 @@ const Index = () => {
     }
 
     setFilteredProperties(filtered);
+    setSearchFallbackHint(usedFallback
+      ? `Aucun bien ne correspond exactement à "${query}". Voici quelques biens proches qui pourraient vous intéresser.`
+      : null);
     // Save recent search
     try {
       const recent = JSON.parse(localStorage.getItem('sapsap_recent_searches') || '[]');
