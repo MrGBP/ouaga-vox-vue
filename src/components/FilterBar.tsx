@@ -216,11 +216,11 @@ const FilterBar = ({
   };
 
   const handleReset = () => {
-    setDraft(DEFAULT_FILTERS);
-    setApplied(DEFAULT_FILTERS);
+    setDraft(dynamicDefaults);
+    setApplied(dynamicDefaults);
     setIsOpen(false);
     if (onReset) onReset();
-    else onFilterChange(DEFAULT_FILTERS);
+    else onFilterChange(dynamicDefaults);
   };
 
   const handleClose = () => setIsOpen(false);
