@@ -238,7 +238,7 @@ const FilterBar = ({
       <div>
         <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Type de bien</h4>
         <div className="grid grid-cols-2 gap-2">
-          {PROPERTY_TYPES.map(t => (
+          {visibleTypes.map(t => (
             <button
               key={t.value}
               onClick={() => toggleType(t.value)}
