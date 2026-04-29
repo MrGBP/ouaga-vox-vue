@@ -455,6 +455,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_property_view: {
+        Args: { _property_id: string }
+        Returns: undefined
+      }
       is_property_owner: {
         Args: { _property_id: string; _user_id: string }
         Returns: boolean
