@@ -333,6 +333,7 @@ const Index = () => {
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
+    setSearchFallbackHint(null);
     const results = applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites);
     setFilteredProperties(results);
     if (results.length > 0) {
