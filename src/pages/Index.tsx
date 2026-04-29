@@ -383,16 +383,42 @@ const Index = () => {
 
   const handleFocusOnMap = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
-    if (prop) {
-      if (isMobile) {
-        setDetailProperty(prop);
-        setFocusedPropertyId(id);
-        addToRecentlyViewed(prop);
-      } else {
-        handleViewDetails(prop);
-      }
+    if (!prop) return;
+    // Save the previous context so the user can return to it (the card view
+    // they were on, with the detail panel as it was, and the same scroll pos).
+    focusReturnRef.current = {
+      detail: detailProperty,
+      scrollY: typeof window !== 'undefined' ? window.scrollY : 0,
+    };
+    setHasFocusReturn(true);
+    addToRecentlyViewed(prop);
+    setActiveQuartier(prop.quartier);
+    setFocusedPropertyId(id);
+    // Close the side detail panel so the map (POI + radius) is fully visible.
+    setDetailProperty(null);
+    if (isMobile) {
+      nav.push({
+        screen: 'carte-niveau3',
+        propertyId: id,
+        propertyTitle: prop.title,
+        propertyQuartier: prop.quartier,
+      });
+    } else {
+      // Make sure the user actually sees the map.
+      setTimeout(() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
-  }, [properties, handleViewDetails, isMobile]);
+  }, [properties, detailProperty, isMobile, nav]);
+
+  const handleFocusReturn = useCallback(() => {
+    const ret = focusReturnRef.current;
+    setFocusedPropertyId(null);
+    setHasFocusReturn(false);
+    focusReturnRef.current = null;
+    if (ret?.detail) setDetailProperty(ret.detail);
+    if (!isMobile && ret) {
+      setTimeout(() => window.scrollTo({ top: ret.scrollY, behavior: 'smooth' }), 50);
+    }
+  }, [isMobile]);
 
   const handleExploreOnMap = (id: string) => {
     const prop = properties.find(p => p.id === id);
