@@ -590,6 +590,17 @@ export default function MobileApp(props: MobileAppProps) {
             favoriteIds={props.favorites}
           />
         </div>
+        {/* Floating "Retour" button when user came from "Voir sur la carte" on a card */}
+        {mobileTab === 'map' && props.hasFocusReturn && props.focusedPropertyId && !props.detailProperty && (
+          <motion.button
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            onClick={() => { props.onFocusReturn?.(); if (nav.canGoBack) nav.pop(); }}
+            className="absolute z-[1000] inline-flex items-center gap-2 rounded-full bg-card/95 backdrop-blur-sm border border-border shadow-lg px-4 py-2 text-sm font-medium text-foreground active:scale-[0.97] transition-transform"
+            style={{ top: 'calc(52px + env(safe-area-inset-top) + 8px)', left: 12 }}
+          >
+            <ChevronLeft className="h-4 w-4" /> Retour
+          </motion.button>
+        )}
       </div>
 
       {/* ═══ NAVBAR ═══ */}
