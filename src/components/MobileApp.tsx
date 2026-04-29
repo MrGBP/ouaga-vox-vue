@@ -384,6 +384,13 @@ export default function MobileApp(props: MobileAppProps) {
   const handleNavBack = () => {
     setPinPreview(null);
     if (isExploring) { setIsExploring(false); return; }
+    // If user came from "Voir sur la carte" on a card, restore the previous
+    // context (detail panel + scroll) instead of just popping the stack.
+    if (props.hasFocusReturn && props.onFocusReturn) {
+      props.onFocusReturn();
+      if (nav.canGoBack) nav.pop();
+      return;
+    }
     if (nav.canGoBack) {
       nav.pop();
       return;
