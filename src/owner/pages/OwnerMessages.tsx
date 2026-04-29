@@ -47,7 +47,7 @@ export default function OwnerMessages() {
     try {
       await sendPropertyMessage({
         property_id: selected.property.id, content: text,
-        sender_role: 'owner', sender_name: profile?.full_name ?? 'Propriétaire',
+        sender_role: 'owner', sender_name: ownerName,
       });
       setText('');
       const msgs = await listPropertyMessages(selected.property.id);
