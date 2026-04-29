@@ -565,6 +565,7 @@ const Index = () => {
         onFocusOnMap={handleFocusOnMap}
         onFocusReturn={handleFocusReturn}
         hasFocusReturn={hasFocusReturn}
+        forceMapTabTrigger={forceMapTabTrigger}
         onFullReset={handleFullReset}
         onQuartierChange={(q) => {
           setActiveQuartier(q);
