@@ -651,7 +651,7 @@ const Index = () => {
         />
 
         <div className="flex gap-0 relative">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`transition-all duration-300 ${detailProperty ? 'w-full md:w-[calc(100%-360px)] lg:w-[calc(100%-420px)]' : 'w-full'}`}>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`relative transition-all duration-300 ${detailProperty ? 'w-full md:w-[calc(100%-360px)] lg:w-[calc(100%-420px)]' : 'w-full'}`}>
             <InteractiveMap
               properties={mapProperties} pois={pois} quartiers={quartiers}
               onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
@@ -661,6 +661,16 @@ const Index = () => {
               panelOpen={!!detailProperty} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
               favoriteIds={favorites}
             />
+            {/* Floating "Retour" button when user came from "Voir sur la carte" on a card */}
+            {hasFocusReturn && focusedPropertyId && !detailProperty && (
+              <motion.button
+                initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                onClick={handleFocusReturn}
+                className="absolute top-4 left-4 z-[1000] inline-flex items-center gap-2 rounded-full bg-card/95 backdrop-blur-sm border border-border shadow-lg px-4 py-2 text-sm font-medium text-foreground hover:bg-card transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" /> Retour
+              </motion.button>
+            )}
           </motion.div>
 
           {detailProperty && (
