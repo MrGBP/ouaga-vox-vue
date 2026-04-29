@@ -121,6 +121,11 @@ const Index = () => {
   const [idxTags, setIdxTags] = useState<{ characteristic: string; emoji: string; label: string }[]>([]);
   const [searchFallbackHint, setSearchFallbackHint] = useState<string | null>(null);
 
+  // Memoize previous context when user clicks "Voir sur la carte" so the
+  // back button can restore exactly the previous view (detail panel + scroll).
+  const focusReturnRef = useRef<{ detail: Property | null; scrollY: number } | null>(null);
+  const [hasFocusReturn, setHasFocusReturn] = useState(false);
+
   // Mobile state
   const isMobile = useIsMobile();
   const nav = useNav();
@@ -378,16 +383,42 @@ const Index = () => {
 
   const handleFocusOnMap = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
-    if (prop) {
-      if (isMobile) {
-        setDetailProperty(prop);
-        setFocusedPropertyId(id);
-        addToRecentlyViewed(prop);
-      } else {
-        handleViewDetails(prop);
-      }
+    if (!prop) return;
+    // Save the previous context so the user can return to it (the card view
+    // they were on, with the detail panel as it was, and the same scroll pos).
+    focusReturnRef.current = {
+      detail: detailProperty,
+      scrollY: typeof window !== 'undefined' ? window.scrollY : 0,
+    };
+    setHasFocusReturn(true);
+    addToRecentlyViewed(prop);
+    setActiveQuartier(prop.quartier);
+    setFocusedPropertyId(id);
+    // Close the side detail panel so the map (POI + radius) is fully visible.
+    setDetailProperty(null);
+    if (isMobile) {
+      nav.push({
+        screen: 'carte-niveau3',
+        propertyId: id,
+        propertyTitle: prop.title,
+        propertyQuartier: prop.quartier,
+      });
+    } else {
+      // Make sure the user actually sees the map.
+      setTimeout(() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
-  }, [properties, handleViewDetails, isMobile]);
+  }, [properties, detailProperty, isMobile, nav]);
+
+  const handleFocusReturn = useCallback(() => {
+    const ret = focusReturnRef.current;
+    setFocusedPropertyId(null);
+    setHasFocusReturn(false);
+    focusReturnRef.current = null;
+    if (ret?.detail) setDetailProperty(ret.detail);
+    if (!isMobile && ret) {
+      setTimeout(() => window.scrollTo({ top: ret.scrollY, behavior: 'smooth' }), 50);
+    }
+  }, [isMobile]);
 
   const handleExploreOnMap = (id: string) => {
     const prop = properties.find(p => p.id === id);
@@ -620,7 +651,7 @@ const Index = () => {
         />
 
         <div className="flex gap-0 relative">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`transition-all duration-300 ${detailProperty ? 'w-full md:w-[calc(100%-360px)] lg:w-[calc(100%-420px)]' : 'w-full'}`}>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`relative transition-all duration-300 ${detailProperty ? 'w-full md:w-[calc(100%-360px)] lg:w-[calc(100%-420px)]' : 'w-full'}`}>
             <InteractiveMap
               properties={mapProperties} pois={pois} quartiers={quartiers}
               onPropertyClick={handlePropertyClick} focusedPropertyId={focusedPropertyId}
@@ -630,6 +661,16 @@ const Index = () => {
               panelOpen={!!detailProperty} onQuartierChange={setActiveQuartier} resetTrigger={mapResetTrigger}
               favoriteIds={favorites}
             />
+            {/* Floating "Retour" button when user came from "Voir sur la carte" on a card */}
+            {hasFocusReturn && focusedPropertyId && !detailProperty && (
+              <motion.button
+                initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                onClick={handleFocusReturn}
+                className="absolute top-4 left-4 z-[1000] inline-flex items-center gap-2 rounded-full bg-card/95 backdrop-blur-sm border border-border shadow-lg px-4 py-2 text-sm font-medium text-foreground hover:bg-card transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" /> Retour
+              </motion.button>
+            )}
           </motion.div>
 
           {detailProperty && (
