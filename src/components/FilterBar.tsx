@@ -175,7 +175,7 @@ const FilterBar = ({
   const activeCount = [
     applied.type !== 'all',
     applied.quartier !== 'all',
-    applied.minPrice > 20000 || applied.maxPrice < 2000000,
+    applied.minPrice > PRICE_MIN || applied.maxPrice < PRICE_MAX,
     applied.minBedrooms > 0,
     applied.hasVirtualTour,
     applied.onlyAvailable,
