@@ -1,34 +1,56 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Heart, Home, Loader2, Calendar, Plus, ArrowRight, AlertCircle } from 'lucide-react';
+import { Eye, Heart, Home, Loader2, Calendar, Plus, ArrowRight, AlertCircle, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { fetchOwnerStats, fetchMyProperties, ADMIN_STATUS_LABEL, type OwnerStats, type OwnerPropertyRow } from '../lib/ownerService';
+import {
+  fetchOwnerStats, fetchMyProperties, fetchMyPropertyReservations,
+  ADMIN_STATUS_LABEL, type OwnerStats, type OwnerPropertyRow,
+} from '../lib/ownerService';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+
+type PropPerf = OwnerPropertyRow & { reservationCount: number; pendingCount: number };
 
 export default function OwnerDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<OwnerStats | null>(null);
-  const [topProps, setTopProps] = useState<OwnerPropertyRow[]>([]);
+  const [perf, setPerf] = useState<PropPerf[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
       try {
-        const [s, props] = await Promise.all([
+        const [s, props, { reservations }] = await Promise.all([
           fetchOwnerStats(user.id),
           fetchMyProperties(user.id),
+          fetchMyPropertyReservations(user.id),
         ]);
         setStats(s);
-        setTopProps([...props].sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0)).slice(0, 5));
+        const merged: PropPerf[] = props.map(p => {
+          const propRes = (reservations as any[]).filter(r => r.property_id === p.id);
+          return {
+            ...p,
+            reservationCount: propRes.length,
+            pendingCount: propRes.filter(r => r.status === 'pending').length,
+          };
+        });
+        setPerf(merged);
       } catch (e: any) {
         toast.error(e?.message ?? 'Erreur');
       } finally { setLoading(false); }
     })();
   }, [user]);
+
+  const topProps = useMemo(
+    () => [...perf].sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0)).slice(0, 5),
+    [perf]
+  );
+  const maxViews = Math.max(1, ...perf.map(p => p.view_count ?? 0));
+  const maxFavs = Math.max(1, ...perf.map(p => p.favorite_count ?? 0));
+  const maxRes = Math.max(1, ...perf.map(p => p.reservationCount));
 
   if (loading) return <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
 
@@ -40,7 +62,7 @@ export default function OwnerDashboard() {
           <h2 className="text-xl font-bold text-foreground">Bonjour 👋</h2>
           <p className="text-sm text-muted-foreground">Voici un aperçu de votre activité.</p>
         </div>
-        <Link to="/proprietaire/biens">
+        <Link to="/proprietaire/biens?new=1">
           <Button size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" /> Publier un bien
           </Button>
@@ -68,6 +90,34 @@ export default function OwnerDashboard() {
         </Card>
       )}
 
+      {/* Performance par bien (mini barres) */}
+      {perf.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-semibold flex items-center gap-1.5">
+              <BarChart3 className="h-4 w-4 text-primary" /> Performance par bien
+            </h3>
+          </div>
+          <Card className="p-3 space-y-3">
+            {perf.map(p => (
+              <div key={p.id} className="text-xs">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-medium truncate flex-1 mr-2">{p.title}</span>
+                  <Badge variant="outline" className={`${ADMIN_STATUS_LABEL[p.admin_status].color} text-[10px]`}>
+                    {ADMIN_STATUS_LABEL[p.admin_status].label}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <Bar icon={<Eye className="h-3 w-3" />} label="Vues" value={p.view_count ?? 0} max={maxViews} color="bg-primary" />
+                  <Bar icon={<Heart className="h-3 w-3" />} label="Favoris" value={p.favorite_count ?? 0} max={maxFavs} color="bg-pink-500" />
+                  <Bar icon={<Calendar className="h-3 w-3" />} label="Demandes" value={p.reservationCount} max={maxRes} color="bg-amber-500" highlight={p.pendingCount > 0 ? `${p.pendingCount} en attente` : undefined} />
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
       {/* Top properties by views */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -78,7 +128,7 @@ export default function OwnerDashboard() {
         </div>
         {topProps.length === 0 ? (
           <Card className="p-8 text-center text-sm text-muted-foreground">
-            Aucun bien pour le moment. <Link to="/proprietaire/biens" className="text-primary underline">Publier mon premier bien</Link>
+            Aucun bien pour le moment. <Link to="/proprietaire/biens?new=1" className="text-primary underline">Publier mon premier bien</Link>
           </Card>
         ) : (
           <div className="space-y-2">
@@ -114,5 +164,21 @@ function KPI({ icon, label, value, hint, highlight }: { icon: React.ReactNode; l
       <div className="text-2xl font-bold text-foreground mt-1">{value}</div>
       {hint && <div className="text-[11px] text-muted-foreground mt-0.5">{hint}</div>}
     </Card>
+  );
+}
+
+function Bar({ icon, label, value, max, color, highlight }: {
+  icon: React.ReactNode; label: string; value: number; max: number; color: string; highlight?: string;
+}) {
+  const pct = Math.max(2, Math.round((value / max) * 100));
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex items-center gap-1 text-muted-foreground w-20 shrink-0">{icon}{label}</span>
+      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+        <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="font-semibold tabular-nums w-8 text-right">{value}</span>
+      {highlight && <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">{highlight}</span>}
+    </div>
   );
 }
