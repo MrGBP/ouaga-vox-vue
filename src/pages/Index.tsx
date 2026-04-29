@@ -12,6 +12,7 @@ import Footer from '@/components/Footer';
 import MobileApp from '@/components/MobileApp';
 
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
+import { filterProperties } from '@/lib/filterProperties';
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
 import VirtualTourModal from '@/components/VirtualTourModal';
@@ -204,61 +205,11 @@ const Index = () => {
     return props.filter(p => p.status !== 'rented' && p.available !== false);
   }, []);
 
-  const applyFilters = useCallback((source: Property[], query: string, f: FilterState, favsOnly: boolean, favSet: Set<string>) => {
-    let result = source.filter(p => p.status !== 'rented' && p.available !== false);
-    if (favsOnly) result = result.filter(p => favSet.has(p.id));
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.quartier.toLowerCase().includes(q) ||
-        p.type.toLowerCase().includes(q) ||
-        getTypeLabel(p.type).toLowerCase().includes(q) ||
-        (p.description || '').toLowerCase().includes(q) ||
-        p.price.toString().includes(q)
-      );
-    }
-    if (f.type !== 'all') result = result.filter(p => p.type === f.type);
-    if (f.quartier !== 'all') result = result.filter(p => p.quartier === f.quartier);
-    result = result.filter(p => p.price >= f.minPrice && p.price <= f.maxPrice);
-    if (f.minBedrooms > 0) result = result.filter(p => (p.bedrooms || 0) >= f.minBedrooms);
-    if (f.hasVirtualTour) result = result.filter(p => !!p.virtual_tour_url);
-    if (f.surfaceRange && f.surfaceRange !== 'all') {
-      const sr = f.surfaceRange;
-      if (sr === '<50') result = result.filter(p => (p.surface_area || 0) < 50);
-      else if (sr === '50-150') result = result.filter(p => (p.surface_area || 0) >= 50 && (p.surface_area || 0) <= 150);
-      else if (sr === '150-300') result = result.filter(p => (p.surface_area || 0) >= 150 && (p.surface_area || 0) <= 300);
-      else if (sr === '>300') result = result.filter(p => (p.surface_area || 0) > 300);
-    }
-    if (f.characteristics.length > 0) {
-      const OR_GROUPS = [
-        ['bed_1', 'bed_2', 'bed_3', 'bed_4plus'],
-        ['bath_1', 'bath_2plus'],
-      ];
-      const orGroupChecks: ((p: any) => boolean)[] = [];
-      const andKeys: string[] = [];
-      const assignedToGroup = new Set<string>();
-      OR_GROUPS.forEach(group => {
-        const activeInGroup = f.characteristics.filter(c => group.includes(c));
-        if (activeInGroup.length > 0) {
-          activeInGroup.forEach(k => assignedToGroup.add(k));
-          orGroupChecks.push((p: any) => activeInGroup.some(c => CHAR_CHECKS[c]?.(p)));
-        }
-      });
-      f.characteristics.forEach(c => {
-        if (!assignedToGroup.has(c)) andKeys.push(c);
-      });
-      result = result.filter(p => {
-        const orPass = orGroupChecks.every(check => check(p));
-        const andPass = andKeys.every(c => CHAR_CHECKS[c]?.(p as any));
-        return orPass && andPass;
-      });
-    }
-    if (f.minSurface > 0) {
-      result = result.filter(p => (p.surface_area || 0) >= f.minSurface);
-    }
-    return result;
-  }, []);
+  const applyFilters = useCallback(
+    (source: Property[], query: string, f: FilterState, favsOnly: boolean, favSet: Set<string>) =>
+      filterProperties(source as any, query, f, favsOnly, favSet) as Property[],
+    []
+  );
 
   const computeFilteredCount = useCallback((draftFilters: FilterState) => {
     return applyFilters(properties, searchQuery, draftFilters, showFavoritesOnly, favorites).length;

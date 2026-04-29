@@ -107,8 +107,8 @@ const SearchPage = () => {
     const trimmed = q.trim();
     if (!trimmed) return;
     saveRecent(trimmed);
-    // Synchroniser avec le reste de la plateforme via query param
-    navigate(`/?q=${encodeURIComponent(trimmed)}`);
+    // Page dédiée : résultats épurés (pas de hero/logo/slogan).
+    navigate(`/resultats?q=${encodeURIComponent(trimmed)}`);
   };
 
   const goToProperty = (id: string) => {
