@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Search as SearchIcon, Calendar, User as UserIcon, MessageSquare, LogOut, Trash2, Bell, BellOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Heart, Search as SearchIcon, Calendar, User as UserIcon, MessageSquare, LogOut, Trash2, Bell, BellOff, Loader2, Home as HomeIcon, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,8 @@ import ReservationChat from '@/components/ReservationChat';
 import { toast } from 'sonner';
 
 export default function MonCompte() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isOwner, refreshRoles } = useAuth();
+  const [becomingOwner, setBecomingOwner] = useState(false);
   const { ids: favIds, toggle: toggleFav } = useFavorites();
   const [reservations, setReservations] = useState<ReservationRow[]>([]);
   const [searches, setSearches] = useState<SavedSearchRow[]>([]);
