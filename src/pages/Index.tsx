@@ -96,6 +96,8 @@ interface Quartier {
 }
 
 const FAVORITES_KEY = 'sapsap_favorites';
+const FILTERS_KEY = 'sapsap_filters_v1';
+const SEARCH_KEY = 'sapsap_search_query_v1';
 const ITEMS_PER_PAGE = 25;
 const Index = () => {
   const [properties, setProperties] = useState<Property[]>([]);
