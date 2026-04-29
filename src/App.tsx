@@ -17,6 +17,7 @@ import MonCompte from "./pages/MonCompte";
 import NotFound from "./pages/NotFound";
 
 const AdminLayout = lazy(() => import("@/admin/AdminLayout"));
+const OwnerLayout = lazy(() => import("@/owner/OwnerLayout"));
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,18 @@ const App = () => (
                     </div>
                   }>
                     <AdminLayout />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/proprietaire/*"
+                element={
+                  <Suspense fallback={
+                    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
+                      Chargement…
+                    </div>
+                  }>
+                    <OwnerLayout />
                   </Suspense>
                 }
               />
