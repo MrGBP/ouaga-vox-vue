@@ -356,8 +356,9 @@ const InteractiveMap = ({
       map.flyToBounds(qBounds, { duration: 0.8, padding: [48, 48], maxZoom: 17 });
       setTimeout(() => {
         if (!mapInst.current) return;
-        // Enlarge bounds by 15% for max bounds
-        const enlarged = qBounds.pad(0.15);
+        // Enlarged max bounds (+35%) so properties near quartier borders stay
+        // visible without the map snapping back. Lot C: avoid hiding edge pins.
+        const enlarged = qBounds.pad(0.35);
         mapInst.current.setMaxBounds(enlarged);
         mapInst.current.setMinZoom(mapInst.current.getZoom() - 1);
       }, 900);
