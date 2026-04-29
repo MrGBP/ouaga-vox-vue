@@ -12,6 +12,7 @@ import Footer from '@/components/Footer';
 import MobileApp from '@/components/MobileApp';
 
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
+import { filterProperties } from '@/lib/filterProperties';
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
 import VirtualTourModal from '@/components/VirtualTourModal';
