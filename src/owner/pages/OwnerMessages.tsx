@@ -12,7 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 type Conversation = Awaited<ReturnType<typeof listMyOwnerConversations>>[number];
 
 export default function OwnerMessages() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const ownerName = (user?.user_metadata as any)?.full_name || user?.email || 'Propriétaire';
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Conversation | null>(null);
