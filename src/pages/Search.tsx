@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, ArrowLeft, SlidersHorizontal, Clock, ChevronUp } from 'lucide-react';
 import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import FilterBar, { type FilterState } from '@/components/FilterBar';
+import { parseQuery, describeParsed, smartFilter } from '@/lib/smartMatch';
 
 const TYPEWRITER_PHRASES = [
   "Villa meublée 4 chambres à Tampouy...",
