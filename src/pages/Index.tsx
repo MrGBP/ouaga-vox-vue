@@ -398,6 +398,9 @@ const Index = () => {
     // Close the side detail panel so the map (POI + radius) is fully visible.
     setDetailProperty(null);
     if (isMobile) {
+      // Force switch to the map tab so the user actually sees the focused
+      // property + POI + radius (same outcome as Desktop scroll-to-map).
+      setForceMapTabTrigger(t => t + 1);
       nav.push({
         screen: 'carte-niveau3',
         propertyId: id,
