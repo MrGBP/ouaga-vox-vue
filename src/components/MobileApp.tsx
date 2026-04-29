@@ -573,6 +573,7 @@ export default function MobileApp(props: MobileAppProps) {
   };
 
   const quartierNames = [...new Set(props.properties.map(p => p.quartier))].sort();
+  const mobileFilterOpts = useMemo(() => computeFilterOptions(props.properties as any), [props.properties]);
 
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-background">
