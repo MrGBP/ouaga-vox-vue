@@ -152,9 +152,15 @@ const FilterBar = ({
     ? PROPERTY_TYPES.filter(t => availableTypeValues.includes(t.value))
     : PROPERTY_TYPES;
 
+  // Build a defaults object that respects the real dataset bounds.
+  const dynamicDefaults: FilterState = {
+    ...DEFAULT_FILTERS,
+    minPrice: PRICE_MIN,
+    maxPrice: PRICE_MAX,
+  };
   const [isOpen, setIsOpen] = useState(false);
-  const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
-  const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
+  const [draft, setDraft] = useState<FilterState>(dynamicDefaults);
+  const [applied, setApplied] = useState<FilterState>(dynamicDefaults);
   const isMobile = useIsMobile();
 
   // Sync with external filters (from IDX tags, quartier clicks, etc.)
