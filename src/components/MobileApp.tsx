@@ -1088,6 +1088,10 @@ export default function MobileApp(props: MobileAppProps) {
             priceBounds={mobileFilterOpts ? { min: mobileFilterOpts.priceMin, max: mobileFilterOpts.priceMax } : undefined}
             availableTypeValues={mobileFilterOpts?.typeValues}
             forceOpen={true}
+            onAfterApply={(f) => {
+              try { localStorage.setItem('sapsap_filters_v1', JSON.stringify(f)); } catch { /* noop */ }
+              navigate(`/resultats?q=${encodeURIComponent(props.searchQuery || '')}`);
+            }}
           />
         </div>
       </MobileDraggableDrawer>

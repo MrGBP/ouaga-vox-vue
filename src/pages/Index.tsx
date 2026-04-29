@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -102,6 +103,7 @@ const FILTERS_KEY = 'sapsap_filters_v1';
 const SEARCH_KEY = 'sapsap_search_query_v1';
 const ITEMS_PER_PAGE = 25;
 const Index = () => {
+  const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
   const [quartiers, setQuartiers] = useState<Quartier[]>([]);
@@ -612,6 +614,10 @@ const Index = () => {
           externalFilters={filters}
           priceBounds={{ min: filterOpts.priceMin, max: filterOpts.priceMax }}
           availableTypeValues={filterOpts.typeValues}
+          onAfterApply={(f) => {
+            try { localStorage.setItem('sapsap_filters_v1', JSON.stringify(f)); } catch { /* noop */ }
+            navigate(`/resultats?q=${encodeURIComponent(searchQuery || '')}`);
+          }}
         />
 
         <div className="flex gap-0 relative">
