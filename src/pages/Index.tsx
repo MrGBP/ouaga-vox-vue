@@ -693,6 +693,12 @@ const Index = () => {
           </span>
         </div>
 
+        {searchFallbackHint && (
+          <p className="text-sm italic text-muted-foreground mb-4">
+            {searchFallbackHint}
+          </p>
+        )}
+
         {paginatedProperties.length > 0 ? (
           <>
             <motion.div
