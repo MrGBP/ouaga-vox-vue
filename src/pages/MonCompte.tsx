@@ -32,6 +32,14 @@ export default function MonCompte() {
     (async () => {
       setDataLoading(true);
       try {
+        // Si une intention "owner" était en attente (signup avec confirm email), on la finalise
+        if (localStorage.getItem('sapsap_pending_owner_role') === '1') {
+          const { error } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'owner' as any });
+          if (!error || error.code === '23505') {
+            localStorage.removeItem('sapsap_pending_owner_role');
+            await refreshRoles();
+          }
+        }
         const [res, sav, prof] = await Promise.all([
           listMyReservations().catch(() => []),
           listSavedSearches().catch(() => []),
@@ -43,6 +51,19 @@ export default function MonCompte() {
       } finally { setDataLoading(false); }
     })();
   }, [user]);
+
+  const becomeOwner = async () => {
+    if (!user) return;
+    setBecomingOwner(true);
+    try {
+      const { error } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'owner' as any });
+      if (error && error.code !== '23505') throw error;
+      await refreshRoles();
+      toast.success('Tu es maintenant propriétaire 🎉');
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Erreur');
+    } finally { setBecomingOwner(false); }
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
