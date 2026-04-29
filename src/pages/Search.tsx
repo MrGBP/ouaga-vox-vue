@@ -173,6 +173,32 @@ const SearchPage = () => {
         </div>
       </div>
 
+      {/* Récap "J'ai compris" — visible uniquement quand l'IA-locale a
+          reconnu au moins un critère métier (équipement, quartier, prix...) */}
+      <AnimatePresence>
+        {understood && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18 }}
+            className="px-3 py-2 border-b border-border bg-primary/5 flex items-start gap-2"
+          >
+            <span className="text-base leading-tight">🧠</span>
+            <p className="text-xs text-foreground leading-snug flex-1">
+              <span className="font-semibold">J'ai compris :</span>{' '}
+              <span className="text-muted-foreground">{understood}</span>
+              <button
+                onClick={() => submit()}
+                className="ml-2 text-primary font-semibold underline-offset-2 hover:underline active:opacity-70"
+              >
+                Valider
+              </button>
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Body */}
       <div className="flex-1 overflow-y-auto scrollable">
         {fuzzy.length > 0 ? (
