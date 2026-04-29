@@ -346,6 +346,7 @@ const Index = () => {
     setFilters(DEFAULT_FILTERS);
     setSearchQuery('');
     setIdxTags([]);
+    setSearchFallbackHint(null);
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
@@ -415,6 +416,7 @@ const Index = () => {
     setFilters(newFilters);
     setSearchQuery('');
     setIdxTags([]);
+    setSearchFallbackHint(null);
     setCurrentPage(1);
     setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
     setMapQuartierTrigger(q.name);
