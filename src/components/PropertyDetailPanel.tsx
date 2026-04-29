@@ -4,7 +4,7 @@ import {
   X, Heart, ChevronLeft, ChevronRight, MapPin, Bed, Bath,
   Maximize, Calendar, Phone, MessageCircle, Mail, Camera,
   Thermometer, Shield, Zap, TreePine, Droplets, Wifi,
-  Map, Accessibility, Share2, PhoneCall, Play,
+  Accessibility, Share2, PhoneCall, Play,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
