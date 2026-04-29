@@ -559,6 +559,8 @@ const Index = () => {
         onViewDetails={handleViewDetails}
         onExploreOnMap={handleExploreOnMap}
         onFocusOnMap={handleFocusOnMap}
+        onFocusReturn={handleFocusReturn}
+        hasFocusReturn={hasFocusReturn}
         onFullReset={handleFullReset}
         onQuartierChange={(q) => {
           setActiveQuartier(q);
