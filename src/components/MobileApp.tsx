@@ -11,6 +11,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import MobileSearchOverlay from '@/components/MobileSearchOverlay';
 import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
 import FilterBar from '@/components/FilterBar';
+import { computeFilterOptions } from '@/lib/filterOptions';
 import InteractiveMap from '@/components/InteractiveMap';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import PropertyCard from '@/components/PropertyCard';
