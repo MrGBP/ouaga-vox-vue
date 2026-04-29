@@ -125,6 +125,7 @@ const Index = () => {
   // back button can restore exactly the previous view (detail panel + scroll).
   const focusReturnRef = useRef<{ detail: Property | null; scrollY: number } | null>(null);
   const [hasFocusReturn, setHasFocusReturn] = useState(false);
+  const [forceMapTabTrigger, setForceMapTabTrigger] = useState(0);
 
   // Mobile state
   const isMobile = useIsMobile();
