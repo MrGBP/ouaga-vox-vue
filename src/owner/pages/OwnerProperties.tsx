@@ -6,7 +6,7 @@ import { Eye, Heart, Loader2, Plus, ExternalLink, Trash2, Pencil } from 'lucide-
 import { useAuth } from '@/hooks/useAuth';
 import { fetchMyProperties, ADMIN_STATUS_LABEL, type OwnerPropertyRow } from '../lib/ownerService';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import OwnerPropertyFormModal from '../components/OwnerPropertyFormModal';
 
@@ -16,6 +16,7 @@ export default function OwnerProperties() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<OwnerPropertyRow | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const reload = () => {
     if (!user) return;
@@ -27,6 +28,16 @@ export default function OwnerProperties() {
   };
 
   useEffect(reload, [user]);
+
+  // Auto-open the create modal when arriving with ?new=1
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setEditing(null);
+      setModalOpen(true);
+      searchParams.delete('new');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const onDelete = async (p: OwnerPropertyRow) => {
     if (!confirm(`Supprimer définitivement « ${p.title} » ?`)) return;
