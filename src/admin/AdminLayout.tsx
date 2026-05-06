@@ -37,7 +37,8 @@ function AdminProtected() {
             <Route path="moderation" element={<AdminModeration />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="users-live" element={<AdminUsersLive />} />
-            <Route path="reservations" element={<AdminReservations />} />
+            <Route path="reservations" element={<AdminReservationsLive />} />
+            <Route path="reservations-demo" element={<AdminReservations />} />
             <Route path="boosts" element={<AdminBoosts />} />
             <Route path="messages" element={<AdminMessages />} />
             <Route path="analytics" element={<AdminAnalytics />} />
