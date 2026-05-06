@@ -8,7 +8,9 @@ import AdminBiens from '@/admin/pages/AdminBiens';
 import AdminBiensLive from '@/admin/pages/AdminBiensLive';
 import AdminModeration from '@/admin/pages/AdminModeration';
 import AdminUsers from '@/admin/pages/AdminUsers';
+import AdminUsersLive from '@/admin/pages/AdminUsersLive';
 import AdminReservations from '@/admin/pages/AdminReservations';
+import AdminReservationsLive from '@/admin/pages/AdminReservationsLive';
 import AdminBoosts from '@/admin/pages/AdminBoosts';
 import AdminMessages from '@/admin/pages/AdminMessages';
 import AdminAnalytics from '@/admin/pages/AdminAnalytics';
@@ -34,7 +36,9 @@ function AdminProtected() {
             <Route path="biens-live" element={<AdminBiensLive />} />
             <Route path="moderation" element={<AdminModeration />} />
             <Route path="users" element={<AdminUsers />} />
-            <Route path="reservations" element={<AdminReservations />} />
+            <Route path="users-live" element={<AdminUsersLive />} />
+            <Route path="reservations" element={<AdminReservationsLive />} />
+            <Route path="reservations-demo" element={<AdminReservations />} />
             <Route path="boosts" element={<AdminBoosts />} />
             <Route path="messages" element={<AdminMessages />} />
             <Route path="analytics" element={<AdminAnalytics />} />
