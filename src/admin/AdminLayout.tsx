@@ -10,6 +10,7 @@ import AdminModeration from '@/admin/pages/AdminModeration';
 import AdminUsers from '@/admin/pages/AdminUsers';
 import AdminUsersLive from '@/admin/pages/AdminUsersLive';
 import AdminReservations from '@/admin/pages/AdminReservations';
+import AdminReservationsLive from '@/admin/pages/AdminReservationsLive';
 import AdminBoosts from '@/admin/pages/AdminBoosts';
 import AdminMessages from '@/admin/pages/AdminMessages';
 import AdminAnalytics from '@/admin/pages/AdminAnalytics';
