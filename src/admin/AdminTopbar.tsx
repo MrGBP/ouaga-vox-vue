@@ -1,12 +1,15 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Bell, LogOut } from 'lucide-react';
-import { adminStats } from '@/admin/data/adminMockData';
 import { useState } from 'react';
+import { useAdminNotifications } from '@/admin/lib/useAdminNotifications';
 
 const TITLES: Record<string, string> = {
   '/admin': 'Tableau de bord',
-  '/admin/biens': 'Gestion des biens',
-  '/admin/users': 'Utilisateurs',
+  '/admin/biens': 'Gestion des biens (démo)',
+  '/admin/biens-live': 'Gestion des biens (production)',
+  '/admin/moderation': 'Modération',
+  '/admin/users': 'Utilisateurs (démo)',
+  '/admin/users-live': 'Utilisateurs (production)',
   '/admin/reservations': 'Réservations',
   '/admin/boosts': 'Boosts',
   '/admin/messages': 'Messages',
