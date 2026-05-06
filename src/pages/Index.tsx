@@ -159,14 +159,16 @@ const Index = () => {
       const found = properties.find(p => p.id === propId);
       if (found) {
         if (exploreMap) {
-          // Ouvrir la CARTE avec ce bien focus + radius + POI (pas la fiche en sheet)
+          // Ouvrir la CARTE avec ce bien focus + radius + POI
           setFocusedPropertyId(found.id);
           setActiveQuartier(found.quartier);
           setMapQuartierTrigger(found.quartier);
           if (isMobile) {
-            // S'assurer qu'on atterrit sur l'onglet carte
             sessionStorage.setItem('sapsap_force_tab', 'map');
             sessionStorage.setItem('sapsap_focus_property', found.id);
+          } else {
+            // Desktop : afficher aussi la fiche détaillée à côté de la carte
+            setDetailProperty(found);
           }
         } else {
           setDetailProperty(found);
@@ -351,11 +353,9 @@ const Index = () => {
     addToRecentlyViewed(prop);
     setActiveQuartier(prop.quartier);
     setFocusedPropertyId(id);
-    // Close the side detail panel so the map (POI + radius) is fully visible.
-    setDetailProperty(null);
     if (isMobile) {
-      // Force switch to the map tab so the user actually sees the focused
-      // property + POI + radius (same outcome as Desktop scroll-to-map).
+      // Mobile : fermer la fiche pour voir la carte plein écran
+      setDetailProperty(null);
       setForceMapTabTrigger(t => t + 1);
       nav.push({
         screen: 'carte-niveau3',
@@ -364,7 +364,8 @@ const Index = () => {
         propertyQuartier: prop.quartier,
       });
     } else {
-      // Make sure the user actually sees the map.
+      // Desktop : garder la fiche ouverte à côté de la carte
+      setDetailProperty(prop);
       setTimeout(() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
   }, [properties, detailProperty, isMobile, nav]);
