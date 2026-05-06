@@ -1,20 +1,6 @@
-import { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Building2, LayoutDashboard, Home, Users, CalendarDays, Zap, MessageSquare, BarChart3, Settings, LogOut, ExternalLink, X, Database, ShieldCheck } from 'lucide-react';
-import { adminProperties, mockReservations, mockMessages } from '@/admin/data/adminMockData';
-
-const NAV_ITEMS = [
-  { label: 'Tableau de bord', icon: LayoutDashboard, path: '/admin', end: true },
-  { label: 'Biens (démo)', icon: Home, path: '/admin/biens', badge: () => adminProperties.filter(p => p.adminStatus === 'pending').length },
-  { label: 'Biens (production)', icon: Database, path: '/admin/biens-live' },
-  { label: 'Modération', icon: ShieldCheck, path: '/admin/moderation' },
-  { label: 'Utilisateurs', icon: Users, path: '/admin/users' },
-  { label: 'Réservations', icon: CalendarDays, path: '/admin/reservations', badge: () => mockReservations.filter(r => r.status === 'pending').length },
-  { label: 'Boosts', icon: Zap, path: '/admin/boosts' },
-  { label: 'Messages', icon: MessageSquare, path: '/admin/messages', badge: () => mockMessages.reduce((s, m) => s + m.unreadCount, 0) },
-  { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
-  { label: 'Paramètres', icon: Settings, path: '/admin/settings' },
-];
+import { NavLink, useNavigate } from 'react-router-dom';
+import { Building2, LayoutDashboard, Home, Users, CalendarDays, Zap, MessageSquare, BarChart3, Settings, LogOut, ExternalLink, X, Database, ShieldCheck, UserCog } from 'lucide-react';
+import { useAdminNotifications } from '@/admin/lib/useAdminNotifications';
 
 interface AdminSidebarProps {
   open: boolean;
@@ -23,6 +9,21 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   const navigate = useNavigate();
+  const notif = useAdminNotifications(true);
+
+  const NAV_ITEMS = [
+    { label: 'Tableau de bord', icon: LayoutDashboard, path: '/admin', end: true, badge: 0 },
+    { label: 'Modération', icon: ShieldCheck, path: '/admin/moderation', badge: notif.pendingProperties },
+    { label: 'Biens (production)', icon: Database, path: '/admin/biens-live', badge: 0 },
+    { label: 'Biens (démo)', icon: Home, path: '/admin/biens', badge: 0 },
+    { label: 'Utilisateurs (production)', icon: UserCog, path: '/admin/users-live', badge: 0 },
+    { label: 'Utilisateurs (démo)', icon: Users, path: '/admin/users', badge: 0 },
+    { label: 'Réservations', icon: CalendarDays, path: '/admin/reservations', badge: notif.pendingReservations },
+    { label: 'Boosts', icon: Zap, path: '/admin/boosts', badge: 0 },
+    { label: 'Messages', icon: MessageSquare, path: '/admin/messages', badge: notif.unreadMessages },
+    { label: 'Analytics', icon: BarChart3, path: '/admin/analytics', badge: 0 },
+    { label: 'Paramètres', icon: Settings, path: '/admin/settings', badge: 0 },
+  ];
 
   const handleLogout = () => {
     localStorage.removeItem('sapsap_admin_auth');
@@ -31,7 +32,6 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
 
   return (
     <>
-      {/* Overlay mobile */}
       {open && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
       )}
@@ -42,7 +42,6 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         }`}
         style={{ background: '#0f172a' }}
       >
-        {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 h-14 shrink-0 border-b border-white/10">
           <div className="w-[26px] h-[26px] rounded-md flex items-center justify-center" style={{ background: '#1a3560' }}>
             <Building2 size={14} className="text-white" />
@@ -52,38 +51,33 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
           <button onClick={onClose} className="ml-auto lg:hidden text-white/60"><X size={18} /></button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
-          {NAV_ITEMS.map(item => {
-            const badgeCount = item.badge?.() || 0;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.end}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
-                    isActive
-                      ? 'bg-white/10 text-white border-l-[3px]'
-                      : 'text-slate-400 hover:bg-white/[0.06] border-l-[3px] border-transparent'
-                  }`
-                }
-                style={({ isActive }) => isActive ? { borderLeftColor: '#e02d2d' } : {}}
-              >
-                <item.icon size={16} />
-                <span className="flex-1">{item.label}</span>
-                {badgeCount > 0 && (
-                  <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: '#e02d2d' }}>
-                    {badgeCount}
-                  </span>
-                )}
-              </NavLink>
-            );
-          })}
+          {NAV_ITEMS.map(item => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.end}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                  isActive
+                    ? 'bg-white/10 text-white border-l-[3px]'
+                    : 'text-slate-400 hover:bg-white/[0.06] border-l-[3px] border-transparent'
+                }`
+              }
+              style={({ isActive }) => isActive ? { borderLeftColor: '#e02d2d' } : {}}
+            >
+              <item.icon size={16} />
+              <span className="flex-1">{item.label}</span>
+              {item.badge > 0 && (
+                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: '#e02d2d' }}>
+                  {item.badge}
+                </span>
+              )}
+            </NavLink>
+          ))}
         </nav>
 
-        {/* Footer */}
         <div className="px-3 pb-4 space-y-1 border-t border-white/10 pt-3">
           <a
             href="/"
