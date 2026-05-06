@@ -8,6 +8,7 @@ import AdminBiens from '@/admin/pages/AdminBiens';
 import AdminBiensLive from '@/admin/pages/AdminBiensLive';
 import AdminModeration from '@/admin/pages/AdminModeration';
 import AdminUsers from '@/admin/pages/AdminUsers';
+import AdminUsersLive from '@/admin/pages/AdminUsersLive';
 import AdminReservations from '@/admin/pages/AdminReservations';
 import AdminBoosts from '@/admin/pages/AdminBoosts';
 import AdminMessages from '@/admin/pages/AdminMessages';
