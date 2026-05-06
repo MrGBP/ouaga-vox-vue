@@ -159,14 +159,16 @@ const Index = () => {
       const found = properties.find(p => p.id === propId);
       if (found) {
         if (exploreMap) {
-          // Ouvrir la CARTE avec ce bien focus + radius + POI (pas la fiche en sheet)
+          // Ouvrir la CARTE avec ce bien focus + radius + POI
           setFocusedPropertyId(found.id);
           setActiveQuartier(found.quartier);
           setMapQuartierTrigger(found.quartier);
           if (isMobile) {
-            // S'assurer qu'on atterrit sur l'onglet carte
             sessionStorage.setItem('sapsap_force_tab', 'map');
             sessionStorage.setItem('sapsap_focus_property', found.id);
+          } else {
+            // Desktop : afficher aussi la fiche détaillée à côté de la carte
+            setDetailProperty(found);
           }
         } else {
           setDetailProperty(found);
