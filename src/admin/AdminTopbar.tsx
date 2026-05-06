@@ -26,6 +26,7 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
   const navigate = useNavigate();
   const title = TITLES[location.pathname] || 'Administration';
   const [showDropdown, setShowDropdown] = useState(false);
+  const notif = useAdminNotifications(true);
 
   return (
     <div className="h-14 shrink-0 border-b border-border bg-card flex items-center px-4 gap-3">
@@ -36,10 +37,16 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
       <h2 className="text-sm font-semibold text-foreground flex-1">{title}</h2>
 
       {/* Bell */}
-      <button className="relative p-2 rounded-lg hover:bg-muted">
+      <button
+        onClick={() => navigate('/admin/moderation')}
+        className="relative p-2 rounded-lg hover:bg-muted"
+        title={`${notif.total} notifications`}
+      >
         <Bell size={18} className="text-muted-foreground" />
-        {adminStats.alertes > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: '#e02d2d' }} />
+        {notif.total > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold text-white flex items-center justify-center" style={{ background: '#e02d2d' }}>
+            {notif.total > 99 ? '99+' : notif.total}
+          </span>
         )}
       </button>
 
