@@ -4,10 +4,12 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
+  const { activeCity, setActiveCity, availableCities } = useGeoCity();
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-soft">
