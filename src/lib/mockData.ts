@@ -424,6 +424,10 @@ function generateProperties(): Property[] {
       agent_phone: agent.phone,
       agent_photo: agent.photo,
       created_at: createdAt,
+      city: 'Ouagadougou',
+      country: 'BF',
+      currency: 'FCFA',
+      arrondissement: findArrondissement(quartierName),
     });
   }
 
