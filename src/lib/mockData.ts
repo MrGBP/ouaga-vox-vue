@@ -1,5 +1,5 @@
 // SapSapHouse — 100 biens de démonstration, 16 quartiers, POI catalog
-import { findArrondissement, findCommune } from '@/lib/geoConfig';
+import { findArrondissement, findCommune, getSecteurCenter, findArrondissementForSecteur } from '@/lib/geoConfig';
 
 export interface AgentPOI {
   label: string;
@@ -196,6 +196,32 @@ export const mockQuartiers: Quartier[] = [
   { id: 'q15', name: 'Bogodogo', description: 'Quartier périphérique, en plein essor', latitude: 12.295, longitude: -1.470, bounds: [[12.278, -1.490], [12.312, -1.450]], image_url: 'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=600&auto=format' },
   { id: 'q16', name: 'Nongsin', description: 'Quartier résidentiel calme, nord-ouest', latitude: 12.460, longitude: -1.582, bounds: [[12.443, -1.602], [12.477, -1.562]], image_url: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format' },
 ];
+
+// ─── 55 SECTEURS URBAINS DE OUAGADOUGOU ─────────────────────────────────────
+const SECTEUR_IMAGES = [
+  'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&auto=format',
+  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&auto=format',
+  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&auto=format',
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&auto=format',
+  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format',
+];
+
+const ouagaSecteursQuartiers: Quartier[] = [];
+for (let s = 1; s <= 55; s++) {
+  const arr = findArrondissementForSecteur(s);
+  const [lat, lng] = getSecteurCenter(s);
+  ouagaSecteursQuartiers.push({
+    id: `sec-${s}`,
+    name: `Secteur ${s}`,
+    description: `Secteur ${s} — Arrondissement ${arr ?? '?'} de Ouagadougou`,
+    latitude: lat,
+    longitude: lng,
+    bounds: [[lat - 0.012, lng - 0.012], [lat + 0.012, lng + 0.012]],
+    image_url: SECTEUR_IMAGES[(s - 1) % SECTEUR_IMAGES.length],
+  });
+}
+// Ajout sans casser les références existantes
+mockQuartiers.push(...ouagaSecteursQuartiers);
 
 // ─── Agents ──────────────────────────────────────────────────────────────────
 const AGENTS = [
@@ -622,6 +648,75 @@ export const mockProperties: Property[] = [
     city: 'Bamako', country: 'ML', currency: 'FCFA',
     agent_name: 'Boubacar Maïga', agent_phone: '+223 76 00 00 06',
   },
+
+  // ─── 55 biens — un par secteur urbain de Ouagadougou ────────────────────
+  ...(() => {
+    const SECTEUR_TYPES = ['maison_villa_simple', 'appartement_simple', 'studio_meuble', 'maison_villa_meublee', 'appartement_meuble', 'bureau', 'local_commercial'] as const;
+    const SECTEUR_TITLES: Record<string, string> = {
+      maison_villa_simple: 'Maison 3ch',
+      appartement_simple: 'Appartement 2ch',
+      studio_meuble: 'Studio meublé',
+      maison_villa_meublee: 'Villa meublée',
+      appartement_meuble: 'Appt meublé',
+      bureau: 'Bureau 60m²',
+      local_commercial: 'Local commercial',
+    };
+    const SECTEUR_PRICES: Record<string, number> = {
+      maison_villa_simple: 150000,
+      appartement_simple: 110000,
+      studio_meuble: 95000,
+      maison_villa_meublee: 380000,
+      appartement_meuble: 220000,
+      bureau: 180000,
+      local_commercial: 130000,
+    };
+    const list: Property[] = [];
+    for (let s = 1; s <= 55; s++) {
+      const type = SECTEUR_TYPES[(s - 1) % SECTEUR_TYPES.length];
+      const arr = findArrondissementForSecteur(s);
+      const [lat, lng] = getSecteurCenter(s);
+      const furnished = type.includes('meuble');
+      const pool = type.includes('studio') ? IMAGES_POOL.studio
+        : type.includes('appartement') ? IMAGES_POOL.appartement
+        : type === 'bureau' ? IMAGES_POOL.bureau
+        : type === 'local_commercial' ? IMAGES_POOL.commerce
+        : type.includes('meublee') ? IMAGES_POOL.villa
+        : IMAGES_POOL.maison;
+      list.push({
+        id: `prop-secteur-${s}`,
+        title: `${SECTEUR_TITLES[type]} — Secteur ${s}`,
+        description: `${SECTEUR_TITLES[type]} situé au secteur ${s} (Arrondissement ${arr ?? '?'}), Ouagadougou.`,
+        type,
+        quartier: `Secteur ${s}`,
+        arrondissement: arr,
+        address: `Secteur ${s}, Ouagadougou`,
+        price: SECTEUR_PRICES[type],
+        bedrooms: type === 'bureau' || type === 'local_commercial' ? 0 : type.includes('studio') ? 1 : type.includes('appartement') ? 2 : 3,
+        bathrooms: type === 'bureau' || type === 'local_commercial' ? 1 : type.includes('studio') ? 1 : 2,
+        surface_area: type.includes('studio') ? 35 : type.includes('appartement') ? 80 : type === 'bureau' ? 60 : type === 'local_commercial' ? 45 : 160,
+        furnished,
+        has_ac: furnished || s % 2 === 0,
+        has_water: true,
+        has_internet: furnished,
+        latitude: lat,
+        longitude: lng,
+        location_type: 'precise',
+        display_radius: 400,
+        display_lat: lat + 0.0012,
+        display_lng: lng + 0.0012,
+        images: pool.slice(0, 4),
+        available: true,
+        status: 'available',
+        city: 'Ouagadougou',
+        country: 'BF',
+        currency: 'FCFA',
+        agent_name: AGENTS[s % AGENTS.length].name,
+        agent_phone: AGENTS[s % AGENTS.length].phone,
+        agent_photo: AGENTS[s % AGENTS.length].photo,
+      });
+    }
+    return list;
+  })(),
 ];
 
 // Suppress unused warning for findCommune (reserved for future use)
