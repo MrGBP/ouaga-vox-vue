@@ -85,8 +85,8 @@ interface POI {
   name: string;
   type: string;
   quartier: string;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
 }
 
 interface Quartier {
@@ -94,9 +94,10 @@ interface Quartier {
   name: string;
   description: string;
   image_url?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
 }
+
 
 const FAVORITES_KEY = 'sapsap_favorites';
 const FILTERS_KEY = 'sapsap_filters_v1';
