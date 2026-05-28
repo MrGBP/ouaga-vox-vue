@@ -65,6 +65,7 @@ export interface Property {
   status?: 'available' | 'reserved' | 'rented';
   agent_name?: string;
   agent_phone?: string;
+  agent_email?: string;
   agent_photo?: string;
   furnished?: boolean;
   /** Nouvelles features catégorisées (clés du featureCatalog) */
