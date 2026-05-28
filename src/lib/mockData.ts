@@ -1,4 +1,5 @@
 // SapSapHouse — 100 biens de démonstration, 16 quartiers, POI catalog
+import { findArrondissement, findCommune } from '@/lib/geoConfig';
 
 export interface AgentPOI {
   label: string;
