@@ -508,6 +508,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_reserved_dates: {
+        Args: { _property_id: string }
+        Returns: {
+          check_in: string
+          check_out: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
