@@ -71,6 +71,16 @@ export interface Property {
   /** Caractéristiques libres saisies par l'admin */
   customFeatures?: string[];
   created_at?: string;
+  /** Ville (ex: 'Ouagadougou', 'Bamako') */
+  city?: string;
+  /** Code pays ISO ('BF', 'ML') */
+  country?: string;
+  /** Devise affichée */
+  currency?: string;
+  /** Numéro d'arrondissement (Ouagadougou) */
+  arrondissement?: number;
+  /** Commune (Bamako) */
+  commune?: string;
 }
 
 export interface POI {
