@@ -643,31 +643,47 @@ const PropertyDetailPanel = ({
           <Share2 className="h-3.5 w-3.5" /> Partager ce bien
         </Button>
 
-        {/* Agent : Appeler + WhatsApp uniquement */}
+        {/* Agent : afficher uniquement les canaux renseignés */}
         {property.agent_name && (
           <div className="bg-muted/50 rounded-xl p-3">
             <div className="flex items-center gap-3">
               {property.agent_photo && <img src={property.agent_photo} alt={property.agent_name} className="w-10 h-10 rounded-full object-cover" />}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">{property.agent_name}</p>
-                <p className="text-[10px] text-muted-foreground">Répond en général en moins de 2h</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {hasAnyContact ? 'Répond en général en moins de 2h' : 'Contactez via la réservation'}
+                </p>
               </div>
             </div>
-            <div className="flex gap-2 mt-2.5">
-              <a
-                href={agentPhoneRaw ? `tel:${property.agent_phone}` : undefined}
-                className="flex-1 h-11 flex items-center justify-center gap-2 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
-              >
-                <Phone className="h-3.5 w-3.5" /> Appeler
-              </a>
-              <a
-                href={agentPhoneRaw ? `https://wa.me/${agentPhoneRaw}` : undefined}
-                target="_blank" rel="noopener noreferrer"
-                className="flex-1 h-11 flex items-center justify-center gap-2 bg-[#25D366] text-white rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
-              >
-                <span>💬</span> WhatsApp
-              </a>
-            </div>
+            {hasAnyContact && (
+              <div className="flex gap-2 mt-2.5">
+                {hasPhone && (
+                  <a
+                    href={`tel:${property.agent_phone}`}
+                    className="flex-1 h-11 flex items-center justify-center gap-2 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
+                  >
+                    <Phone className="h-3.5 w-3.5" /> Appeler
+                  </a>
+                )}
+                {hasPhone && (
+                  <a
+                    href={`https://wa.me/${agentPhoneRaw}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex-1 h-11 flex items-center justify-center gap-2 bg-[#25D366] text-white rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
+                  >
+                    <span>💬</span> WhatsApp
+                  </a>
+                )}
+                {hasEmail && (
+                  <a
+                    href={`mailto:${agentEmail}`}
+                    className="flex-1 h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
+                  >
+                    <Mail className="h-3.5 w-3.5" /> Email
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         )}
 
