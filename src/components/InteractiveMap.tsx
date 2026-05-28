@@ -399,29 +399,32 @@ const InteractiveMap = ({
 
     if (qProps.length > 12) {
       const gridSize = 0.003;
-      const subClusters = new Map<string, Property[]>();
+      const subClusters = new Map<string, { prop: Property; lat: number; lng: number }[]>();
       qProps.forEach(p => {
-        const key = `${Math.floor(p.latitude / gridSize)}_${Math.floor(p.longitude / gridSize)}`;
+        const coords = getDisplayCoords(p);
+        if (!coords) return;
+        const [lat, lng] = coords;
+        const key = `${Math.floor(lat / gridSize)}_${Math.floor(lng / gridSize)}`;
         const arr = subClusters.get(key) || [];
-        arr.push(p);
+        arr.push({ prop: p, lat, lng });
         subClusters.set(key, arr);
       });
 
       subClusters.forEach((cluster) => {
         if (cluster.length === 1) {
-          const p = cluster[0];
+          const { prop: p, lat, lng } = cluster[0];
           const icon = L.divIcon({ html: propertyPinHTML(p, false, favoriteIds?.has(p.id)), className: '', iconSize: [110, 28], iconAnchor: [55, 14] });
-          const m = L.marker([p.latitude, p.longitude], { icon });
+          const m = L.marker([lat, lng], { icon });
           m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
           propertyLayer.current!.addLayer(m);
         } else {
-          const avgLat = cluster.reduce((s, p) => s + p.latitude, 0) / cluster.length;
-          const avgLng = cluster.reduce((s, p) => s + p.longitude, 0) / cluster.length;
+          const avgLat = cluster.reduce((s, c) => s + c.lat, 0) / cluster.length;
+          const avgLng = cluster.reduce((s, c) => s + c.lng, 0) / cluster.length;
           const icon = L.divIcon({ html: quartierClusterHTML(`${cluster.length} biens`, cluster.length), className: '', iconSize: [60, 60], iconAnchor: [30, 30] });
           const m = L.marker([avgLat, avgLng], { icon });
           m.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
-            const cBounds = L.latLngBounds(cluster.map(p => L.latLng(p.latitude, p.longitude)));
+            const cBounds = L.latLngBounds(cluster.map(c => L.latLng(c.lat, c.lng)));
             mapInst.current?.flyToBounds(cBounds.pad(0.3), { duration: 0.5, maxZoom: 18 });
           });
           propertyLayer.current!.addLayer(m);
