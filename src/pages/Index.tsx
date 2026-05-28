@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { mockProperties, mockPois, mockQuartiers, isTypeFurnished, pricePerNight, getTypeLabel, CHAR_CHECKS, IDX_KEYWORD_MAP } from '@/lib/mockData';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { useIsMobile } from '@/hooks/use-mobile';
