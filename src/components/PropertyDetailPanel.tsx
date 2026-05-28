@@ -248,6 +248,10 @@ const PropertyDetailPanel = ({
     setShowSharePanel(true);
   };
   const agentPhoneRaw = property.agent_phone?.replace(/\D/g, '') ?? '';
+  const agentEmail = property.agent_email?.trim() ?? '';
+  const hasPhone = agentPhoneRaw.length > 0;
+  const hasEmail = agentEmail.length > 0;
+  const hasAnyContact = hasPhone || hasEmail;
 
   const currentMedia = mediaItems[mediaIdx];
 
