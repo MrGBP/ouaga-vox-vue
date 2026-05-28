@@ -224,6 +224,15 @@ const InteractiveMap = ({
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
   const [layerMode, setLayerMode] = useState<MapLayerMode>('standard');
 
+  // Géo : recentrer la carte quand la ville active change
+  const { activeCity } = useGeoCity();
+  useEffect(() => {
+    if (!mapInst.current || !activeCity) return;
+    const b = L.latLngBounds(L.latLng(activeCity.bounds[0][0], activeCity.bounds[0][1]), L.latLng(activeCity.bounds[1][0], activeCity.bounds[1][1]));
+    mapInst.current.setMaxBounds(b);
+    mapInst.current.flyTo(activeCity.center, activeCity.zoom, { animate: true, duration: 0.8 });
+  }, [activeCity?.id]);
+
   // Stable refs for callbacks to break re-render loops
   const onQuartierChangeRef = useRef(onQuartierChange);
   useEffect(() => { onQuartierChangeRef.current = onQuartierChange; });
