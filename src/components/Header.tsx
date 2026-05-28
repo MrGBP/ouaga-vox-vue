@@ -35,9 +35,22 @@ const Header = () => {
 
           {/* CTA + contact */}
           <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5" />
-              <span>Ouagadougou, BF</span>
+            <div className="flex items-center gap-1 bg-muted/50 rounded-full p-0.5">
+              {availableCities.map((city) => (
+                <button
+                  key={city.id}
+                  onClick={() => setActiveCity(city.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    activeCity.id === city.id
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                  aria-label={`Voir les biens à ${city.name}`}
+                >
+                  <span>{city.flag}</span>
+                  <span>{city.name}</span>
+                </button>
+              ))}
             </div>
             <Link to={user ? '/mon-compte' : '/auth'}>
               <Button size="sm" variant="outline" className="gap-2">
