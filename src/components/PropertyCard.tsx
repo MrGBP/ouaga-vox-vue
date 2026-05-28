@@ -24,6 +24,7 @@ interface Property {
   virtual_tour_url?: string;
   furnished?: boolean;
   created_at?: string;
+  location_type?: 'precise' | 'quartier_only';
 }
 
 interface PropertyCardProps {
