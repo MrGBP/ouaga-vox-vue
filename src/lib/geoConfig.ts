@@ -168,3 +168,40 @@ export function findCommune(quartier: string): string | undefined {
   }
   return undefined;
 }
+
+// ─── 55 secteurs urbains de Ouagadougou (répartition par arrondissement) ───
+export const OUAGADOUGOU_SECTEURS_BY_ARR: Record<number, number[]> = {
+  1: [1, 2, 3, 4, 5],
+  2: [6, 7, 8, 9, 10],
+  3: [11, 12, 13, 14, 15],
+  4: [16, 17, 18, 19, 20],
+  5: [21, 22, 23, 24, 25],
+  6: [26, 27, 28, 29, 30],
+  7: [31, 32, 33, 34],
+  8: [35, 36, 37, 38, 39],
+  9: [40, 41, 42, 43],
+  10: [44, 45, 46, 47, 48],
+  11: [49, 50, 51, 52],
+  12: [53, 54, 55],
+};
+
+/** Renvoie l'arrondissement pour un secteur (1..55) */
+export function findArrondissementForSecteur(secteur: number): number | undefined {
+  for (const [arr, secs] of Object.entries(OUAGADOUGOU_SECTEURS_BY_ARR)) {
+    if (secs.includes(secteur)) return Number(arr);
+  }
+  return undefined;
+}
+
+/** Renvoie un centre approximatif pour le secteur (basé sur le centre de son arrondissement + offset déterministe) */
+export function getSecteurCenter(secteur: number): [number, number] {
+  const arr = findArrondissementForSecteur(secteur);
+  if (!arr) return CITIES.ouagadougou.center;
+  const arrCfg = (OUAGADOUGOU_ARRONDISSEMENTS as any)[`arrondissement${arr}`];
+  const base: [number, number] = arrCfg?.center ?? CITIES.ouagadougou.center;
+  // offset déterministe en spirale autour du centre de l'arrondissement
+  const idxInArr = OUAGADOUGOU_SECTEURS_BY_ARR[arr].indexOf(secteur);
+  const angle = (idxInArr * 72) * (Math.PI / 180);
+  const r = 0.012 + (idxInArr % 3) * 0.004;
+  return [base[0] + Math.sin(angle) * r, base[1] + Math.cos(angle) * r];
+}
