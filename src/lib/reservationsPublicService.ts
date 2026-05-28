@@ -23,13 +23,10 @@ export interface PublicReservationRow extends PublicReservationInput {
   created_at: string;
 }
 
-/** Récupère les dates réservées (confirmées + pending) pour un bien. */
+/** Récupère les dates réservées via RPC sécurisée (ne renvoie que les dates, pas de PII). */
 export async function getReservedDates(propertyId: string): Promise<{ check_in: string; check_out: string }[]> {
-  const { data, error } = await supabase
-    .from('public_reservations' as any)
-    .select('check_in, check_out')
-    .eq('property_id', propertyId)
-    .in('status', ['pending', 'confirmed']);
+  const { data, error } = await (supabase as any)
+    .rpc('get_reserved_dates', { _property_id: propertyId });
   if (error) {
     console.warn('[getReservedDates] error', error);
     return [];
@@ -55,7 +52,7 @@ export function expandReservedNights(rows: { check_in: string; check_out: string
 export async function createPublicReservation(input: PublicReservationInput): Promise<{ row: PublicReservationRow | null; error: any }> {
   const { data, error } = await supabase
     .from('public_reservations' as any)
-    .insert({ ...input, status: 'confirmed' })
+    .insert({ ...input, status: 'pending' })
     .select()
     .single();
   return { row: (data as any) ?? null, error };
