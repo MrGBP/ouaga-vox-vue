@@ -52,7 +52,7 @@ export function expandReservedNights(rows: { check_in: string; check_out: string
 export async function createPublicReservation(input: PublicReservationInput): Promise<{ row: PublicReservationRow | null; error: any }> {
   const { data, error } = await supabase
     .from('public_reservations' as any)
-    .insert({ ...input, status: 'confirmed' })
+    .insert({ ...input, status: 'pending' })
     .select()
     .single();
   return { row: (data as any) ?? null, error };
