@@ -79,6 +79,7 @@ interface Property {
   status?: string;
   agent_name?: string;
   agent_phone?: string;
+  agent_email?: string;
   agent_photo?: string;
   furnished?: boolean;
 }
