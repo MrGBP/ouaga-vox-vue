@@ -171,25 +171,33 @@ const propertyPinHTML = (p: Property, focused: boolean, isFav?: boolean) => {
   `;
 };
 
+// Coordonnées à afficher publiquement : display_lat/lng pour precise, sinon vraies coords (legacy)
+const getDisplayCoords = (p: Property): [number, number] | null => {
+  if (p.display_lat != null && p.display_lng != null) return [p.display_lat, p.display_lng];
+  if (p.latitude != null && p.longitude != null) return [p.latitude, p.longitude];
+  return null;
+};
+
 const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng: number }[] => {
   const placed: { lat: number; lng: number }[] = [];
   const MIN_GAP = 0.0008;
   return props.map(p => {
-    let lat = p.latitude;
-    let lng = p.longitude;
+    const coords = getDisplayCoords(p);
+    if (!coords) return null;
+    let [lat, lng] = coords;
     let attempts = 0;
     while (attempts < 20) {
       const overlap = placed.some(pl => Math.abs(pl.lat - lat) < MIN_GAP && Math.abs(pl.lng - lng) < MIN_GAP);
       if (!overlap) break;
       const angle = (attempts * 137.5 * Math.PI) / 180;
       const r = MIN_GAP * (1 + attempts * 0.3);
-      lat = p.latitude + r * Math.cos(angle);
-      lng = p.longitude + r * Math.sin(angle);
+      lat = coords[0] + r * Math.cos(angle);
+      lng = coords[1] + r * Math.sin(angle);
       attempts++;
     }
     placed.push({ lat, lng });
     return { prop: p, lat, lng };
-  });
+  }).filter(Boolean) as { prop: Property; lat: number; lng: number }[];
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
