@@ -143,7 +143,12 @@ const Index = () => {
   
 
   useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
-  useEffect(() => { fetchData(); }, []);
+
+  const { activeCity, wasAutoSwitched, dismissAutoSwitchBanner } = useGeoCity();
+  const [showGeoBanner, setShowGeoBanner] = useState(false);
+  useEffect(() => { if (wasAutoSwitched) setShowGeoBanner(true); }, [wasAutoSwitched]);
+
+  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [activeCity.id]);
 
   // Sync depuis l'URL (?q=, ?property=, ?openFilters=, ?exploreMap=) — venant ex. de la page /search ou /property/:id
   const urlSyncDoneRef = useRef(false);
