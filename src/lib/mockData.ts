@@ -197,6 +197,32 @@ export const mockQuartiers: Quartier[] = [
   { id: 'q16', name: 'Nongsin', description: 'Quartier résidentiel calme, nord-ouest', latitude: 12.460, longitude: -1.582, bounds: [[12.443, -1.602], [12.477, -1.562]], image_url: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format' },
 ];
 
+// ─── 55 SECTEURS URBAINS DE OUAGADOUGOU ─────────────────────────────────────
+const SECTEUR_IMAGES = [
+  'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&auto=format',
+  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&auto=format',
+  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&auto=format',
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&auto=format',
+  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format',
+];
+
+const ouagaSecteursQuartiers: Quartier[] = [];
+for (let s = 1; s <= 55; s++) {
+  const arr = findArrondissementForSecteur(s);
+  const [lat, lng] = getSecteurCenter(s);
+  ouagaSecteursQuartiers.push({
+    id: `sec-${s}`,
+    name: `Secteur ${s}`,
+    description: `Secteur ${s} — Arrondissement ${arr ?? '?'} de Ouagadougou`,
+    latitude: lat,
+    longitude: lng,
+    bounds: [[lat - 0.012, lng - 0.012], [lat + 0.012, lng + 0.012]],
+    image_url: SECTEUR_IMAGES[(s - 1) % SECTEUR_IMAGES.length],
+  });
+}
+// Ajout sans casser les références existantes
+mockQuartiers.push(...ouagaSecteursQuartiers);
+
 // ─── Agents ──────────────────────────────────────────────────────────────────
 const AGENTS = [
   { name: 'Ibrahim Ouédraogo', phone: '+226 70 12 34 56', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format' },
