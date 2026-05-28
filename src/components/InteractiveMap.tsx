@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { POI_CATALOG, isTypeFurnished, pricePerNight, getTypeEmoji, mockQuartiers } from '@/lib/mockData';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Property {
@@ -222,6 +223,15 @@ const InteractiveMap = ({
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
   const [layerMode, setLayerMode] = useState<MapLayerMode>('standard');
+
+  // Géo : recentrer la carte quand la ville active change
+  const { activeCity } = useGeoCity();
+  useEffect(() => {
+    if (!mapInst.current || !activeCity) return;
+    const b = L.latLngBounds(L.latLng(activeCity.bounds[0][0], activeCity.bounds[0][1]), L.latLng(activeCity.bounds[1][0], activeCity.bounds[1][1]));
+    mapInst.current.setMaxBounds(b);
+    mapInst.current.flyTo(activeCity.center, activeCity.zoom, { animate: true, duration: 0.8 });
+  }, [activeCity?.id]);
 
   // Stable refs for callbacks to break re-render loops
   const onQuartierChangeRef = useRef(onQuartierChange);
