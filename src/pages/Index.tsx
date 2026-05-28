@@ -559,6 +559,23 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
+      {showGeoBanner && (
+        <div className="bg-primary/10 border-b border-primary/20">
+          <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm text-foreground">
+              <span className="text-lg">{activeCity.flag}</span>
+              <span>
+                Nous avons détecté que vous êtes au <strong>{activeCity.countryName}</strong>. Affichage des biens à <strong>{activeCity.name}</strong>.
+              </span>
+            </div>
+            <button onClick={() => { setShowGeoBanner(false); dismissAutoSwitchBanner(); }} className="text-xs underline opacity-80 shrink-0">
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+
       {/* ① Hero + IDX */}
       <section className="relative h-[65vh] min-h-[520px] overflow-hidden">
         <img src={heroImage} alt="Ouagadougou" className="absolute inset-0 w-full h-full object-cover" />
