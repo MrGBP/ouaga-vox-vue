@@ -1,5 +1,11 @@
 // SapSapHouse — 100 biens de démonstration, 16 quartiers, POI catalog
 
+export interface AgentPOI {
+  label: string;
+  distance_text: string;
+  emoji: string;
+}
+
 export interface Property {
   id: string;
   title: string;
@@ -8,8 +14,18 @@ export interface Property {
   price: number;
   quartier: string;
   address: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  /** Mode de localisation : 'precise' (lat/lng réels) ou 'quartier_only' (zone uniquement) */
+  location_type?: 'precise' | 'quartier_only';
+  /** Rayon du cercle d'approximation (mètres) */
+  display_radius?: number;
+  /** Latitude affichée publiquement (décalée de la vraie position) */
+  display_lat?: number;
+  /** Longitude affichée publiquement (décalée de la vraie position) */
+  display_lng?: number;
+  /** POI saisis manuellement par l'agent (mode quartier_only) */
+  agent_pois?: AgentPOI[];
   bedrooms?: number;
   bathrooms?: number;
   surface_area?: number;
