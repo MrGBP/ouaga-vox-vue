@@ -1,0 +1,90 @@
+{
+  "nav": {
+    "accueil": "Accueil",
+    "carte": "Carte",
+    "recherche": "Rechercher",
+    "favoris": "Favoris",
+    "profil": "Profil",
+    "biens": "Biens",
+    "quartiers": "Quartiers",
+    "connexion": "Connexion",
+    "mon_compte": "Mon compte",
+    "contact": "Contact"
+  },
+  "hero": {
+    "titre": "Trouvez votre logement à Ouagadougou",
+    "placeholder": "Rechercher un bien, un quartier..."
+  },
+  "filtre": {
+    "titre": "Filtres",
+    "reinitialiser": "Réinitialiser",
+    "appliquer": "Appliquer"
+  },
+  "bien": {
+    "reserver": "Réserver",
+    "appeler": "Appeler",
+    "whatsapp": "WhatsApp",
+    "partager": "Partager",
+    "voir_carte": "Voir sur la carte",
+    "nuit": "nuit",
+    "mois": "mois",
+    "chambres": "chambres",
+    "salles_de_bain": "salles de bain",
+    "surface": "surface"
+  },
+  "partage": {
+    "titre": "Partager ce bien",
+    "whatsapp": "WhatsApp",
+    "copier": "Copier le lien",
+    "copie": "Lien copié !",
+    "fermer": "Fermer"
+  },
+  "reservation": {
+    "titre": "Réserver ce bien",
+    "etape1": "Dates & Voyageurs",
+    "etape2": "Coordonnées",
+    "etape3": "Récapitulatif",
+    "confirmer": "Confirmer la réservation",
+    "indisponible_titre": "Ces dates ne sont pas disponibles",
+    "indisponible_desc": "La période sélectionnée contient des jours déjà réservés.",
+    "prochaines_dispos": "Prochaines disponibilités",
+    "arrivee": "Arrivée",
+    "depart": "Départ",
+    "nuits": "nuits",
+    "nuit": "nuit",
+    "total": "Total",
+    "adultes": "Adultes",
+    "enfants": "Enfants",
+    "voyageurs": "Voyageurs",
+    "continuer": "Continuer",
+    "retour": "Retour",
+    "nom_complet": "Nom complet",
+    "email": "Email",
+    "telephone": "Téléphone (WhatsApp de préférence)",
+    "message_optionnel": "Message au propriétaire (optionnel)",
+    "paiement_bientot": "Paiement mobile disponible prochainement",
+    "succes_titre": "Réservation confirmée !",
+    "succes_numero": "Numéro de confirmation",
+    "fermer": "Fermer",
+    "reserve": "Réservé"
+  },
+  "footer": {
+    "contact": "Contact",
+    "navigation": "Navigation",
+    "suivez_nous": "Suivez-nous",
+    "mentions": "Mentions légales",
+    "confidentialite": "Politique de confidentialité",
+    "cgu": "Conditions d'utilisation",
+    "tous_droits": "Tous droits réservés"
+  },
+  "legal": {
+    "en_redaction": "Contenu en cours de rédaction",
+    "retour_accueil": "Retour à l'accueil"
+  },
+  "pagination": {
+    "precedent": "Précédent",
+    "suivant": "Suivant",
+    "sur": "sur",
+    "biens": "biens"
+  }
+}
