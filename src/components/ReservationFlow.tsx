@@ -1,19 +1,34 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight, X, Check, Download, Share2, Mail, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import {
+  X, ChevronLeft, ChevronRight, Check, Minus, Plus, Loader2, Calendar as CalendarIcon, AlertTriangle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { createReservation } from '@/lib/reservationsService';
+import {
+  createPublicReservation,
+  getReservedDates,
+  expandReservedNights,
+  type PublicReservationRow,
+} from '@/lib/reservationsPublicService';
+import { sendConfirmationEmail } from '@/lib/emailTemplates';
+import { isTypeFurnished, pricePerNight as pricePerNightCalc } from '@/lib/mockData';
 
 interface Property {
   id: string;
   title: string;
+  type?: string;
   price: number;
   quartier: string;
   address?: string;
+  latitude?: number;
+  longitude?: number;
   images?: string[];
+  agent_name?: string;
+  agent_phone?: string;
+  furnished?: boolean;
 }
 
 interface ReservationFlowProps {
@@ -21,632 +36,576 @@ interface ReservationFlowProps {
   onClose: () => void;
 }
 
-// Pricing tiers
-const TIERS = [
-  { min: 1, max: 2, discount: 0, name: 'Tarif standard' },
-  { min: 3, max: 6, discount: 0.03, name: 'Tarif court séjour' },
-  { min: 7, max: 13, discount: 0.06, name: 'Tarif semaine' },
-  { min: 14, max: 29, discount: 0.08, name: 'Tarif quinzaine' },
-  { min: 30, max: 999, discount: 0.10, name: 'Tarif mensuel' },
-];
-
-const getTier = (nights: number) => TIERS.find(t => nights >= t.min && nights <= t.max) || TIERS[0];
-const getNextTier = (nights: number) => {
-  const currentIdx = TIERS.findIndex(t => nights >= t.min && nights <= t.max);
-  return currentIdx < TIERS.length - 1 ? TIERS[currentIdx + 1] : null;
-};
-
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 
 const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
-// Simple calendar component
-const MiniCalendar = ({
-  month, year,
+const toKey = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const isSameDay = (a: Date, b: Date) => toKey(a) === toKey(b);
+
+// ── Calendrier d'un mois (style Trip.com / Booking) ──
+const MonthCalendar = ({
+  month, year, today,
   checkIn, checkOut,
-  bookedDates,
+  hoverDate,
+  bookedNights,
   onSelectDate,
-  onPrevMonth, onNextMonth
+  onHoverDate,
 }: {
-  month: number; year: number;
+  month: number; year: number; today: Date;
   checkIn: Date | null; checkOut: Date | null;
-  bookedDates: Set<string>;
+  hoverDate: Date | null;
+  bookedNights: Set<string>;
   onSelectDate: (d: Date) => void;
-  onPrevMonth: () => void; onNextMonth: () => void;
+  onHoverDate: (d: Date | null) => void;
 }) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  const startDay = (firstDay.getDay() + 6) % 7; // Monday = 0
+  const startDay = (firstDay.getDay() + 6) % 7;
 
-  const days: (Date | null)[] = [];
-  for (let i = 0; i < startDay; i++) days.push(null);
-  for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startDay; i++) cells.push(null);
+  for (let d = 1; d <= lastDay.getDate(); d++) cells.push(new Date(year, month, d));
 
-  const dateKey = (d: Date) => d.toISOString().split('T')[0];
-
-  const isInRange = (d: Date) => {
-    if (!checkIn || !checkOut) return false;
-    return d >= checkIn && d <= checkOut;
-  };
-
-  // Disable previous-month navigation if it would go into the past
-  const canGoBack = (() => {
-    const prevMonth = month === 0 ? 11 : month - 1;
-    const prevYear = month === 0 ? year - 1 : year;
-    const lastOfPrev = new Date(prevYear, prevMonth + 1, 0);
-    return lastOfPrev >= today;
-  })();
+  // Range preview (hover)
+  const previewEnd = !checkOut && hoverDate && checkIn && hoverDate > checkIn ? hoverDate : null;
+  const rangeStart = checkIn;
+  const rangeEnd = checkOut || previewEnd;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <button
-          onClick={onPrevMonth}
-          disabled={!canGoBack}
-          className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="Mois précédent"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
+    <div className="flex-1 min-w-0">
+      <div className="text-center mb-3">
         <span className="text-sm font-semibold text-foreground">{MONTHS_FR[month]} {year}</span>
-        <button onClick={onNextMonth} className="p-1 rounded hover:bg-muted" aria-label="Mois suivant">
-          <ChevronRight className="h-4 w-4" />
-        </button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center">
-        {DAYS_FR.map(d => (
-          <span key={d} className="text-[10px] font-medium text-muted-foreground py-1">{d}</span>
+      <div className="grid grid-cols-7 gap-y-1 text-center">
+        {DAYS_FR.map((d, i) => (
+          <span key={i} className="text-[10px] font-bold text-muted-foreground py-1">{d}</span>
         ))}
-        {days.map((day, i) => {
+        {cells.map((day, i) => {
           if (!day) return <span key={`e${i}`} />;
-          const key = dateKey(day);
+          const key = toKey(day);
           const isPast = day < today;
-          // Hide past dates entirely (no rendering)
-          if (isPast) return <span key={`p${i}`} />;
-          const isBooked = bookedDates.has(key);
-          const isDisabled = isBooked;
-          const isCheckIn = checkIn && dateKey(day) === dateKey(checkIn);
-          const isCheckOut = checkOut && dateKey(day) === dateKey(checkOut);
-          const inRange = isInRange(day);
+          const isBooked = bookedNights.has(key);
+          const isToday = isSameDay(day, today);
+          const isCheckIn = checkIn && isSameDay(day, checkIn);
+          const isCheckOut = checkOut && isSameDay(day, checkOut);
+          const inRange = rangeStart && rangeEnd && day > rangeStart && day < rangeEnd;
+          const isExtremity = isCheckIn || isCheckOut;
+          const isDisabled = isPast || isBooked;
 
-          let cellStyle: React.CSSProperties = {};
-          let classes = 'w-8 h-8 rounded-md text-xs font-medium transition-colors ';
+          let cellClass = 'relative h-10 w-full flex flex-col items-center justify-center text-xs font-medium transition-colors ';
+          let inner: React.ReactNode = day.getDate();
 
-          if (isCheckIn || isCheckOut) {
-            classes += 'bg-primary text-primary-foreground';
-          } else if (inRange) {
-            classes += 'bg-primary/15 text-primary';
+          if (isPast) {
+            cellClass += 'text-muted-foreground/40 line-through cursor-not-allowed';
           } else if (isBooked) {
-            cellStyle = { background: '#fee2e2' };
-            classes += 'text-destructive/70 cursor-not-allowed';
+            cellClass += 'cursor-not-allowed';
+            inner = (
+              <>
+                <span className="text-destructive/70 line-through">{day.getDate()}</span>
+                <span className="text-[7px] leading-none text-destructive/70 font-semibold uppercase">Réservé</span>
+              </>
+            );
+          } else if (isExtremity) {
+            cellClass += 'bg-primary text-primary-foreground rounded-lg font-bold';
+          } else if (inRange) {
+            cellClass += 'bg-primary/10 text-primary rounded-none';
+          } else if (isToday) {
+            cellClass += 'text-primary font-bold border border-primary rounded-lg';
           } else {
-            cellStyle = { background: '#d1fae5' };
-            classes += 'hover:bg-primary/10 cursor-pointer';
+            cellClass += 'text-foreground hover:bg-muted rounded-lg cursor-pointer';
           }
+
+          const bgClass = isBooked && !isPast ? 'bg-[#fee2e2]' : '';
 
           return (
             <button
               key={i}
               disabled={isDisabled}
               onClick={() => !isDisabled && onSelectDate(day)}
-              className={classes}
-              style={cellStyle}
+              onMouseEnter={() => !isDisabled && onHoverDate(day)}
+              onMouseLeave={() => onHoverDate(null)}
+              className={`${cellClass} ${bgClass}`}
               aria-label={day.toLocaleDateString('fr-FR')}
             >
-              {day.getDate()}
+              {inner}
             </button>
           );
         })}
-      </div>
-      <div className="flex gap-3 mt-3 text-[10px] text-muted-foreground flex-wrap">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#d1fae5', border: '1px solid #86efac' }} /> Disponible</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: '#fee2e2', border: '1px solid #fca5a5' }} /> Réservé</span>
       </div>
     </div>
   );
 };
 
+// ── Compteur voyageurs ──
+const GuestCounter = ({ label, sub, value, onChange, min = 0 }: { label: string; sub?: string; value: number; onChange: (v: number) => void; min?: number }) => (
+  <div className="flex items-center justify-between py-2">
+    <div>
+      <p className="text-sm font-semibold text-foreground">{label}</p>
+      {sub && <p className="text-[11px] text-muted-foreground">{sub}</p>}
+    </div>
+    <div className="flex items-center gap-3">
+      <button
+        onClick={() => onChange(Math.max(min, value - 1))}
+        disabled={value <= min}
+        className="w-8 h-8 rounded-full border border-border flex items-center justify-center disabled:opacity-30 hover:bg-muted"
+      >
+        <Minus className="h-3.5 w-3.5" />
+      </button>
+      <span className="w-6 text-center text-sm font-semibold tabular-nums">{value}</span>
+      <button
+        onClick={() => onChange(value + 1)}
+        className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+      >
+        <Plus className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  </div>
+);
+
 const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
-  const [step, setStep] = useState(1);
-  const [checkIn, setCheckIn] = useState<Date | null>(null);
-  const [checkOut, setCheckOut] = useState<Date | null>(null);
-  const [calMonth, setCalMonth] = useState(new Date().getMonth());
-  const [calYear, setCalYear] = useState(new Date().getFullYear());
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const [upgradeShown, setUpgradeShown] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<string>('');
-  const [paymentType, setPaymentType] = useState<'partial' | 'full'>('partial');
-
-  // Contact info (prefilled from profile when signed in, editable for guests)
-  const [contactName, setContactName] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactMessage, setContactMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [submittedId, setSubmittedId] = useState<string | null>(null);
-  const [isAuthed, setIsAuthed] = useState(false);
-
+  const { t } = useTranslation();
   const { toast } = useToast();
 
-  // Prefill contact info from auth profile
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
+  const [calMonth, setCalMonth] = useState(today.getMonth());
+  const [calYear, setCalYear] = useState(today.getFullYear());
+
+  const [checkIn, setCheckIn] = useState<Date | null>(null);
+  const [checkOut, setCheckOut] = useState<Date | null>(null);
+  const [hoverDate, setHoverDate] = useState<Date | null>(null);
+
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [message, setMessage] = useState('');
+
+  const [bookedNights, setBookedNights] = useState<Set<string>>(new Set());
+  const [conflict, setConflict] = useState<{ from: Date; next: Date | null } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState<PublicReservationRow | null>(null);
+
+  // Window viewport (responsive : 2 mois desktop, 1 mobile)
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
+  useEffect(() => {
+    const onR = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', onR);
+    return () => window.removeEventListener('resize', onR);
+  }, []);
+
+  // Load booked dates + prefill from auth
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const rows = await getReservedDates(property.id);
+      if (cancelled) return;
+      setBookedNights(expandReservedNights(rows));
+    })();
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (cancelled || !user) return;
-      setIsAuthed(true);
-      // Default to auth metadata
-      setContactEmail(user.email ?? '');
+      setEmail(user.email ?? '');
       const meta = (user.user_metadata ?? {}) as Record<string, any>;
-      if (meta.full_name) setContactName(meta.full_name);
-      if (meta.phone) setContactPhone(meta.phone);
-      // Try profiles table for richer data
-      const { data: profile } = await supabase
-        .from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle();
+      if (meta.full_name) setName(meta.full_name);
+      if (meta.phone) setPhone(meta.phone);
+      const { data: profile } = await supabase.from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle();
       if (cancelled || !profile) return;
-      if (profile.full_name) setContactName(profile.full_name);
-      if (profile.phone) setContactPhone(profile.phone);
+      if (profile.full_name) setName(profile.full_name);
+      if (profile.phone) setPhone(profile.phone);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [property.id]);
 
-  // Demo calendar statuses: reserved, available
-  const { bookedDates, availableDates } = useMemo(() => {
-    const booked = new Set<string>();
-    const available = new Set<string>();
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
-    // Days 1-5 reserved
-    for (let d = 1; d <= 5; d++) booked.add(new Date(y, m, d).toISOString().split('T')[0]);
-    // Days 8-20 available
-    for (let d = 8; d <= 20; d++) available.add(new Date(y, m, d).toISOString().split('T')[0]);
-    // Days 21-23 reserved
-    for (let d = 21; d <= 23; d++) booked.add(new Date(y, m, d).toISOString().split('T')[0]);
-    // Days 25+ available
-    const lastDay = new Date(y, m + 1, 0).getDate();
-    for (let d = 25; d <= lastDay; d++) available.add(new Date(y, m, d).toISOString().split('T')[0]);
-    return { bookedDates: booked, availableDates: available };
-  }, []);
+  // Find next free night after a given date
+  const nextFreeNight = (from: Date): Date | null => {
+    const cur = new Date(from);
+    for (let i = 0; i < 365; i++) {
+      cur.setDate(cur.getDate() + 1);
+      if (!bookedNights.has(toKey(cur)) && cur >= today) return new Date(cur);
+    }
+    return null;
+  };
 
-  const isSameDay = (a: Date, b: Date) => a.toISOString().split('T')[0] === b.toISOString().split('T')[0];
+  // Range contains a booked night ?
+  const rangeHasBooked = (start: Date, end: Date): Date | null => {
+    const cur = new Date(start);
+    while (cur < end) {
+      if (bookedNights.has(toKey(cur))) return new Date(cur);
+      cur.setDate(cur.getDate() + 1);
+    }
+    return null;
+  };
 
   const handleSelectDate = (d: Date) => {
+    setConflict(null);
     if (!checkIn || (checkIn && checkOut)) {
       setCheckIn(d);
       setCheckOut(null);
-      setShowUpgrade(false);
-      setUpgradeShown(false);
-    } else if (checkIn && !checkOut) {
-      if (isSameDay(d, checkIn)) {
-        // Double-click same day = 1 night
-        const nextDay = new Date(d);
-        nextDay.setDate(nextDay.getDate() + 1);
-        setCheckOut(nextDay);
-      } else if (d < checkIn) {
-        // Click before check-in = swap
-        setCheckOut(checkIn);
-        setCheckIn(d);
-      } else {
-        // Check no booked dates in range
-        const current = new Date(checkIn);
-        while (current <= d) {
-          const key = current.toISOString().split('T')[0];
-          if (bookedDates.has(key)) {
-            toast({ title: 'Dates indisponibles', description: 'La plage sélectionnée inclut des jours déjà réservés.', variant: 'destructive' });
-            return;
-          }
-          current.setDate(current.getDate() + 1);
-        }
-        setCheckOut(d);
-      }
-      // Show upgrade after 2 seconds
-      if (!upgradeShown) {
-        setTimeout(() => setShowUpgrade(true), 2000);
-        setUpgradeShown(true);
-      }
+      return;
     }
+    if (d <= checkIn) {
+      setCheckIn(d);
+      setCheckOut(null);
+      return;
+    }
+    // Validate range
+    const conflictDate = rangeHasBooked(checkIn, d);
+    if (conflictDate) {
+      setConflict({ from: conflictDate, next: nextFreeNight(conflictDate) });
+      return;
+    }
+    setCheckOut(d);
   };
 
   const nights = checkIn && checkOut
-    ? Math.max(1, Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(1, Math.round((checkOut.getTime() - checkIn.getTime()) / 86400000))
     : 0;
 
-  const pricePerNight = Math.round(property.price / 30); // Monthly to nightly
-  const tier = getTier(nights);
-  const discountedPrice = Math.round(pricePerNight * (1 - tier.discount));
-  const totalPrice = discountedPrice * nights;
-  const nextTier = getNextTier(nights);
+  const isFurnished = isTypeFurnished(property.type || '') || property.furnished || false;
+  const nightlyPrice = isFurnished ? pricePerNightCalc(property.price) : Math.round(property.price / 30);
+  const totalPrice = nightlyPrice * nights;
 
-  const nextTierNights = nextTier ? nextTier.min : 0;
-  const nextTierPrice = nextTier ? Math.round(pricePerNight * (1 - nextTier.discount)) : 0;
-  const savings = nextTier ? (pricePerNight - nextTierPrice) * nextTierNights : 0;
+  const formatDate = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }) : '';
+  const formatDateLong = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
 
-  const handleUpgradeAccept = () => {
-    if (checkIn && nextTier) {
-      const newCheckOut = new Date(checkIn);
-      newCheckOut.setDate(newCheckOut.getDate() + nextTierNights);
-      setCheckOut(newCheckOut);
-      setShowUpgrade(false);
+  const goPrevMonth = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else setCalMonth(m => m - 1); };
+  const goNextMonth = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else setCalMonth(m => m + 1); };
+
+  const canGoBack = useMemo(() => {
+    const prevMonth = calMonth === 0 ? 11 : calMonth - 1;
+    const prevYear = calMonth === 0 ? calYear - 1 : calYear;
+    const lastOfPrev = new Date(prevYear, prevMonth + 1, 0);
+    return lastOfPrev >= today;
+  }, [calMonth, calYear, today]);
+
+  const validEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+
+  const handleConfirm = async () => {
+    if (!checkIn || !checkOut || nights === 0) return;
+    if (!name.trim() || name.trim().length < 2) {
+      toast({ title: 'Nom requis', variant: 'destructive' }); return;
+    }
+    if (!validEmail(email)) {
+      toast({ title: 'Email invalide', variant: 'destructive' }); return;
+    }
+    if (!phone.trim() || phone.replace(/\D/g, '').length < 6) {
+      toast({ title: 'Téléphone requis', variant: 'destructive' }); return;
+    }
+    setSubmitting(true);
+    try {
+      const { row, error } = await createPublicReservation({
+        property_id: property.id,
+        property_title: property.title,
+        property_quartier: property.quartier,
+        user_name: name.trim(),
+        user_email: email.trim(),
+        user_phone: phone.trim(),
+        message: message.trim() || null,
+        check_in: toKey(checkIn),
+        check_out: toKey(checkOut),
+        nights,
+        guests_count: adults + children,
+        price_per_night: nightlyPrice,
+        total_price: totalPrice,
+      });
+      if (error || !row) throw error || new Error('insert failed');
+      // Génère + log l'email (envoi réel à brancher plus tard)
+      sendConfirmationEmail(row, {
+        id: property.id,
+        title: property.title,
+        quartier: property.quartier,
+        address: property.address,
+        image: property.images?.[0],
+        latitude: property.latitude,
+        longitude: property.longitude,
+        agent_name: property.agent_name,
+        agent_phone: property.agent_phone,
+      });
+      setSubmitted(row);
+    } catch (err: any) {
+      console.error('Reservation error', err);
+      toast({ title: 'Erreur', description: err?.message ?? 'Réessayez.', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const reservationNumber = submittedId
-    ? `RES-${submittedId.split('-')[0].toUpperCase()}`
-    : `RES-${Date.now().toString(36).toUpperCase().slice(-5)}`;
-  const formatDate = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
+  // ── Rendu écran de confirmation ──
+  if (submitted) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-foreground/40 z-[800] flex items-center justify-center p-4">
+        <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-card rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-border">
+          <div className="p-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+              <Check className="h-8 w-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-1">{t('reservation.succes_titre')}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t('reservation.succes_numero')}</p>
+            <p className="text-2xl font-bold text-primary tracking-wider mb-6">{submitted.confirmation_number}</p>
+
+            <div className="bg-muted/50 rounded-xl p-4 space-y-2 text-sm text-left mb-4">
+              <div className="flex justify-between"><span className="text-muted-foreground">Bien</span><span className="font-semibold">{property.title}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{nights} {t('reservation.nuits')}</span></div>
+              <div className="flex justify-between pt-2 border-t border-border text-base font-bold"><span>{t('reservation.total')}</span><span className="text-primary">{fmt(totalPrice)} FCFA</span></div>
+            </div>
+
+            <p className="text-xs text-muted-foreground mb-4">
+              📧 Un email de confirmation contenant l'adresse exacte et les instructions d'accès a été préparé pour <strong>{email}</strong>.
+            </p>
+
+            <Button onClick={onClose} className="w-full bg-primary text-primary-foreground">{t('reservation.fermer')}</Button>
+          </div>
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-foreground/40 z-[800] flex items-center justify-center p-4"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-foreground/40 z-[800] flex items-center justify-center p-2 sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
-        initial={{ y: 24, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-card rounded-2xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto border border-border"
+        initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        className="bg-card rounded-2xl shadow-xl w-full max-w-2xl max-h-[95vh] overflow-y-auto border border-border"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            <span className="font-semibold text-sm text-foreground">
-              {step === 1 && 'Choisir vos dates'}
-              {step === 2 && 'Récapitulatif'}
-              {step === 3 && 'Paiement'}
-              {step === 4 && 'Confirmation'}
-            </span>
+        {/* Header + progress */}
+        <div className="sticky top-0 z-10 bg-card border-b border-border">
+          <div className="flex items-center justify-between p-4">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4 text-primary" /> {t('reservation.titre')}
+            </h2>
+            <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted"><X className="h-4 w-4" /></button>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Step indicators */}
-            <div className="flex gap-1">
-              {[1, 2, 3, 4].map(s => (
-                <span key={s} className={`w-2 h-2 rounded-full transition-colors ${s <= step ? 'bg-primary' : 'bg-muted-foreground/20'}`} />
-              ))}
+          {/* Steps */}
+          <div className="px-4 pb-3">
+            <div className="flex items-center justify-between text-[11px] font-semibold mb-2">
+              <span className={step >= 1 ? 'text-primary' : 'text-muted-foreground'}>① {t('reservation.etape1')}</span>
+              <span className={step >= 2 ? 'text-primary' : 'text-muted-foreground'}>② {t('reservation.etape2')}</span>
+              <span className={step >= 3 ? 'text-primary' : 'text-muted-foreground'}>③ {t('reservation.etape3')}</span>
             </div>
-            <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted">
-              <X className="h-4 w-4" />
-            </button>
+            <div className="h-1 rounded-full bg-muted overflow-hidden">
+              <div className="h-full bg-primary transition-all duration-300" style={{ width: `${(step / 3) * 100}%` }} />
+            </div>
           </div>
         </div>
 
-        <div className="p-5 space-y-5">
-          {/* ── STEP 1: Calendar ── */}
+        <div className="p-4 sm:p-5">
+          {/* ── ÉTAPE 1 ── */}
           {step === 1 && (
-            <>
-              <div className="text-xs text-muted-foreground mb-1">
+            <div className="space-y-5">
+              <p className="text-xs text-muted-foreground">
                 <strong className="text-foreground">{property.title}</strong> · {property.quartier}
+              </p>
+
+              {/* Calendar header navigation */}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={goPrevMonth}
+                  disabled={!canGoBack}
+                  className="p-1.5 rounded hover:bg-muted disabled:opacity-30"
+                  aria-label="Mois précédent"
+                ><ChevronLeft className="h-4 w-4" /></button>
+                <span className="text-xs text-muted-foreground">Sélectionnez votre arrivée puis votre départ</span>
+                <button onClick={goNextMonth} className="p-1.5 rounded hover:bg-muted" aria-label="Mois suivant">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
 
-              <MiniCalendar
-                month={calMonth}
-                year={calYear}
-                checkIn={checkIn}
-                checkOut={checkOut}
-                bookedDates={bookedDates}
-                onSelectDate={handleSelectDate}
-                onPrevMonth={() => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else setCalMonth(m => m - 1); }}
-                onNextMonth={() => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else setCalMonth(m => m + 1); }}
-              />
-
-              <div className="text-xs text-muted-foreground">
-                Check-in : <strong>14h00</strong> · Check-out : <strong>11h00</strong>
+              {/* Calendars */}
+              <div className="flex gap-4">
+                <MonthCalendar
+                  month={calMonth} year={calYear} today={today}
+                  checkIn={checkIn} checkOut={checkOut} hoverDate={hoverDate}
+                  bookedNights={bookedNights}
+                  onSelectDate={handleSelectDate}
+                  onHoverDate={setHoverDate}
+                />
+                {isDesktop && (() => {
+                  const nm = calMonth === 11 ? 0 : calMonth + 1;
+                  const ny = calMonth === 11 ? calYear + 1 : calYear;
+                  return (
+                    <MonthCalendar
+                      month={nm} year={ny} today={today}
+                      checkIn={checkIn} checkOut={checkOut} hoverDate={hoverDate}
+                      bookedNights={bookedNights}
+                      onSelectDate={handleSelectDate}
+                      onHoverDate={setHoverDate}
+                    />
+                  );
+                })()}
               </div>
 
-              {nights > 0 && (
-                <div className="bg-muted/50 rounded-xl p-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{nights} nuit{nights > 1 ? 's' : ''} · {fmt(discountedPrice)} FCFA / nuit</span>
-                  </div>
-                  <div className="flex justify-between text-base font-bold text-foreground border-t border-border pt-2">
-                    <span>Total estimé</span>
-                    <span className="text-primary">{fmt(totalPrice)} FCFA</span>
-                  </div>
-                  {tier.discount > 0 && (
-                    <Badge className="bg-primary/10 text-primary text-xs">
-                      🏷️ {tier.name}
-                    </Badge>
-                  )}
-                </div>
-              )}
+              {/* Legend */}
+              <div className="flex gap-4 text-[10px] text-muted-foreground flex-wrap">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary" /> Sélectionné</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary/10" /> Période</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[#fee2e2]" /> Réservé</span>
+              </div>
 
-              {/* Upgrade suggestion */}
+              {/* Conflict popup */}
               <AnimatePresence>
-                {showUpgrade && nextTier && nights > 0 && (
+                {conflict && (
                   <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    className="bg-accent/10 border border-accent/30 rounded-xl p-4 space-y-3"
+                    initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex gap-3"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">🏷️</span>
-                      <span className="text-sm font-semibold text-foreground">{nextTier.name} disponible</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      En passant à {nextTierNights} nuits, votre nuitée passe à <strong className="text-foreground">{fmt(nextTierPrice)} FCFA</strong> au lieu de {fmt(pricePerNight)} FCFA.
-                      <br />Vous gagnez <strong className="text-primary">{fmt(savings)} FCFA</strong> sur votre séjour.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={handleUpgradeAccept} className="flex-1 bg-primary text-primary-foreground">
-                        <Check className="h-3 w-3 mr-1" /> Je passe à {nextTierNights} nuits
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setShowUpgrade(false)} className="flex-1">
-                        Garder {nights} nuits
-                      </Button>
+                    <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                    <div className="flex-1 text-xs">
+                      <p className="font-bold text-destructive mb-1">{t('reservation.indisponible_titre')}</p>
+                      <p className="text-foreground/80">
+                        La période sélectionnée inclut le <strong>{formatDateLong(conflict.from)}</strong> qui est déjà réservé.
+                      </p>
+                      {conflict.next && (
+                        <p className="mt-1 text-foreground/80">
+                          {t('reservation.prochaines_dispos')} : <strong>{formatDateLong(conflict.next)}</strong>
+                        </p>
+                      )}
+                      <button onClick={() => setConflict(null)} className="mt-2 text-primary font-semibold hover:underline">Choisir d'autres dates</button>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
+              {/* Selected summary */}
+              {checkIn && (
+                <div className="bg-muted/50 rounded-xl p-3 flex items-center justify-between text-sm">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">{t('reservation.arrivee')}</p>
+                    <p className="font-semibold">{formatDate(checkIn)}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">{t('reservation.depart')}</p>
+                    <p className="font-semibold">{checkOut ? formatDate(checkOut) : '—'}</p>
+                  </div>
+                  {nights > 0 && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Durée</p>
+                      <p className="font-semibold">{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Guests */}
+              <div className="border border-border rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">{t('reservation.voyageurs')}</p>
+                <GuestCounter label={t('reservation.adultes')} value={adults} onChange={setAdults} min={1} />
+                <div className="border-t border-border" />
+                <GuestCounter label={t('reservation.enfants')} sub="2 – 12 ans" value={children} onChange={setChildren} min={0} />
+              </div>
+
               <Button
                 onClick={() => setStep(2)}
                 disabled={!checkIn || !checkOut}
-                className="w-full bg-primary text-primary-foreground"
+                className="w-full bg-primary text-primary-foreground h-11"
               >
-                Continuer
+                {t('reservation.continuer')}
               </Button>
-            </>
+            </div>
           )}
 
-          {/* ── STEP 2: Recap ── */}
+          {/* ── ÉTAPE 2 ── */}
           {step === 2 && (
-            <>
-              <div className="space-y-3">
-                <div className="flex gap-3">
-                  <img
-                    src={property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=200'}
-                    className="w-20 h-16 rounded-lg object-cover"
-                    alt=""
-                  />
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground">{property.title}</h4>
-                    <p className="text-xs text-muted-foreground">{property.address || property.quartier}</p>
-                  </div>
-                </div>
-
-                <div className="bg-muted/50 rounded-xl p-4 space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Check-in</span><span className="font-medium text-foreground">{formatDate(checkIn)} à 14h00</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Check-out</span><span className="font-medium text-foreground">{formatDate(checkOut)} à 11h00</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-medium text-foreground">{nights} nuit{nights > 1 ? 's' : ''}</span></div>
-                  {tier.discount > 0 && (
-                    <div className="flex justify-between"><span className="text-muted-foreground">Tarif</span><Badge className="bg-primary/10 text-primary text-xs">{tier.name}</Badge></div>
-                  )}
-                  <div className="flex justify-between pt-2 border-t border-border text-base font-bold">
-                    <span>Total</span>
-                    <span className="text-primary">{fmt(totalPrice)} FCFA</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
-                  <ChevronLeft className="h-4 w-4 mr-1" /> Modifier
+            <div className="space-y-3">
+              <input
+                type="text" placeholder={t('reservation.nom_complet') + ' *'}
+                value={name} onChange={e => setName(e.target.value.slice(0, 100))}
+                className="w-full px-3 py-2.5 rounded-lg border border-border text-sm bg-background"
+              />
+              <input
+                type="email" placeholder={t('reservation.email') + ' *'}
+                value={email} onChange={e => setEmail(e.target.value.slice(0, 255))}
+                className="w-full px-3 py-2.5 rounded-lg border border-border text-sm bg-background"
+              />
+              <input
+                type="tel" placeholder={t('reservation.telephone') + ' *'}
+                value={phone} onChange={e => setPhone(e.target.value.slice(0, 30))}
+                className="w-full px-3 py-2.5 rounded-lg border border-border text-sm bg-background"
+              />
+              <textarea
+                placeholder={t('reservation.message_optionnel')}
+                value={message} onChange={e => setMessage(e.target.value.slice(0, 500))}
+                rows={3}
+                className="w-full px-3 py-2.5 rounded-lg border border-border text-sm bg-background resize-none"
+              />
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" onClick={() => setStep(1)} className="flex-1 h-11">
+                  <ChevronLeft className="h-4 w-4 mr-1" /> {t('reservation.retour')}
                 </Button>
-                <Button onClick={() => setStep(3)} className="flex-1 bg-primary text-primary-foreground">
-                  Payer
+                <Button onClick={() => setStep(3)} className="flex-1 h-11 bg-primary text-primary-foreground">
+                  {t('reservation.continuer')}
                 </Button>
               </div>
-            </>
+            </div>
           )}
 
-          {/* ── STEP 3: Payment ── */}
+          {/* ── ÉTAPE 3 ── */}
           {step === 3 && (
-            <>
-              <div className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <img
+                  src={property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=200'}
+                  className="w-24 h-20 rounded-lg object-cover" alt=""
+                />
                 <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Mode de paiement</h4>
-                  <div className="space-y-2">
-                    {[
-                      { id: 'orange', label: '🟠 Orange Money', desc: 'Paiement mobile Orange' },
-                      { id: 'moov', label: '🔵 Moov Money', desc: 'Paiement mobile Moov' },
-                      { id: 'virement', label: '🏦 Virement bancaire', desc: 'Transfert bancaire' },
-                    ].map(pm => (
-                      <button
-                        key={pm.id}
-                        onClick={() => setPaymentMethod(pm.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors ${
-                          paymentMethod === pm.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:bg-muted/50'
-                        }`}
-                      >
-                        <span className="text-sm font-medium text-foreground">{pm.label}</span>
-                        <span className="text-xs text-muted-foreground ml-auto">{pm.desc}</span>
-                        {paymentMethod === pm.id && <Check className="h-4 w-4 text-primary" />}
-                      </button>
-                    ))}
-                  </div>
+                  <h4 className="text-sm font-bold text-foreground">{property.title}</h4>
+                  <p className="text-xs text-muted-foreground">{property.quartier}, Ouagadougou</p>
                 </div>
-
-                <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Type de paiement</h4>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setPaymentType('partial')}
-                      className={`flex-1 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
-                        paymentType === 'partial' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-foreground hover:bg-muted/50'
-                      }`}
-                    >
-                      Acompte 30%
-                      <br /><span className="text-xs font-normal text-muted-foreground">{fmt(Math.round(totalPrice * 0.3))} FCFA</span>
-                    </button>
-                    <button
-                      onClick={() => setPaymentType('full')}
-                      className={`flex-1 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
-                        paymentType === 'full' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-foreground hover:bg-muted/50'
-                      }`}
-                    >
-                      Paiement intégral
-                      <br /><span className="text-xs font-normal text-muted-foreground">{fmt(totalPrice)} FCFA</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* ── Vos coordonnées (invité ou pré-rempli si connecté) ── */}
-              <div>
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                  Vos coordonnées
-                  {!isAuthed && <span className="ml-2 text-[10px] font-normal text-muted-foreground">(en tant qu'invité)</span>}
-                </h4>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Nom complet *"
-                    value={contactName}
-                    onChange={e => setContactName(e.target.value.slice(0, 100))}
-                    className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background text-foreground"
-                    maxLength={100}
-                    required
-                  />
-                  <input
-                    type="tel"
-                    placeholder="Téléphone *"
-                    value={contactPhone}
-                    onChange={e => setContactPhone(e.target.value.slice(0, 30))}
-                    className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background text-foreground"
-                    maxLength={30}
-                    required
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email (optionnel)"
-                    value={contactEmail}
-                    onChange={e => setContactEmail(e.target.value.slice(0, 255))}
-                    className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background text-foreground"
-                    maxLength={255}
-                  />
-                  <textarea
-                    placeholder="Message à l'agent (optionnel)"
-                    value={contactMessage}
-                    onChange={e => setContactMessage(e.target.value.slice(0, 500))}
-                    rows={2}
-                    className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background text-foreground resize-none"
-                    maxLength={500}
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1" disabled={submitting}>
-                  <ChevronLeft className="h-4 w-4 mr-1" /> Retour
-                </Button>
-                <Button
-                  onClick={async () => {
-                    if (!paymentMethod) {
-                      toast({ title: 'Choisissez un mode de paiement', variant: 'destructive' });
-                      return;
-                    }
-                    if (!contactName.trim() || contactName.trim().length < 2) {
-                      toast({ title: 'Nom requis', description: 'Merci d\'indiquer votre nom complet.', variant: 'destructive' });
-                      return;
-                    }
-                    if (!contactPhone.trim() || contactPhone.trim().length < 6) {
-                      toast({ title: 'Téléphone requis', description: 'Merci d\'indiquer un numéro joignable.', variant: 'destructive' });
-                      return;
-                    }
-                    setSubmitting(true);
-                    try {
-                      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(property.id);
-                      if (isUuid) {
-                        const row = await createReservation({
-                          property_id: property.id,
-                          kind: 'booking',
-                          start_date: checkIn ? checkIn.toISOString().split('T')[0] : null,
-                          end_date: checkOut ? checkOut.toISOString().split('T')[0] : null,
-                          guests_count: 1,
-                          total_price: totalPrice,
-                          contact_name: contactName,
-                          contact_phone: contactPhone,
-                          contact_email: contactEmail || null,
-                          message: contactMessage || null,
-                        });
-                        setSubmittedId(row.id);
-                      } else {
-                        // Mock property (not in Supabase) — skip persistence, keep flow
-                        console.info('[Reservation] Skipping Supabase persist for mock property', property.id);
-                      }
-                      setStep(4);
-                    } catch (err: any) {
-                      console.error('Reservation insert failed:', err);
-                      toast({
-                        title: 'Erreur d\'enregistrement',
-                        description: err?.message ?? 'Réessayez dans un instant.',
-                        variant: 'destructive',
-                      });
-                    } finally {
-                      setSubmitting(false);
-                    }
-                  }}
-                  disabled={submitting}
-                  className="flex-1 bg-primary text-primary-foreground"
-                >
-                  {submitting ? (
-                    <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Envoi…</>
-                  ) : (
-                    <>Confirmer {fmt(paymentType === 'partial' ? Math.round(totalPrice * 0.3) : totalPrice)} FCFA</>
-                  )}
-                </Button>
-              </div>
-            </>
-          )}
-
-          {/* ── STEP 4: Confirmation ── */}
-          {step === 4 && (
-            <>
-              <div className="text-center py-4">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Check className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground mb-1">Réservation confirmée !</h3>
-                <p className="text-sm text-muted-foreground">N° {reservationNumber}</p>
               </div>
 
               <div className="bg-muted/50 rounded-xl p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Bien</span><span className="font-medium text-foreground">{property.title}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Check-in</span><span className="font-medium">{formatDate(checkIn)} à 14h00</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Check-out</span><span className="font-medium">{formatDate(checkOut)} à 11h00</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-medium">{nights} nuits</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Montant payé</span><span className="font-bold text-primary">{fmt(paymentType === 'partial' ? Math.round(totalPrice * 0.3) : totalPrice)} FCFA</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Statut</span><Badge className="bg-primary/10 text-primary">CONFIRMÉE</Badge></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.voyageurs')}</span><span className="font-semibold">{adults + children}</span></div>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-1 text-xs"
-                  onClick={() => toast({ title: '📥 Certificat', description: 'Le certificat PDF sera généré et téléchargé.' })}
-                >
-                  <Download className="h-3 w-3" /> Télécharger PDF
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-1 text-xs"
-                  onClick={() => toast({ title: '📤 Partage', description: 'Lien de partage WhatsApp copié.' })}
-                >
-                  <Share2 className="h-3 w-3" /> WhatsApp
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-1 text-xs"
-                  onClick={() => toast({ title: '📧 Email', description: 'Confirmation envoyée par email.' })}
-                >
-                  <Mail className="h-3 w-3" /> Email
-                </Button>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <div className="flex justify-between text-sm text-foreground">
+                  <span>{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')} × {fmt(nightlyPrice)} FCFA</span>
+                  <span className="font-semibold">{fmt(totalPrice)} FCFA</span>
+                </div>
+                <div className="flex justify-between pt-2 mt-2 border-t border-border text-base font-bold">
+                  <span>{t('reservation.total')}</span>
+                  <span className="text-primary">{fmt(totalPrice)} FCFA</span>
+                </div>
               </div>
 
-              <Button onClick={onClose} className="w-full bg-primary text-primary-foreground">
-                Fermer
-              </Button>
-            </>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={handleConfirm} disabled={submitting}
+                  className="w-full bg-primary text-primary-foreground h-12 text-sm font-semibold"
+                >
+                  {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Envoi…</> : t('reservation.confirmer')}
+                </Button>
+                <button
+                  disabled
+                  className="w-full h-11 rounded-lg bg-muted/60 text-muted-foreground text-xs font-medium cursor-not-allowed"
+                  title="Bientôt disponible"
+                >
+                  💳 Paiement mobile — {t('reservation.paiement_bientot')}
+                </button>
+                <Button variant="outline" onClick={() => setStep(2)} className="w-full h-9 text-xs">
+                  <ChevronLeft className="h-3 w-3 mr-1" /> {t('reservation.retour')}
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </motion.div>

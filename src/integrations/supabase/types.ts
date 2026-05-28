@@ -294,6 +294,66 @@ export type Database = {
           },
         ]
       }
+      public_reservations: {
+        Row: {
+          check_in: string
+          check_out: string
+          confirmation_number: string
+          created_at: string
+          guests_count: number
+          id: string
+          message: string | null
+          nights: number
+          price_per_night: number
+          property_id: string
+          property_quartier: string
+          property_title: string
+          status: string
+          total_price: number
+          user_email: string
+          user_name: string
+          user_phone: string
+        }
+        Insert: {
+          check_in: string
+          check_out: string
+          confirmation_number?: string
+          created_at?: string
+          guests_count?: number
+          id?: string
+          message?: string | null
+          nights: number
+          price_per_night: number
+          property_id: string
+          property_quartier: string
+          property_title: string
+          status?: string
+          total_price: number
+          user_email: string
+          user_name: string
+          user_phone: string
+        }
+        Update: {
+          check_in?: string
+          check_out?: string
+          confirmation_number?: string
+          created_at?: string
+          guests_count?: number
+          id?: string
+          message?: string | null
+          nights?: number
+          price_per_night?: number
+          property_id?: string
+          property_quartier?: string
+          property_title?: string
+          status?: string
+          total_price?: number
+          user_email?: string
+          user_name?: string
+          user_phone?: string
+        }
+        Relationships: []
+      }
       quartiers: {
         Row: {
           created_at: string

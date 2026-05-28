@@ -1,0 +1,90 @@
+{
+  "nav": {
+    "accueil": "Home",
+    "carte": "Map",
+    "recherche": "Search",
+    "favoris": "Favorites",
+    "profil": "Profile",
+    "biens": "Listings",
+    "quartiers": "Neighborhoods",
+    "connexion": "Sign in",
+    "mon_compte": "My account",
+    "contact": "Contact"
+  },
+  "hero": {
+    "titre": "Find your home in Ouagadougou",
+    "placeholder": "Search a property, a neighborhood..."
+  },
+  "filtre": {
+    "titre": "Filters",
+    "reinitialiser": "Reset",
+    "appliquer": "Apply"
+  },
+  "bien": {
+    "reserver": "Book",
+    "appeler": "Call",
+    "whatsapp": "WhatsApp",
+    "partager": "Share",
+    "voir_carte": "View on map",
+    "nuit": "night",
+    "mois": "month",
+    "chambres": "bedrooms",
+    "salles_de_bain": "bathrooms",
+    "surface": "surface"
+  },
+  "partage": {
+    "titre": "Share this listing",
+    "whatsapp": "WhatsApp",
+    "copier": "Copy link",
+    "copie": "Link copied!",
+    "fermer": "Close"
+  },
+  "reservation": {
+    "titre": "Book this property",
+    "etape1": "Dates & Guests",
+    "etape2": "Contact",
+    "etape3": "Summary",
+    "confirmer": "Confirm booking",
+    "indisponible_titre": "These dates are not available",
+    "indisponible_desc": "Your selection includes already booked nights.",
+    "prochaines_dispos": "Next availability",
+    "arrivee": "Check-in",
+    "depart": "Check-out",
+    "nuits": "nights",
+    "nuit": "night",
+    "total": "Total",
+    "adultes": "Adults",
+    "enfants": "Children",
+    "voyageurs": "Guests",
+    "continuer": "Continue",
+    "retour": "Back",
+    "nom_complet": "Full name",
+    "email": "Email",
+    "telephone": "Phone (WhatsApp preferred)",
+    "message_optionnel": "Message to host (optional)",
+    "paiement_bientot": "Mobile payment coming soon",
+    "succes_titre": "Booking confirmed!",
+    "succes_numero": "Confirmation number",
+    "fermer": "Close",
+    "reserve": "Booked"
+  },
+  "footer": {
+    "contact": "Contact",
+    "navigation": "Navigation",
+    "suivez_nous": "Follow us",
+    "mentions": "Legal notice",
+    "confidentialite": "Privacy policy",
+    "cgu": "Terms of use",
+    "tous_droits": "All rights reserved"
+  },
+  "legal": {
+    "en_redaction": "Content being drafted",
+    "retour_accueil": "Back to home"
+  },
+  "pagination": {
+    "precedent": "Previous",
+    "suivant": "Next",
+    "sur": "of",
+    "biens": "listings"
+  }
+}
