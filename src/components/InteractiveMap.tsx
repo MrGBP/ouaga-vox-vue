@@ -8,8 +8,13 @@ interface Property {
   id: string;
   title: string;
   description?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  location_type?: 'precise' | 'quartier_only';
+  display_radius?: number;
+  display_lat?: number;
+  display_lng?: number;
+  agent_pois?: { label: string; distance_text: string; emoji: string }[];
   price: number;
   type: string;
   quartier: string;
