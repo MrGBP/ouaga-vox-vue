@@ -195,17 +195,20 @@ const Index = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const finalProps = mockProperties as unknown as Property[];
+      const allProps = mockProperties as unknown as Property[];
+      const cityProps = allProps.filter((p: any) => p.city === activeCity.name);
       const finalPois = mockPois as unknown as POI[];
       const finalQuartiers = mockQuartiers as unknown as Quartier[];
-      setProperties(finalProps);
-      setFilteredProperties(finalProps);
+      setProperties(cityProps);
+      setFilteredProperties(cityProps);
       setPois(finalPois);
       setQuartiers(finalQuartiers);
     } catch (error: any) {
       console.warn('Error loading data:', error.message);
-      setProperties(mockProperties as unknown as Property[]);
-      setFilteredProperties(mockProperties as unknown as Property[]);
+      const allProps = mockProperties as unknown as Property[];
+      const cityProps = allProps.filter((p: any) => p.city === activeCity.name);
+      setProperties(cityProps);
+      setFilteredProperties(cityProps);
       setPois(mockPois as unknown as POI[]);
       setQuartiers(mockQuartiers as unknown as Quartier[]);
     } finally {
