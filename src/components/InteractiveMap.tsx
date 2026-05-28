@@ -638,15 +638,18 @@ const InteractiveMap = ({
 
     let hoverCircles: L.Circle[] = [];
     favProps.forEach(p => {
+      const coords = getDisplayCoords(p);
+      if (!coords) return;
+      const [fLat, fLng] = coords;
       const icon = L.divIcon({
         html: `<div style="background:rgba(26,53,96,0.25);border:1.5px solid rgba(26,53,96,0.6);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;backdrop-filter:blur(2px);cursor:pointer;transition:all 200ms;">❤️</div>`,
         className: '', iconSize: [26, 26], iconAnchor: [13, 13],
       });
-      const marker = L.marker([p.latitude, p.longitude], { icon, zIndexOffset: 400 });
+      const marker = L.marker([fLat, fLng], { icon, zIndexOffset: 400 });
       marker.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
       marker.on('mouseover', () => {
         [300, 500, 1000].forEach(r => {
-          const c = L.circle([p.latitude, p.longitude], {
+          const c = L.circle([fLat, fLng], {
             radius: r, color: 'rgba(30,80,160,0.6)', fillColor: 'rgba(30,80,160,0.08)',
             fillOpacity: 0.1, weight: 1, dashArray: '4 3', interactive: false,
           }).addTo(favoriteLayer.current!);
