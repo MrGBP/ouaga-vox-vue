@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Heart, ChevronLeft, ChevronRight, MapPin, Bed, Bath,
-  Maximize, Calendar, Phone,
+  Maximize, Calendar, Phone, Mail,
   Thermometer, Shield, Zap, TreePine, Droplets, Wifi,
   Share2, Play,
 } from 'lucide-react';
