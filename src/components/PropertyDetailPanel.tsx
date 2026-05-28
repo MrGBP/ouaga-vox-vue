@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Heart, ChevronLeft, ChevronRight, MapPin, Bed, Bath,
-  Maximize, Calendar, Phone, MessageCircle, Mail, Camera,
+  Maximize, Calendar, Phone,
   Thermometer, Shield, Zap, TreePine, Droplets, Wifi,
-  Accessibility, Share2, PhoneCall, Play,
+  Share2, Play,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { usePropertyMedia } from '@/hooks/usePropertyMedia';
 import { useNearbyPOI } from '@/hooks/useNearbyPOI';
 import { useToast } from '@/hooks/use-toast';
 import ReservationFlow from './ReservationFlow';
+import SharePanel from './SharePanel';
 
 // ─── POI category groups (UI filter chips) ───────────────────────────────────
 const POI_CATEGORIES: { id: string; label: string; emoji: string; types: string[] }[] = [
@@ -123,11 +124,10 @@ const PropertyDetailPanel = ({
   const [descExpanded, setDescExpanded] = useState(false);
   const [showReservation, setShowReservation] = useState(false);
   const [showAllPois, setShowAllPois] = useState(false);
-  const [showCallbackModal, setShowCallbackModal] = useState(false);
   const [showAllFeatures, setShowAllFeatures] = useState(false);
-  const [callbackPhone, setCallbackPhone] = useState('');
   const [show360Overlay, setShow360Overlay] = useState(false);
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
+  const [showSharePanel, setShowSharePanel] = useState(false);
   const [poiCategory, setPoiCategory] = useState<string>('all');
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
@@ -228,19 +228,20 @@ const PropertyDetailPanel = ({
     property.accessibility_rating && { label: 'Accessibilité', value: property.accessibility_rating },
   ].filter(Boolean) as { label: string; value: number }[];
 
-  // WhatsApp share
-  const handleWhatsAppShare = () => {
-    const msg = `🏠 ${property.title} — ${property.quartier}\n💰 ${fmt(property.price)} FCFA/mois${isFurnished ? ` · ${fmt(nightPrice)} FCFA/nuit` : ''}\n✅ Vérifié sur SapSapHouse\n👉 ${window.location.href}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  // ── Partage ──
+  const baseShareOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://sapsaphouse.lovable.app';
+  const shareUrl = `${baseShareOrigin}/bien/${property.id}`;
+  const shareText = `${property.title} — ${property.quartier}, Ouagadougou\n${fmt(property.price)} FCFA/${isFurnished ? 'nuit' : 'mois'}\n${shareUrl}`;
+  const handleShare = async () => {
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      try {
+        await (navigator as any).share({ title: property.title, text: shareText, url: shareUrl });
+        return;
+      } catch { /* fallback to panel */ }
+    }
+    setShowSharePanel(true);
   };
-
-  // Callback
-  const handleCallback = () => {
-    if (!callbackPhone.trim()) return;
-    toast({ title: '📞 Demande envoyée', description: 'Vous serez contacté(e) sous 24h.' });
-    setShowCallbackModal(false);
-    setCallbackPhone('');
-  };
+  const agentPhoneRaw = property.agent_phone?.replace(/\D/g, '') ?? '';
 
   const currentMedia = mediaItems[mediaIdx];
 
@@ -348,14 +349,9 @@ const PropertyDetailPanel = ({
         <div>
           <h3 className="text-lg font-bold text-foreground">{property.title}</h3>
           {isFurnished && nightPrice > 0 ? (
-            <>
-              <div className="text-2xl font-bold text-primary mt-1">
-                {fmt(nightPrice)} FCFA <span className="text-sm font-medium text-muted-foreground">/nuit</span>
-              </div>
-              <div className="text-sm text-muted-foreground mt-0.5">
-                soit {fmt(property.price)} FCFA /mois
-              </div>
-            </>
+            <div className="text-2xl font-bold text-primary mt-1">
+              {fmt(nightPrice)} FCFA <span className="text-sm font-medium text-muted-foreground">/nuit</span>
+            </div>
           ) : (
             <div className="text-2xl font-bold text-primary mt-1">
               {fmt(property.price)} FCFA <span className="text-sm font-medium text-muted-foreground">/mois</span>
@@ -573,17 +569,12 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* WhatsApp + Callback */}
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleWhatsAppShare} className="flex-1 gap-2 text-xs hover:bg-muted active:scale-[0.98]">
-            📲 Partager WhatsApp
-          </Button>
-          <Button variant="outline" onClick={() => setShowCallbackModal(true)} className="flex-1 gap-2 text-xs hover:bg-muted active:scale-[0.98]">
-            <PhoneCall className="h-3.5 w-3.5" /> Me rappeler
-          </Button>
-        </div>
+        {/* Partage */}
+        <Button variant="outline" onClick={handleShare} className="w-full gap-2 text-xs hover:bg-muted active:scale-[0.98]">
+          <Share2 className="h-3.5 w-3.5" /> Partager ce bien
+        </Button>
 
-        {/* Agent */}
+        {/* Agent : Appeler + WhatsApp uniquement */}
         {property.agent_name && (
           <div className="bg-muted/50 rounded-xl p-3">
             <div className="flex items-center gap-3">
@@ -594,9 +585,19 @@ const PropertyDetailPanel = ({
               </div>
             </div>
             <div className="flex gap-2 mt-2.5">
-              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs hover:bg-muted active:scale-[0.98]"><Phone className="h-3 w-3" /> Appeler</Button>
-              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs hover:bg-muted active:scale-[0.98]"><MessageCircle className="h-3 w-3" /> WhatsApp</Button>
-              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs hover:bg-muted active:scale-[0.98]"><Mail className="h-3 w-3" /> Email</Button>
+              <a
+                href={agentPhoneRaw ? `tel:${property.agent_phone}` : undefined}
+                className="flex-1 h-11 flex items-center justify-center gap-2 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
+              >
+                <Phone className="h-3.5 w-3.5" /> Appeler
+              </a>
+              <a
+                href={agentPhoneRaw ? `https://wa.me/${agentPhoneRaw}` : undefined}
+                target="_blank" rel="noopener noreferrer"
+                className="flex-1 h-11 flex items-center justify-center gap-2 bg-[#25D366] text-white rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
+              >
+                <span>💬</span> WhatsApp
+              </a>
             </div>
           </div>
         )}
@@ -643,26 +644,10 @@ const PropertyDetailPanel = ({
         )}
       </div>
 
-      {/* Callback Modal */}
+      {/* Share Panel */}
       <AnimatePresence>
-        {showCallbackModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[800] flex items-center justify-center bg-foreground/40" onClick={() => setShowCallbackModal(false)}>
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-card rounded-xl p-5 w-80 shadow-lg" onClick={e => e.stopPropagation()}>
-              <h3 className="text-sm font-bold text-foreground mb-3">📞 Demande de rappel</h3>
-              <input
-                type="tel"
-                placeholder="Votre numéro de téléphone"
-                value={callbackPhone}
-                onChange={e => setCallbackPhone(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background text-foreground mb-3"
-              />
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setShowCallbackModal(false)} className="flex-1 text-xs">Annuler</Button>
-                <Button onClick={handleCallback} className="flex-1 text-xs bg-primary text-primary-foreground">Envoyer</Button>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-2 text-center">Vous serez contacté(e) sous 24h</p>
-            </motion.div>
-          </motion.div>
+        {showSharePanel && (
+          <SharePanel shareUrl={shareUrl} shareText={shareText} onClose={() => setShowSharePanel(false)} />
         )}
       </AnimatePresence>
 

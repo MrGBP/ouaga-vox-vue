@@ -729,16 +729,44 @@ const Index = () => {
             </motion.div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4 mt-8">
-                <Button variant="outline" size="icon" disabled={currentPage === 1}
-                  onClick={() => handlePageChange(-1)} className="h-10 w-10 disabled:opacity-30">
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <span className="text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
-                <Button variant="outline" size="icon" disabled={currentPage === totalPages}
-                  onClick={() => handlePageChange(1)} className="h-10 w-10 disabled:opacity-30">
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
+              <div className="mt-10 flex flex-col items-center gap-3">
+                <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                  <button
+                    onClick={() => { setPageTransition(true); setTimeout(() => { setCurrentPage(p => Math.max(1, p - 1)); setTimeout(() => setPageTransition(false), 50); }, 100); }}
+                    disabled={currentPage === 1}
+                    className="h-10 px-4 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-muted transition-colors"
+                  >
+                    ← Précédent
+                  </button>
+                  {(() => {
+                    const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2);
+                    return pages.map((page, idx) => (
+                      <>
+                        {idx > 0 && pages[idx - 1] !== page - 1 && (
+                          <span key={`e${page}`} className="px-1 text-muted-foreground">…</span>
+                        )}
+                        <button
+                          key={page}
+                          onClick={() => { setPageTransition(true); setTimeout(() => { setCurrentPage(page); setTimeout(() => setPageTransition(false), 50); }, 100); }}
+                          className={`h-10 w-10 rounded-xl text-sm font-medium transition-colors ${currentPage === page ? 'bg-primary text-primary-foreground' : 'border border-border hover:bg-muted'}`}
+                        >
+                          {page}
+                        </button>
+                      </>
+                    ));
+                  })()}
+                  <button
+                    onClick={() => { setPageTransition(true); setTimeout(() => { setCurrentPage(p => Math.min(totalPages, p + 1)); setTimeout(() => setPageTransition(false), 50); }, 100); }}
+                    disabled={currentPage === totalPages}
+                    className="h-10 px-4 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-muted transition-colors"
+                  >
+                    Suivant →
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {(currentPage - 1) * ITEMS_PER_PAGE + 1} – {Math.min(currentPage * ITEMS_PER_PAGE, displayProperties.length)} sur {displayProperties.length} biens
+                </p>
               </div>
             )}
           </>
