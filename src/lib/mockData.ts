@@ -480,7 +480,152 @@ function generateProperties(): Property[] {
   return props;
 }
 
-export const mockProperties: Property[] = generateProperties();
+export const mockProperties: Property[] = [
+  ...generateProperties(),
+
+  // ─── Ouagadougou — nouveaux quartiers (arrondissements officiels) ───────
+  {
+    id: 'prop-bilbalogo-01', title: 'Appartement 3 chambres centre-ville', description: 'Appartement spacieux au centre-ville de Ouagadougou, proche commerces et administrations.', type: 'appartement_simple',
+    quartier: 'Bilbalogo', arrondissement: 1, address: 'Bilbalogo, secteur 4',
+    price: 180000, bedrooms: 3, bathrooms: 1, surface_area: 90, furnished: false,
+    has_ac: true, has_internet: true, has_water: true,
+    latitude: 12.3650, longitude: -1.5340, location_type: 'precise', display_radius: 400, display_lat: 12.3665, display_lng: -1.5325,
+    images: IMAGES_POOL.appartement.slice(0, 4), available: true, status: 'available',
+    city: 'Ouagadougou', country: 'BF', currency: 'FCFA',
+    agent_name: 'Boubacar Sawadogo', agent_phone: '+226 70 00 00 01',
+  },
+  {
+    id: 'prop-hamdalaye-01', title: 'Studio meublé Hamdalaye', description: 'Studio meublé moderne, climatisé, wifi inclus.', type: 'studio_meuble',
+    quartier: 'Hamdalaye', arrondissement: 2, address: 'Hamdalaye, secteur 9',
+    price: 250000, bedrooms: 1, bathrooms: 1, surface_area: 35, furnished: true,
+    has_ac: true, has_internet: true, has_water: true, has_kitchen: true, has_fridge: true,
+    latitude: 12.3755, longitude: -1.5195, location_type: 'precise', display_radius: 350, display_lat: 12.3770, display_lng: -1.5180,
+    images: IMAGES_POOL.studio.slice(0, 4), available: true, status: 'available',
+    city: 'Ouagadougou', country: 'BF', currency: 'FCFA',
+    agent_name: 'Aminata Ouédraogo', agent_phone: '+226 70 00 00 02',
+  },
+  {
+    id: 'prop-cissin-01', title: 'Villa 4ch avec jardin Cissin', description: 'Villa familiale avec jardin, gardien, groupe électrogène.', type: 'maison_villa_simple',
+    quartier: 'Cissin', arrondissement: 6, address: 'Cissin, secteur 17',
+    price: 350000, bedrooms: 4, bathrooms: 2, surface_area: 200, furnished: false,
+    has_ac: true, has_guardian: true, has_garden: true, has_generator: true, has_fence: true, has_water: true,
+    latitude: 12.3305, longitude: -1.5610, location_type: 'precise', display_radius: 450, display_lat: 12.3320, display_lng: -1.5595,
+    images: IMAGES_POOL.villa.slice(0, 4), available: true, status: 'available',
+    city: 'Ouagadougou', country: 'BF', currency: 'FCFA',
+    agent_name: 'Ibrahim Compaoré', agent_phone: '+226 70 00 00 03',
+  },
+  {
+    id: 'prop-nagrin-01', title: 'Maison simple 2ch Nagrin', description: 'Maison simple dans quartier calme.', type: 'maison_villa_simple',
+    quartier: 'Nagrin', arrondissement: 7, address: 'Nagrin',
+    price: 80000, bedrooms: 2, bathrooms: 1, surface_area: 70, furnished: false,
+    has_water: true, has_fence: true,
+    location_type: 'quartier_only',
+    agent_pois: [
+      { label: 'Marché Nagrin', distance_text: '5 min à pied', emoji: '🛒' },
+      { label: 'École primaire', distance_text: '3 min', emoji: '🏫' },
+      { label: 'Route goudronnée', distance_text: '2 min', emoji: '🛣️' },
+    ],
+    images: IMAGES_POOL.maison.slice(0, 4), available: true, status: 'available',
+    city: 'Ouagadougou', country: 'BF', currency: 'FCFA',
+    agent_name: 'Fatou Kaboré', agent_phone: '+226 70 00 00 04',
+  },
+  {
+    id: 'prop-bassinko-01', title: 'Villa meublée standing Bassinko', description: 'Villa meublée haut standing avec piscine et gardien.', type: 'maison_villa_meublee',
+    quartier: 'Bassinko', arrondissement: 8, address: 'Bassinko',
+    price: 450000, bedrooms: 3, bathrooms: 2, surface_area: 150, furnished: true,
+    has_ac: true, has_pool: true, has_guardian: true, has_internet: true, has_water: true, has_kitchen: true,
+    latitude: 12.3510, longitude: -1.6215, location_type: 'precise', display_radius: 400, display_lat: 12.3525, display_lng: -1.6200,
+    images: IMAGES_POOL.villa.slice(0, 4), available: true, status: 'available',
+    city: 'Ouagadougou', country: 'BF', currency: 'FCFA',
+    agent_name: 'Seydou Traoré', agent_phone: '+226 70 00 00 05',
+  },
+  {
+    id: 'prop-marcoussis-01', title: 'Appartement 2ch Marcoussis', description: 'Appartement moderne avec climatisation.', type: 'appartement_simple',
+    quartier: 'Marcoussis', arrondissement: 9, address: 'Marcoussis',
+    price: 120000, bedrooms: 2, bathrooms: 1, surface_area: 75, furnished: false, has_ac: true, has_water: true,
+    latitude: 12.3205, longitude: -1.4810, location_type: 'precise', display_radius: 400, display_lat: 12.3220, display_lng: -1.4795,
+    images: IMAGES_POOL.appartement.slice(0, 4), available: true, status: 'available',
+    city: 'Ouagadougou', country: 'BF', currency: 'FCFA',
+    agent_name: 'Mariam Zongo', agent_phone: '+226 70 00 00 06',
+  },
+  {
+    id: 'prop-taabtenga-01', title: 'Bureau 50m² Taabtenga', description: 'Bureau professionnel climatisé avec internet.', type: 'bureau',
+    quartier: 'Taabtenga', arrondissement: 10, address: 'Taabtenga',
+    price: 200000, surface_area: 50, has_ac: true, has_internet: true,
+    latitude: 12.4005, longitude: -1.4610, location_type: 'precise', display_radius: 350, display_lat: 12.4020, display_lng: -1.4595,
+    images: IMAGES_POOL.bureau.slice(0, 4), available: true, status: 'available',
+    city: 'Ouagadougou', country: 'BF', currency: 'FCFA',
+    agent_name: 'Oumar Diallo', agent_phone: '+226 70 00 00 07',
+  },
+
+  // ─── Bamako — Mali ──────────────────────────────────────────────────────
+  {
+    id: 'prop-bko-aci2000-01', title: 'Villa meublée standing ACI 2000', description: 'Villa standing avec piscine, gardien et groupe électrogène à ACI 2000.', type: 'maison_villa_meublee',
+    quartier: 'ACI 2000', commune: 'Commune III', address: 'ACI 2000',
+    price: 650000, bedrooms: 4, bathrooms: 3, surface_area: 250, furnished: true,
+    has_ac: true, has_pool: true, has_guardian: true, has_generator: true, has_internet: true, has_water: true, has_kitchen: true,
+    latitude: 12.6492, longitude: -7.9836, location_type: 'precise', display_radius: 400, display_lat: 12.6505, display_lng: -7.9822,
+    images: IMAGES_POOL.villa.slice(0, 4), available: true, status: 'available',
+    city: 'Bamako', country: 'ML', currency: 'FCFA',
+    agent_name: 'Moussa Coulibaly', agent_phone: '+223 76 00 00 01',
+  },
+  {
+    id: 'prop-bko-hippodrome-01', title: 'Appartement 3ch Hippodrome', description: 'Appartement spacieux quartier Hippodrome, climatisé et sécurisé.', type: 'appartement_simple',
+    quartier: 'Hippodrome', commune: 'Commune II', address: 'Hippodrome',
+    price: 250000, bedrooms: 3, bathrooms: 2, surface_area: 120, furnished: false,
+    has_ac: true, has_internet: true, has_guardian: true, has_water: true,
+    latitude: 12.6612, longitude: -7.9895, location_type: 'precise', display_radius: 400, display_lat: 12.6625, display_lng: -7.9880,
+    images: IMAGES_POOL.appartement.slice(0, 4), available: true, status: 'available',
+    city: 'Bamako', country: 'ML', currency: 'FCFA',
+    agent_name: 'Aminata Diarra', agent_phone: '+223 76 00 00 02',
+  },
+  {
+    id: 'prop-bko-badalabougou-01', title: 'Villa 5ch Badalabougou bord fleuve', description: 'Magnifique villa près du fleuve Niger.', type: 'maison_villa_simple',
+    quartier: 'Badalabougou', commune: 'Commune V', address: 'Badalabougou',
+    price: 600000, bedrooms: 5, bathrooms: 3, surface_area: 350, furnished: false,
+    has_ac: true, has_pool: true, has_guardian: true, has_cameras: true, has_generator: true, has_water: true,
+    latitude: 12.6218, longitude: -7.9612, location_type: 'precise', display_radius: 500, display_lat: 12.6232, display_lng: -7.9598,
+    images: IMAGES_POOL.villa.slice(0, 4), available: true, status: 'available',
+    city: 'Bamako', country: 'ML', currency: 'FCFA',
+    agent_name: 'Ibrahim Keïta', agent_phone: '+223 76 00 00 03',
+  },
+  {
+    id: 'prop-bko-hamdallaye-01', title: 'Studio meublé Hamdallaye', description: 'Studio meublé, climatisé, wifi inclus.', type: 'studio_meuble',
+    quartier: 'Hamdallaye', commune: 'Commune IV', address: 'Hamdallaye',
+    price: 300000, bedrooms: 1, bathrooms: 1, surface_area: 40, furnished: true,
+    has_ac: true, has_internet: true, has_water: true, has_kitchen: true, has_fridge: true,
+    latitude: 12.6398, longitude: -8.0115, location_type: 'precise', display_radius: 350, display_lat: 12.6412, display_lng: -8.0100,
+    images: IMAGES_POOL.studio.slice(0, 4), available: true, status: 'available',
+    city: 'Bamako', country: 'ML', currency: 'FCFA',
+    agent_name: 'Fatoumata Traoré', agent_phone: '+223 76 00 00 04',
+  },
+  {
+    id: 'prop-bko-kalaban-01', title: 'Maison 3ch Kalaban-Coura', description: 'Maison familiale dans quartier vivant.', type: 'maison_villa_simple',
+    quartier: 'Kalaban-Coura', commune: 'Commune V', address: 'Kalaban-Coura',
+    price: 150000, bedrooms: 3, bathrooms: 1, surface_area: 100, furnished: false, has_water: true, has_fence: true,
+    location_type: 'quartier_only',
+    agent_pois: [
+      { label: 'Marché Kalaban', distance_text: '5 min', emoji: '🛒' },
+      { label: 'École fondamentale', distance_text: '3 min', emoji: '🏫' },
+      { label: 'Axe goudronné', distance_text: '2 min', emoji: '🛣️' },
+    ],
+    images: IMAGES_POOL.maison.slice(0, 4), available: true, status: 'available',
+    city: 'Bamako', country: 'ML', currency: 'FCFA',
+    agent_name: 'Seydou Sissoko', agent_phone: '+223 76 00 00 05',
+  },
+  {
+    id: 'prop-bko-magnambougou-01', title: 'Bureau 80m² Magnambougou', description: 'Bureau climatisé avec internet et gardien.', type: 'bureau',
+    quartier: 'Magnambougou', commune: 'Commune VI', address: 'Magnambougou',
+    price: 300000, surface_area: 80, has_ac: true, has_internet: true, has_guardian: true,
+    latitude: 12.6005, longitude: -7.9415, location_type: 'precise', display_radius: 400, display_lat: 12.6020, display_lng: -7.9400,
+    images: IMAGES_POOL.bureau.slice(0, 4), available: true, status: 'available',
+    city: 'Bamako', country: 'ML', currency: 'FCFA',
+    agent_name: 'Boubacar Maïga', agent_phone: '+223 76 00 00 06',
+  },
+];
+
+// Suppress unused warning for findCommune (reserved for future use)
+void findCommune;
 
 // ─── MOCK POIs ───────────────────────────────────────────────────────────────
 export const mockPois: POI[] = [
