@@ -356,7 +356,8 @@ const InteractiveMap = ({
     propertyLayer.current.clearLayers();
 
     const allQProps = properties.filter(p => p.quartier === selectedQuartier);
-    const qProps = allQProps;
+    // Pour les pins individuels, on ne garde que les biens "precise" (avec coordonnées affichables)
+    const qProps = allQProps.filter(p => p.location_type !== 'quartier_only' && getDisplayCoords(p));
     const map = mapInst.current;
 
     // Get quartier bounds from mockQuartiers
