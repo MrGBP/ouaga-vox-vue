@@ -35,8 +35,8 @@ interface Property {
   price: number;
   quartier: string;
   address?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   bedrooms?: number;
   bathrooms?: number;
   surface_area?: number;
@@ -97,6 +97,7 @@ interface Quartier {
   latitude: number;
   longitude: number;
 }
+
 
 const FAVORITES_KEY = 'sapsap_favorites';
 const FILTERS_KEY = 'sapsap_filters_v1';

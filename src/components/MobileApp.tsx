@@ -33,8 +33,8 @@ interface Property {
   price: number;
   quartier: string;
   address?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   bedrooms?: number;
   bathrooms?: number;
   surface_area?: number;

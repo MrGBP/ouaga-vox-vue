@@ -1,5 +1,11 @@
 // SapSapHouse — 100 biens de démonstration, 16 quartiers, POI catalog
 
+export interface AgentPOI {
+  label: string;
+  distance_text: string;
+  emoji: string;
+}
+
 export interface Property {
   id: string;
   title: string;
@@ -8,8 +14,18 @@ export interface Property {
   price: number;
   quartier: string;
   address: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  /** Mode de localisation : 'precise' (lat/lng réels) ou 'quartier_only' (zone uniquement) */
+  location_type?: 'precise' | 'quartier_only';
+  /** Rayon du cercle d'approximation (mètres) */
+  display_radius?: number;
+  /** Latitude affichée publiquement (décalée de la vraie position) */
+  display_lat?: number;
+  /** Longitude affichée publiquement (décalée de la vraie position) */
+  display_lng?: number;
+  /** POI saisis manuellement par l'agent (mode quartier_only) */
+  agent_pois?: AgentPOI[];
   bedrooms?: number;
   bathrooms?: number;
   surface_area?: number;
@@ -339,6 +355,10 @@ function generateProperties(): Property[] {
     const hasVideo = i % 4 === 0;
     const has360 = i % 3 === 0;
 
+    // Décalage pour display_lat / display_lng (+/- 0.002 à 0.004)
+    const dLat = (Math.random() * 0.004 - 0.002);
+    const dLng = (Math.random() * 0.004 - 0.002);
+
     props.push({
       id: `p${i + 1}`,
       title: `${titlePart}${suffix} ${quartierName}`,
@@ -349,6 +369,10 @@ function generateProperties(): Property[] {
       address: `Secteur ${randInt(1, 50)}, ${quartierName}`,
       latitude: lat,
       longitude: lng,
+      location_type: 'precise',
+      display_radius: 400,
+      display_lat: +(lat + dLat).toFixed(6),
+      display_lng: +(lng + dLng).toFixed(6),
       bedrooms,
       bathrooms,
       surface_area: surface,
@@ -392,6 +416,51 @@ function generateProperties(): Property[] {
       created_at: createdAt,
     });
   }
+
+  // Marquer ~20% des biens (les derniers de chaque quartier) en mode quartier_only
+  const AGENT_POIS_PRESETS: AgentPOI[][] = [
+    [
+      { label: 'Marché central', distance_text: '5 min à pied', emoji: '🛒' },
+      { label: 'École primaire', distance_text: '3 min à pied', emoji: '🏫' },
+      { label: 'CSPS', distance_text: '10 min à moto', emoji: '🏥' },
+      { label: 'Axe goudronné', distance_text: 'À 2 min', emoji: '🛣️' },
+    ],
+    [
+      { label: 'Mosquée du quartier', distance_text: '4 min à pied', emoji: '🕌' },
+      { label: 'Boutique de quartier', distance_text: '2 min à pied', emoji: '🏪' },
+      { label: 'Station Total', distance_text: '6 min à moto', emoji: '⛽' },
+      { label: 'Arrêt SOTRACO', distance_text: '5 min à pied', emoji: '🚏' },
+    ],
+    [
+      { label: 'Pharmacie', distance_text: '5 min à pied', emoji: '💊' },
+      { label: 'Lycée', distance_text: '8 min à moto', emoji: '🏫' },
+      { label: 'Banque', distance_text: '10 min à moto', emoji: '🏦' },
+      { label: 'Restaurant / maquis', distance_text: '3 min à pied', emoji: '🍽️' },
+    ],
+  ];
+
+  const byQuartier = new Map<string, Property[]>();
+  props.forEach(p => {
+    const arr = byQuartier.get(p.quartier) || [];
+    arr.push(p);
+    byQuartier.set(p.quartier, arr);
+  });
+
+  let presetIdx = 0;
+  byQuartier.forEach((list) => {
+    const approxCount = Math.max(1, Math.floor(list.length * 0.2));
+    const toApprox = list.slice(-approxCount);
+    toApprox.forEach(p => {
+      p.location_type = 'quartier_only';
+      p.display_radius = 0;
+      p.latitude = undefined;
+      p.longitude = undefined;
+      p.display_lat = undefined;
+      p.display_lng = undefined;
+      p.agent_pois = AGENT_POIS_PRESETS[presetIdx % AGENT_POIS_PRESETS.length];
+      presetIdx++;
+    });
+  });
 
   return props;
 }

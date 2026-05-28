@@ -40,8 +40,13 @@ interface Property {
   price: number;
   quartier: string;
   address?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  location_type?: 'precise' | 'quartier_only';
+  display_radius?: number;
+  display_lat?: number;
+  display_lng?: number;
+  agent_pois?: { label: string; distance_text: string; emoji: string }[];
   bedrooms?: number;
   bathrooms?: number;
   surface_area?: number;
@@ -429,35 +434,94 @@ const PropertyDetailPanel = ({
           </div>
         )}
 
-        {/* Localisation — clickable map block */}
-        {onExploreOnMap && (
+        {/* Localisation — adapté au mode (precise vs quartier_only) */}
+        {property.location_type === 'quartier_only' ? (
           <div>
-            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Localisation</h4>
-            <button
-              onClick={() => onExploreOnMap(property.id)}
-              className="w-full relative h-32 rounded-xl overflow-hidden border border-border bg-muted active:scale-[0.99] transition-transform group"
-              aria-label="Voir sur la carte"
-            >
-              <img
-                src={`https://staticmap.openstreetmap.de/staticmap.php?center=${property.latitude},${property.longitude}&zoom=15&size=600x256&markers=${property.latitude},${property.longitude},red-pushpin`}
-                alt="Carte"
-                className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 via-transparent to-transparent" />
-              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 bg-card/95 backdrop-blur-sm rounded-full px-2.5 py-1 shadow">
-                  <MapPin className="h-3 w-3 text-secondary" />
-                  <span className="text-[11px] font-semibold text-foreground truncate max-w-[160px]">
-                    {property.address || property.quartier}
-                  </span>
-                </div>
-                <span className="text-[10px] font-bold text-card bg-secondary px-2 py-1 rounded-full shadow">
-                  Voir la carte →
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <MapPin className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                Quartier & alentours
+              </span>
+            </div>
+
+            {/* Badge quartier */}
+            <div className="flex items-center gap-2 mb-3 p-2.5 bg-primary/5 rounded-xl border border-primary/10">
+              <span className="text-lg">📍</span>
+              <div>
+                <div className="text-[13px] font-semibold text-foreground">{property.quartier}</div>
+                <div className="text-[10px] text-muted-foreground">Ouagadougou, Burkina Faso</div>
+              </div>
+              <div className="ml-auto">
+                <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 font-medium">
+                  Zone approx.
                 </span>
               </div>
-            </button>
+            </div>
+
+            {/* POI manuels de l'agent */}
+            {property.agent_pois && property.agent_pois.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                  Points d'intérêt à proximité
+                </div>
+                {property.agent_pois.map((poi, i) => (
+                  <div key={i} className="flex items-center gap-2.5 py-1.5 border-b border-border last:border-0">
+                    <span className="text-base w-6 text-center flex-shrink-0">{poi.emoji}</span>
+                    <span className="text-[13px] text-foreground flex-1">{poi.label}</span>
+                    <span className="text-[11px] text-muted-foreground bg-muted rounded-full px-2 py-0.5 flex-shrink-0">
+                      {poi.distance_text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Mention adresse après réservation */}
+            <div className="mt-3 flex items-start gap-2 p-2.5 bg-muted/50 rounded-lg">
+              <span className="text-sm flex-shrink-0">🔐</span>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                L'adresse exacte et les instructions d'accès vous seront communiquées par email après confirmation de votre réservation.
+              </p>
+            </div>
           </div>
+        ) : (
+          onExploreOnMap && (property.display_lat ?? property.latitude) != null && (
+            <div>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Localisation</h4>
+              <button
+                onClick={() => onExploreOnMap(property.id)}
+                className="w-full relative h-32 rounded-xl overflow-hidden border border-border bg-muted active:scale-[0.99] transition-transform group"
+                aria-label="Voir sur la carte"
+              >
+                <img
+                  src={`https://staticmap.openstreetmap.de/staticmap.php?center=${property.display_lat ?? property.latitude},${property.display_lng ?? property.longitude}&zoom=15&size=600x256&markers=${property.display_lat ?? property.latitude},${property.display_lng ?? property.longitude},red-pushpin`}
+                  alt="Carte"
+                  className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 via-transparent to-transparent" />
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 bg-card/95 backdrop-blur-sm rounded-full px-2.5 py-1 shadow">
+                    <MapPin className="h-3 w-3 text-secondary" />
+                    <span className="text-[11px] font-semibold text-foreground truncate max-w-[160px]">
+                      {property.quartier}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-card bg-secondary px-2 py-1 rounded-full shadow">
+                    Voir la carte →
+                  </span>
+                </div>
+              </button>
+              <div className="flex items-center gap-1.5 mt-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span className="text-[10px] text-muted-foreground">
+                  Localisation approximative · Adresse exacte communiquée après réservation
+                </span>
+              </div>
+            </div>
+          )
         )}
 
         {/* POI — categorized chips + walking/driving time */}

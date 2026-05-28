@@ -24,6 +24,7 @@ interface Property {
   virtual_tour_url?: string;
   furnished?: boolean;
   created_at?: string;
+  location_type?: 'precise' | 'quartier_only';
 }
 
 interface PropertyCardProps {
@@ -75,6 +76,16 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
             </Badge>
           )}
         </div>
+
+        {/* Badge Zone approx. (mode quartier_only) */}
+        {property.location_type === 'quartier_only' && (
+          <div className="absolute bottom-3 left-3 z-10">
+            <span className="text-[10px] bg-card/95 text-amber-700 rounded-full px-2 py-0.5 font-medium border border-amber-200 shadow-sm">
+              Zone approx.
+            </span>
+          </div>
+        )}
+
 
         {/* Heart */}
         <div className="absolute top-3 right-3">

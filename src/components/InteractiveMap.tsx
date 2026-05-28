@@ -8,8 +8,13 @@ interface Property {
   id: string;
   title: string;
   description?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  location_type?: 'precise' | 'quartier_only';
+  display_radius?: number;
+  display_lat?: number;
+  display_lng?: number;
+  agent_pois?: { label: string; distance_text: string; emoji: string }[];
   price: number;
   type: string;
   quartier: string;
@@ -166,25 +171,33 @@ const propertyPinHTML = (p: Property, focused: boolean, isFav?: boolean) => {
   `;
 };
 
+// Coordonnées à afficher publiquement : display_lat/lng pour precise, sinon vraies coords (legacy)
+const getDisplayCoords = (p: Property): [number, number] | null => {
+  if (p.display_lat != null && p.display_lng != null) return [p.display_lat, p.display_lng];
+  if (p.latitude != null && p.longitude != null) return [p.latitude, p.longitude];
+  return null;
+};
+
 const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng: number }[] => {
   const placed: { lat: number; lng: number }[] = [];
   const MIN_GAP = 0.0008;
   return props.map(p => {
-    let lat = p.latitude;
-    let lng = p.longitude;
+    const coords = getDisplayCoords(p);
+    if (!coords) return null;
+    let [lat, lng] = coords;
     let attempts = 0;
     while (attempts < 20) {
       const overlap = placed.some(pl => Math.abs(pl.lat - lat) < MIN_GAP && Math.abs(pl.lng - lng) < MIN_GAP);
       if (!overlap) break;
       const angle = (attempts * 137.5 * Math.PI) / 180;
       const r = MIN_GAP * (1 + attempts * 0.3);
-      lat = p.latitude + r * Math.cos(angle);
-      lng = p.longitude + r * Math.sin(angle);
+      lat = coords[0] + r * Math.cos(angle);
+      lng = coords[1] + r * Math.sin(angle);
       attempts++;
     }
     placed.push({ lat, lng });
     return { prop: p, lat, lng };
-  });
+  }).filter(Boolean) as { prop: Property; lat: number; lng: number }[];
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -343,7 +356,8 @@ const InteractiveMap = ({
     propertyLayer.current.clearLayers();
 
     const allQProps = properties.filter(p => p.quartier === selectedQuartier);
-    const qProps = allQProps;
+    // Pour les pins individuels, on ne garde que les biens "precise" (avec coordonnées affichables)
+    const qProps = allQProps.filter(p => p.location_type !== 'quartier_only' && getDisplayCoords(p));
     const map = mapInst.current;
 
     // Get quartier bounds from mockQuartiers
@@ -385,29 +399,32 @@ const InteractiveMap = ({
 
     if (qProps.length > 12) {
       const gridSize = 0.003;
-      const subClusters = new Map<string, Property[]>();
+      const subClusters = new Map<string, { prop: Property; lat: number; lng: number }[]>();
       qProps.forEach(p => {
-        const key = `${Math.floor(p.latitude / gridSize)}_${Math.floor(p.longitude / gridSize)}`;
+        const coords = getDisplayCoords(p);
+        if (!coords) return;
+        const [lat, lng] = coords;
+        const key = `${Math.floor(lat / gridSize)}_${Math.floor(lng / gridSize)}`;
         const arr = subClusters.get(key) || [];
-        arr.push(p);
+        arr.push({ prop: p, lat, lng });
         subClusters.set(key, arr);
       });
 
       subClusters.forEach((cluster) => {
         if (cluster.length === 1) {
-          const p = cluster[0];
+          const { prop: p, lat, lng } = cluster[0];
           const icon = L.divIcon({ html: propertyPinHTML(p, false, favoriteIds?.has(p.id)), className: '', iconSize: [110, 28], iconAnchor: [55, 14] });
-          const m = L.marker([p.latitude, p.longitude], { icon });
+          const m = L.marker([lat, lng], { icon });
           m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
           propertyLayer.current!.addLayer(m);
         } else {
-          const avgLat = cluster.reduce((s, p) => s + p.latitude, 0) / cluster.length;
-          const avgLng = cluster.reduce((s, p) => s + p.longitude, 0) / cluster.length;
+          const avgLat = cluster.reduce((s, c) => s + c.lat, 0) / cluster.length;
+          const avgLng = cluster.reduce((s, c) => s + c.lng, 0) / cluster.length;
           const icon = L.divIcon({ html: quartierClusterHTML(`${cluster.length} biens`, cluster.length), className: '', iconSize: [60, 60], iconAnchor: [30, 30] });
           const m = L.marker([avgLat, avgLng], { icon });
           m.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
-            const cBounds = L.latLngBounds(cluster.map(p => L.latLng(p.latitude, p.longitude)));
+            const cBounds = L.latLngBounds(cluster.map(c => L.latLng(c.lat, c.lng)));
             mapInst.current?.flyToBounds(cBounds.pad(0.3), { duration: 0.5, maxZoom: 18 });
           });
           propertyLayer.current!.addLayer(m);
@@ -440,20 +457,85 @@ const InteractiveMap = ({
     if (!prop) return;
 
     const map = mapInst.current;
-    map.flyTo([prop.latitude, prop.longitude], 15, { duration: 0.8 });
+
+    // ── MODE B : quartier_only — pas de pin, on surligne le polygone du quartier ──
+    if (prop.location_type === 'quartier_only' || !getDisplayCoords(prop)) {
+      const allQuartiers = quartiers.length > 0 ? quartiers : mockQuartiers;
+      const qData = allQuartiers.find(q => q.name === prop.quartier);
+      if (qData?.bounds) {
+        const polyCoords: [number, number][] = [
+          [qData.bounds[0][0], qData.bounds[0][1]],
+          [qData.bounds[0][0], qData.bounds[1][1]],
+          [qData.bounds[1][0], qData.bounds[1][1]],
+          [qData.bounds[1][0], qData.bounds[0][1]],
+        ];
+        const polygon = L.polygon(polyCoords, {
+          color: '#1a3560',
+          fillColor: '#1a3560',
+          fillOpacity: 0.10,
+          weight: 2,
+          dashArray: '8 4',
+        });
+        focusLayer.current.addLayer(polygon);
+
+        const center = polygon.getBounds().getCenter();
+        const zoneLabel = L.tooltip({
+          permanent: true,
+          direction: 'center',
+          className: 'quartier-zone-label',
+        })
+          .setContent(`📍 Ce bien se trouve dans ${prop.quartier}`)
+          .setLatLng(center);
+        focusLayer.current.addLayer(zoneLabel as any);
+
+        map.flyToBounds(polygon.getBounds(), {
+          padding: [40, 40],
+          animate: true,
+          duration: 0.6,
+        });
+      }
+      return;
+    }
+
+    // ── MODE A : precise — pin sur display_lat/lng + cercle d'approximation ──
+    const [dispLat, dispLng] = getDisplayCoords(prop)!;
+    const displayRadius = prop.display_radius || 400;
+
+    map.flyTo([dispLat, dispLng], 15, { duration: 0.8 });
     setTimeout(() => {
       if (!mapInst.current) return;
       mapInst.current.invalidateSize({ animate: false });
-      // Offset pin upward so it's visible above the sheet (40% height)
       const offsetPx = window.innerHeight * 0.20;
       mapInst.current.panBy([0, offsetPx], { animate: true, duration: 0.4 });
     }, 900);
 
+    // Cercle pointillé d'approximation autour du bien
+    const approxCircle = L.circle([dispLat, dispLng], {
+      radius: displayRadius,
+      color: '#1a3560',
+      fillColor: '#1a3560',
+      fillOpacity: 0.08,
+      weight: 1.5,
+      dashArray: '6 4',
+    });
+    focusLayer.current.addLayer(approxCircle);
+
     // Focused pin
     const focusIcon = L.divIcon({ html: propertyPinHTML(prop, true, favoriteIds?.has(prop.id)), className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
-    L.marker([prop.latitude, prop.longitude], { icon: focusIcon, zIndexOffset: 1000 }).addTo(focusLayer.current);
+    L.marker([dispLat, dispLng], { icon: focusIcon, zIndexOffset: 1000 }).addTo(focusLayer.current);
 
-    // Radius circles
+    // Label "Localisation approximative" sous le pin
+    const approxLabel = L.tooltip({
+      permanent: true,
+      direction: 'bottom',
+      offset: [0, 14],
+      className: 'location-approx-label',
+    })
+      .setContent('📍 Localisation approximative')
+      .setLatLng([dispLat, dispLng]);
+    focusLayer.current.addLayer(approxLabel as any);
+
+    // Radius circles (POI exploration)
     const radiusConfig = [
       { r: 300, fillOpacity: 0.15, dash: '', weight: 2, color: 'rgba(30,80,160,1)' },
       { r: 500, fillOpacity: 0.10, dash: '6 4', weight: 1.5, color: 'rgba(30,80,160,0.8)' },
@@ -461,7 +543,7 @@ const InteractiveMap = ({
     ];
     radiusConfig.forEach(({ r, fillOpacity, dash, weight, color }) => {
       const isActive = activeRadius === r;
-      const circle = L.circle([prop.latitude, prop.longitude], {
+      const circle = L.circle([dispLat, dispLng], {
         radius: r, color, fillColor: 'rgba(30,80,160,0.1)', fillOpacity,
         weight: isActive ? weight + 2 : weight, dashArray: dash, interactive: true,
       });
@@ -469,8 +551,8 @@ const InteractiveMap = ({
       circle.addTo(focusLayer.current!);
 
       const labelAngle = -45 * (Math.PI / 180);
-      const labelLat = prop.latitude + (r / 111320) * Math.cos(labelAngle);
-      const labelLng = prop.longitude + (r / (111320 * Math.cos(prop.latitude * Math.PI / 180))) * Math.sin(labelAngle);
+      const labelLat = dispLat + (r / 111320) * Math.cos(labelAngle);
+      const labelLng = dispLng + (r / (111320 * Math.cos(dispLat * Math.PI / 180))) * Math.sin(labelAngle);
       L.marker([labelLat, labelLng], {
         icon: L.divIcon({
           html: `<div style="font-size:9px;color:rgba(30,80,160,0.8);font-weight:600;font-family:system-ui;background:rgba(255,255,255,0.9);padding:1px 6px;border-radius:8px;white-space:nowrap;cursor:pointer;${isActive ? 'border:1.5px solid rgba(30,80,160,0.6);' : ''}">${fmtDist(r)}</div>`,
@@ -480,10 +562,10 @@ const InteractiveMap = ({
       }).on('click', (e) => { L.DomEvent.stopPropagation(e); setActiveRadius(prev => prev === r ? null : r); }).addTo(focusLayer.current!);
     });
 
-    // POI
+    // POI calculés autour des coordonnées affichées
     const maxDist = activeRadius || 1000;
     const allPoisInRange = pois
-      .map(poi => ({ ...poi, distance: distanceM(prop.latitude, prop.longitude, poi.latitude, poi.longitude) }))
+      .map(poi => ({ ...poi, distance: distanceM(dispLat, dispLng, poi.latitude, poi.longitude) }))
       .filter(p => p.distance <= maxDist)
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 25);
@@ -496,10 +578,10 @@ const InteractiveMap = ({
       const closest = groupPois[0];
       const count = groupPois.length;
 
-      L.polyline([[prop.latitude, prop.longitude], [closest.latitude, closest.longitude]], { color: info.color, weight: 1.2, opacity: 0.4, dashArray: '5 4', interactive: false }).addTo(tentacleLayer.current!);
+      L.polyline([[dispLat, dispLng], [closest.latitude, closest.longitude]], { color: info.color, weight: 1.2, opacity: 0.4, dashArray: '5 4', interactive: false }).addTo(tentacleLayer.current!);
 
-      const midLat = (prop.latitude + closest.latitude) / 2;
-      const midLng = (prop.longitude + closest.longitude) / 2;
+      const midLat = (dispLat + closest.latitude) / 2;
+      const midLng = (dispLng + closest.longitude) / 2;
       const labelText = count > 1 ? `${info.label} (${count}) · ${fmtDist(closest.distance)}` : `${info.label} · ${fmtDist(closest.distance)}`;
 
       L.marker([midLat, midLng], {
@@ -525,7 +607,7 @@ const InteractiveMap = ({
         zIndexOffset: 500,
       }).bindTooltip(`<strong style="color:${info.color}">${info.label}</strong><br/><span style="font-size:11px;color:#666">${poi.name} · ${fmtDist(poi.distance)}</span>`, { direction: 'top' }).addTo(tentacleLayer.current!);
     });
-  }, [focusedPropertyId, properties, pois, panelOpen, activeRadius]);
+  }, [focusedPropertyId, properties, pois, panelOpen, activeRadius, quartiers]);
 
   // Invalidate on panel change
   useEffect(() => {
@@ -556,15 +638,18 @@ const InteractiveMap = ({
 
     let hoverCircles: L.Circle[] = [];
     favProps.forEach(p => {
+      const coords = getDisplayCoords(p);
+      if (!coords) return;
+      const [fLat, fLng] = coords;
       const icon = L.divIcon({
         html: `<div style="background:rgba(26,53,96,0.25);border:1.5px solid rgba(26,53,96,0.6);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;backdrop-filter:blur(2px);cursor:pointer;transition:all 200ms;">❤️</div>`,
         className: '', iconSize: [26, 26], iconAnchor: [13, 13],
       });
-      const marker = L.marker([p.latitude, p.longitude], { icon, zIndexOffset: 400 });
+      const marker = L.marker([fLat, fLng], { icon, zIndexOffset: 400 });
       marker.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(p.id); });
       marker.on('mouseover', () => {
         [300, 500, 1000].forEach(r => {
-          const c = L.circle([p.latitude, p.longitude], {
+          const c = L.circle([fLat, fLng], {
             radius: r, color: 'rgba(30,80,160,0.6)', fillColor: 'rgba(30,80,160,0.08)',
             fillOpacity: 0.1, weight: 1, dashArray: '4 3', interactive: false,
           }).addTo(favoriteLayer.current!);
