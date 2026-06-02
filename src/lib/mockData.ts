@@ -1,5 +1,5 @@
 // SapSapHouse — 100 biens de démonstration, 16 quartiers, POI catalog
-import { findArrondissement, findCommune, getSecteurCenter, findArrondissementForSecteur } from '@/lib/geoConfig';
+import { findArrondissement, findCommune, getSecteurCenter, findArrondissementForSecteur, ACCRA_DISTRICTS } from '@/lib/geoConfig';
 
 export interface AgentPOI {
   label: string;
@@ -83,6 +83,8 @@ export interface Property {
   arrondissement?: number;
   /** Commune (Bamako) */
   commune?: string;
+  /** District (Accra) */
+  district?: string;
 }
 
 export interface POI {
