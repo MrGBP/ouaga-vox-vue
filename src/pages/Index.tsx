@@ -113,7 +113,13 @@ const Index = () => {
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<FilterState>(() => {
+    try {
+      const raw = localStorage.getItem(FILTERS_KEY);
+      if (raw) return { ...DEFAULT_FILTERS, ...JSON.parse(raw) };
+    } catch { /* noop */ }
+    return DEFAULT_FILTERS;
+  });
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailProperty, setDetailProperty] = useState<Property | null>(null);
