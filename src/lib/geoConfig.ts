@@ -44,11 +44,26 @@ export const CITIES: Record<string, CityConfig> = {
     phone_prefix: '+223',
     price_unit: 'FCFA',
   },
+  accra: {
+    id: 'accra',
+    name: 'Accra',
+    country: 'GH',
+    countryName: 'Ghana',
+    flag: '🇬🇭',
+    currency: 'GHS',
+    language: 'en',
+    center: [5.6037, -0.1870],
+    zoom: 12,
+    bounds: [[5.50, -0.35], [5.75, -0.05]],
+    phone_prefix: '+233',
+    price_unit: '₵',
+  },
 };
 
 export const COUNTRY_TO_CITY: Record<string, string> = {
   BF: 'ouagadougou',
   ML: 'bamako',
+  GH: 'accra',
 };
 
 export const DEFAULT_CITY = 'ouagadougou';
@@ -167,6 +182,26 @@ export function findCommune(quartier: string): string | undefined {
     if (c.quartiers.includes(quartier)) return c.nom;
   }
   return undefined;
+}
+
+// ─── Districts of Accra (Ghana) ────────────────────────────────────────────
+export const ACCRA_DISTRICTS = {
+  osu: { nom: 'Osu', center: [5.5556, -0.1769] as [number, number] },
+  east_legon: { nom: 'East Legon', center: [5.6325, -0.1551] as [number, number] },
+  cantonments: { nom: 'Cantonments', center: [5.5728, -0.1747] as [number, number] },
+  airport: { nom: 'Airport Residential', center: [5.6052, -0.1719] as [number, number] },
+  labone: { nom: 'Labone', center: [5.5680, -0.1693] as [number, number] },
+  dansoman: { nom: 'Dansoman', center: [5.5400, -0.2520] as [number, number] },
+  tema: { nom: 'Tema', center: [5.6700, 0.0166] as [number, number] },
+  madina: { nom: 'Madina', center: [5.6840, -0.1660] as [number, number] },
+  adenta: { nom: 'Adenta', center: [5.7080, -0.1610] as [number, number] },
+  achimota: { nom: 'Achimota', center: [5.6210, -0.2330] as [number, number] },
+};
+
+/** Returns the Accra district name for a given quartier */
+export function findAccraDistrict(quartier: string): string | undefined {
+  const match = Object.values(ACCRA_DISTRICTS).find(d => d.nom === quartier);
+  return match?.nom;
 }
 
 // ─── 55 secteurs urbains de Ouagadougou (répartition par arrondissement) ───
