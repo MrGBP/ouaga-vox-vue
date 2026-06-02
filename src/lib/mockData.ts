@@ -243,6 +243,37 @@ for (let s = 1; s <= 55; s++) {
 // Ajout sans casser les références existantes
 mockQuartiers.push(...ouagaSecteursQuartiers);
 
+// ─── 10 districts of Accra (Ghana) ─────────────────────────────────────────
+const ACCRA_DISTRICT_IMAGES = [
+  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&auto=format',
+  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&auto=format',
+  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&auto=format',
+  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format',
+];
+const ACCRA_DISTRICT_DESCRIPTIONS: Record<string, string> = {
+  'Osu': 'Vibrant nightlife and dining hub on the Atlantic coast',
+  'East Legon': 'Upscale residential area, embassies and luxury villas',
+  'Cantonments': 'Quiet, leafy diplomatic neighbourhood',
+  'Airport Residential': 'Prime business and residential district near Kotoka Airport',
+  'Labone': 'Modern residential area popular with expats',
+  'Dansoman': 'Densely populated, lively coastal suburb',
+  'Tema': 'Coastal industrial city east of Accra',
+  'Madina': 'Bustling market town with a young, mixed community',
+  'Adenta': 'Fast-growing residential suburb north of Accra',
+  'Achimota': 'Green residential area with the famous Achimota Forest',
+};
+Object.values(ACCRA_DISTRICTS).forEach((d, i) => {
+  mockQuartiers.push({
+    id: `accra-${d.nom.toLowerCase().replace(/\s+/g, '-')}`,
+    name: d.nom,
+    description: ACCRA_DISTRICT_DESCRIPTIONS[d.nom] || `${d.nom} — Accra, Ghana`,
+    latitude: d.center[0],
+    longitude: d.center[1],
+    bounds: [[d.center[0] - 0.012, d.center[1] - 0.012], [d.center[0] + 0.012, d.center[1] + 0.012]],
+    image_url: ACCRA_DISTRICT_IMAGES[i % ACCRA_DISTRICT_IMAGES.length],
+  });
+});
+
 // ─── Agents ──────────────────────────────────────────────────────────────────
 const AGENTS = [
   { name: 'Ibrahim Ouédraogo', phone: '+226 70 12 34 56', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format' },
