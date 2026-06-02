@@ -19,12 +19,10 @@ import { computeFilterOptions } from '@/lib/filterOptions';
 import PropertyCard from '@/components/PropertyCard';
 import InteractiveMap from '@/components/InteractiveMap';
 import VirtualTourModal from '@/components/VirtualTourModal';
-import AIComparator from '@/components/AIComparator';
-import AIProfileSection from '@/components/AIProfileSection';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
-import { Loader2, MapPin, Home, Sparkles, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search } from 'lucide-react';
+import { Loader2, MapPin, Home, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
@@ -707,14 +705,12 @@ const Index = () => {
                 <div className="p-3">
                   <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
                   <p className="text-xs text-muted-foreground">{p.quartier}</p>
-                  {dp.nightPrice ? (
-                    <>
-                      <p className="text-sm font-bold text-primary mt-1">{dp.nightPrice} FCFA <span className="text-xs font-normal text-muted-foreground">/nuit</span></p>
-                      <p className="text-xs text-muted-foreground">soit {dp.price} FCFA /mois</p>
-                    </>
-                  ) : (
-                    <p className="text-sm font-bold text-primary mt-1">{dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">/mois</span></p>
-                  )}
+                  <p className="text-sm font-bold text-primary mt-1">
+                    {dp.nightPrice || dp.price} {p.currency || 'FCFA'}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {' '}{dp.nightPrice ? '/nuit' : '/mois'}
+                    </span>
+                  </p>
                 </div>
               </motion.button>
             );
@@ -815,16 +811,6 @@ const Index = () => {
       <TestimonialsSection />
       <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
 
-      <section id="ia" className="container mx-auto px-4 pb-16">
-        <div className="flex items-center gap-2 mb-6">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="text-2xl font-bold text-foreground">SapSap AI Engine</h2>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <AIComparator favorites={favoriteProperties} priorities={[]} />
-          <AIProfileSection properties={properties} onHighlightProperty={handleFocusOnMap} />
-        </div>
-      </section>
 
       <Footer />
       <VirtualTourModal property={selectedProperty} open={modalOpen} onOpenChange={setModalOpen} pois={pois} />
