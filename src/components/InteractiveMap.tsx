@@ -448,7 +448,8 @@ const InteractiveMap = ({
         const isFurnished = isTypeFurnished(prop.type) || prop.furnished;
         const displayPrice = isFurnished ? pricePerNight(prop.price) : prop.price;
         const suffix = isFurnished ? '/nuit' : '/mois';
-        m.bindTooltip(`<div style="font-family:system-ui;"><span style="font-size:11px;font-weight:700;color:#1a3560;">${new Intl.NumberFormat('fr-FR').format(displayPrice)} FCFA${suffix}</span></div>`, { direction: 'top', offset: [0, -8] });
+        const cur = (prop as any).currency || 'FCFA';
+        m.bindTooltip(`<div style="font-family:system-ui;"><span style="font-size:11px;font-weight:700;color:#1a3560;">${new Intl.NumberFormat('fr-FR').format(displayPrice)} ${cur}${suffix}</span></div>`, { direction: 'top', offset: [0, -8] });
         m.on('click', (e) => { L.DomEvent.stopPropagation(e); onPropertyClickRef.current?.(prop.id); });
         propertyLayer.current!.addLayer(m);
       });
