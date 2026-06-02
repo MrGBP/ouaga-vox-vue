@@ -131,6 +131,11 @@ export default function AdminModeration() {
                 </div>
                 <p className="text-[11px] text-muted-foreground truncate">{row.type} • {row.quartier} • {row.address}</p>
                 <p className="text-[11px] font-semibold text-primary mt-0.5">{Number(row.price).toLocaleString('fr-FR')} F</p>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+                  <span>Proprio : {fmtDateTime(row.owner_updated_at) ?? fmtDateTime(row.created_at)}</span>
+                  {row.reviewed_at && <span>Admin : {fmtDateTime(row.reviewed_at)}</span>}
+                  {row.published_at && <span className="text-green-700">Publié : {fmtDateTime(row.published_at)}</span>}
+                </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <button onClick={() => setSelected(row)}
