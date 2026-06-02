@@ -54,8 +54,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
   useEffect(() => {
     if (!open) return;
+    // Reset médias en attente à chaque ouverture
+    setPendingMedia(prev => { prev.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl)); return []; });
+    setPendingUrl(''); setPendingKind('image'); setExistingMediaCount(0);
+
     if (initial) {
-      // Charger les détails complets depuis Supabase pour edit
       (async () => {
         const { data } = await supabase.from('properties').select('*').eq('id', initial.id).single();
         if (data) {
@@ -71,6 +74,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           setCustomFeatures(Array.isArray(f.__custom) ? (f.__custom as string[]) : []);
           setSavedId(initial.id);
         }
+        const media = await listPropertyMedia(initial.id).catch(() => []);
+        setExistingMediaCount(media?.length ?? 0);
       })();
     } else {
       setTitle(''); setDescription(''); setType(PROPERTY_TYPES[0].value);
@@ -83,6 +88,33 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     setActiveCat(FEATURE_CATEGORIES[0].id);
     setTimeout(() => titleRef.current?.focus(), 100);
   }, [open, initial]);
+
+  const addPendingFiles = (files: FileList | null) => {
+    if (!files?.length) return;
+    const next: PendingMedia[] = [];
+    Array.from(files).forEach(file => {
+      if (file.size > 20_000_000) { toast.error(`${file.name} dépasse 20 Mo`); return; }
+      const k: 'image' | 'video' = file.type.startsWith('video/') ? 'video' : 'image';
+      next.push({ kind: k, source: 'file', file, previewUrl: URL.createObjectURL(file) });
+    });
+    if (next.length) setPendingMedia(prev => [...prev, ...next]);
+  };
+
+  const addPendingUrl = () => {
+    const u = pendingUrl.trim();
+    if (!u) return;
+    if (!/^https?:\/\//i.test(u)) { toast.error('URL invalide (http/https requis)'); return; }
+    setPendingMedia(prev => [...prev, { kind: pendingKind, source: 'url', url: u }]);
+    setPendingUrl('');
+  };
+
+  const removePending = (idx: number) => {
+    setPendingMedia(prev => {
+      const item = prev[idx];
+      if (item?.source === 'file') URL.revokeObjectURL(item.previewUrl);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
 
   const featuresByCat = useMemo(() => {
     const map: Record<string, typeof FEATURE_CATALOG> = {};
