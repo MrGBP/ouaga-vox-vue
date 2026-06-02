@@ -632,7 +632,7 @@ const PropertyDetailPanel = ({
                 <Phone className="h-4 w-4" /> Contacter l'agent
               </Button>
             ) : (
-              <Button onClick={() => setShowReservation(true)} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
+              <Button onClick={openReservation} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
                 <Calendar className="h-4 w-4" /> Réserver
               </Button>
             )}
