@@ -106,18 +106,19 @@ const SearchPage = () => {
   };
 
   const handleApplyFilters = (f: FilterState) => {
-    // Persiste les filtres pour la page Résultats (même clé que partout)
-    try { localStorage.setItem('sapsap_filters_v1', JSON.stringify(f)); } catch {}
-    // Va vers la page dédiée /resultats (PAS la home avec hero)
+    setSavedFilters(f);
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify(f)); } catch {}
     setShowFilters(false);
     navigate(`/resultats?q=${encodeURIComponent(query.trim())}`);
   };
 
   const handleResetFilters = () => {
-    // Reset local — l'utilisateur reste sur la page de recherche
+    setSavedFilters(DEFAULT_FILTERS);
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify(DEFAULT_FILTERS)); } catch {}
     setShowFilters(false);
     setTimeout(() => setShowFilters(true), 50);
   };
+
 
   // Recherche unifiée : applique la requête NLP (smartFilter) ET les filtres
   // persistés afin que ce que l'utilisateur voit ici soit strictement le
