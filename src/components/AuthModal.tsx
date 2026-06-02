@@ -4,6 +4,7 @@ import { X, Building2, Mail, Lock, User as UserIcon, Phone, MessageCircle } from
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { track } from '@/lib/analytics';
 
 const WHATSAPP_NUMBER = '22657976660';
 
