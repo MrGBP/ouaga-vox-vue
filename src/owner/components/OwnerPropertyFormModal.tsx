@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { mockQuartiers, PROPERTY_TYPES } from '@/lib/mockData';
 import { FEATURE_CATALOG, FEATURE_CATEGORIES, type FeatureCategoryId } from '@/lib/featureCatalog';
 import { supabase } from '@/integrations/supabase/client';
 import MapPicker from '@/admin/components/MapPicker';
 import MediaUploader from '@/admin/components/MediaUploader';
+import { uploadPropertyMedia, addPropertyMediaUrl, listPropertyMedia } from '@/lib/propertiesService';
 import { Loader2 } from 'lucide-react';
 import type { OwnerPropertyRow } from '../lib/ownerService';
+
+type PendingMedia =
+  | { kind: 'image' | 'video'; source: 'file'; file: File; previewUrl: string }
+  | { kind: 'image' | 'video' | 'video_360'; source: 'url'; url: string };
 
 interface Props {
   open: boolean;
@@ -38,12 +43,22 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [activeCat, setActiveCat] = useState<FeatureCategoryId>(FEATURE_CATEGORIES[0].id);
   const [busy, setBusy] = useState(false);
 
+  // Médias en attente (création) + compteur médias existants (édition)
+  const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
+  const [pendingUrl, setPendingUrl] = useState('');
+  const [pendingKind, setPendingKind] = useState<'image' | 'video' | 'video_360'>('image');
+  const [existingMediaCount, setExistingMediaCount] = useState(0);
+  const pendingFileRef = useRef<HTMLInputElement>(null);
+
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    // Reset médias en attente à chaque ouverture
+    setPendingMedia(prev => { prev.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl)); return []; });
+    setPendingUrl(''); setPendingKind('image'); setExistingMediaCount(0);
+
     if (initial) {
-      // Charger les détails complets depuis Supabase pour edit
       (async () => {
         const { data } = await supabase.from('properties').select('*').eq('id', initial.id).single();
         if (data) {
@@ -59,6 +74,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           setCustomFeatures(Array.isArray(f.__custom) ? (f.__custom as string[]) : []);
           setSavedId(initial.id);
         }
+        const media = await listPropertyMedia(initial.id).catch(() => []);
+        setExistingMediaCount(media?.length ?? 0);
       })();
     } else {
       setTitle(''); setDescription(''); setType(PROPERTY_TYPES[0].value);
@@ -71,6 +88,33 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     setActiveCat(FEATURE_CATEGORIES[0].id);
     setTimeout(() => titleRef.current?.focus(), 100);
   }, [open, initial]);
+
+  const addPendingFiles = (files: FileList | null) => {
+    if (!files?.length) return;
+    const next: PendingMedia[] = [];
+    Array.from(files).forEach(file => {
+      if (file.size > 20_000_000) { toast.error(`${file.name} dépasse 20 Mo`); return; }
+      const k: 'image' | 'video' = file.type.startsWith('video/') ? 'video' : 'image';
+      next.push({ kind: k, source: 'file', file, previewUrl: URL.createObjectURL(file) });
+    });
+    if (next.length) setPendingMedia(prev => [...prev, ...next]);
+  };
+
+  const addPendingUrl = () => {
+    const u = pendingUrl.trim();
+    if (!u) return;
+    if (!/^https?:\/\//i.test(u)) { toast.error('URL invalide (http/https requis)'); return; }
+    setPendingMedia(prev => [...prev, { kind: pendingKind, source: 'url', url: u }]);
+    setPendingUrl('');
+  };
+
+  const removePending = (idx: number) => {
+    setPendingMedia(prev => {
+      const item = prev[idx];
+      if (item?.source === 'file') URL.revokeObjectURL(item.previewUrl);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
 
   const featuresByCat = useMemo(() => {
     const map: Record<string, typeof FEATURE_CATALOG> = {};
@@ -94,19 +138,25 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return toast.error('Le titre est requis');
+    if (description.trim().length < 20) return toast.error('La description est requise (20 caractères minimum)');
     if (!price || Number(price) <= 0) return toast.error('Le prix doit être supérieur à 0');
     if (!quartier) return toast.error('Quartier requis');
 
+    // Au moins 1 média : pending (création) ou existants (édition)
+    const totalMedia = pendingMedia.length + (isEdit ? existingMediaCount : 0);
+    if (totalMedia < 1) {
+      return toast.error('Ajoute au moins 1 média (photo, vidéo ou visite 360°)');
+    }
+
     setBusy(true);
     try {
-      // Construire le jsonb features (flags + custom)
       const featuresObj: Record<string, any> = {};
       features.forEach(k => { featuresObj[k] = true; });
       if (customFeatures.length) featuresObj.__custom = customFeatures;
 
       const payload = {
         title: title.trim(),
-        description: description.trim() || null,
+        description: description.trim(),
         type,
         price: Number(price),
         quartier,
@@ -121,27 +171,52 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         owner_id: ownerId,
       };
 
+      let propertyId: string;
+      let willRequireReview = false;
+
       if (isEdit && initial) {
-        // Si le propriétaire modifie un bien refusé/à corriger, on le repasse en 'pending' pour re-modération
-        const willRequireReview = ['rejected', 'corrections'].includes(initial.admin_status);
+        willRequireReview = ['rejected', 'corrections'].includes(initial.admin_status);
         const updatePayload: any = { ...payload };
         if (willRequireReview) updatePayload.admin_status = 'pending';
-
         const { error } = await supabase.from('properties').update(updatePayload).eq('id', initial.id);
         if (error) throw error;
-        toast.success(willRequireReview ? 'Bien renvoyé en validation' : 'Bien mis à jour');
-        setSavedId(initial.id);
+        propertyId = initial.id;
       } else {
-        // Création : toujours 'pending' (un propriétaire ne peut PAS publier directement)
         const { data, error } = await supabase
           .from('properties')
           .insert({ ...payload, admin_status: 'pending' as any, status: 'available' })
           .select('id')
           .single();
         if (error) throw error;
-        toast.success('Bien créé. En attente de validation.');
-        setSavedId(data.id);
+        propertyId = data.id;
       }
+
+      // Upload des médias en attente
+      if (pendingMedia.length) {
+        for (const m of pendingMedia) {
+          try {
+            if (m.source === 'file') {
+              await uploadPropertyMedia(propertyId, m.file, m.kind);
+            } else {
+              await addPropertyMediaUrl(propertyId, m.url, m.kind);
+            }
+          } catch (err: any) {
+            toast.error(`Média non uploadé : ${err?.message ?? 'erreur'}`);
+          }
+        }
+        // Nettoyer les previews
+        pendingMedia.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl));
+        setPendingMedia([]);
+        const fresh = await listPropertyMedia(propertyId).catch(() => []);
+        setExistingMediaCount(fresh?.length ?? 0);
+      }
+
+      setSavedId(propertyId);
+      toast.success(
+        isEdit
+          ? (willRequireReview ? 'Bien renvoyé en validation' : 'Bien mis à jour')
+          : 'Bien créé. En attente de validation.'
+      );
     } catch (e: any) {
       toast.error(e?.message ?? 'Erreur');
     } finally { setBusy(false); }
@@ -168,8 +243,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             <input ref={titleRef} value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder="Villa moderne à Tampouy" />
           </Field>
 
-          <Field label="Description">
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="form-input resize-none" placeholder="Décris ton bien…" />
+          <Field label="Description *">
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={3}
+              minLength={20}
+              required
+              className="form-input resize-none"
+              placeholder="Décris ton bien (min. 20 caractères)…"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">{description.trim().length} / 20 caractères minimum</p>
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
@@ -272,15 +356,106 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             )}
           </div>
 
-          {/* Médias — uniquement après que le bien a un id */}
+          {/* Médias — toujours disponibles, requis avant validation */}
           <div className="space-y-2 border-t pt-4">
-            <label className="text-xs font-semibold text-foreground">Médias (photos, vidéos, visite 360°)</label>
-            {savedId ? (
-              <MediaUploader propertyId={savedId} />
-            ) : (
-              <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-center text-xs text-muted-foreground">
-                Enregistre d'abord le bien pour pouvoir ajouter des photos/vidéos/visites 360°.
-              </div>
+            <label className="text-xs font-semibold text-foreground">
+              Médias * (photos, vidéos, visite 360°) — au moins 1 requis
+            </label>
+
+            {/* Médias déjà uploadés (édition) */}
+            {savedId && <MediaUploader propertyId={savedId} />}
+
+            {/* Staging : pré-upload avant la création */}
+            {!savedId && (
+              <>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => pendingFileRef.current?.click()}
+                    className="flex-1 h-10 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 text-xs hover:bg-muted"
+                  >
+                    <Upload size={14} /> Choisir photos / vidéos (multi)
+                  </button>
+                  <input
+                    ref={pendingFileRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    hidden
+                    onChange={e => { addPendingFiles(e.target.files); if (pendingFileRef.current) pendingFileRef.current.value = ''; }}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <select
+                    value={pendingKind}
+                    onChange={e => setPendingKind(e.target.value as any)}
+                    className="rounded-lg border border-border bg-background px-2 text-xs"
+                  >
+                    <option value="image">Image</option>
+                    <option value="video">Vidéo</option>
+                    <option value="video_360">Visite 360°</option>
+                  </select>
+                  <div className="relative flex-1">
+                    <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={pendingUrl}
+                      onChange={e => setPendingUrl(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingUrl(); } }}
+                      placeholder="https://… (Matterport, Kuula, YouTube, image…)"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-9 text-xs"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addPendingUrl}
+                    className="px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
+                  >
+                    Ajouter
+                  </button>
+                </div>
+
+                {pendingMedia.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {pendingMedia.map((m, i) => (
+                      <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
+                        {m.kind === 'image' && m.source === 'file' ? (
+                          <img src={m.previewUrl} alt="" className="w-full h-full object-cover" />
+                        ) : m.kind === 'image' && m.source === 'url' ? (
+                          <img src={m.url} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.src='/placeholder.svg')} />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-xs text-muted-foreground p-2 text-center">
+                            {m.kind === 'video_360' ? <Globe size={22} /> : <Video size={22} />}
+                            <span className="truncate mt-1 w-full text-[10px]">
+                              {m.kind === 'video_360' ? '360°' : 'Vidéo'}
+                            </span>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removePending(i)}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                        <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded">
+                          {m.kind === 'image' ? <><ImageIcon size={9}/> IMG</> : m.kind === 'video_360' ? <>🔭 360°</> : <><Video size={9}/> VIDEO</>}
+                        </span>
+                        <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
+                          #{i + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground text-center py-3 rounded-lg border border-dashed">
+                    Aucun média sélectionné — ajoute au moins 1 photo, vidéo ou visite 360°
+                  </p>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  Les médias seront uploadés à l'enregistrement. Limite : 20 Mo par fichier.
+                </p>
+              </>
             )}
           </div>
 
