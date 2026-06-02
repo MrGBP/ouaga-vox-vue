@@ -138,19 +138,25 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return toast.error('Le titre est requis');
+    if (description.trim().length < 20) return toast.error('La description est requise (20 caractères minimum)');
     if (!price || Number(price) <= 0) return toast.error('Le prix doit être supérieur à 0');
     if (!quartier) return toast.error('Quartier requis');
 
+    // Au moins 1 média : pending (création) ou existants (édition)
+    const totalMedia = pendingMedia.length + (isEdit ? existingMediaCount : 0);
+    if (totalMedia < 1) {
+      return toast.error('Ajoute au moins 1 média (photo, vidéo ou visite 360°)');
+    }
+
     setBusy(true);
     try {
-      // Construire le jsonb features (flags + custom)
       const featuresObj: Record<string, any> = {};
       features.forEach(k => { featuresObj[k] = true; });
       if (customFeatures.length) featuresObj.__custom = customFeatures;
 
       const payload = {
         title: title.trim(),
-        description: description.trim() || null,
+        description: description.trim(),
         type,
         price: Number(price),
         quartier,
@@ -165,27 +171,52 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         owner_id: ownerId,
       };
 
+      let propertyId: string;
+      let willRequireReview = false;
+
       if (isEdit && initial) {
-        // Si le propriétaire modifie un bien refusé/à corriger, on le repasse en 'pending' pour re-modération
-        const willRequireReview = ['rejected', 'corrections'].includes(initial.admin_status);
+        willRequireReview = ['rejected', 'corrections'].includes(initial.admin_status);
         const updatePayload: any = { ...payload };
         if (willRequireReview) updatePayload.admin_status = 'pending';
-
         const { error } = await supabase.from('properties').update(updatePayload).eq('id', initial.id);
         if (error) throw error;
-        toast.success(willRequireReview ? 'Bien renvoyé en validation' : 'Bien mis à jour');
-        setSavedId(initial.id);
+        propertyId = initial.id;
       } else {
-        // Création : toujours 'pending' (un propriétaire ne peut PAS publier directement)
         const { data, error } = await supabase
           .from('properties')
           .insert({ ...payload, admin_status: 'pending' as any, status: 'available' })
           .select('id')
           .single();
         if (error) throw error;
-        toast.success('Bien créé. En attente de validation.');
-        setSavedId(data.id);
+        propertyId = data.id;
       }
+
+      // Upload des médias en attente
+      if (pendingMedia.length) {
+        for (const m of pendingMedia) {
+          try {
+            if (m.source === 'file') {
+              await uploadPropertyMedia(propertyId, m.file, m.kind);
+            } else {
+              await addPropertyMediaUrl(propertyId, m.url, m.kind);
+            }
+          } catch (err: any) {
+            toast.error(`Média non uploadé : ${err?.message ?? 'erreur'}`);
+          }
+        }
+        // Nettoyer les previews
+        pendingMedia.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl));
+        setPendingMedia([]);
+        const fresh = await listPropertyMedia(propertyId).catch(() => []);
+        setExistingMediaCount(fresh?.length ?? 0);
+      }
+
+      setSavedId(propertyId);
+      toast.success(
+        isEdit
+          ? (willRequireReview ? 'Bien renvoyé en validation' : 'Bien mis à jour')
+          : 'Bien créé. En attente de validation.'
+      );
     } catch (e: any) {
       toast.error(e?.message ?? 'Erreur');
     } finally { setBusy(false); }
