@@ -371,8 +371,12 @@ const SearchPage = () => {
                   onReset={handleResetFilters}
                   quartiers={quartierNames}
                   totalCount={properties.length}
-                  filteredCount={properties.length}
+                  filteredCount={filteredAll.length}
+                  externalFilters={savedFilters}
+                  allProperties={properties}
+                  computeFilteredCount={(f) => filterProperties(properties, query, f, false, new Set()).length}
                 />
+
               </div>
             </motion.section>
           )}
