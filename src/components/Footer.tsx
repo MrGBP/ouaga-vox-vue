@@ -70,6 +70,39 @@ const Footer = () => (
         </div>
       </div>
 
+      {/* Partenaires */}
+      <div className="mt-10 pt-8 border-t border-border">
+        <div className="flex flex-col items-center text-center mb-6">
+          <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">
+            Ils nous font confiance
+          </span>
+          <h4 className="text-base font-semibold text-foreground mt-1">Nos partenaires</h4>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          {[
+            { name: 'Coris Bank', tag: 'Financement' },
+            { name: 'Ecobank', tag: 'Banque' },
+            { name: 'Orange Money', tag: 'Paiement' },
+            { name: 'Chambre des Notaires', tag: 'Juridique' },
+            { name: 'Onatel', tag: 'Télécoms' },
+            { name: 'CCI-BF', tag: 'Institution' },
+          ].map((p) => (
+            <div
+              key={p.name}
+              className="group h-16 rounded-xl border border-border bg-background hover:bg-muted/50 hover:border-primary/30 transition-all flex flex-col items-center justify-center px-2"
+              title={`${p.name} — Partenaire ${p.tag}`}
+            >
+              <span className="text-sm font-bold text-foreground/80 group-hover:text-primary transition-colors truncate max-w-full">
+                {p.name}
+              </span>
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">
+                {p.tag}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Bottom bar */}
       <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
         <p>© {new Date().getFullYear()} SapSapHouse. Tous droits réservés.</p>
@@ -79,6 +112,7 @@ const Footer = () => (
           <a href="#" className="hover:text-foreground transition-colors">CGU</a>
         </div>
       </div>
+
     </div>
   </footer>
 );
