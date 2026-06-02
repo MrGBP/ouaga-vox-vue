@@ -332,6 +332,8 @@ const Index = () => {
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
+    // Sync filters with /search and /resultats via shared localStorage key
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify(newFilters)); } catch { /* noop */ }
     setDetailProperty(null);
     setFocusedPropertyId(null);
     setCurrentPage(1);
