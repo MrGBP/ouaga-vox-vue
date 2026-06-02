@@ -4,8 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, ArrowLeft, SlidersHorizontal, Clock, ChevronUp } from 'lucide-react';
 import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight, type Property } from '@/lib/mockData';
 import { fetchMergedProperties } from '@/lib/propertiesService';
-import FilterBar, { type FilterState } from '@/components/FilterBar';
-import { parseQuery, describeParsed, smartFilter } from '@/lib/smartMatch';
+import FilterBar, { type FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
+import { parseQuery, describeParsed } from '@/lib/smartMatch';
+import { filterProperties } from '@/lib/filterProperties';
+
+const FILTERS_KEY = 'sapsap_filters_v1';
+const loadFilters = (): FilterState => {
+  try {
+    const raw = localStorage.getItem(FILTERS_KEY);
+    if (raw) return { ...DEFAULT_FILTERS, ...JSON.parse(raw) };
+  } catch { /* noop */ }
+  return DEFAULT_FILTERS;
+};
 
 const TYPEWRITER_PHRASES = [
   "Villa meublée 4 chambres à Tampouy...",
@@ -28,6 +38,19 @@ const SearchPage = () => {
   const [query, setQuery] = useState(initialQuery);
   const [recent, setRecent] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  // Filtres persistés (partagés avec /resultats et la home) — la prévisu
+  // de recherche les applique pour que ce que l'utilisateur voit ici
+  // corresponde exactement à ce qu'il verra sur la page Résultats.
+  const [savedFilters, setSavedFilters] = useState<FilterState>(loadFilters);
+  useEffect(() => {
+    const sync = () => setSavedFilters(loadFilters());
+    window.addEventListener('storage', sync);
+    window.addEventListener('focus', sync);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('focus', sync);
+    };
+  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
   const filtersRef = useRef<HTMLDivElement>(null);
 
@@ -83,25 +106,31 @@ const SearchPage = () => {
   };
 
   const handleApplyFilters = (f: FilterState) => {
-    // Persiste les filtres pour la page Résultats (même clé que partout)
-    try { localStorage.setItem('sapsap_filters_v1', JSON.stringify(f)); } catch {}
-    // Va vers la page dédiée /resultats (PAS la home avec hero)
+    setSavedFilters(f);
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify(f)); } catch {}
     setShowFilters(false);
     navigate(`/resultats?q=${encodeURIComponent(query.trim())}`);
   };
 
   const handleResetFilters = () => {
-    // Reset local — l'utilisateur reste sur la page de recherche
+    setSavedFilters(DEFAULT_FILTERS);
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify(DEFAULT_FILTERS)); } catch {}
     setShowFilters(false);
     setTimeout(() => setShowFilters(true), 50);
   };
 
-  // Smart matching : tolère les fautes, comprend les synonymes (clim/climatisé,
-  // bureau/office, meublé/equipé...) et combine plusieurs critères.
+
+  // Recherche unifiée : applique la requête NLP (smartFilter) ET les filtres
+  // persistés afin que ce que l'utilisateur voit ici soit strictement le
+  // même résultat que sur /resultats — pas de surprise au moment de valider.
+  const filteredAll = useMemo(
+    () => filterProperties(properties, query, savedFilters, false, new Set()),
+    [properties, query, savedFilters]
+  );
   const fuzzy = useMemo(() => {
     if (query.trim().length === 0) return [];
-    return smartFilter(properties, query, quartierNames).slice(0, 12);
-  }, [query, properties, quartierNames]);
+    return filteredAll.slice(0, 12);
+  }, [query, filteredAll]);
 
   // Récap humain "J'ai compris : ..." — n'apparaît que si on a vraiment
   // identifié au moins un critère (sinon on reste discret).
@@ -343,8 +372,12 @@ const SearchPage = () => {
                   onReset={handleResetFilters}
                   quartiers={quartierNames}
                   totalCount={properties.length}
-                  filteredCount={properties.length}
+                  filteredCount={filteredAll.length}
+                  externalFilters={savedFilters}
+                  allProperties={properties}
+                  computeFilteredCount={(f) => filterProperties(properties, query, f, false, new Set()).length}
                 />
+
               </div>
             </motion.section>
           )}
