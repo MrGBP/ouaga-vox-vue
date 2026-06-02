@@ -60,9 +60,16 @@ const SearchPage = () => {
     setTimeout(() => inputRef.current?.focus(), 80);
   }, []);
 
+  const [allProps, setAllProps] = useState<Property[]>(mockProperties as any);
+  useEffect(() => {
+    let alive = true;
+    fetchMergedProperties().then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   const properties = useMemo(
-    () => mockProperties.filter(p => p.status !== 'rented' && p.available !== false),
-    []
+    () => allProps.filter(p => p.status !== 'rented' && p.available !== false),
+    [allProps]
   );
 
   const quartierNames = useMemo(
