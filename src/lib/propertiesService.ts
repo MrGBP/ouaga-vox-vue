@@ -115,10 +115,23 @@ export async function adminDeleteProperty(id: string) {
 }
 
 export async function adminSetStatus(id: string, admin_status: 'pending'|'published'|'rejected'|'rented'|'inactive'|'reviewing'|'corrections') {
-  const patch: any = { admin_status };
-  if (admin_status === 'published') patch.published_at = new Date().toISOString();
-  const { error } = await supabase.from('properties').update(patch).eq('id', id);
+  const { data: userData } = await supabase.auth.getUser();
+  const adminId = userData.user?.id ?? null;
+  const nowIso = new Date().toISOString();
+  const patch: any = { admin_status, reviewed_at: nowIso, reviewed_by: adminId };
+  if (admin_status === 'published') patch.published_at = nowIso;
+  // Use .select() to verify a row was actually updated (RLS may silently
+  // return 0 rows if the caller is not an admin).
+  const { data, error } = await supabase
+    .from('properties')
+    .update(patch)
+    .eq('id', id)
+    .select('id, admin_status, reviewed_at, published_at');
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error("Mise à jour refusée : vous n'avez pas les droits administrateur sur ce bien.");
+  }
+  return data[0];
 }
 
 // ─── MEDIA ────────────────────────────────────────────────────────────────
