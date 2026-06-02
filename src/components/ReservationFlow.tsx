@@ -15,6 +15,8 @@ import {
 } from '@/lib/reservationsPublicService';
 import { sendConfirmationEmail } from '@/lib/emailTemplates';
 import { isTypeFurnished, pricePerNight as pricePerNightCalc } from '@/lib/mockData';
+import { track } from '@/lib/analytics';
+import { notifyOwner } from '@/lib/notifications';
 
 interface Property {
   id: string;
