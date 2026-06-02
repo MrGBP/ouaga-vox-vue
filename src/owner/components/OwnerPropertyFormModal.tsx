@@ -356,15 +356,106 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             )}
           </div>
 
-          {/* Médias — uniquement après que le bien a un id */}
+          {/* Médias — toujours disponibles, requis avant validation */}
           <div className="space-y-2 border-t pt-4">
-            <label className="text-xs font-semibold text-foreground">Médias (photos, vidéos, visite 360°)</label>
-            {savedId ? (
-              <MediaUploader propertyId={savedId} />
-            ) : (
-              <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-center text-xs text-muted-foreground">
-                Enregistre d'abord le bien pour pouvoir ajouter des photos/vidéos/visites 360°.
-              </div>
+            <label className="text-xs font-semibold text-foreground">
+              Médias * (photos, vidéos, visite 360°) — au moins 1 requis
+            </label>
+
+            {/* Médias déjà uploadés (édition) */}
+            {savedId && <MediaUploader propertyId={savedId} />}
+
+            {/* Staging : pré-upload avant la création */}
+            {!savedId && (
+              <>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => pendingFileRef.current?.click()}
+                    className="flex-1 h-10 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 text-xs hover:bg-muted"
+                  >
+                    <Upload size={14} /> Choisir photos / vidéos (multi)
+                  </button>
+                  <input
+                    ref={pendingFileRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    hidden
+                    onChange={e => { addPendingFiles(e.target.files); if (pendingFileRef.current) pendingFileRef.current.value = ''; }}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <select
+                    value={pendingKind}
+                    onChange={e => setPendingKind(e.target.value as any)}
+                    className="rounded-lg border border-border bg-background px-2 text-xs"
+                  >
+                    <option value="image">Image</option>
+                    <option value="video">Vidéo</option>
+                    <option value="video_360">Visite 360°</option>
+                  </select>
+                  <div className="relative flex-1">
+                    <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={pendingUrl}
+                      onChange={e => setPendingUrl(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingUrl(); } }}
+                      placeholder="https://… (Matterport, Kuula, YouTube, image…)"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-9 text-xs"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addPendingUrl}
+                    className="px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
+                  >
+                    Ajouter
+                  </button>
+                </div>
+
+                {pendingMedia.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {pendingMedia.map((m, i) => (
+                      <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
+                        {m.kind === 'image' && m.source === 'file' ? (
+                          <img src={m.previewUrl} alt="" className="w-full h-full object-cover" />
+                        ) : m.kind === 'image' && m.source === 'url' ? (
+                          <img src={m.url} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.src='/placeholder.svg')} />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-xs text-muted-foreground p-2 text-center">
+                            {m.kind === 'video_360' ? <Globe size={22} /> : <Video size={22} />}
+                            <span className="truncate mt-1 w-full text-[10px]">
+                              {m.kind === 'video_360' ? '360°' : 'Vidéo'}
+                            </span>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removePending(i)}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                        <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded">
+                          {m.kind === 'image' ? <><ImageIcon size={9}/> IMG</> : m.kind === 'video_360' ? <>🔭 360°</> : <><Video size={9}/> VIDEO</>}
+                        </span>
+                        <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
+                          #{i + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground text-center py-3 rounded-lg border border-dashed">
+                    Aucun média sélectionné — ajoute au moins 1 photo, vidéo ou visite 360°
+                  </p>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  Les médias seront uploadés à l'enregistrement. Limite : 20 Mo par fichier.
+                </p>
+              </>
             )}
           </div>
 
