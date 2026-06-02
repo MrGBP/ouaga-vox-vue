@@ -8,7 +8,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const { activeCity, setActiveCity, availableCities } = useGeoCity();
 
   return (
@@ -52,12 +52,19 @@ const Header = () => {
                 </button>
               ))}
             </div>
-            <Link to={user ? '/mon-compte' : '/auth'}>
-              <Button size="sm" variant="outline" className="gap-2">
+            {user ? (
+              <Link to="/mon-compte">
+                <Button size="sm" variant="outline" className="gap-2">
+                  <User className="h-3.5 w-3.5" />
+                  Mon compte
+                </Button>
+              </Link>
+            ) : (
+              <Button size="sm" variant="outline" className="gap-2" onClick={() => openAuthModal()}>
                 <User className="h-3.5 w-3.5" />
-                {user ? 'Mon compte' : 'Connexion'}
+                Connexion
               </Button>
-            </Link>
+            )}
             <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground gap-2">
               <Phone className="h-3.5 w-3.5" />
               Contact

@@ -13,6 +13,7 @@ import { resolveFeatures } from '@/lib/featureCatalog';
 import { usePropertyMedia } from '@/hooks/usePropertyMedia';
 import { useNearbyPOI } from '@/hooks/useNearbyPOI';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import ReservationFlow from './ReservationFlow';
 import SharePanel from './SharePanel';
 
@@ -137,6 +138,8 @@ const PropertyDetailPanel = ({
   const [poiCategory, setPoiCategory] = useState<string>('all');
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  const { requireAuth } = useAuth();
+  const openReservation = () => requireAuth('réserver ce bien', () => setShowReservation(true));
   const isMobile = isMobileOverride ?? false;
 
   // Reset media index when property changes
@@ -614,7 +617,7 @@ const PropertyDetailPanel = ({
         {isMobile ? (
           <div className="flex gap-2.5 pt-1">
             <button
-              onClick={() => setShowReservation(true)}
+              onClick={openReservation}
               className="flex-1 h-12 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
             >
               📅 Réserver · {isFurnished && nightPrice > 0
@@ -629,7 +632,7 @@ const PropertyDetailPanel = ({
                 <Phone className="h-4 w-4" /> Contacter l'agent
               </Button>
             ) : (
-              <Button onClick={() => setShowReservation(true)} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
+              <Button onClick={openReservation} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
                 <Calendar className="h-4 w-4" /> Réserver
               </Button>
             )}
