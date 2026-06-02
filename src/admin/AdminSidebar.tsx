@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Building2, LayoutDashboard, Home, Users, CalendarDays, Zap, MessageSquare, BarChart3, Settings, LogOut, ExternalLink, X, Database, ShieldCheck, UserCog } from 'lucide-react';
+import { Building2, LayoutDashboard, Home, Users, CalendarDays, Zap, MessageSquare, BarChart3, Settings, LogOut, ExternalLink, X, Database, ShieldCheck, UserCog, Globe } from 'lucide-react';
 import { useAdminNotifications } from '@/admin/lib/useAdminNotifications';
 
 interface AdminSidebarProps {
@@ -22,6 +22,7 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
     { label: 'Boosts', icon: Zap, path: '/admin/boosts', badge: 0 },
     { label: 'Messages', icon: MessageSquare, path: '/admin/messages', badge: notif.unreadMessages },
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics', badge: 0 },
+    { label: 'Pays', icon: Globe, path: '/admin/pays', badge: 0 },
     { label: 'Paramètres', icon: Settings, path: '/admin/settings', badge: 0 },
   ];
 

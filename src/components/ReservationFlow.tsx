@@ -17,6 +17,9 @@ import { sendConfirmationEmail } from '@/lib/emailTemplates';
 import { isTypeFurnished, pricePerNight as pricePerNightCalc } from '@/lib/mockData';
 import { track } from '@/lib/analytics';
 import { notifyOwner } from '@/lib/notifications';
+import { openWhatsApp, openEmail, openCountrySupport, buildReservationOwnerMessage } from '@/lib/contact';
+import { useCountryConfig } from '@/hooks/useCountryConfig';
+import { MessageCircle, Mail, LifeBuoy } from 'lucide-react';
 
 interface Property {
   id: string;
@@ -175,6 +178,7 @@ const GuestCounter = ({ label, sub, value, onChange, min = 0 }: { label: string;
 const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const country = useCountryConfig();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
@@ -375,9 +379,56 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               <div className="flex justify-between pt-2 border-t border-border text-base font-bold"><span>{t('reservation.total')}</span><span className="text-primary">{fmt(totalPrice)} FCFA</span></div>
             </div>
 
-            <p className="text-xs text-muted-foreground mb-4">
-              📧 Un email de confirmation contenant l'adresse exacte et les instructions d'accès a été préparé pour <strong>{email}</strong>.
+            <p className="text-xs text-muted-foreground mb-3">
+              Pour accélérer la confirmation, notifie directement le propriétaire :
             </p>
+
+            {(() => {
+              const ownerMsg = buildReservationOwnerMessage({
+                propertyTitle: property.title,
+                clientName: name,
+                clientPhone: phone,
+                clientEmail: email,
+                checkIn: checkIn ? formatDateLong(checkIn) : undefined,
+                checkOut: checkOut ? formatDateLong(checkOut) : undefined,
+                guests: guestsCount,
+                totalPrice,
+                currencySymbol: country.currency_symbol,
+                confirmationNumber: submitted.confirmation_number,
+              });
+              return (
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <Button
+                    type="button"
+                    onClick={() => openWhatsApp(property.agent_phone, ownerMsg)}
+                    disabled={!property.agent_phone}
+                    className="h-11 bg-[#25D366] hover:bg-[#1ebd58] text-white"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-1.5" /> WhatsApp
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => openEmail({
+                      to: (property as any).agent_email || country.support_email || '',
+                      subject: `Réservation ${submitted.confirmation_number} — ${property.title}`,
+                      body: ownerMsg,
+                    })}
+                    className="h-11"
+                  >
+                    <Mail className="h-4 w-4 mr-1.5" /> Email
+                  </Button>
+                </div>
+              );
+            })()}
+
+            <button
+              type="button"
+              onClick={() => openCountrySupport(country, `Réservation ${submitted.confirmation_number} — ${property.title}`)}
+              className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5 py-2 mb-3"
+            >
+              <LifeBuoy className="h-3 w-3" /> Besoin d'aide ? Contacter le service client {country.flag_emoji}
+            </button>
 
             <Button onClick={onClose} className="w-full bg-primary text-primary-foreground">{t('reservation.fermer')}</Button>
           </div>

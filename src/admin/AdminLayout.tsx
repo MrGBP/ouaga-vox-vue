@@ -15,6 +15,7 @@ import AdminBoosts from '@/admin/pages/AdminBoosts';
 import AdminMessages from '@/admin/pages/AdminMessages';
 import AdminAnalytics from '@/admin/pages/AdminAnalytics';
 import AdminSettings from '@/admin/pages/AdminSettings';
+import AdminCountries from '@/admin/pages/AdminCountries';
 
 function AdminProtected() {
   console.log('AdminProtected rendered, auth:', localStorage.getItem('sapsap_admin_auth'));
@@ -43,6 +44,7 @@ function AdminProtected() {
             <Route path="messages" element={<AdminMessages />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="pays" element={<AdminCountries />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </main>
