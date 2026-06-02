@@ -8,7 +8,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const { activeCity, setActiveCity, availableCities } = useGeoCity();
 
   return (
