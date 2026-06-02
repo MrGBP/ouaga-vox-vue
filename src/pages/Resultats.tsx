@@ -35,9 +35,16 @@ const ResultatsPage = () => {
     } catch { return new Set(); }
   });
 
+  const [allProps, setAllProps] = useState<Property[]>(mockProperties as any);
+  useEffect(() => {
+    let alive = true;
+    fetchMergedProperties().then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   const results = useMemo(
-    () => filterProperties(mockProperties, appliedQuery, filters, false, favorites),
-    [appliedQuery, filters, favorites]
+    () => filterProperties(allProps, appliedQuery, filters, false, favorites),
+    [allProps, appliedQuery, filters, favorites]
   );
 
   const toggleFavorite = useCallback((id: string) => {
