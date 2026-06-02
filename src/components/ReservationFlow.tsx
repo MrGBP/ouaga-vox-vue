@@ -17,6 +17,9 @@ import { sendConfirmationEmail } from '@/lib/emailTemplates';
 import { isTypeFurnished, pricePerNight as pricePerNightCalc } from '@/lib/mockData';
 import { track } from '@/lib/analytics';
 import { notifyOwner } from '@/lib/notifications';
+import { openWhatsApp, openEmail, openCountrySupport, buildReservationOwnerMessage } from '@/lib/contact';
+import { useCountryConfig } from '@/hooks/useCountryConfig';
+import { MessageCircle, Mail, LifeBuoy } from 'lucide-react';
 
 interface Property {
   id: string;
