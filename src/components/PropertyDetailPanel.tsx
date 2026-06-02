@@ -138,6 +138,8 @@ const PropertyDetailPanel = ({
   const [poiCategory, setPoiCategory] = useState<string>('all');
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  const { requireAuth } = useAuth();
+  const openReservation = () => requireAuth('réserver ce bien', () => setShowReservation(true));
   const isMobile = isMobileOverride ?? false;
 
   // Reset media index when property changes
