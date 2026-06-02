@@ -243,8 +243,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             <input ref={titleRef} value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder="Villa moderne à Tampouy" />
           </Field>
 
-          <Field label="Description">
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="form-input resize-none" placeholder="Décris ton bien…" />
+          <Field label="Description *">
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={3}
+              minLength={20}
+              required
+              className="form-input resize-none"
+              placeholder="Décris ton bien (min. 20 caractères)…"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">{description.trim().length} / 20 caractères minimum</p>
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
