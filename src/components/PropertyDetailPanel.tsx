@@ -694,6 +694,7 @@ const PropertyDetailPanel = ({
                   <a
                     href={`https://wa.me/${agentPhoneRaw}`}
                     target="_blank" rel="noopener noreferrer"
+                    onClick={() => track('contact_whatsapp_clicked', { property_id: property.id })}
                     className="flex-1 h-11 flex items-center justify-center gap-2 bg-[#25D366] text-white rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
                   >
                     <span>💬</span> WhatsApp
@@ -702,6 +703,7 @@ const PropertyDetailPanel = ({
                 {hasEmail && (
                   <a
                     href={`mailto:${agentEmail}`}
+                    onClick={() => track('contact_email_clicked', { property_id: property.id })}
                     className="flex-1 h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
                   >
                     <Mail className="h-3.5 w-3.5" /> Email
