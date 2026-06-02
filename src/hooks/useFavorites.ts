@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { addFavorite, listFavoriteIds, removeFavorite, syncLocalFavoritesToCloud } from '@/lib/favoritesService';
 
 export function useFavorites() {
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const [ids, setIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
