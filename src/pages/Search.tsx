@@ -119,12 +119,17 @@ const SearchPage = () => {
     setTimeout(() => setShowFilters(true), 50);
   };
 
-  // Smart matching : tolère les fautes, comprend les synonymes (clim/climatisé,
-  // bureau/office, meublé/equipé...) et combine plusieurs critères.
+  // Recherche unifiée : applique la requête NLP (smartFilter) ET les filtres
+  // persistés afin que ce que l'utilisateur voit ici soit strictement le
+  // même résultat que sur /resultats — pas de surprise au moment de valider.
+  const filteredAll = useMemo(
+    () => filterProperties(properties, query, savedFilters, false, new Set()),
+    [properties, query, savedFilters]
+  );
   const fuzzy = useMemo(() => {
     if (query.trim().length === 0) return [];
-    return smartFilter(properties, query, quartierNames).slice(0, 12);
-  }, [query, properties, quartierNames]);
+    return filteredAll.slice(0, 12);
+  }, [query, filteredAll]);
 
   // Récap humain "J'ai compris : ..." — n'apparaît que si on a vraiment
   // identifié au moins un critère (sinon on reste discret).
