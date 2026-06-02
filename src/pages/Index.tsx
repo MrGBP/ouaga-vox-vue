@@ -51,6 +51,9 @@ interface Property {
   agent_name?: string;
   agent_phone?: string;
   agent_photo?: string;
+  currency?: string;
+  city?: string;
+  country?: string;
   year_built?: number;
   has_ac?: boolean;
   has_guardian?: boolean;
