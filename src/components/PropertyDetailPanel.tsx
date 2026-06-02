@@ -358,15 +358,13 @@ const PropertyDetailPanel = ({
         {/* Identity */}
         <div>
           <h3 className="text-lg font-bold text-foreground">{property.title}</h3>
-          {isFurnished && nightPrice > 0 ? (
-            <div className="text-2xl font-bold text-primary mt-1">
-              {fmt(nightPrice)} FCFA <span className="text-sm font-medium text-muted-foreground">/nuit</span>
-            </div>
-          ) : (
-            <div className="text-2xl font-bold text-primary mt-1">
-              {fmt(property.price)} FCFA <span className="text-sm font-medium text-muted-foreground">/mois</span>
-            </div>
-          )}
+          <div className="text-2xl font-bold text-primary mt-1">
+            {fmt(isFurnished && nightPrice > 0 ? nightPrice : property.price)}{' '}
+            {(property as any).currency || 'FCFA'}
+            <span className="text-sm font-medium text-muted-foreground">
+              {' '}/{isFurnished ? 'nuit' : 'mois'}
+            </span>
+          </div>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Badge className="bg-primary/10 text-primary text-xs">
               {getTypeLabel(property.type)}

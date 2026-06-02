@@ -183,8 +183,8 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const [checkOut, setCheckOut] = useState<Date | null>(null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
 
-  const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
+  // Guest counter removed — single occupant by default
+  const guestsCount = 1;
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -315,7 +315,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
         check_in: toKey(checkIn),
         check_out: toKey(checkOut),
         nights,
-        guests_count: adults + children,
+        guests_count: guestsCount,
         price_per_night: nightlyPrice,
         total_price: totalPrice,
       });
@@ -502,13 +502,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                 </div>
               )}
 
-              {/* Guests */}
-              <div className="border border-border rounded-xl p-3">
-                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">{t('reservation.voyageurs')}</p>
-                <GuestCounter label={t('reservation.adultes')} value={adults} onChange={setAdults} min={1} />
-                <div className="border-t border-border" />
-                <GuestCounter label={t('reservation.enfants')} sub="2 – 12 ans" value={children} onChange={setChildren} min={0} />
-              </div>
+              {/* Guest counter removed per simplified flow */}
 
               <Button
                 onClick={() => setStep(2)}
@@ -573,17 +567,17 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.voyageurs')}</span><span className="font-semibold">{adults + children}</span></div>
+                
               </div>
 
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex justify-between text-sm text-foreground">
-                  <span>{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')} × {fmt(nightlyPrice)} FCFA</span>
-                  <span className="font-semibold">{fmt(totalPrice)} FCFA</span>
+                  <span>{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')} × {fmt(nightlyPrice)} {(property as any).currency || 'FCFA'}</span>
+                  <span className="font-semibold">{fmt(totalPrice)} {(property as any).currency || 'FCFA'}</span>
                 </div>
                 <div className="flex justify-between pt-2 mt-2 border-t border-border text-base font-bold">
                   <span>{t('reservation.total')}</span>
-                  <span className="text-primary">{fmt(totalPrice)} FCFA</span>
+                  <span className="text-primary">{fmt(totalPrice)} {(property as any).currency || 'FCFA'}</span>
                 </div>
               </div>
 

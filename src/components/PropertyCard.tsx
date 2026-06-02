@@ -25,6 +25,7 @@ interface Property {
   furnished?: boolean;
   created_at?: string;
   location_type?: 'precise' | 'quartier_only';
+  currency?: string;
 }
 
 interface PropertyCardProps {
@@ -106,22 +107,15 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
       <div className="p-4">
         <h3 className="font-semibold text-base text-foreground line-clamp-1 mb-2">{property.title}</h3>
 
-        {/* Pricing: nightly first for furnished */}
+        {/* Pricing: simple — one line, /nuit if furnished else /mois */}
         <div className="mb-3">
-          {isFurnished && nightPrice > 0 ? (
-            <>
-              <div className="text-lg font-bold text-primary">
-                {fmt(nightPrice)} FCFA <span className="text-sm font-normal text-muted-foreground">/nuit</span>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                soit {fmt(property.price)} FCFA /mois
-              </div>
-            </>
-          ) : (
-            <div className="text-lg font-bold text-primary">
-              {fmt(property.price)} FCFA <span className="text-sm font-normal text-muted-foreground">/mois</span>
-            </div>
-          )}
+          <div className="text-lg font-bold text-primary">
+            {fmt(isFurnished && nightPrice > 0 ? nightPrice : property.price)}{' '}
+            {property.currency || 'FCFA'}
+            <span className="text-sm font-normal text-muted-foreground">
+              {' '}/{isFurnished ? 'nuit' : 'mois'}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">

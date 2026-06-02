@@ -1,5 +1,5 @@
 // SapSapHouse — 100 biens de démonstration, 16 quartiers, POI catalog
-import { findArrondissement, findCommune, getSecteurCenter, findArrondissementForSecteur } from '@/lib/geoConfig';
+import { findArrondissement, findCommune, getSecteurCenter, findArrondissementForSecteur, ACCRA_DISTRICTS } from '@/lib/geoConfig';
 
 export interface AgentPOI {
   label: string;
@@ -83,6 +83,8 @@ export interface Property {
   arrondissement?: number;
   /** Commune (Bamako) */
   commune?: string;
+  /** District (Accra) */
+  district?: string;
 }
 
 export interface POI {
@@ -106,14 +108,31 @@ export interface Quartier {
 
 // ─── 7 TYPES OFFICIELS ──────────────────────────────────────────────────────
 export const PROPERTY_TYPES = [
-  { value: 'maison_villa_meublee', label: 'Maison / Villa meublée', emoji: '🛋️', furnished: true },
-  { value: 'maison_villa_simple', label: 'Maison / Villa simple', emoji: '🔑', furnished: false },
-  { value: 'appartement_meuble', label: 'Appartement meublé', emoji: '🛋️', furnished: true },
-  { value: 'appartement_simple', label: 'Appartement simple', emoji: '🔑', furnished: false },
+  { value: 'maison_villa_meublee', label: 'Villa meublée', emoji: '🏡', furnished: true },
+  { value: 'maison_villa_simple', label: 'Villa', emoji: '🏘️', furnished: false },
+  { value: 'appartement_meuble', label: 'Appartement meublé', emoji: '🏢', furnished: true },
+  { value: 'appartement_simple', label: 'Appartement', emoji: '🏢', furnished: false },
   { value: 'studio_meuble', label: 'Studio meublé', emoji: '🛋️', furnished: true },
-  { value: 'bureau', label: 'Bureau', emoji: '🏢', furnished: false },
+  { value: 'bureau', label: 'Bureau', emoji: '💼', furnished: false },
   { value: 'local_commercial', label: 'Local commercial', emoji: '🏪', furnished: false },
 ] as const;
+
+/** Configuration étendue : emoji + label + color par type (utilisé pour pins, badges, etc.) */
+export const PROPERTY_TYPE_CONFIG: Record<string, { emoji: string; label: string; color: string }> = {
+  villa_meublee:    { emoji: '🏡', label: 'Villa meublée',    color: '#1a3560' },
+  maison_villa_meublee: { emoji: '🏡', label: 'Villa meublée', color: '#1a3560' },
+  villa:            { emoji: '🏘️', label: 'Villa',            color: '#1a3560' },
+  maison_villa_simple: { emoji: '🏘️', label: 'Villa',         color: '#1a3560' },
+  appartement:      { emoji: '🏢', label: 'Appartement',      color: '#2563eb' },
+  appartement_simple: { emoji: '🏢', label: 'Appartement',    color: '#2563eb' },
+  appartement_meuble: { emoji: '🏢', label: 'Appartement meublé', color: '#2563eb' },
+  studio_meuble:    { emoji: '🛋️', label: 'Studio meublé',    color: '#7c3aed' },
+  maison:           { emoji: '🏠', label: 'Maison',           color: '#059669' },
+  bureau:           { emoji: '💼', label: 'Bureau',           color: '#d97706' },
+  local_commercial: { emoji: '🏪', label: 'Local commercial', color: '#dc2626' },
+  chambre_meublee:  { emoji: '🛏️', label: 'Chambre meublée',  color: '#0891b2' },
+  duplex:           { emoji: '🏗️', label: 'Duplex',           color: '#65a30d' },
+};
 
 export type PropertyType = typeof PROPERTY_TYPES[number]['value'];
 
@@ -121,10 +140,10 @@ export const isTypeFurnished = (type: string): boolean =>
   PROPERTY_TYPES.find(t => t.value === type)?.furnished ?? false;
 
 export const getTypeLabel = (type: string): string =>
-  PROPERTY_TYPES.find(t => t.value === type)?.label ?? type;
+  PROPERTY_TYPE_CONFIG[type]?.label ?? PROPERTY_TYPES.find(t => t.value === type)?.label ?? type;
 
 export const getTypeEmoji = (type: string): string =>
-  PROPERTY_TYPES.find(t => t.value === type)?.emoji ?? '📍';
+  PROPERTY_TYPE_CONFIG[type]?.emoji ?? PROPERTY_TYPES.find(t => t.value === type)?.emoji ?? '📍';
 
 /** Prix par nuit = prix/mois ÷ 30, arrondi au 500 FCFA le plus proche */
 export const pricePerNight = (monthlyPrice: number): number =>
@@ -223,6 +242,37 @@ for (let s = 1; s <= 55; s++) {
 }
 // Ajout sans casser les références existantes
 mockQuartiers.push(...ouagaSecteursQuartiers);
+
+// ─── 10 districts of Accra (Ghana) ─────────────────────────────────────────
+const ACCRA_DISTRICT_IMAGES = [
+  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&auto=format',
+  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&auto=format',
+  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&auto=format',
+  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format',
+];
+const ACCRA_DISTRICT_DESCRIPTIONS: Record<string, string> = {
+  'Osu': 'Vibrant nightlife and dining hub on the Atlantic coast',
+  'East Legon': 'Upscale residential area, embassies and luxury villas',
+  'Cantonments': 'Quiet, leafy diplomatic neighbourhood',
+  'Airport Residential': 'Prime business and residential district near Kotoka Airport',
+  'Labone': 'Modern residential area popular with expats',
+  'Dansoman': 'Densely populated, lively coastal suburb',
+  'Tema': 'Coastal industrial city east of Accra',
+  'Madina': 'Bustling market town with a young, mixed community',
+  'Adenta': 'Fast-growing residential suburb north of Accra',
+  'Achimota': 'Green residential area with the famous Achimota Forest',
+};
+Object.values(ACCRA_DISTRICTS).forEach((d, i) => {
+  mockQuartiers.push({
+    id: `accra-${d.nom.toLowerCase().replace(/\s+/g, '-')}`,
+    name: d.nom,
+    description: ACCRA_DISTRICT_DESCRIPTIONS[d.nom] || `${d.nom} — Accra, Ghana`,
+    latitude: d.center[0],
+    longitude: d.center[1],
+    bounds: [[d.center[0] - 0.012, d.center[1] - 0.012], [d.center[0] + 0.012, d.center[1] + 0.012]],
+    image_url: ACCRA_DISTRICT_IMAGES[i % ACCRA_DISTRICT_IMAGES.length],
+  });
+});
 
 // ─── Agents ──────────────────────────────────────────────────────────────────
 const AGENTS = [
@@ -717,6 +767,68 @@ export const mockProperties: Property[] = [
       });
     }
     return list;
+  })(),
+
+  // ─── Accra — Ghana (10 properties, English, GHS) ────────────────────────
+  ...(() => {
+    const ACCRA_AGENTS = [
+      { name: 'Kwame Mensah', phone: '+233 24 000 0001' },
+      { name: 'Ama Owusu', phone: '+233 24 000 0002' },
+      { name: 'Kojo Asante', phone: '+233 24 000 0003' },
+      { name: 'Akosua Boateng', phone: '+233 24 000 0004' },
+    ];
+    const ACCRA_PROPS: Array<{ district: string; type: PropertyType; title: string; price: number; bedrooms: number; bathrooms: number; surface: number; pool?: string }> = [
+      { district: 'Osu',                  type: 'studio_meuble',        title: 'Furnished studio in Osu — walk to the beach', price: 350,  bedrooms: 1, bathrooms: 1, surface: 38,  pool: 'studio' },
+      { district: 'East Legon',           type: 'maison_villa_meublee', title: 'Modern furnished 4BR villa in East Legon',    price: 1800, bedrooms: 4, bathrooms: 4, surface: 320, pool: 'villa' },
+      { district: 'East Legon',           type: 'maison_villa_simple',  title: 'Spacious 5BR family home — East Legon',       price: 1200, bedrooms: 5, bathrooms: 4, surface: 380, pool: 'villa' },
+      { district: 'Cantonments',          type: 'appartement_meuble',   title: 'Furnished 2BR apartment — Cantonments',       price: 950,  bedrooms: 2, bathrooms: 2, surface: 110, pool: 'appartement' },
+      { district: 'Airport Residential',  type: 'maison_villa_meublee', title: 'Executive villa — Airport Residential',       price: 2200, bedrooms: 4, bathrooms: 5, surface: 350, pool: 'villa' },
+      { district: 'Labone',               type: 'appartement_simple',   title: '3BR apartment with sea breeze — Labone',      price: 750,  bedrooms: 3, bathrooms: 2, surface: 140, pool: 'appartement' },
+      { district: 'Dansoman',             type: 'appartement_simple',   title: 'Affordable 2BR apartment — Dansoman',         price: 380,  bedrooms: 2, bathrooms: 1, surface: 85,  pool: 'appartement' },
+      { district: 'Tema',                 type: 'maison_villa_simple',  title: '3BR family house close to Tema Harbour',      price: 600,  bedrooms: 3, bathrooms: 2, surface: 180, pool: 'maison' },
+      { district: 'Madina',               type: 'bureau',               title: 'Office space 90m² — Madina',                  price: 550,  bedrooms: 0, bathrooms: 1, surface: 90,  pool: 'bureau' },
+      { district: 'Achimota',             type: 'local_commercial',     title: 'Retail shop on main road — Achimota',         price: 700,  bedrooms: 0, bathrooms: 1, surface: 60,  pool: 'commerce' },
+    ];
+    return ACCRA_PROPS.map((p, i) => {
+      const d = Object.values(ACCRA_DISTRICTS).find(x => x.nom === p.district)!;
+      const furnished = isTypeFurnished(p.type);
+      const agent = ACCRA_AGENTS[i % ACCRA_AGENTS.length];
+      const pool = (IMAGES_POOL as any)[p.pool || 'maison'] as string[];
+      return {
+        id: `prop-accra-${i + 1}`,
+        title: p.title,
+        description: `${p.title}. ${furnished ? 'Fully furnished with AC, Wi-Fi and modern appliances.' : 'Long-term rental.'} ${p.surface}m², ${p.bedrooms > 0 ? p.bedrooms + ' bedroom(s), ' : ''}${p.bathrooms} bathroom(s). Located in ${p.district}, Accra.`,
+        type: p.type,
+        quartier: p.district,
+        district: p.district,
+        address: `${p.district}, Accra`,
+        price: p.price,
+        bedrooms: p.bedrooms,
+        bathrooms: p.bathrooms,
+        surface_area: p.surface,
+        furnished,
+        has_ac: true,
+        has_water: true,
+        has_internet: furnished,
+        has_kitchen: furnished,
+        has_guardian: i % 2 === 0,
+        has_fence: true,
+        latitude: d.center[0] + (i % 3 - 1) * 0.004,
+        longitude: d.center[1] + (i % 4 - 1) * 0.004,
+        location_type: 'precise' as const,
+        display_radius: 400,
+        display_lat: d.center[0] + (i % 3 - 1) * 0.004 + 0.0012,
+        display_lng: d.center[1] + (i % 4 - 1) * 0.004 + 0.0012,
+        images: pool.slice(0, 4),
+        available: true,
+        status: 'available' as const,
+        city: 'Accra',
+        country: 'GH',
+        currency: 'GHS',
+        agent_name: agent.name,
+        agent_phone: agent.phone,
+      };
+    });
   })(),
 ];
 
