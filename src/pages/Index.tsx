@@ -355,6 +355,7 @@ const Index = () => {
 
   const handleFullReset = () => {
     setFilters(DEFAULT_FILTERS);
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify(DEFAULT_FILTERS)); } catch { /* noop */ }
     setSearchQuery('');
     setIdxTags([]);
     setSearchFallbackHint(null);
