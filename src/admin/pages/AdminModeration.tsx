@@ -11,7 +11,12 @@ type ModRow = {
   id: string; title: string; type: string; quartier: string; address: string;
   price: number; images: string[] | null;
   admin_status: string; created_at: string; owner_id: string | null;
+  reviewed_at?: string | null; reviewed_by?: string | null;
+  owner_updated_at?: string | null; published_at?: string | null;
 };
+
+const fmtDateTime = (iso?: string | null) =>
+  iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : null;
 
 const STATUS_BADGE: Record<string, string> = {
   pending: 'bg-amber-500/10 text-amber-700 border-amber-500/30',
