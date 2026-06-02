@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, ArrowLeft, SlidersHorizontal, Clock, ChevronUp } from 'lucide-react';
-import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
+import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight, type Property } from '@/lib/mockData';
+import { fetchMergedProperties } from '@/lib/propertiesService';
 import FilterBar, { type FilterState } from '@/components/FilterBar';
 import { parseQuery, describeParsed, smartFilter } from '@/lib/smartMatch';
 
