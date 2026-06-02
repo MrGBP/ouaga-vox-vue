@@ -15,12 +15,14 @@ export type OwnerPropertyRow = {
   favorite_count: number;
   created_at: string;
   published_at: string | null;
+  reviewed_at: string | null;
+  owner_updated_at: string | null;
 };
 
 export async function fetchMyProperties(userId: string): Promise<OwnerPropertyRow[]> {
   const { data, error } = await supabase
     .from('properties')
-    .select('id,title,type,quartier,address,price,images,admin_status,status,view_count,favorite_count,created_at,published_at')
+    .select('id,title,type,quartier,address,price,images,admin_status,status,view_count,favorite_count,created_at,published_at,reviewed_at,owner_updated_at')
     .eq('owner_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;

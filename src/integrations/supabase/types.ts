@@ -215,9 +215,12 @@ export type Database = {
           latitude: number
           longitude: number
           owner_id: string | null
+          owner_updated_at: string | null
           price: number
           published_at: string | null
           quartier: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           security_rating: number | null
           status: string | null
           surface_area: number | null
@@ -250,9 +253,12 @@ export type Database = {
           latitude: number
           longitude: number
           owner_id?: string | null
+          owner_updated_at?: string | null
           price: number
           published_at?: string | null
           quartier: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           security_rating?: number | null
           status?: string | null
           surface_area?: number | null
@@ -285,9 +291,12 @@ export type Database = {
           latitude?: number
           longitude?: number
           owner_id?: string | null
+          owner_updated_at?: string | null
           price?: number
           published_at?: string | null
           quartier?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           security_rating?: number | null
           status?: string | null
           surface_area?: number | null

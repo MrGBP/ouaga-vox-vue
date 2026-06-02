@@ -177,21 +177,29 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
       if (isEdit && initial) {
         willRequireReview = ['rejected', 'corrections'].includes(initial.admin_status);
-        const updatePayload: any = { ...payload };
+        const updatePayload: any = { ...payload, owner_updated_at: new Date().toISOString() };
         if (willRequireReview) updatePayload.admin_status = 'pending';
-        const { error } = await supabase.from('properties').update(updatePayload).eq('id', initial.id);
+        const { data: updated, error } = await supabase
+          .from('properties')
+          .update(updatePayload)
+          .eq('id', initial.id)
+          .select('id');
         if (error) throw error;
+        if (!updated || updated.length === 0) {
+          throw new Error("Mise à jour refusée : vous n'êtes pas propriétaire de ce bien.");
+        }
         propertyId = initial.id;
       } else {
         const { data, error } = await supabase
           .from('properties')
-          .insert({ ...payload, admin_status: 'pending' as any, status: 'available' })
+          .insert({ ...payload, admin_status: 'pending' as any, status: 'available', owner_updated_at: new Date().toISOString() })
           .select('id')
           .single();
         if (error) throw error;
         propertyId = data.id;
         createdPropertyId = propertyId;
       }
+
 
       // Upload atomique des médias en attente
       if (pendingMedia.length) {
