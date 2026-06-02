@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import AuthModal from '@/components/AuthModal';
 
 interface AuthCtx {
   user: User | null;
@@ -10,9 +11,17 @@ interface AuthCtx {
   loading: boolean;
   refreshRoles: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** Open auth modal. If user already signed in, runs the action immediately. */
+  requireAuth: (reasonOrAction: string | (() => void), action?: () => void) => void;
+  /** Open the modal without an action (e.g. from the Login button in the header). */
+  openAuthModal: (reason?: string) => void;
 }
 
-const Ctx = createContext<AuthCtx>({ user: null, session: null, isAdmin: false, isOwner: false, loading: true, refreshRoles: async () => {}, signOut: async () => {} });
+const Ctx = createContext<AuthCtx>({
+  user: null, session: null, isAdmin: false, isOwner: false, loading: true,
+  refreshRoles: async () => {}, signOut: async () => {},
+  requireAuth: () => {}, openAuthModal: () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -21,6 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalReason, setModalReason] = useState<string | undefined>(undefined);
+  const pendingActionRef = useRef<(() => void) | null>(null);
+
   const fetchRoles = async (uid: string) => {
     const { data } = await supabase.from('user_roles').select('role').eq('user_id', uid);
     setIsAdmin(!!data?.some(r => r.role === 'admin'));
@@ -28,12 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Listener FIRST
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        // defer to avoid deadlock
         setTimeout(() => { fetchRoles(sess.user.id); }, 0);
       } else {
         setIsAdmin(false);
@@ -57,7 +69,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshRoles = async () => { if (user) await fetchRoles(user.id); };
   const signOut = async () => { await supabase.auth.signOut(); };
 
-  return <Ctx.Provider value={{ user, session, isAdmin, isOwner, loading, refreshRoles, signOut }}>{children}</Ctx.Provider>;
+  const openAuthModal = useCallback((reason?: string) => {
+    setModalReason(reason);
+    pendingActionRef.current = null;
+    setModalOpen(true);
+  }, []);
+
+  const requireAuth = useCallback((reasonOrAction: string | (() => void), action?: () => void) => {
+    const reason = typeof reasonOrAction === 'string' ? reasonOrAction : undefined;
+    const cb = typeof reasonOrAction === 'function' ? reasonOrAction : action;
+    if (user) {
+      cb?.();
+      return;
+    }
+    setModalReason(reason);
+    pendingActionRef.current = cb ?? null;
+    setModalOpen(true);
+  }, [user]);
+
+  const onAuthSuccess = useCallback(() => {
+    const cb = pendingActionRef.current;
+    pendingActionRef.current = null;
+    // Defer so user state propagates first.
+    if (cb) setTimeout(cb, 50);
+  }, []);
+
+  return (
+    <Ctx.Provider value={{ user, session, isAdmin, isOwner, loading, refreshRoles, signOut, requireAuth, openAuthModal }}>
+      {children}
+      <AuthModal
+        open={modalOpen}
+        reason={modalReason}
+        onClose={() => { setModalOpen(false); pendingActionRef.current = null; }}
+        onSuccess={onAuthSuccess}
+      />
+    </Ctx.Provider>
+  );
 }
 
 export const useAuth = () => useContext(Ctx);
