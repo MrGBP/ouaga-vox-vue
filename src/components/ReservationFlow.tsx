@@ -334,6 +334,17 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
         agent_name: property.agent_name,
         agent_phone: property.agent_phone,
       });
+      // Lot 3: notifier le propriétaire (in-app + email + WhatsApp deep link)
+      notifyOwner({
+        propertyId: property.id,
+        reservationId: row.id,
+        ownerPhone: property.agent_phone,
+        ownerEmail: (property as any).agent_email,
+        title: `Nouvelle réservation — ${property.title}`,
+        body: `${name.trim()} a réservé du ${toKey(checkIn)} au ${toKey(checkOut)} (${nights} nuit${nights > 1 ? 's' : ''}).\nTél: ${phone.trim()}\nEmail: ${email.trim()}`,
+        senderName: 'SapSapHouse',
+      }).catch(() => { /* swallow */ });
+      track('reservation_submitted', { property_id: property.id, nights, total: totalPrice });
       setSubmitted(row);
     } catch (err: any) {
       console.error('Reservation error', err);
