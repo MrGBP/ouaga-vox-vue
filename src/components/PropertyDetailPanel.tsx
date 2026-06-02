@@ -141,11 +141,17 @@ const PropertyDetailPanel = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const { requireAuth } = useAuth();
-  const openReservation = () => requireAuth('réserver ce bien', () => setShowReservation(true));
+  const openReservation = () => {
+    track('reservation_started', { property_id: property?.id });
+    requireAuth('réserver ce bien', () => setShowReservation(true));
+  };
   const isMobile = isMobileOverride ?? false;
 
   // Reset media index when property changes
   useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); setShowAllFeatures(false); setPoiCategory('all'); }, [property?.id]);
+
+  // Track property view
+  useEffect(() => { if (property?.id) track('property_viewed', { property_id: property.id, type: property.type, quartier: property.quartier }); }, [property?.id]);
 
   if (!property) return null;
 
