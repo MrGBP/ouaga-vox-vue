@@ -200,8 +200,35 @@ const Index = () => {
       const cityProps = allProps.filter((p: any) => p.city === activeCity.name);
       const finalPois = mockPois as unknown as POI[];
       const finalQuartiers = mockQuartiers as unknown as Quartier[];
-      setProperties(cityProps);
-      setFilteredProperties(cityProps);
+
+      // Merge real published properties from Supabase (newly approved by admin)
+      let realProps: Property[] = [];
+      try {
+        const { data } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('admin_status', 'published')
+          .neq('status', 'rented')
+          .order('published_at', { ascending: false, nullsFirst: false });
+        if (data) {
+          const mockIds = new Set(cityProps.map(p => p.id));
+          realProps = (data as any[])
+            .filter(r => !mockIds.has(r.id))
+            .map(r => ({
+              ...r,
+              price: Number(r.price),
+              latitude: Number(r.latitude),
+              longitude: Number(r.longitude),
+              images: r.images ?? [],
+              has_video: !!r.video_url,
+              ...(r.features ?? {}),
+            })) as unknown as Property[];
+        }
+      } catch (e) { console.warn('Supabase properties merge failed:', e); }
+
+      const merged = [...realProps, ...cityProps];
+      setProperties(merged);
+      setFilteredProperties(merged);
       setPois(finalPois);
       setQuartiers(finalQuartiers);
     } catch (error: any) {

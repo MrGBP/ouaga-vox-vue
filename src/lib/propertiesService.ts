@@ -49,12 +49,34 @@ export async function fetchPublishedProperties(): Promise<Property[]> {
     .select('*')
     .eq('admin_status', 'published')
     .neq('status', 'rented')
-    .order('created_at', { ascending: false });
+    .order('published_at', { ascending: false, nullsFirst: false });
   if (error || !data || data.length === 0) {
-    // Fallback to mocks (keeps the public site working before any real data is added)
     return mockProperties.filter(p => p.status !== 'rented');
   }
   return data.map(rowToProperty);
+}
+
+/**
+ * Merge real published Supabase properties with the mock catalog so that
+ * newly approved listings show up immediately on the public site without
+ * removing the demo content. Real items appear first (most recent approval).
+ */
+export async function fetchMergedProperties(): Promise<Property[]> {
+  const mocks = mockProperties.filter(p => p.status !== 'rented');
+  try {
+    const { data } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('admin_status', 'published')
+      .neq('status', 'rented')
+      .order('published_at', { ascending: false, nullsFirst: false });
+    if (!data || data.length === 0) return mocks;
+    const mockIds = new Set(mocks.map(p => p.id));
+    const real = data.filter(r => !mockIds.has(r.id)).map(rowToProperty);
+    return [...real, ...mocks];
+  } catch {
+    return mocks;
+  }
 }
 
 export async function fetchAllPropertiesAdmin(): Promise<Property[]> {

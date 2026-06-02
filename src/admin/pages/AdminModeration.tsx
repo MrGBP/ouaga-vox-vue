@@ -45,7 +45,21 @@ export default function AdminModeration() {
   };
   useEffect(() => { reload(); }, []);
 
-  const filtered = items.filter(i => filter === 'all' ? true : i.admin_status === filter);
+  // Status-based queue priority: pending / corrections / reviewing remain on top.
+  // Decided items (published, rejected) drop to the bottom so the admin always
+  // sees actionable items first ("file d'attente").
+  const STATUS_PRIORITY: Record<string, number> = {
+    pending: 0, corrections: 1, reviewing: 2, rejected: 3, published: 4, inactive: 5, rented: 6,
+  };
+  const filtered = items
+    .filter(i => filter === 'all' ? true : i.admin_status === filter)
+    .slice()
+    .sort((a, b) => {
+      const pa = STATUS_PRIORITY[a.admin_status] ?? 99;
+      const pb = STATUS_PRIORITY[b.admin_status] ?? 99;
+      if (pa !== pb) return pa - pb;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 
   const decide = async (row: ModRow, status: 'published' | 'rejected' | 'corrections', note?: string) => {
     try {

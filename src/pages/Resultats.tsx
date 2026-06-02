@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { mockProperties } from '@/lib/mockData';
+import { mockProperties, type Property } from '@/lib/mockData';
+import { fetchMergedProperties } from '@/lib/propertiesService';
 import PropertyCard from '@/components/PropertyCard';
 import { type FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import MobileBottomNav from '@/components/MobileBottomNav';
@@ -34,9 +35,16 @@ const ResultatsPage = () => {
     } catch { return new Set(); }
   });
 
+  const [allProps, setAllProps] = useState<Property[]>(mockProperties as any);
+  useEffect(() => {
+    let alive = true;
+    fetchMergedProperties().then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   const results = useMemo(
-    () => filterProperties(mockProperties, appliedQuery, filters, false, favorites),
-    [appliedQuery, filters, favorites]
+    () => filterProperties(allProps, appliedQuery, filters, false, favorites),
+    [allProps, appliedQuery, filters, favorites]
   );
 
   const toggleFavorite = useCallback((id: string) => {
