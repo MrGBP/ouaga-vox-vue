@@ -43,6 +43,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [activeCat, setActiveCat] = useState<FeatureCategoryId>(FEATURE_CATEGORIES[0].id);
   const [busy, setBusy] = useState(false);
 
+  // Médias en attente (création) + compteur médias existants (édition)
+  const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
+  const [pendingUrl, setPendingUrl] = useState('');
+  const [pendingKind, setPendingKind] = useState<'image' | 'video' | 'video_360'>('image');
+  const [existingMediaCount, setExistingMediaCount] = useState(0);
+  const pendingFileRef = useRef<HTMLInputElement>(null);
+
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
