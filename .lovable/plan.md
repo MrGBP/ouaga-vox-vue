@@ -1,40 +1,102 @@
-Ce chantier est volumineux (9 sections, ~8 fichiers majeurs + nouvelle table). Je propose de l'exécuter en 3 lots, dans l'ordre, avec validation entre chaque lot pour limiter les régressions.
+# Production-ready : multi-pays + admin éditable
 
-## Lot 1 — Backend & fondations (priorité)
+## Objectif
+Aucun bouton non fonctionnel. Chaque pays a son email + WhatsApp service client. L'admin peut tout éditer depuis le dashboard. Solution palliative email via `mailto:` (zéro infra, zéro coût) ; upgrade vers Lovable Emails plus tard quand un domaine sera acheté.
 
-1. **Table `reservations` (Supabase)** — migration avec champs spec (confirmation_number auto `SSH-XXXXXXXX`, property_id, dates, nights, prix, status, contact), RLS lecture/insert publiques, GRANTs anon+authenticated.
-   - Note: la table existante `reservations` a une structure différente (liée à `auth.users`, status enum). Je crée la nouvelle table sous un nom dédié **`public_reservations`** pour éviter de casser l'existant (admin, owner dashboard, RLS). Tous les services front pointeront dessus.
-2. **`src/lib/reservationsPublicService.ts`** — `getReservedDates(propertyId)` + `createReservation(...)`.
-3. **`src/lib/emailTemplates.ts`** — `generateConfirmationEmail(reservation, property)` retournant `{ subject, html, text }` style Booking.com (logo, sections bien/séjour/montant/accès/règlement/support). Logué en console + affiché à l'écran pour l'instant.
+---
 
-## Lot 2 — UX réservation & fiche bien
+## 1. Configuration par pays (table DB + admin UI)
 
-4. **Refonte `ReservationFlow.tsx`** — 3 étapes avec barre de progression :
-   - Étape 1 : calendrier (2 mois desktop / 1 scrollable mobile) basé sur `react-day-picker` déjà présent, jours réservés en rouge clair avec label "Réservé", validation en temps réel (popup d'indisponibilité **avant** confirmation), compteur adultes/enfants.
-   - Étape 2 : nom / email / téléphone WhatsApp / message.
-   - Étape 3 : récap (photo, dates, X nuits × prix = total, **aucune réduction**), bouton "Confirmer", bouton paiement mobile grisé "disponible prochainement".
-   - À la confirmation : insert dans `public_reservations` + génération email (console.log + écran de succès avec n° `SSH-XXXX`).
-5. **`PropertyDetailPanel.tsx`** :
-   - Suppression de toute logique de prix mensuel/réduction (formule unique nuits × prix).
-   - Section agent : uniquement **Appeler** (`tel:`) + **WhatsApp** (`wa.me/`). Suppression email + "Demander un rappel".
-   - Bouton partage : URL unique `/bien/${id}`, Web Share API si dispo, sinon panel WhatsApp + Copier le lien.
+### Migration : nouvelle table `country_configs`
+Champs par pays (BF, GH, ML) :
+- `code` (BF/GH/ML), `name`, `flag_emoji`, `currency` (XOF/GHS/XOF), `language` (fr/en/fr)
+- `support_email` (ex: `bf@sapsaphouse.com` ou ton gmail perso pour l'instant)
+- `support_whatsapp` (BF: +22657976660, GH: à fournir, ML: +22377018912)
+- `commission_rate` (5–7%)
+- `enabled` (bool — masquer un pays côté public sans suppression)
+- RLS : lecture publique, écriture admin uniquement
 
-## Lot 3 — Index, i18n, Footer
+### Seed initial
+- BF : `support_whatsapp = +22657976660`, commission 6%
+- ML : `support_whatsapp = +22377018912`, commission 6%
+- GH : `support_whatsapp = null` (désactivé tant que pas fourni), langue EN, devise GHS
 
-6. **Pagination desktop `Index.tsx`** — numéros visibles, Précédent/Suivant, ellipses, info "X–Y sur Z biens".
-7. **i18n** — install `i18next` + `react-i18next`, `src/i18n/index.ts`, `fr.json`, `en.json` avec les clés listées. Switcher FR/EN dans `Header.tsx` (desktop) et onglet Profil mobile.
-8. **Footer** — `CONTACT_INFO` + `LEGAL_LINKS` placeholders, liens mailto/wa.me cliquables, 3 routes légales (`/mentions-legales`, `/politique-confidentialite`, `/conditions-utilisation`) avec page "Contenu en cours de rédaction".
+---
 
-## Hors-scope explicite
+## 2. Couche applicative : `useCountryConfig` hook
 
-- Envoi réel d'email (Resend / edge function) — non demandé maintenant, juste console.log + affichage écran.
-- Paiement mobile — bouton grisé uniquement.
-- Réductions admin — non implémentées (futur).
+Nouveau hook qui :
+- Détermine le pays actif (depuis `useCountry` existant)
+- Récupère la config depuis Supabase (cache via React Query)
+- Expose : `supportEmail`, `supportWhatsapp`, `commissionRate`, `currency`, `enabled`
+- Fallback : si pays désactivé → redirige vers BF (pays par défaut)
 
-## Risques / points d'attention
+---
 
-- La table `reservations` existante est utilisée par `OwnerReservations`, `AdminReservations`, `reservationsService.ts` — **je n'y touche pas**. La nouvelle table publique est séparée.
-- Le calendrier 2 mois utilisera `react-day-picker` (déjà dans le projet via shadcn `calendar.tsx`).
-- i18n : je traduis uniquement les clés du brief + composants principaux (Header, MobileBottomNav, hero, PropertyCard CTA, ReservationFlow). Pas de migration totale du site.
+## 3. Helpers contact universels (`src/lib/contact.ts`)
 
-Confirme et je lance le **Lot 1** (migration + services + template email) — j'enchaînerai les Lots 2 et 3 après.
+Trois fonctions, utilisables partout :
+- `openWhatsApp(phone, message)` → `https://wa.me/<phone>?text=<encoded>`
+- `openEmail({ to, subject, body })` → `mailto:` pré-rempli
+- `openSupport(country, context)` → ouvre WhatsApp service client du pays avec message contextuel
+
+Tous les boutons "Contact", "Réserver via WhatsApp", "Email propriétaire" passent par ces helpers → **aucun bouton mort**.
+
+---
+
+## 4. Notifications propriétaires (mailto + wa.me)
+
+Quand un client soumet une réservation :
+1. La réservation est enregistrée en DB (déjà fait)
+2. Le client voit un écran de confirmation avec **2 boutons fonctionnels** :
+   - "Notifier le propriétaire par WhatsApp" → `wa.me` pré-rempli avec détails résa
+   - "Notifier par email" → `mailto:` pré-rempli
+3. Bonus : message in-app dans `messages` (déjà fait)
+
+Le propriétaire reçoit donc une notification réelle, gratuite, sans serveur email.
+
+---
+
+## 5. Admin Dashboard — nouvel onglet "Pays"
+
+Page admin qui liste les 3 pays en cartes éditables :
+- Toggle activé/désactivé
+- Inputs : email support, WhatsApp support, taux commission, devise, langue
+- Bouton "Enregistrer" → update DB
+- Lecture seule pour les non-admins
+
+Aussi : afficher dans le Kanban réservations le pays + montant commission calculé.
+
+---
+
+## 6. Audit "boutons morts" — passe complète
+
+Je vérifie et corrige chaque bouton de l'app :
+- Header : Connexion, Favoris, Compte → tous fonctionnels (déjà ok via AuthModal)
+- PropertyDetailPanel : Réserver, Contact tel/wa/email → via helpers
+- ReservationFlow : Soumettre → DB + écran notif propriétaire
+- Footer / About / CGU → liens vers pages existantes ou supprimés si vides
+- Tout bouton sans handler → soit câblé, soit retiré
+
+---
+
+## 7. Ce qui reste hors scope (à activer plus tard)
+
+- **Envoi auto d'emails serveur** : nécessite un domaine. Je préparerai le code mais inactif.
+- **WhatsApp Business API** : payant + compte Meta Business. Le `wa.me` couvre 95% des besoins.
+- **Pays additionnels** (Côte d'Ivoire, Sénégal…) : ajout en 2 min via la table `country_configs`.
+
+---
+
+## Détails techniques
+
+```
+Migration  → country_configs (table + RLS + seed BF/GH/ML)
+Hook       → src/hooks/useCountryConfig.ts
+Helpers    → src/lib/contact.ts (openWhatsApp, openEmail, openSupport)
+Admin      → src/components/admin/CountrySettings.tsx (nouvel onglet)
+Refacto    → PropertyDetailPanel, ReservationFlow, Header utilisent les helpers
+Confirm    → src/components/ReservationConfirmation.tsx (2 boutons notif owner)
+```
+
+Livraison en une passe. Tu pourras tester immédiatement : ouvre une fiche, clique "Email proprio" → ton app mail s'ouvre pré-remplie. Clique "WhatsApp service client" → WhatsApp s'ouvre avec le bon numéro selon le pays sélectionné.

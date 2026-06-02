@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      country_configs: {
+        Row: {
+          code: string
+          commission_rate: number
+          created_at: string
+          currency: string
+          currency_symbol: string
+          enabled: boolean
+          flag_emoji: string
+          id: string
+          language: string
+          name: string
+          support_email: string | null
+          support_whatsapp: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          currency_symbol?: string
+          enabled?: boolean
+          flag_emoji?: string
+          id?: string
+          language?: string
+          name: string
+          support_email?: string | null
+          support_whatsapp?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          currency_symbol?: string
+          enabled?: boolean
+          flag_emoji?: string
+          id?: string
+          language?: string
+          name?: string
+          support_email?: string | null
+          support_whatsapp?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
