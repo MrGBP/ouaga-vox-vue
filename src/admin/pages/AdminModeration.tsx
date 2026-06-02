@@ -41,7 +41,7 @@ export default function AdminModeration() {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('id,title,type,quartier,address,price,images,admin_status,created_at,owner_id')
+        .select('id,title,type,quartier,address,price,images,admin_status,created_at,owner_id,reviewed_at,reviewed_by,owner_updated_at,published_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
       setItems((data ?? []) as ModRow[]);
