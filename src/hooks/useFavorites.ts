@@ -38,6 +38,7 @@ export function useFavorites() {
       return;
     }
     const was = ids.includes(id);
+    track(was ? 'favorite_removed' : 'favorite_added', { property_id: id });
     // optimistic
     setIds(prev => was ? prev.filter(x => x !== id) : [...prev, id]);
     try {
