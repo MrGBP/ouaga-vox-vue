@@ -142,13 +142,14 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     if (!price || Number(price) <= 0) return toast.error('Le prix doit être supérieur à 0');
     if (!quartier) return toast.error('Quartier requis');
 
-    // Au moins 1 média : pending (création) ou existants (édition)
+    // Au moins 1 média : pending + existants
     const totalMedia = pendingMedia.length + (isEdit ? existingMediaCount : 0);
     if (totalMedia < 1) {
-      return toast.error('Ajoute au moins 1 média (photo, vidéo ou visite 360°)');
+      return toast.error('Ajoute au moins 1 média (photo, vidéo ou visite 360°) avant de continuer');
     }
 
     setBusy(true);
+    let createdPropertyId: string | null = null;
     try {
       const featuresObj: Record<string, any> = {};
       features.forEach(k => { featuresObj[k] = true; });
@@ -189,10 +190,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           .single();
         if (error) throw error;
         propertyId = data.id;
+        createdPropertyId = propertyId;
       }
 
-      // Upload des médias en attente
+      // Upload atomique des médias en attente
       if (pendingMedia.length) {
+        const failures: string[] = [];
+        let uploaded = 0;
         for (const m of pendingMedia) {
           try {
             if (m.source === 'file') {
@@ -200,23 +204,35 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             } else {
               await addPropertyMediaUrl(propertyId, m.url, m.kind);
             }
+            uploaded++;
           } catch (err: any) {
-            toast.error(`Média non uploadé : ${err?.message ?? 'erreur'}`);
+            failures.push(err?.message ?? 'erreur inconnue');
           }
         }
-        // Nettoyer les previews
+
+        // Si rien n'a été uploadé pour une création vierge => rollback
+        if (uploaded === 0 && (isEdit ? existingMediaCount : 0) === 0) {
+          if (createdPropertyId) {
+            await supabase.from('properties').delete().eq('id', createdPropertyId);
+          }
+          throw new Error(`Aucun média n'a pu être uploadé : ${failures[0] ?? 'erreur inconnue'}. Le bien n'a pas été enregistré.`);
+        }
+
+        if (failures.length) {
+          toast.warning(`${uploaded}/${pendingMedia.length} médias uploadés. ${failures.length} en échec : ${failures[0]}`);
+        }
+
         pendingMedia.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl));
         setPendingMedia([]);
-        const fresh = await listPropertyMedia(propertyId).catch(() => []);
-        setExistingMediaCount(fresh?.length ?? 0);
       }
 
-      setSavedId(propertyId);
       toast.success(
         isEdit
           ? (willRequireReview ? 'Bien renvoyé en validation' : 'Bien mis à jour')
           : 'Bien créé. En attente de validation.'
       );
+      // Fermeture automatique — pas de 2e étape
+      onClose(true);
     } catch (e: any) {
       toast.error(e?.message ?? 'Erreur');
     } finally { setBusy(false); }
