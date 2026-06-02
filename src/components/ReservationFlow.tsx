@@ -572,12 +572,12 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
 
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex justify-between text-sm text-foreground">
-                  <span>{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')} × {fmt(nightlyPrice)} FCFA</span>
-                  <span className="font-semibold">{fmt(totalPrice)} FCFA</span>
+                  <span>{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')} × {fmt(nightlyPrice)} {(property as any).currency || 'FCFA'}</span>
+                  <span className="font-semibold">{fmt(totalPrice)} {(property as any).currency || 'FCFA'}</span>
                 </div>
                 <div className="flex justify-between pt-2 mt-2 border-t border-border text-base font-bold">
                   <span>{t('reservation.total')}</span>
-                  <span className="text-primary">{fmt(totalPrice)} FCFA</span>
+                  <span className="text-primary">{fmt(totalPrice)} {(property as any).currency || 'FCFA'}</span>
                 </div>
               </div>
 
