@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { addFavorite, listFavoriteIds, removeFavorite, syncLocalFavoritesToCloud } from '@/lib/favoritesService';
+import { track } from '@/lib/analytics';
 
 export function useFavorites() {
   const { user, requireAuth } = useAuth();
@@ -37,6 +38,7 @@ export function useFavorites() {
       return;
     }
     const was = ids.includes(id);
+    track(was ? 'favorite_removed' : 'favorite_added', { property_id: id });
     // optimistic
     setIds(prev => was ? prev.filter(x => x !== id) : [...prev, id]);
     try {

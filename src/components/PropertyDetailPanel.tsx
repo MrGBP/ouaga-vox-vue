@@ -14,6 +14,8 @@ import { usePropertyMedia } from '@/hooks/usePropertyMedia';
 import { useNearbyPOI } from '@/hooks/useNearbyPOI';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { getTrustBadge } from '@/lib/trustSystem';
+import { track } from '@/lib/analytics';
 import ReservationFlow from './ReservationFlow';
 import SharePanel from './SharePanel';
 
@@ -139,11 +141,17 @@ const PropertyDetailPanel = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const { requireAuth } = useAuth();
-  const openReservation = () => requireAuth('réserver ce bien', () => setShowReservation(true));
+  const openReservation = () => {
+    track('reservation_started', { property_id: property?.id });
+    requireAuth('réserver ce bien', () => setShowReservation(true));
+  };
   const isMobile = isMobileOverride ?? false;
 
   // Reset media index when property changes
   useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); setShowAllFeatures(false); setPoiCategory('all'); }, [property?.id]);
+
+  // Track property view
+  useEffect(() => { if (property?.id) track('property_viewed', { property_id: property.id, type: property.type, quartier: property.quartier }); }, [property?.id]);
 
   if (!property) return null;
 
@@ -650,7 +658,22 @@ const PropertyDetailPanel = ({
             <div className="flex items-center gap-3">
               {property.agent_photo && <img src={property.agent_photo} alt={property.agent_name} className="w-10 h-10 rounded-full object-cover" />}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">{property.agent_name}</p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-sm font-semibold text-foreground">{property.agent_name}</p>
+                  {(() => {
+                    // Trust badge (mock stats for now — real signals will come from owner profile)
+                    const badge = getTrustBadge({ idVerified: true, propertiesCount: 1, completedReservations: 3 });
+                    return (
+                      <span
+                        title={badge.description}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white"
+                        style={{ background: badge.color }}
+                      >
+                        <span>{badge.emoji}</span>{badge.label}
+                      </span>
+                    );
+                  })()}
+                </div>
                 <p className="text-[10px] text-muted-foreground">
                   {hasAnyContact ? 'Répond en général en moins de 2h' : 'Contactez via la réservation'}
                 </p>
@@ -661,6 +684,7 @@ const PropertyDetailPanel = ({
                 {hasPhone && (
                   <a
                     href={`tel:${property.agent_phone}`}
+                    onClick={() => track('contact_phone_clicked', { property_id: property.id })}
                     className="flex-1 h-11 flex items-center justify-center gap-2 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
                   >
                     <Phone className="h-3.5 w-3.5" /> Appeler
@@ -670,6 +694,7 @@ const PropertyDetailPanel = ({
                   <a
                     href={`https://wa.me/${agentPhoneRaw}`}
                     target="_blank" rel="noopener noreferrer"
+                    onClick={() => track('contact_whatsapp_clicked', { property_id: property.id })}
                     className="flex-1 h-11 flex items-center justify-center gap-2 bg-[#25D366] text-white rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
                   >
                     <span>💬</span> WhatsApp
@@ -678,6 +703,7 @@ const PropertyDetailPanel = ({
                 {hasEmail && (
                   <a
                     href={`mailto:${agentEmail}`}
+                    onClick={() => track('contact_email_clicked', { property_id: property.id })}
                     className="flex-1 h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
                   >
                     <Mail className="h-3.5 w-3.5" /> Email
