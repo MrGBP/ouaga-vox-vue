@@ -48,6 +48,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
         });
         if (error) throw error;
         toast.success('Compte créé. Vérifie ton email si la confirmation est activée.');
+        track('auth_signup_success', { reason });
         onSuccess?.();
         onClose();
       } else {
@@ -58,6 +59,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
         });
         if (error) throw error;
         toast.success('Connecté');
+        track('auth_signin_success', { reason });
         onSuccess?.();
         onClose();
       }
@@ -67,6 +69,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
   };
 
   const continueWithWhatsApp = () => {
+    track('auth_whatsapp_continue', { reason });
     const msg = encodeURIComponent(
       reason ? `Bonjour SapSap, je souhaite ${reason} sans créer de compte.` : 'Bonjour SapSap, je souhaite continuer via WhatsApp.'
     );
