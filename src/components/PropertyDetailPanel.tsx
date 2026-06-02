@@ -617,7 +617,7 @@ const PropertyDetailPanel = ({
         {isMobile ? (
           <div className="flex gap-2.5 pt-1">
             <button
-              onClick={() => setShowReservation(true)}
+              onClick={openReservation}
               className="flex-1 h-12 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
             >
               📅 Réserver · {isFurnished && nightPrice > 0
