@@ -4,8 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, ArrowLeft, SlidersHorizontal, Clock, ChevronUp } from 'lucide-react';
 import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight, type Property } from '@/lib/mockData';
 import { fetchMergedProperties } from '@/lib/propertiesService';
-import FilterBar, { type FilterState } from '@/components/FilterBar';
-import { parseQuery, describeParsed, smartFilter } from '@/lib/smartMatch';
+import FilterBar, { type FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
+import { parseQuery, describeParsed } from '@/lib/smartMatch';
+import { filterProperties } from '@/lib/filterProperties';
+
+const FILTERS_KEY = 'sapsap_filters_v1';
+const loadFilters = (): FilterState => {
+  try {
+    const raw = localStorage.getItem(FILTERS_KEY);
+    if (raw) return { ...DEFAULT_FILTERS, ...JSON.parse(raw) };
+  } catch { /* noop */ }
+  return DEFAULT_FILTERS;
+};
 
 const TYPEWRITER_PHRASES = [
   "Villa meublée 4 chambres à Tampouy...",
