@@ -17,16 +17,26 @@ const ResultatsPage = () => {
   const [searchParams] = useSearchParams();
   const appliedQuery = searchParams.get('q') || '';
 
-  // Filters are read from localStorage (kept in sync with the rest of the
-  // platform) but not editable here — the user reopens the search overlay
-  // via the navbar to refine.
-  const [filters] = useState<FilterState>(() => {
+  const loadFilters = (): FilterState => {
     try {
       const raw = localStorage.getItem(FILTERS_KEY);
       if (raw) return { ...DEFAULT_FILTERS, ...JSON.parse(raw) };
     } catch { /* noop */ }
     return DEFAULT_FILTERS;
-  });
+  };
+  // Filtres lus depuis localStorage et synchronisés en temps réel avec
+  // les autres pages (home, /search) via les events 'storage' et 'focus'.
+  const [filters, setFilters] = useState<FilterState>(loadFilters);
+  useEffect(() => {
+    const sync = () => setFilters(loadFilters());
+    window.addEventListener('storage', sync);
+    window.addEventListener('focus', sync);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('focus', sync);
+    };
+  }, []);
+
 
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     try {
