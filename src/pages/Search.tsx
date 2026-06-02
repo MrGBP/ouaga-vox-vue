@@ -38,6 +38,19 @@ const SearchPage = () => {
   const [query, setQuery] = useState(initialQuery);
   const [recent, setRecent] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  // Filtres persistés (partagés avec /resultats et la home) — la prévisu
+  // de recherche les applique pour que ce que l'utilisateur voit ici
+  // corresponde exactement à ce qu'il verra sur la page Résultats.
+  const [savedFilters, setSavedFilters] = useState<FilterState>(loadFilters);
+  useEffect(() => {
+    const sync = () => setSavedFilters(loadFilters());
+    window.addEventListener('storage', sync);
+    window.addEventListener('focus', sync);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('focus', sync);
+    };
+  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
   const filtersRef = useRef<HTMLDivElement>(null);
 
