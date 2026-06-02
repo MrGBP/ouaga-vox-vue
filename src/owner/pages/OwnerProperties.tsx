@@ -92,6 +92,14 @@ export default function OwnerProperties() {
                   <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {p.view_count ?? 0}</span>
                   <span className="flex items-center gap-1"><Heart className="h-3 w-3" /> {p.favorite_count ?? 0}</span>
                 </div>
+                <div className="mt-1.5 text-[10px] text-muted-foreground space-y-0.5">
+                  <div>Soumis : {new Date(p.owner_updated_at ?? p.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</div>
+                  {p.reviewed_at && (
+                    <div className={p.admin_status === 'published' ? 'text-green-700' : p.admin_status === 'rejected' ? 'text-red-700' : ''}>
+                      Examiné par l'admin : {new Date(p.reviewed_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
+                    </div>
+                  )}
+                </div>
                 <div className="flex gap-1.5 mt-3 pt-3 border-t">
                   {p.admin_status === 'published' && (
                     <Link to={`/property/${p.id}`} target="_blank" className="flex-1">
