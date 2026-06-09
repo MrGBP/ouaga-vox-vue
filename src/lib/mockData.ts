@@ -938,3 +938,21 @@ export const POI_CATALOG: Record<string, POICatalogEntry> = {
   place_publique:   { emoji: '🟫', bg: '#EFEBE9', color: '#4E342E', label: 'Place publique' },
   mall:             { emoji: '🏬', bg: '#F3E5F5', color: '#4A148C', label: 'Centre commercial' },
 };
+
+// ─── MVP GATED EXPORTS ───────────────────────────────────────────────────────
+// Les jeux de données mock (mockProperties, mockQuartiers, mockPois) sont
+// désormais désactivés par défaut en mode MVP production. Ils restent
+// disponibles via les exports `RAW_*` ci-dessous pour pouvoir tout réafficher
+// en activant le mode démo (cf. src/lib/mockMode.ts).
+import { isMockEnabled as _isMockEnabled } from '@/lib/mockMode';
+const _MOCK_ON = _isMockEnabled();
+
+export const mockProperties: Property[] = _MOCK_ON ? _mockProperties : [];
+export const mockQuartiers: Quartier[] = _MOCK_ON ? _mockQuartiers : [];
+export const mockPois: POI[] = _MOCK_ON ? _mockPois : [];
+
+// Accès brut — utiliser uniquement pour des outils internes (ex: catalogue de
+// référence côté admin, géocodage des quartiers connus, etc.).
+export const RAW_MOCK_PROPERTIES = _mockProperties;
+export const RAW_MOCK_QUARTIERS = _mockQuartiers;
+export const RAW_MOCK_POIS = _mockPois;
