@@ -357,26 +357,49 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 </div>
 
                 {commercial ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Pièces / bureaux">
-                      <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                    <Field label="Surface (m²)">
-                      <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                  </div>
+                  <>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Field label={isOfficeType(type) ? 'Nombre de bureaux' : 'Nombre de locaux'}>
+                        <input type="number" min={0} value={rooms} onChange={e => setRooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Nombre de pièces">
+                        <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Surface (m²)">
+                        <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Étage">
+                        <input type="number" min={0} value={floor} onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Capacité d'accueil (optionnel)">
+                        <input type="number" min={0} value={capacity} onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder="ex: 12 personnes" />
+                      </Field>
+                    </div>
+                  </>
                 ) : (
-                  <div className="grid grid-cols-3 gap-3">
-                    <Field label="Chambres">
-                      <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                    <Field label="SDB">
-                      <input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                    <Field label="Surface (m²)">
-                      <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                  </div>
+                  <>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Field label="Chambres">
+                        <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Salles de bain">
+                        <input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Surface (m²)">
+                        <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Étage">
+                        <input type="number" min={0} value={floor} onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Nombre de pièces">
+                        <input type="number" min={0} value={rooms} onChange={e => setRooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                    </div>
+                  </>
                 )}
 
                 {!commercial && (
