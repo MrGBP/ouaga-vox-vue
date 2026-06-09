@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Search, Check, X, Pencil, Zap, Trash2, Plus, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAdminStore, adminStore } from '@/admin/store/adminStore';
-import { getTypeLabel, isTypeFurnished, pricePerNight, mockQuartiers, PROPERTY_TYPES } from '@/lib/mockData';
+import { getTypeLabel, isTypeFurnished, pricePerNight, RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES } from '@/lib/mockData';
 import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import AdminBadge from '@/admin/components/AdminBadge';
 import PropertyFormModal from '@/admin/components/PropertyFormModal';

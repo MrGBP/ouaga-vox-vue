@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, Upload, Link2, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { mockQuartiers, PROPERTY_TYPES } from '@/lib/mockData';
+import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES } from '@/lib/mockData';
 import {
   FEATURE_CATALOG,
   FEATURE_CATEGORIES,

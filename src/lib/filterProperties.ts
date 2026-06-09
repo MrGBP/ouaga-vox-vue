@@ -1,5 +1,5 @@
 import type { Property } from '@/lib/mockData';
-import { getTypeLabel, CHAR_CHECKS, mockQuartiers } from '@/lib/mockData';
+import { getTypeLabel, CHAR_CHECKS, RAW_MOCK_QUARTIERS as mockQuartiers } from '@/lib/mockData';
 import type { FilterState } from '@/components/FilterBar';
 import { smartFilter } from '@/lib/smartMatch';
 
