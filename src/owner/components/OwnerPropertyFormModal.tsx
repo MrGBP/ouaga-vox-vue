@@ -173,14 +173,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return toast.error('Le titre est requis');
-    if (description.trim().length < 20) return toast.error('La description est requise (20 caractères minimum)');
+    if (description.trim().length < 20) return toast.error('La description est obligatoire (20 caractères minimum)');
     if (!price || Number(price) <= 0) return toast.error('Le prix doit être supérieur à 0');
     if (!quartier) return toast.error('Quartier requis');
 
     // Au moins 1 média : pending + existants
     const totalMedia = pendingMedia.length + (isEdit ? existingMediaCount : 0);
     if (totalMedia < 1) {
-      return toast.error('Ajoute au moins 1 média (photo, vidéo ou visite 360°) avant de continuer');
+      return toast.error('Ajoute au moins 1 photo (obligatoire). Vidéo et visite 360° sont optionnelles.');
+    }
+
+    // Au moins 1 POI : pending + existants
+    const totalPois = pendingPois.length + existingPois.length;
+    if (totalPois < 1) {
+      return toast.error('Ajoute au moins 1 Point d\'Intérêt à proximité (école, hôpital, marché…)');
     }
 
     setBusy(true);
@@ -189,7 +195,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       const featuresObj: Record<string, any> = {};
       features.forEach(k => { featuresObj[k] = true; });
       if (customFeatures.length) featuresObj.__custom = customFeatures;
+      if (floor !== '') featuresObj.__floor = Number(floor);
+      if (rooms !== '') featuresObj.__rooms = Number(rooms);
+      if (capacity !== '') featuresObj.__capacity = Number(capacity);
 
+      const commercial = isCommercialType(type);
       const payload = {
         title: title.trim(),
         description: description.trim(),
@@ -199,8 +209,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         address: address.trim() || quartier,
         latitude: lat,
         longitude: lng,
-        bedrooms: Number(bedrooms) || null,
-        bathrooms: Number(bathrooms) || null,
+        bedrooms: commercial ? null : (Number(bedrooms) || null),
+        bathrooms: commercial ? null : (Number(bathrooms) || null),
         surface_area: Number(surface) || null,
         furnished,
         features: featuresObj,
@@ -235,7 +245,6 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         createdPropertyId = propertyId;
       }
 
-
       // Upload atomique des médias en attente
       if (pendingMedia.length) {
         const failures: string[] = [];
@@ -253,20 +262,24 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           }
         }
 
-        // Si rien n'a été uploadé pour une création vierge => rollback
         if (uploaded === 0 && (isEdit ? existingMediaCount : 0) === 0) {
-          if (createdPropertyId) {
-            await supabase.from('properties').delete().eq('id', createdPropertyId);
-          }
+          if (createdPropertyId) await supabase.from('properties').delete().eq('id', createdPropertyId);
           throw new Error(`Aucun média n'a pu être uploadé : ${failures[0] ?? 'erreur inconnue'}. Le bien n'a pas été enregistré.`);
         }
-
         if (failures.length) {
           toast.warning(`${uploaded}/${pendingMedia.length} médias uploadés. ${failures.length} en échec : ${failures[0]}`);
         }
-
         pendingMedia.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl));
         setPendingMedia([]);
+      }
+
+      // Persistance des POIs en attente
+      if (pendingPois.length) {
+        for (const p of pendingPois) {
+          try { await addPoiToProperty(propertyId, { name: p.name, type: p.type, quartier, distance_m: p.distance_m }); }
+          catch (err: any) { console.warn('POI add failed', err); }
+        }
+        setPendingPois([]);
       }
 
       toast.success(
@@ -274,7 +287,6 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           ? (willRequireReview ? 'Bien renvoyé en validation' : 'Bien mis à jour')
           : 'Bien créé. En attente de validation.'
       );
-      // Fermeture automatique — pas de 2e étape
       onClose(true);
     } catch (e: any) {
       toast.error(e?.message ?? 'Erreur');
