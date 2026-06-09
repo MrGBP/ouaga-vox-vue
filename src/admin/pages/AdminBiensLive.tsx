@@ -41,10 +41,12 @@ const FEATURE_DEFS: { key: string; label: string; group: string }[] = [
 const STATUS_OPTIONS = [
   { value: 'pending', label: 'En attente' },
   { value: 'reviewing', label: 'En révision' },
+  { value: 'corrections', label: 'À corriger' },
   { value: 'published', label: 'Publié' },
   { value: 'rejected', label: 'Refusé' },
+  { value: 'paused', label: 'Suspendu' },
   { value: 'rented', label: 'Loué' },
-  { value: 'inactive', label: 'Inactif' },
+  { value: 'inactive', label: 'Archivé' },
 ];
 
 const propertySchema = z.object({
