@@ -22,7 +22,7 @@ export default function AdminMessages() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<PropertyMessageRow[]>([]);
-  const [text, setText] = useState('');
+  
   const [sending, setSending] = useState(false);
   const [search, setSearch] = useState('');
 
