@@ -74,3 +74,55 @@ export async function listMyOwnerConversations(userId: string) {
     return bt.localeCompare(at);
   });
 }
+
+/**
+ * Liste, pour l'admin, toutes les conversations groupées par bien.
+ * Renvoie chaque bien ayant au moins un message, ou tous les biens si pas encore d'échange.
+ */
+export async function listAllAdminConversations() {
+  // 1. tous les messages property-scope (non-réservation)
+  const { data: msgs, error: mErr } = await supabase
+    .from('messages')
+    .select('*')
+    .not('property_id', 'is', null)
+    .order('created_at', { ascending: false });
+  if (mErr) throw mErr;
+
+  const propIds = Array.from(new Set((msgs ?? []).map((m: any) => m.property_id))).filter(Boolean);
+  if (propIds.length === 0) return [];
+
+  const { data: props, error: pErr } = await supabase
+    .from('properties')
+    .select('id,title,admin_status,images,owner_id,quartier')
+    .in('id', propIds);
+  if (pErr) throw pErr;
+
+  // 2. récupère les profils owner pour le nom
+  const ownerIds = Array.from(new Set((props ?? []).map((p: any) => p.owner_id).filter(Boolean)));
+  let owners: Record<string, { full_name: string | null; phone: string | null }> = {};
+  if (ownerIds.length) {
+    const { data: profs } = await supabase.from('profiles').select('id,full_name,phone').in('id', ownerIds);
+    owners = Object.fromEntries((profs ?? []).map((p: any) => [p.id, { full_name: p.full_name, phone: p.phone }]));
+  }
+
+  return (props ?? []).map((p: any) => {
+    const propMsgs = (msgs ?? []).filter((m: any) => m.property_id === p.id);
+    const owner = p.owner_id ? owners[p.owner_id] : null;
+    return {
+      property: p,
+      owner,
+      lastMessage: propMsgs[0] ?? null,
+      unread: propMsgs.filter((m: any) => m.sender_role !== 'admin' && !m.read_by_admin).length,
+      count: propMsgs.length,
+    };
+  }).sort((a, b) => {
+    const at = a.lastMessage?.created_at ?? '';
+    const bt = b.lastMessage?.created_at ?? '';
+    return bt.localeCompare(at);
+  });
+}
+
+export async function markPropertyMessagesReadByAdmin(propertyId: string) {
+  await supabase.from('messages').update({ read_by_admin: true })
+    .eq('property_id', propertyId).neq('sender_role', 'admin');
+}
