@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Send, MessageSquare, Image as ImageIcon, ArrowLeft, Phone } from 'lucide-react';
+import { Loader2, MessageSquare, Image as ImageIcon, ArrowLeft, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import {
   listAllAdminConversations, listPropertyMessages, sendPropertyMessage,
   markPropertyMessagesReadByAdmin, type PropertyMessageRow,
 } from '@/lib/propertyMessagesService';
+import PropertyChatThread from '@/components/PropertyChatThread';
 
 type Conversation = Awaited<ReturnType<typeof listAllAdminConversations>>[number];
 
