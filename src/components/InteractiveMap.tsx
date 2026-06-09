@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { POI_CATALOG, isTypeFurnished, pricePerNight, getTypeEmoji, mockQuartiers } from '@/lib/mockData';
+import { POI_CATALOG, isTypeFurnished, pricePerNight, getTypeEmoji, RAW_MOCK_QUARTIERS as mockQuartiers } from '@/lib/mockData';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

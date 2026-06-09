@@ -6,7 +6,7 @@ import {
   fetchAllPropertiesAdmin, adminCreateProperty, adminUpdateProperty,
   adminDeleteProperty, adminSetStatus,
 } from '@/lib/propertiesService';
-import { mockQuartiers, PROPERTY_TYPES, type Property } from '@/lib/mockData';
+import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, type Property } from '@/lib/mockData';
 import MapPicker from '@/admin/components/MapPicker';
 import MediaUploader from '@/admin/components/MediaUploader';
 

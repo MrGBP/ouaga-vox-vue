@@ -6,7 +6,7 @@ import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import AdminKPICard from '@/admin/components/AdminKPICard';
 import { supabase } from '@/integrations/supabase/client';
 import { adminSetStatus } from '@/lib/propertiesService';
-import { isMockEnabled } from '@/lib/mockMode';
+import { isMockEnabled, setMockEnabled } from '@/lib/mockMode';
 
 type DashStats = {
   total_properties: number;
@@ -129,9 +129,19 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {isMockEnabled() && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 text-xs px-3 py-2">
-          ⚠ Mode démo (MOCK_MODE) actif — certains composants affichent des données simulées.
+      {isMockEnabled() ? (
+        <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 text-xs px-3 py-2 flex items-center justify-between gap-3">
+          <span>⚠ <strong>Mode démo</strong> actif — les données mock (biens, quartiers, analytics) sont affichées.</span>
+          <button onClick={() => { setMockEnabled(false); location.reload(); }} className="px-2 py-1 rounded border border-amber-400 hover:bg-amber-100 font-medium">
+            Repasser en MVP
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-md border border-emerald-300 bg-emerald-50 text-emerald-900 text-xs px-3 py-2 flex items-center justify-between gap-3">
+          <span>✅ <strong>Mode MVP production</strong> — seules les données réelles (Lovable Cloud) sont affichées.</span>
+          <button onClick={() => { setMockEnabled(true); location.reload(); }} className="px-2 py-1 rounded border border-emerald-400 hover:bg-emerald-100 font-medium">
+            Activer démo (données mock)
+          </button>
         </div>
       )}
 

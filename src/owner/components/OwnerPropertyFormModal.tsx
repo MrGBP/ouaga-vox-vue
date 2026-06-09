@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe } from 'lucide-react';
 import { toast } from 'sonner';
-import { mockQuartiers, PROPERTY_TYPES, isTypeFurnished } from '@/lib/mockData';
+import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, isTypeFurnished } from '@/lib/mockData';
 import { FEATURE_CATALOG, FEATURE_CATEGORIES, type FeatureCategoryId } from '@/lib/featureCatalog';
 import { supabase } from '@/integrations/supabase/client';
 import MapPicker from '@/admin/components/MapPicker';

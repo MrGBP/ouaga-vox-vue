@@ -198,7 +198,7 @@ export const IDX_KEYWORD_MAP: { keywords: string[]; characteristic: string; emoj
 ];
 
 // ─── 16 QUARTIERS ────────────────────────────────────────────────────────────
-export const mockQuartiers: Quartier[] = [
+const _mockQuartiers: Quartier[] = [
   { id: 'q1', name: 'Ouaga 2000', description: 'Quartier résidentiel haut standing, ambassades et villas de luxe', latitude: 12.298, longitude: -1.620, bounds: [[12.278, -1.645], [12.318, -1.595]], image_url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&auto=format' },
   { id: 'q2', name: 'Tampouy', description: 'Quartier populaire dynamique, commerces et marchés', latitude: 12.452, longitude: -1.520, bounds: [[12.435, -1.540], [12.468, -1.500]], image_url: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format' },
   { id: 'q3', name: 'Zogona', description: 'Quartier universitaire vivant, proche du centre', latitude: 12.400, longitude: -1.515, bounds: [[12.383, -1.535], [12.418, -1.495]], image_url: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=600&auto=format' },
@@ -241,7 +241,7 @@ for (let s = 1; s <= 55; s++) {
   });
 }
 // Ajout sans casser les références existantes
-mockQuartiers.push(...ouagaSecteursQuartiers);
+_mockQuartiers.push(...ouagaSecteursQuartiers);
 
 // ─── 10 districts of Accra (Ghana) ─────────────────────────────────────────
 const ACCRA_DISTRICT_IMAGES = [
@@ -263,7 +263,7 @@ const ACCRA_DISTRICT_DESCRIPTIONS: Record<string, string> = {
   'Achimota': 'Green residential area with the famous Achimota Forest',
 };
 Object.values(ACCRA_DISTRICTS).forEach((d, i) => {
-  mockQuartiers.push({
+  _mockQuartiers.push({
     id: `accra-${d.nom.toLowerCase().replace(/\s+/g, '-')}`,
     name: d.nom,
     description: ACCRA_DISTRICT_DESCRIPTIONS[d.nom] || `${d.nom} — Accra, Ghana`,
@@ -416,7 +416,7 @@ function generateProperties(): Property[] {
   for (let i = 0; i < 100; i++) {
     const quartierName = shuffledQuartiers[i];
     const cfg = shuffledTypes[i];
-    const q = mockQuartiers.find(qq => qq.name === quartierName)!;
+    const q = _mockQuartiers.find(qq => qq.name === quartierName)!;
     const agent = AGENTS[i % AGENTS.length];
     const isFurnished = isTypeFurnished(cfg.type);
 
@@ -557,7 +557,7 @@ function generateProperties(): Property[] {
   return props;
 }
 
-export const mockProperties: Property[] = [
+const _mockProperties: Property[] = [
   ...generateProperties(),
 
   // ─── Ouagadougou — nouveaux quartiers (arrondissements officiels) ───────
@@ -836,7 +836,7 @@ export const mockProperties: Property[] = [
 void findCommune;
 
 // ─── MOCK POIs ───────────────────────────────────────────────────────────────
-export const mockPois: POI[] = [
+const _mockPois: POI[] = [
   { id: 'poi1', name: 'Clinique Les Genêts', type: 'clinique', quartier: 'Ouaga 2000', latitude: 12.300, longitude: -1.618 },
   { id: 'poi2', name: 'Lycée International', type: 'lycee', quartier: 'Ouaga 2000', latitude: 12.295, longitude: -1.625 },
   { id: 'poi3', name: 'Banque BICIA-B', type: 'banque', quartier: 'Ouaga 2000', latitude: 12.302, longitude: -1.615 },
@@ -938,3 +938,21 @@ export const POI_CATALOG: Record<string, POICatalogEntry> = {
   place_publique:   { emoji: '🟫', bg: '#EFEBE9', color: '#4E342E', label: 'Place publique' },
   mall:             { emoji: '🏬', bg: '#F3E5F5', color: '#4A148C', label: 'Centre commercial' },
 };
+
+// ─── MVP GATED EXPORTS ───────────────────────────────────────────────────────
+// Les jeux de données mock (mockProperties, mockQuartiers, mockPois) sont
+// désormais désactivés par défaut en mode MVP production. Ils restent
+// disponibles via les exports `RAW_*` ci-dessous pour pouvoir tout réafficher
+// en activant le mode démo (cf. src/lib/mockMode.ts).
+import { isMockEnabled as _isMockEnabled } from '@/lib/mockMode';
+const _MOCK_ON = _isMockEnabled();
+
+export const mockProperties: Property[] = _MOCK_ON ? _mockProperties : [];
+export const mockQuartiers: Quartier[] = _MOCK_ON ? _mockQuartiers : [];
+export const mockPois: POI[] = _MOCK_ON ? _mockPois : [];
+
+// Accès brut — utiliser uniquement pour des outils internes (ex: catalogue de
+// référence côté admin, géocodage des quartiers connus, etc.).
+export const RAW_MOCK_PROPERTIES = _mockProperties;
+export const RAW_MOCK_QUARTIERS = _mockQuartiers;
+export const RAW_MOCK_POIS = _mockPois;
