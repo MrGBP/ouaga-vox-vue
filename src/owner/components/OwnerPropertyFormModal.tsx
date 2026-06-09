@@ -527,10 +527,35 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             </div>
           </div>
 
+          {/* Aperçu carte — tel qu'affiché aux locataires */}
+          <div className="border-t pt-4 space-y-2">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              👁 Aperçu — tel qu'il sera affiché aux locataires
+            </label>
+            <ListingPreviewCard
+              title={title || 'Titre du bien'}
+              type={type}
+              price={typeof price === 'number' ? price : 0}
+              quartier={quartier}
+              bedrooms={typeof bedrooms === 'number' ? bedrooms : 0}
+              bathrooms={typeof bathrooms === 'number' ? bathrooms : 0}
+              surface={typeof surface === 'number' ? surface : 0}
+              furnished={furnished}
+              firstImage={
+                pendingMedia.find(m => m.kind === 'image')?.source === 'file'
+                  ? (pendingMedia.find(m => m.kind === 'image') as any).previewUrl
+                  : (pendingMedia.find(m => m.kind === 'image') as any)?.url ?? null
+              }
+            />
+            <p className="text-[10px] text-muted-foreground">
+              La 1ʳᵉ image (★ Principale) sera la photo de couverture sur la liste, la carte, et le partage.
+            </p>
+          </div>
+
           {/* Médias — toujours disponibles, requis avant validation */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground">
-              Médias * — au moins 1 photo obligatoire (vidéo et 360° optionnelles)
+              Médias * — au moins 1 photo obligatoire (vidéo et 360° optionnelles). La <b>1ʳᵉ image</b> est la <b>photo principale</b>.
             </label>
 
             {/* Médias déjà uploadés (édition) */}
