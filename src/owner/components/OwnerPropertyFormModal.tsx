@@ -686,3 +686,46 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+function ListingPreviewCard(props: {
+  title: string; type: string; price: number; quartier: string;
+  bedrooms: number; bathrooms: number; surface: number; furnished: boolean;
+  firstImage: string | null;
+}) {
+  const typeLabel = PROPERTY_TYPES.find(t => t.value === props.type);
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden max-w-sm shadow-sm">
+      <div className="aspect-video bg-muted relative">
+        {props.firstImage ? (
+          <img src={props.firstImage} alt={props.title} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground text-xs">
+            <ImageIcon size={24} className="opacity-40" />
+            <span className="mt-1 opacity-60">Aucune image — ajoute-en une ci-dessous</span>
+          </div>
+        )}
+        <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full">
+          {typeLabel?.emoji} {typeLabel?.label ?? props.type}
+        </span>
+        {props.furnished && (
+          <span className="absolute top-2 right-2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
+            Meublé
+          </span>
+        )}
+      </div>
+      <div className="p-3">
+        <h4 className="text-sm font-bold truncate">{props.title}</h4>
+        <p className="text-[11px] text-muted-foreground truncate">📍 {props.quartier || '—'}</p>
+        <p className="text-sm font-bold text-primary mt-1">
+          {props.price > 0 ? `${props.price.toLocaleString('fr-FR')} FCFA` : '—'}
+        </p>
+        <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+          <span>🛏 {props.bedrooms}</span>
+          <span>🚿 {props.bathrooms}</span>
+          <span>📐 {props.surface} m²</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+}
