@@ -728,4 +728,3 @@ function ListingPreviewCard(props: {
     </div>
   );
 }
-}
