@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import NotificationBell from '@/components/NotificationBell';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -52,6 +53,7 @@ const Header = () => {
                 </button>
               ))}
             </div>
+            {user && <NotificationBell />}
             {user ? (
               <Link to="/mon-compte">
                 <Button size="sm" variant="outline" className="gap-2">
