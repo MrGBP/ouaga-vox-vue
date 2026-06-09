@@ -181,6 +181,8 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const country = useCountryConfig();
+  useLockBackdrop(true);
+
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
