@@ -3,6 +3,7 @@ import { MapPin, Bed, Maximize, Eye, Camera, Heart, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getTypeLabel, isTypeFurnished, pricePerNight } from '@/lib/mockData';
+import PropertyImage from '@/components/PropertyImage';
 
 interface Property {
   id: string;
