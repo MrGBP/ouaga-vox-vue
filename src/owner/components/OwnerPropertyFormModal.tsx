@@ -41,6 +41,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [bedrooms, setBedrooms] = useState<number | ''>(1);
   const [bathrooms, setBathrooms] = useState<number | ''>(1);
   const [surface, setSurface] = useState<number | ''>(50);
+  const [floor, setFloor] = useState<number | ''>(0);
+  const [rooms, setRooms] = useState<number | ''>(3);
+  const [capacity, setCapacity] = useState<number | ''>('');
   const [furnished, setFurnished] = useState(false);
   const [lat, setLat] = useState<number>(12.3714);
   const [lng, setLng] = useState<number>(-1.5197);
@@ -56,6 +59,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [pendingKind, setPendingKind] = useState<'image' | 'video' | 'video_360'>('image');
   const [existingMediaCount, setExistingMediaCount] = useState(0);
   const pendingFileRef = useRef<HTMLInputElement>(null);
+
+  // POIs — au moins 1 requis avant publication
+  const [existingPois, setExistingPois] = useState<PropertyPoi[]>([]);
+  const [pendingPois, setPendingPois] = useState<{ name: string; type: string; distance_m?: number }[]>([]);
+  const [poiName, setPoiName] = useState('');
+  const [poiType, setPoiType] = useState<string>(POI_TYPES[0].value);
+  const [poiDist, setPoiDist] = useState<number | ''>('');
 
   const titleRef = useRef<HTMLInputElement>(null);
 
