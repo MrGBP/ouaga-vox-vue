@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Edit, Check, X, Database } from 'lucide-react';
+import { Plus, Trash2, Edit, Check, X, Database, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import {
@@ -9,6 +9,7 @@ import {
 import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, type Property } from '@/lib/mockData';
 import MapPicker from '@/admin/components/MapPicker';
 import MediaUploader from '@/admin/components/MediaUploader';
+import PropertyReviewPanel from '@/admin/components/PropertyReviewPanel';
 
 // All toggleable feature checkboxes (cocher à souhait)
 const FEATURE_DEFS: { key: string; label: string; group: string }[] = [
