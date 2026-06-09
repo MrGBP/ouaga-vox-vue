@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Heart, Loader2, Plus, ExternalLink, Trash2, Pencil, Pause, Play } from 'lucide-react';
+import { Eye, Heart, Loader2, Plus, ExternalLink, Trash2, Pencil, Pause, Play, CalendarOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchMyProperties, ADMIN_STATUS_LABEL, ownerSetPause, type OwnerPropertyRow } from '../lib/ownerService';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import OwnerPropertyFormModal from '../components/OwnerPropertyFormModal';
+import BlockedDatesModal from '../components/BlockedDatesModal';
+import PropertyImage from '@/components/PropertyImage';
+import { isTypeFurnished } from '@/lib/mockData';
 
 export default function OwnerProperties() {
   const { user } = useAuth();
@@ -16,6 +19,7 @@ export default function OwnerProperties() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<OwnerPropertyRow | null>(null);
+  const [blockedFor, setBlockedFor] = useState<OwnerPropertyRow | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const reload = () => {
