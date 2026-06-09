@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, MessageSquare, Send, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { Loader2, MessageSquare, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import {
   type PropertyMessageRow,
 } from '@/lib/propertyMessagesService';
 import { supabase } from '@/integrations/supabase/client';
+import PropertyChatThread from '@/components/PropertyChatThread';
 
 type Conversation = Awaited<ReturnType<typeof listMyOwnerConversations>>[number];
 
