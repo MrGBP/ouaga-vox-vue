@@ -60,7 +60,7 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
     >
       {/* Image */}
       <div className="relative h-52 overflow-hidden">
-        <img src={imgSrc} alt={property.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+        <PropertyImage src={imgSrc} alt={property.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
 
         {/* Badges top-left */}
         <div className="absolute top-3 left-3 flex gap-2 flex-wrap">
