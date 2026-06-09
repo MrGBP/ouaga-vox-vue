@@ -42,7 +42,7 @@ const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigit
 const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFavorite, onFocusOnMap }: PropertyCardProps) => {
   const isFurnished = isTypeFurnished(property.type) || property.furnished || false;
   const nightPrice = isFurnished ? pricePerNight(property.price) : 0;
-  const imgSrc = property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&auto=format&fit=crop';
+  const imgSrc = property.images?.[0];
 
   // Badge "Nouveau" — créé il y a moins de 7 jours
   const isNew = property.created_at
