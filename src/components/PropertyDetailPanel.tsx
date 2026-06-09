@@ -622,30 +622,65 @@ const PropertyDetailPanel = ({
 
         {/* Actions — inline (non-blocking, scrolls with content) */}
         {/* NOTE: Map icon button removed (Lot A) — the "Localisation" block above already opens the map context. */}
-        {isMobile ? (
-          <div className="flex gap-2.5 pt-1">
-            <button
-              onClick={openReservation}
-              className="flex-1 h-12 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
-            >
-              📅 Réserver · {isFurnished && nightPrice > 0
-                ? `${fmt(nightPrice)} FCFA/nuit`
-                : `${fmt(property.price)} FCFA/mois`}
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            {property.type === 'bureau' || property.type === 'local_commercial' ? (
-              <Button className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
-                <Phone className="h-4 w-4" /> Contacter l'agent
-              </Button>
-            ) : (
-              <Button onClick={openReservation} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all">
-                <Calendar className="h-4 w-4" /> Réserver
-              </Button>
-            )}
-          </div>
-        )}
+        {(() => {
+          const isCommercial = property.type === 'bureau' || property.type === 'local_commercial' || property.type === 'commerce';
+          const openVisit = () => {
+            track('visit_requested', { property_id: property.id });
+            requireAuth('demander une visite', () => setShowReservation(true));
+          };
+          const openContact = () => {
+            track('contact_requested', { property_id: property.id });
+            if (property.agent_phone) window.location.href = `tel:${property.agent_phone}`;
+          };
+
+          if (isMobile) {
+            if (isCommercial) {
+              return (
+                <div className="flex gap-2 pt-1">
+                  <button onClick={openContact} className="flex-1 h-12 bg-primary text-primary-foreground rounded-xl text-sm font-semibold active:scale-[0.97]">💼 Contacter</button>
+                  <button onClick={openVisit} className="flex-1 h-12 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97]">📅 Planifier visite</button>
+                </div>
+              );
+            }
+            if (isFurnished) {
+              return (
+                <div className="flex gap-2.5 pt-1">
+                  <button onClick={openReservation} className="flex-1 h-12 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97]">
+                    📅 Réserver · {nightPrice > 0 ? `${fmt(nightPrice)} FCFA/nuit` : `${fmt(property.price)} FCFA/mois`}
+                  </button>
+                </div>
+              );
+            }
+            return (
+              <div className="pt-1 space-y-2">
+                <div className="text-xs text-muted-foreground">📋 Location longue durée — {fmt(property.price)} FCFA/mois</div>
+                <button onClick={openVisit} className="w-full h-12 bg-primary text-primary-foreground rounded-xl text-sm font-semibold active:scale-[0.97]">🏠 Demander une visite</button>
+              </div>
+            );
+          }
+
+          if (isCommercial) {
+            return (
+              <div className="flex gap-2">
+                <Button onClick={openContact} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90"><Phone className="h-4 w-4" /> Contacter</Button>
+                <Button onClick={openVisit} variant="outline" className="flex-1 gap-2"><Calendar className="h-4 w-4" /> Planifier visite</Button>
+              </div>
+            );
+          }
+          if (isFurnished) {
+            return (
+              <div className="flex gap-2">
+                <Button onClick={openReservation} className="flex-1 bg-primary text-primary-foreground gap-2 hover:bg-primary/90"><Calendar className="h-4 w-4" /> Réserver</Button>
+              </div>
+            );
+          }
+          return (
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">📋 Location longue durée — {fmt(property.price)} FCFA/mois</div>
+              <Button onClick={openVisit} className="w-full bg-primary text-primary-foreground gap-2 hover:bg-primary/90"><Calendar className="h-4 w-4" /> Demander une visite</Button>
+            </div>
+          );
+        })()}
 
         {/* Partage */}
         <Button variant="outline" onClick={handleShare} className="w-full gap-2 text-xs hover:bg-muted active:scale-[0.98]">
