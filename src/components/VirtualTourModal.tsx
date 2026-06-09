@@ -65,6 +65,7 @@ const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => 
 };
 
 const VirtualTourModal = ({ property, open, onOpenChange, pois = [] }: VirtualTourModalProps) => {
+  useLockBackdrop(open);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [activeTab, setActiveTab] = useState<'photos' | 'video' | 'tour360' | 'map'>('photos');
