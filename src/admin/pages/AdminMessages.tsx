@@ -42,15 +42,15 @@ export default function AdminMessages() {
     } catch (e: any) { toast.error(e.message); }
   };
 
-  const send = async () => {
-    if (!selected || !text.trim()) return;
+  const send = async (content: string, replyToId: string | null) => {
+    if (!selected) return;
     setSending(true);
     try {
       await sendPropertyMessage({
-        property_id: selected.property.id, content: text,
+        property_id: selected.property.id, content,
         sender_role: 'admin', sender_name: 'Administration SapSapHouse',
+        reply_to_id: replyToId,
       });
-      setText('');
       setMessages(await listPropertyMessages(selected.property.id));
       reload();
     } catch (e: any) { toast.error(e.message); }
