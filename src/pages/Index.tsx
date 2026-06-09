@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -107,6 +108,7 @@ const SEARCH_KEY = 'sapsap_search_query_v1';
 const ITEMS_PER_PAGE = 25;
 const Index = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [properties, setProperties] = useState<Property[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
   const [quartiers, setQuartiers] = useState<Quartier[]>([]);
@@ -633,7 +635,7 @@ const Index = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-                placeholder="Rechercher un bien, un quartier, un type..."
+                placeholder={t('hero.placeholder_long')}
                 className="w-full h-14 rounded-full bg-card/95 pl-6 pr-36 text-foreground text-base outline-none shadow-lg focus:ring-2 focus:ring-primary/30"
                 style={{ fontSize: 16 }}
               />
@@ -641,7 +643,7 @@ const Index = () => {
                 onClick={() => handleSearch(searchQuery)}
                 className="absolute right-2 top-2 h-10 px-6 bg-secondary text-secondary-foreground rounded-full text-sm font-semibold active:scale-[0.97] transition-transform"
               >
-                Chercher
+                {t('hero.bouton_chercher')}
               </button>
             </div>
             {idxTags.length > 0 && (
@@ -663,7 +665,7 @@ const Index = () => {
       {/* ② Carte interactive + Filters + Detail Panel */}
       <section id="map" className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Carte interactive</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t('sections.carte_interactive')}</h2>
         </div>
 
         <FilterBar
