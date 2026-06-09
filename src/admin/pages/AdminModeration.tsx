@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Check, X, AlertTriangle, Send, MessageSquare, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Check, X, AlertTriangle, Eye, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { adminSetStatus } from '@/lib/propertiesService';
-import {
-  listPropertyMessages, sendPropertyMessage, type PropertyMessageRow,
-} from '@/lib/propertyMessagesService';
+import { sendPropertyMessage } from '@/lib/propertyMessagesService';
+import PropertyReviewPanel from '@/admin/components/PropertyReviewPanel';
 
 type ModRow = {
   id: string; title: string; type: string; quartier: string; address: string;
