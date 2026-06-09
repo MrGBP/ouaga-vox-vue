@@ -129,6 +129,11 @@ export default function OwnerProperties() {
                         : <><Play className="h-3 w-3" /> Réactiver</>}
                     </Button>
                   )}
+                  {p.admin_status === 'published' && isTypeFurnished(p.type) && (
+                    <Button size="sm" variant="outline" className="flex-1 min-w-[90px] text-xs gap-1.5" onClick={() => setBlockedFor(p)} title="Bloquer des dates">
+                      <CalendarOff className="h-3 w-3" /> Calendrier
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" className="flex-1 min-w-[90px] text-xs gap-1.5" onClick={() => openEdit(p)}>
                     <Pencil className="h-3 w-3" /> Modifier
                   </Button>
