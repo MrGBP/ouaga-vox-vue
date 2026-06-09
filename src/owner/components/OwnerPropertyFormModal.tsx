@@ -612,9 +612,15 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                         <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded">
                           {m.kind === 'image' ? <><ImageIcon size={9}/> IMG</> : m.kind === 'video_360' ? <>🔭 360°</> : <><Video size={9}/> VIDEO</>}
                         </span>
-                        <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
-                          #{i + 1}
-                        </span>
+                        {i === 0 ? (
+                          <span className="absolute top-1 left-1 text-[9px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold shadow">
+                            ★ Principale
+                          </span>
+                        ) : (
+                          <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
+                            #{i + 1}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
