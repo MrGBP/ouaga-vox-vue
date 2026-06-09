@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useNav } from '@/contexts/NavigationContext';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
 import { isTypeFurnished, pricePerNight } from '@/lib/mockData';
@@ -202,6 +203,7 @@ const CarouselWithSwipeHint = ({ properties, activeQuartier, favorites, formatDi
 export default function MobileApp(props: MobileAppProps) {
   const nav = useNav();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   useSwipeBack();
 
   const [mobileTab, setMobileTab] = useState('home');
@@ -664,7 +666,7 @@ export default function MobileApp(props: MobileAppProps) {
               >
                 <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="text-sm text-muted-foreground truncate">
-                  {props.searchQuery || 'Rechercher un bien, un quartier...'}
+                  {props.searchQuery || t('hero.placeholder')}
                 </span>
               </button>
             </section>
@@ -682,8 +684,8 @@ export default function MobileApp(props: MobileAppProps) {
                 </button>
                 <button
                   onClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
-                  aria-label="Favoris"
-                  title="Favoris"
+                  aria-label={t('nav.favoris')}
+                  title={t('nav.favoris')}
                   className={`relative inline-flex items-center justify-center rounded-full w-10 h-10 transition-all border active:scale-[0.98] ${
                     props.showFavoritesOnly
                       ? 'bg-secondary text-secondary-foreground border-secondary'
@@ -715,7 +717,7 @@ export default function MobileApp(props: MobileAppProps) {
 
             {/* Featured carousel */}
             <section className="px-4 py-5">
-              <h2 className="text-lg font-bold text-foreground mb-3">Biens mis en avant</h2>
+              <h2 className="text-lg font-bold text-foreground mb-3">{t('sections.biens_mis_en_avant')}</h2>
               <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollable">
                 {availableProperties(props.properties).slice(0, 8).map(p => {
                   const dp = formatDisplayPrice(p);
@@ -742,9 +744,9 @@ export default function MobileApp(props: MobileAppProps) {
             {/* Properties grid */}
             <section className="px-4 pb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-foreground">Tous les biens</h2>
+                <h2 className="text-lg font-bold text-foreground">{t('sections.tous_les_biens')}</h2>
                 <span className="text-xs text-muted-foreground">
-                  <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
+                  <span className="text-foreground font-bold">{displayProperties.length}</span> {displayProperties.length > 1 ? t('sections.resultats') : t('sections.resultat')}
                 </span>
               </div>
               {props.searchFallbackHint && (
@@ -766,9 +768,9 @@ export default function MobileApp(props: MobileAppProps) {
                         onClick={() => setVisibleCount(c => Math.min(c + LOAD_MORE_INCREMENT, displayProperties.length))}
                         className="rounded-full px-6 h-11 text-sm font-semibold gap-2"
                       >
-                        Voir plus
+                        {t('sections.voir_plus')}
                         <span className="text-muted-foreground text-xs">
-                          ({Math.min(LOAD_MORE_INCREMENT, displayProperties.length - visibleCount)} de plus)
+                          ({Math.min(LOAD_MORE_INCREMENT, displayProperties.length - visibleCount)} {t('sections.de_plus')})
                         </span>
                       </Button>
                     </div>
@@ -776,9 +778,9 @@ export default function MobileApp(props: MobileAppProps) {
                 </>
               ) : (
                 <div className="text-center py-12 bg-card border border-border rounded-xl">
-                  <p className="text-sm text-muted-foreground">Aucun bien trouvé</p>
+                  <p className="text-sm text-muted-foreground">{t('sections.aucun_bien')}</p>
                   <Button variant="outline" size="sm" onClick={props.onFullReset} className="mt-3 gap-2">
-                    <RotateCcw className="h-3 w-3" /> Réinitialiser
+                    <RotateCcw className="h-3 w-3" /> {t('filtre.reinitialiser')}
                   </Button>
                 </div>
               )}
@@ -804,13 +806,13 @@ export default function MobileApp(props: MobileAppProps) {
               className="fixed top-0 left-0 right-0 z-[80] flex items-center justify-between px-3 no-select"
               style={{ height: 52, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
             >
-              <span className="text-sm font-bold text-foreground">❤️ Mes favoris</span>
+              <span className="text-sm font-bold text-foreground">❤️ {t('sections.mes_favoris')}</span>
               <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
                 <button onClick={() => setFavViewMode('list')} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-card text-foreground shadow-sm">
-                  ☰ Liste
+                  ☰ {t('sections.liste')}
                 </button>
                 <button onClick={() => setFavViewMode('map')} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-muted-foreground">
-                  🗺️ Carte
+                  🗺️ {t('nav.carte')}
                 </button>
               </div>
             </nav>
@@ -823,22 +825,22 @@ export default function MobileApp(props: MobileAppProps) {
                     ))}
                   </div>
                   <div className="mt-6 bg-card border border-border rounded-xl p-4 space-y-2">
-                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Récapitulatif</h4>
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('sections.recapitulatif')}</h4>
                     <p className="text-sm text-foreground">
-                      {favoriteProperties.length} bien{favoriteProperties.length > 1 ? 's' : ''} en favoris
+                      {favoriteProperties.length} {favoriteProperties.length > 1 ? t('nav.favoris').toLowerCase() : t('nav.favoris').toLowerCase()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Budget moyen : {new Intl.NumberFormat('fr-FR').format(Math.round(favoriteProperties.reduce((s, p) => s + p.price, 0) / favoriteProperties.length))} FCFA/mois
+                      Budget : {new Intl.NumberFormat('fr-FR').format(Math.round(favoriteProperties.reduce((s, p) => s + p.price, 0) / favoriteProperties.length))} FCFA/{t('bien.mois')}
                     </p>
                   </div>
                 </>
               ) : (
                 <div className="text-center py-20">
                   <div className="text-5xl mb-4">❤️</div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Aucun favori pour l'instant</h3>
-                  <p className="text-sm text-muted-foreground mb-6">Swipez une card vers la droite pour ajouter</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{t('sections.aucun_favori')}</h3>
+                  <p className="text-sm text-muted-foreground mb-6">{t('sections.swipe_hint')}</p>
                   <Button onClick={() => handleMobileTabChange('map')} className="bg-primary text-primary-foreground gap-2">
-                    Explorer les biens →
+                    {t('sections.explorer')} →
                   </Button>
                 </div>
               )}
@@ -853,13 +855,13 @@ export default function MobileApp(props: MobileAppProps) {
               className="fixed top-0 left-0 right-0 z-[80] flex items-center justify-between px-3 no-select"
               style={{ height: 52, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
             >
-              <span className="text-sm font-bold text-foreground">❤️ Favoris sur la carte</span>
+              <span className="text-sm font-bold text-foreground">❤️ {t('sections.favoris_carte')}</span>
               <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
                 <button onClick={() => setFavViewMode('list')} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-muted-foreground">
-                  ☰ Liste
+                  ☰ {t('sections.liste')}
                 </button>
                 <button onClick={() => setFavViewMode('map')} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-card text-foreground shadow-sm">
-                  🗺️ Carte
+                  🗺️ {t('nav.carte')}
                 </button>
               </div>
             </nav>
@@ -878,16 +880,16 @@ export default function MobileApp(props: MobileAppProps) {
               className="fixed top-0 left-0 right-0 z-[80] flex items-center px-3 no-select"
               style={{ height: 52, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
             >
-              <span className="text-sm font-bold text-foreground">👤 Profil</span>
+              <span className="text-sm font-bold text-foreground">👤 {t('nav.profil')}</span>
             </nav>
             <div className="flex flex-col items-center justify-center h-full px-6">
               <div className="text-5xl mb-4">👤</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Connectez-vous</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t('sections.connectez_vous')}</h3>
               <p className="text-sm text-muted-foreground text-center mb-6">
-                Connectez-vous pour accéder à votre profil, vos réservations et vos alertes.
+                {t('sections.connectez_vous_desc')}
               </p>
-              <Button className="bg-primary text-primary-foreground w-full max-w-xs mb-3">Se connecter</Button>
-              <Button variant="outline" className="w-full max-w-xs">Créer un compte</Button>
+              <Button className="bg-primary text-primary-foreground w-full max-w-xs mb-3">{t('sections.se_connecter')}</Button>
+              <Button variant="outline" className="w-full max-w-xs">{t('sections.creer_compte')}</Button>
             </div>
           </motion.div>
         )}

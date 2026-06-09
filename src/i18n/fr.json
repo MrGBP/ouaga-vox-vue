@@ -3,17 +3,42 @@
     "accueil": "Accueil",
     "carte": "Carte",
     "recherche": "Rechercher",
+    "chercher": "Chercher",
     "favoris": "Favoris",
     "profil": "Profil",
     "biens": "Biens",
     "quartiers": "Quartiers",
     "connexion": "Connexion",
     "mon_compte": "Mon compte",
-    "contact": "Contact"
+    "contact": "Contact",
+    "nous_contacter": "Nous contacter"
   },
   "hero": {
-    "titre": "Trouvez votre logement à Ouagadougou",
-    "placeholder": "Rechercher un bien, un quartier..."
+    "titre": "Trouvez votre logement",
+    "placeholder": "Rechercher un bien, un quartier...",
+    "placeholder_long": "Rechercher un bien, un quartier, un type...",
+    "bouton_chercher": "Chercher"
+  },
+  "sections": {
+    "carte_interactive": "Carte interactive",
+    "biens_mis_en_avant": "Biens mis en avant",
+    "tous_les_biens": "Tous les biens",
+    "aucun_bien": "Aucun bien trouvé",
+    "voir_plus": "Voir plus",
+    "de_plus": "de plus",
+    "resultat": "résultat",
+    "resultats": "résultats",
+    "mes_favoris": "Mes favoris",
+    "favoris_carte": "Favoris sur la carte",
+    "liste": "Liste",
+    "aucun_favori": "Aucun favori pour l'instant",
+    "swipe_hint": "Swipez une carte vers la droite pour ajouter",
+    "explorer": "Explorer les biens",
+    "se_connecter": "Se connecter",
+    "creer_compte": "Créer un compte",
+    "connectez_vous": "Connectez-vous",
+    "connectez_vous_desc": "Connectez-vous pour accéder à votre profil, vos réservations et vos alertes.",
+    "recapitulatif": "Récapitulatif"
   },
   "filtre": {
     "titre": "Filtres",

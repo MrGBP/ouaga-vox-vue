@@ -3,17 +3,42 @@
     "accueil": "Home",
     "carte": "Map",
     "recherche": "Search",
+    "chercher": "Search",
     "favoris": "Favorites",
     "profil": "Profile",
     "biens": "Listings",
     "quartiers": "Neighborhoods",
     "connexion": "Sign in",
     "mon_compte": "My account",
-    "contact": "Contact"
+    "contact": "Contact",
+    "nous_contacter": "Contact us"
   },
   "hero": {
-    "titre": "Find your home in Ouagadougou",
-    "placeholder": "Search a property, a neighborhood..."
+    "titre": "Find your home",
+    "placeholder": "Search a property, a neighborhood...",
+    "placeholder_long": "Search a property, neighborhood, type...",
+    "bouton_chercher": "Search"
+  },
+  "sections": {
+    "carte_interactive": "Interactive map",
+    "biens_mis_en_avant": "Featured listings",
+    "tous_les_biens": "All listings",
+    "aucun_bien": "No listing found",
+    "voir_plus": "Show more",
+    "de_plus": "more",
+    "resultat": "result",
+    "resultats": "results",
+    "mes_favoris": "My favorites",
+    "favoris_carte": "Favorites on the map",
+    "liste": "List",
+    "aucun_favori": "No favorites yet",
+    "swipe_hint": "Swipe a card to the right to add",
+    "explorer": "Explore listings",
+    "se_connecter": "Sign in",
+    "creer_compte": "Create an account",
+    "connectez_vous": "Sign in",
+    "connectez_vous_desc": "Sign in to access your profile, bookings and alerts.",
+    "recapitulatif": "Summary"
   },
   "filtre": {
     "titre": "Filters",
