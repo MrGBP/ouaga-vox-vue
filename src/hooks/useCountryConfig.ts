@@ -64,5 +64,13 @@ export function useCountryConfig(): CountryConfig {
   const { activeCity } = useGeoCity();
   const { data } = useAllCountryConfigs();
   const code = activeCity?.country || 'BF';
-  return data?.find((c) => c.code === code) ?? FALLBACK;
+  const row = data?.find((c) => c.code === code);
+  if (!row) return FALLBACK;
+  // Les contacts support ne sont pas exposés à anon — utiliser les valeurs FALLBACK
+  // pour le BF afin que les boutons WhatsApp/email du support restent fonctionnels.
+  return {
+    ...row,
+    support_email: row.support_email ?? (code === 'BF' ? FALLBACK.support_email : null),
+    support_whatsapp: row.support_whatsapp ?? (code === 'BF' ? FALLBACK.support_whatsapp : null),
+  };
 }
