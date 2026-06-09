@@ -9,7 +9,7 @@ export type OwnerPropertyRow = {
   address: string;
   price: number;
   images: string[] | null;
-  admin_status: 'pending' | 'reviewing' | 'corrections' | 'published' | 'rejected' | 'rented' | 'inactive';
+  admin_status: 'pending' | 'reviewing' | 'corrections' | 'published' | 'rejected' | 'rented' | 'inactive' | 'paused';
   status: string | null;
   view_count: number;
   favorite_count: number;
@@ -85,4 +85,23 @@ export const ADMIN_STATUS_LABEL: Record<OwnerPropertyRow['admin_status'], { labe
   rejected: { label: 'Refusé', color: 'bg-red-500/10 text-red-700 border-red-500/30' },
   rented: { label: 'Loué', color: 'bg-slate-500/10 text-slate-700 border-slate-500/30' },
   inactive: { label: 'Inactif', color: 'bg-slate-500/10 text-slate-700 border-slate-500/30' },
+  paused: { label: 'En pause', color: 'bg-zinc-500/10 text-zinc-700 border-zinc-500/30' },
 };
+
+/**
+ * Met en pause ou réactive un bien (RLS : seul le propriétaire peut le faire).
+ * 'paused'    → bien masqué des recherches publiques sans repasser en modération
+ * 'published' → réactive un bien précédemment en pause
+ */
+export async function ownerSetPause(propertyId: string, ownerId: string, paused: boolean) {
+  const target = paused ? 'paused' : 'published';
+  const { data, error } = await supabase
+    .from('properties')
+    .update({ admin_status: target, owner_updated_at: new Date().toISOString() })
+    .eq('id', propertyId)
+    .eq('owner_id', ownerId)
+    .select('id, admin_status');
+  if (error) throw error;
+  if (!data || data.length === 0) throw new Error('Impossible de modifier ce bien (droits insuffisants).');
+  return data[0];
+}

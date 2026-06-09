@@ -114,7 +114,7 @@ export async function adminDeleteProperty(id: string) {
   if (error) throw error;
 }
 
-export async function adminSetStatus(id: string, admin_status: 'pending'|'published'|'rejected'|'rented'|'inactive'|'reviewing'|'corrections') {
+export async function adminSetStatus(id: string, admin_status: 'pending'|'published'|'rejected'|'rented'|'inactive'|'reviewing'|'corrections'|'paused') {
   const { data: userData } = await supabase.auth.getUser();
   const adminId = userData.user?.id ?? null;
   const nowIso = new Date().toISOString();

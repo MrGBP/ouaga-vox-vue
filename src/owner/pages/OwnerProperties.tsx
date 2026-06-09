@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Heart, Loader2, Plus, ExternalLink, Trash2, Pencil } from 'lucide-react';
+import { Eye, Heart, Loader2, Plus, ExternalLink, Trash2, Pencil, Pause, Play } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { fetchMyProperties, ADMIN_STATUS_LABEL, type OwnerPropertyRow } from '../lib/ownerService';
+import { fetchMyProperties, ADMIN_STATUS_LABEL, ownerSetPause, type OwnerPropertyRow } from '../lib/ownerService';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,6 +46,16 @@ export default function OwnerProperties() {
       if (error) throw error;
       setItems(prev => prev.filter(x => x.id !== p.id));
       toast.success('Bien supprimé');
+    } catch (e: any) { toast.error(e?.message ?? 'Erreur'); }
+  };
+
+  const togglePause = async (p: OwnerPropertyRow) => {
+    if (!user) return;
+    const wantPause = p.admin_status === 'published';
+    try {
+      await ownerSetPause(p.id, user.id, wantPause);
+      toast.success(wantPause ? 'Bien mis en pause (masqué des recherches)' : 'Bien réactivé');
+      setItems(prev => prev.map(x => x.id === p.id ? { ...x, admin_status: wantPause ? 'paused' : 'published' } : x));
     } catch (e: any) { toast.error(e?.message ?? 'Erreur'); }
   };
 
@@ -100,15 +110,22 @@ export default function OwnerProperties() {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-1.5 mt-3 pt-3 border-t">
+                <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t">
                   {p.admin_status === 'published' && (
-                    <Link to={`/property/${p.id}`} target="_blank" className="flex-1">
+                    <Link to={`/property/${p.id}`} target="_blank" className="flex-1 min-w-[80px]">
                       <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs">
                         <ExternalLink className="h-3 w-3" /> Voir
                       </Button>
                     </Link>
                   )}
-                  <Button size="sm" variant="outline" className="flex-1 text-xs gap-1.5" onClick={() => openEdit(p)}>
+                  {(p.admin_status === 'published' || p.admin_status === 'paused') && (
+                    <Button size="sm" variant="outline" className="flex-1 min-w-[90px] text-xs gap-1.5" onClick={() => togglePause(p)}>
+                      {p.admin_status === 'published'
+                        ? <><Pause className="h-3 w-3" /> Pause</>
+                        : <><Play className="h-3 w-3" /> Réactiver</>}
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" className="flex-1 min-w-[90px] text-xs gap-1.5" onClick={() => openEdit(p)}>
                     <Pencil className="h-3 w-3" /> Modifier
                   </Button>
                   <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => onDelete(p)} title="Supprimer">

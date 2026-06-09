@@ -22,7 +22,9 @@ export type AnalyticsEvent =
   | 'auth_modal_opened'
   | 'auth_signin_success'
   | 'auth_signup_success'
-  | 'auth_whatsapp_continue';
+  | 'auth_whatsapp_continue'
+  | 'visit_requested'
+  | 'contact_requested';
 
 interface TrackOptions {
   /** Arbitrary properties — must be JSON-serializable. */

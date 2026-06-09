@@ -1,102 +1,116 @@
-# Production-ready : multi-pays + admin éditable
+# SapSapHouse — Passage en mode MVP Production
 
-## Objectif
-Aucun bouton non fonctionnel. Chaque pays a son email + WhatsApp service client. L'admin peut tout éditer depuis le dashboard. Solution palliative email via `mailto:` (zéro infra, zéro coût) ; upgrade vers Lovable Emails plus tard quand un domaine sera acheté.
+Objectif : tout ce qui s'affiche doit être réel. Le code mort/mockData n'est pas supprimé — il est **masqué derrière un flag réactivable**.
 
----
+## Principe central : Flag `MOCK_MODE` réactivable
 
-## 1. Configuration par pays (table DB + admin UI)
+Création de `src/lib/mockMode.ts` :
 
-### Migration : nouvelle table `country_configs`
-Champs par pays (BF, GH, ML) :
-- `code` (BF/GH/ML), `name`, `flag_emoji`, `currency` (XOF/GHS/XOF), `language` (fr/en/fr)
-- `support_email` (ex: `bf@sapsaphouse.com` ou ton gmail perso pour l'instant)
-- `support_whatsapp` (BF: +22657976660, GH: à fournir, ML: +22377018912)
-- `commission_rate` (5–7%)
-- `enabled` (bool — masquer un pays côté public sans suppression)
-- RLS : lecture publique, écriture admin uniquement
-
-### Seed initial
-- BF : `support_whatsapp = +22657976660`, commission 6%
-- ML : `support_whatsapp = +22377018912`, commission 6%
-- GH : `support_whatsapp = null` (désactivé tant que pas fourni), langue EN, devise GHS
-
----
-
-## 2. Couche applicative : `useCountryConfig` hook
-
-Nouveau hook qui :
-- Détermine le pays actif (depuis `useCountry` existant)
-- Récupère la config depuis Supabase (cache via React Query)
-- Expose : `supportEmail`, `supportWhatsapp`, `commissionRate`, `currency`, `enabled`
-- Fallback : si pays désactivé → redirige vers BF (pays par défaut)
-
----
-
-## 3. Helpers contact universels (`src/lib/contact.ts`)
-
-Trois fonctions, utilisables partout :
-- `openWhatsApp(phone, message)` → `https://wa.me/<phone>?text=<encoded>`
-- `openEmail({ to, subject, body })` → `mailto:` pré-rempli
-- `openSupport(country, context)` → ouvre WhatsApp service client du pays avec message contextuel
-
-Tous les boutons "Contact", "Réserver via WhatsApp", "Email propriétaire" passent par ces helpers → **aucun bouton mort**.
-
----
-
-## 4. Notifications propriétaires (mailto + wa.me)
-
-Quand un client soumet une réservation :
-1. La réservation est enregistrée en DB (déjà fait)
-2. Le client voit un écran de confirmation avec **2 boutons fonctionnels** :
-   - "Notifier le propriétaire par WhatsApp" → `wa.me` pré-rempli avec détails résa
-   - "Notifier par email" → `mailto:` pré-rempli
-3. Bonus : message in-app dans `messages` (déjà fait)
-
-Le propriétaire reçoit donc une notification réelle, gratuite, sans serveur email.
-
----
-
-## 5. Admin Dashboard — nouvel onglet "Pays"
-
-Page admin qui liste les 3 pays en cartes éditables :
-- Toggle activé/désactivé
-- Inputs : email support, WhatsApp support, taux commission, devise, langue
-- Bouton "Enregistrer" → update DB
-- Lecture seule pour les non-admins
-
-Aussi : afficher dans le Kanban réservations le pays + montant commission calculé.
-
----
-
-## 6. Audit "boutons morts" — passe complète
-
-Je vérifie et corrige chaque bouton de l'app :
-- Header : Connexion, Favoris, Compte → tous fonctionnels (déjà ok via AuthModal)
-- PropertyDetailPanel : Réserver, Contact tel/wa/email → via helpers
-- ReservationFlow : Soumettre → DB + écran notif propriétaire
-- Footer / About / CGU → liens vers pages existantes ou supprimés si vides
-- Tout bouton sans handler → soit câblé, soit retiré
-
----
-
-## 7. Ce qui reste hors scope (à activer plus tard)
-
-- **Envoi auto d'emails serveur** : nécessite un domaine. Je préparerai le code mais inactif.
-- **WhatsApp Business API** : payant + compte Meta Business. Le `wa.me` couvre 95% des besoins.
-- **Pays additionnels** (Côte d'Ivoire, Sénégal…) : ajout en 2 min via la table `country_configs`.
-
----
-
-## Détails techniques
-
-```
-Migration  → country_configs (table + RLS + seed BF/GH/ML)
-Hook       → src/hooks/useCountryConfig.ts
-Helpers    → src/lib/contact.ts (openWhatsApp, openEmail, openSupport)
-Admin      → src/components/admin/CountrySettings.tsx (nouvel onglet)
-Refacto    → PropertyDetailPanel, ReservationFlow, Header utilisent les helpers
-Confirm    → src/components/ReservationConfirmation.tsx (2 boutons notif owner)
+```ts
+// Toggle global. false = MVP production. true = remet toutes les données mock.
+export const MOCK_MODE = false;
+// Persisté aussi en localStorage ('sapsap_mock_mode') pour bascule rapide
+// depuis la console : localStorage.setItem('sapsap_mock_mode','1');
 ```
 
-Livraison en une passe. Tu pourras tester immédiatement : ouvre une fiche, clique "Email proprio" → ton app mail s'ouvre pré-remplie. Clique "WhatsApp service client" → WhatsApp s'ouvre avec le bon numéro selon le pays sélectionné.
+Chaque endroit qui utilise `mockProperties`, `adminMockData`, `MobileCarousel`, `AIComparator`, `AIProfileSection`, `VoiceSearch` devient conditionnel : `if (isMockEnabled()) { ... }`. **Aucun fichier supprimé**, juste import paresseux / branchements masqués.
+
+---
+
+## Lot 1 — Admin 100 % Supabase (mockData masqué)
+
+1. **RPC `get_dashboard_stats`** (migration) — KPIs en un appel (biens publiés/pending, réservations totales/pending/confirmées ce mois, users totaux/nouveaux 7j).
+2. **`AdminDashboard.tsx`** — remplace adminMockData par : `supabase.rpc('get_dashboard_stats')`, liste réelle des biens `admin_status='pending'` (jointure `profiles`), 20 dernières réservations.
+3. **Empty states propres** quand 0 résultat (✅ « Aucun bien en attente »).
+4. **Realtime** : channel `admin-live` sur INSERT `reservations` + `properties` → feed live.
+5. **`adminMockData.ts` conservé**, imports gatés par `isMockEnabled()`.
+
+## Lot 2 — Wizard publication en 3 étapes (`PublishPropertyWizard.tsx`)
+
+Remplace `OwnerPropertyFormModal` (gardé en fallback si MOCK_MODE).
+
+- **Étape 1** — Choix du type (grille emoji + hint « courte durée / nuit » vs « longue durée / mois »).
+- **Étape 2** — Champs **adaptatifs** via `getFieldsForType(type)` :
+  - Meublé → chambres, SDB, étage, équipements, prix/nuit
+  - Non meublé longue durée → chambres, SDB, étage, caution, prix/mois
+  - Bureau/local → surface, pièces, parking, PMR
+  - Communs : titre, quartier (autocomplete BDD), surface, **min 1 photo (au lieu de 3 pour ne pas bloquer)**.
+- **Étape 3** — Pin sur la carte OU mode « quartier_only » + 3 POI, mini-preview, soumission → `admin_status='pending'`.
+
+Upload photos direct Supabase Storage (`property-media`, 5 Mo max, jpg/png/webp), retour `publicUrl` avant insert.
+
+## Lot 3 — UI adaptative dans `PropertyDetailPanel`
+
+- Meublé → calendrier + bouton **Réserver**
+- Non meublé longue durée → bouton **Demander une visite** (jamais de calendrier)
+- Bureau/local → **Contacter** + **Planifier visite**
+- Helper `isTypeFurnished(type)` + `isCommercial(type)` centralisé dans `filterOptions.ts`.
+
+## Lot 4 — `OwnerDashboard` réel
+
+Page `/proprietaire` enrichie :
+- Liste de mes biens (Supabase, RLS owner_id), carte par bien avec KPI vues/favoris + badge statut.
+- Actions selon statut : Modifier / **Mettre en pause** (admin_status='paused') / Réactiver / Stats.
+- Réservations liées à mes biens (jointure).
+- Calendrier global multi-biens (couleur par bien).
+
+Ajout d'un statut `'paused'` dans le check constraint `admin_status` (migration).
+
+## Lot 5 — Calendrier propriétaire (`blocked_dates`)
+
+Migration : table `blocked_dates` (property_id, owner_id, date_from, date_to, reason, RLS owner-only, GRANT authenticated).
+- Sélection plage → blocage. `ReservationFlow` vérifie blocked_dates **+** reservations existantes avant validation.
+
+## Lot 6 — Notifications temps réel
+
+Migration : table `notifications` (user_id, type, title, body, data jsonb, read, RLS own + GRANT authenticated, ALTER PUBLICATION supabase_realtime).
+- Insert serveur (triggers) sur INSERT reservation, UPDATE property.admin_status.
+- Cloche dans `Header.tsx` + `MobileNavbar.tsx` avec badge count temps réel.
+
+## Lot 7 — Médias robustes
+
+- `public/placeholder-property.svg` (icône 🏠 fond gris).
+- Wrapper `<PropertyImage>` avec onError → placeholder. Migration progressive : remplacer `<img>` dans PropertyCard, PropertyDetailPanel, MobileApp, OwnerDashboard.
+
+## Lot 8 — Fix superpositions modals / Leaflet
+
+Hook `useLockBackdrop(open)` : bloque scroll body + cache `.leaflet-control/.leaflet-top/.leaflet-bottom`. Appliqué dans `AuthModal`, `ReservationFlow`, `VirtualTourModal`. Z-index hiérarchie documentée dans `index.css`.
+
+## Lot 9 — Nettoyage **masqué** (pas supprimé)
+
+Composants `MobileBottomSheet`, `MobileCarousel`, `AIComparator`, `AIProfileSection`, `VoiceSearch`, hooks voice : **imports gardés** mais rendu conditionné par `isMockEnabled()`. Fusion des états mobiles dupliqués Index ↔ MobileApp : un seul propriétaire (MobileApp).
+
+## Lot 10 — Hiérarchie géographique
+
+Migration table `locations` (country_code, city, quartier, commune, arrondissement, lat/lng, active). Seed Ouaga (12 arrondissements) + Bamako (6 communes). Ghana `active=false`. Autocomplete quartier branchée sur cette table dans le wizard + FilterBar.
+
+---
+
+## Migrations SQL groupées (un seul fichier)
+
+1. `get_dashboard_stats()` SECURITY DEFINER
+2. ALTER `properties.admin_status` check constraint pour inclure `'paused'`
+3. CREATE TABLE `blocked_dates` + GRANT + RLS + policies owner
+4. CREATE TABLE `notifications` + GRANT + RLS + policies own + realtime publication
+5. CREATE TABLE `locations` + GRANT (SELECT anon) + seed Ouaga/Bamako
+6. Triggers insert notifications (new_reservation → owner, status change → owner)
+
+---
+
+## Ordre d'exécution proposé
+
+1. **Migration SQL unique** (Lots 1, 4, 5, 6, 10)
+2. **`mockMode.ts` + gating admin** (Lot 1 + Lot 9 partiel)
+3. **Wizard publication** (Lot 2) + helpers types (Lot 3)
+4. **PropertyDetailPanel adaptatif** (Lot 3)
+5. **OwnerDashboard + blocked_dates UI** (Lots 4, 5)
+6. **Notifications cloche** (Lot 6)
+7. **PropertyImage + placeholder** (Lot 7)
+8. **useLockBackdrop** (Lot 8)
+9. **Autocomplete locations** (Lot 10)
+
+---
+
+## Question avant exécution
+
+Le plan est dense (10 lots, 1 grosse migration, ~15 fichiers touchés). **Tu veux que je lance tout en une seule passe**, ou **je découpe en 2-3 livraisons** (par ex. d'abord Lots 1+2+3+9 = admin réel + wizard + UI adaptative + mock toggle, puis le reste) pour que tu puisses tester entre chaque ?

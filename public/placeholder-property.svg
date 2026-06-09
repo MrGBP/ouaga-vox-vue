@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#f1f5f9"/>
+  <g transform="translate(200 150)" fill="none" stroke="#94a3b8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-60 10 L0 -45 L60 10 V55 H-60 Z"/>
+    <path d="M-20 55 V25 H20 V55"/>
+  </g>
+  <text x="200" y="240" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="13" fill="#94a3b8">Aucune image disponible</text>
+</svg>
