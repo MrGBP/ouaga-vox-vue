@@ -71,9 +71,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
   useEffect(() => {
     if (!open) return;
-    // Reset médias en attente à chaque ouverture
     setPendingMedia(prev => { prev.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl)); return []; });
     setPendingUrl(''); setPendingKind('image'); setExistingMediaCount(0);
+    setPendingPois([]); setExistingPois([]); setPoiName(''); setPoiType(POI_TYPES[0].value); setPoiDist('');
 
     if (initial) {
       (async () => {
@@ -89,15 +89,21 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           const active = FEATURE_CATALOG.filter(c => f[c.key]).map(c => c.key);
           setFeatures(active);
           setCustomFeatures(Array.isArray(f.__custom) ? (f.__custom as string[]) : []);
+          setFloor(typeof f.__floor === 'number' ? f.__floor : 0);
+          setRooms(typeof f.__rooms === 'number' ? f.__rooms : 3);
+          setCapacity(typeof f.__capacity === 'number' ? f.__capacity : '');
           setSavedId(initial.id);
         }
         const media = await listPropertyMedia(initial.id).catch(() => []);
         setExistingMediaCount(media?.length ?? 0);
+        const pois = await listPoisForProperty(initial.id).catch(() => []);
+        setExistingPois(pois);
       })();
     } else {
       setTitle(''); setDescription(''); setType(PROPERTY_TYPES[0].value);
       setPrice(''); setQuartier(mockQuartiers[0]?.name || '');
       setAddress(''); setBedrooms(1); setBathrooms(1); setSurface(50);
+      setFloor(0); setRooms(3); setCapacity('');
       setFurnished(false); setLat(12.3714); setLng(-1.5197);
       setFeatures([]); setCustomFeatures([]); setSavedId(null);
     }
@@ -105,6 +111,18 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     setActiveCat(FEATURE_CATEGORIES[0].id);
     setTimeout(() => titleRef.current?.focus(), 100);
   }, [open, initial]);
+
+  const addPendingPoi = () => {
+    const n = poiName.trim();
+    if (!n) return toast.error('Nom du POI requis');
+    setPendingPois(prev => [...prev, { name: n, type: poiType, distance_m: poiDist === '' ? undefined : Number(poiDist) }]);
+    setPoiName(''); setPoiDist('');
+  };
+  const removePendingPoi = (idx: number) => setPendingPois(prev => prev.filter((_, i) => i !== idx));
+  const removeExistingPoi = async (id: string) => {
+    try { await removePoi(id); setExistingPois(prev => prev.filter(p => p.id !== id)); toast.success('POI supprimé'); }
+    catch (e: any) { toast.error(e.message); }
+  };
 
   const addPendingFiles = (files: FileList | null) => {
     if (!files?.length) return;
