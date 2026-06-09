@@ -20,6 +20,8 @@ import { notifyOwner } from '@/lib/notifications';
 import { openWhatsApp, openEmail, openCountrySupport, buildReservationOwnerMessage } from '@/lib/contact';
 import { useCountryConfig } from '@/hooks/useCountryConfig';
 import { MessageCircle, Mail, LifeBuoy } from 'lucide-react';
+import { useLockBackdrop } from '@/hooks/useLockBackdrop';
+import { hasBlockedConflict } from '@/lib/blockedDatesService';
 
 interface Property {
   id: string;
