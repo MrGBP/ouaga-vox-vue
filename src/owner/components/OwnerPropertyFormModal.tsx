@@ -26,6 +26,7 @@ interface Props {
 
 export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose }: Props) {
   const isEdit = !!initial;
+  useLockBackdrop(open);
   const [savedId, setSavedId] = useState<string | null>(null); // id du bien après save => active uploader
 
   const [title, setTitle] = useState('');
