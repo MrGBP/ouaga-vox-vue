@@ -677,74 +677,8 @@ const _mockProperties: Property[] = [
     agent_name: 'Boubacar Maïga', agent_phone: '+223 76 00 00 06',
   },
 
-  // ─── 55 biens — un par secteur urbain de Ouagadougou ────────────────────
-  ...(() => {
-    const SECTEUR_TYPES = ['maison_villa_simple', 'appartement_simple', 'studio_meuble', 'maison_villa_meublee', 'appartement_meuble', 'bureau', 'local_commercial'] as const;
-    const SECTEUR_TITLES: Record<string, string> = {
-      maison_villa_simple: 'Maison 3ch',
-      appartement_simple: 'Appartement 2ch',
-      studio_meuble: 'Studio meublé',
-      maison_villa_meublee: 'Villa meublée',
-      appartement_meuble: 'Appt meublé',
-      bureau: 'Bureau 60m²',
-      local_commercial: 'Local commercial',
-    };
-    const SECTEUR_PRICES: Record<string, number> = {
-      maison_villa_simple: 150000,
-      appartement_simple: 110000,
-      studio_meuble: 95000,
-      maison_villa_meublee: 380000,
-      appartement_meuble: 220000,
-      bureau: 180000,
-      local_commercial: 130000,
-    };
-    const list: Property[] = [];
-    for (let s = 1; s <= 55; s++) {
-      const type = SECTEUR_TYPES[(s - 1) % SECTEUR_TYPES.length];
-      const arr = findArrondissementForSecteur(s);
-      const [lat, lng] = getSecteurCenter(s);
-      const furnished = type.includes('meuble');
-      const pool = type.includes('studio') ? IMAGES_POOL.studio
-        : type.includes('appartement') ? IMAGES_POOL.appartement
-        : type === 'bureau' ? IMAGES_POOL.bureau
-        : type === 'local_commercial' ? IMAGES_POOL.commerce
-        : type.includes('meublee') ? IMAGES_POOL.villa
-        : IMAGES_POOL.maison;
-      list.push({
-        id: `prop-secteur-${s}`,
-        title: `${SECTEUR_TITLES[type]} — Secteur ${s}`,
-        description: `${SECTEUR_TITLES[type]} situé au secteur ${s} (Arrondissement ${arr ?? '?'}), Ouagadougou.`,
-        type,
-        quartier: `Secteur ${s}`,
-        arrondissement: arr,
-        address: `Secteur ${s}, Ouagadougou`,
-        price: SECTEUR_PRICES[type],
-        bedrooms: type === 'bureau' || type === 'local_commercial' ? 0 : type.includes('studio') ? 1 : type.includes('appartement') ? 2 : 3,
-        bathrooms: type === 'bureau' || type === 'local_commercial' ? 1 : type.includes('studio') ? 1 : 2,
-        surface_area: type.includes('studio') ? 35 : type.includes('appartement') ? 80 : type === 'bureau' ? 60 : type === 'local_commercial' ? 45 : 160,
-        furnished,
-        has_ac: furnished || s % 2 === 0,
-        has_water: true,
-        has_internet: furnished,
-        latitude: lat,
-        longitude: lng,
-        location_type: 'precise',
-        display_radius: 400,
-        display_lat: lat + 0.0012,
-        display_lng: lng + 0.0012,
-        images: pool.slice(0, 4),
-        available: true,
-        status: 'available',
-        city: 'Ouagadougou',
-        country: 'BF',
-        currency: 'FCFA',
-        agent_name: AGENTS[s % AGENTS.length].name,
-        agent_phone: AGENTS[s % AGENTS.length].phone,
-        agent_photo: AGENTS[s % AGENTS.length].photo,
-      });
-    }
-    return list;
-  })(),
+  // ─── Anciens biens par "Secteur N" supprimés : on conserve uniquement de vrais quartiers ───
+
 
   // ─── Accra — Ghana (10 properties, English, GHS) ────────────────────────
   ...(() => {
