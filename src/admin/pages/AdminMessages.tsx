@@ -1,151 +1,194 @@
-import { useState } from 'react';
-import { Send, Trash2, CheckCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Loader2, Send, MessageSquare, Image as ImageIcon, ArrowLeft, Phone } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAdminStore, adminStore } from '@/admin/store/adminStore';
 import AdminPageHeader from '@/admin/components/AdminPageHeader';
-import AdminBadge from '@/admin/components/AdminBadge';
-import ConfirmDialog from '@/admin/components/ConfirmDialog';
+import {
+  listAllAdminConversations, listPropertyMessages, sendPropertyMessage,
+  markPropertyMessagesReadByAdmin, type PropertyMessageRow,
+} from '@/lib/propertyMessagesService';
 
-const TEMPLATES = ['Bien publié ✅', 'Corrections requises', 'Réservation confirmée'];
+type Conversation = Awaited<ReturnType<typeof listAllAdminConversations>>[number];
+
+const TEMPLATES = [
+  'Bien publié ✅ Félicitations !',
+  'Merci, quelques corrections nécessaires :',
+  'Manque(s) : photos / description / POI',
+  'Nous vous recontactons sous 24h.',
+];
 
 export default function AdminMessages() {
-  const messages = useAdminStore(s => s.messages);
-  const [selectedId, setSelectedId] = useState(messages[0]?.id || '');
-  const [filter, setFilter] = useState<'all' | 'whatsapp' | 'email' | 'app'>('all');
-  const [reply, setReply] = useState('');
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<PropertyMessageRow[]>([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [search, setSearch] = useState('');
 
-  const filtered = filter === 'all' ? messages : messages.filter(m => m.channel === filter);
-  const selected = messages.find(m => m.id === selectedId);
+  const reload = async () => {
+    setLoading(true);
+    try { setConversations(await listAllAdminConversations()); }
+    catch (e: any) { toast.error(e.message); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { reload(); }, []);
 
-  const handleSend = () => {
-    if (!reply.trim() || !selected) return;
-    adminStore.sendMessage(selected.id, reply.trim());
-    toast.success('Message envoyé');
-    setReply('');
+  const openConv = async (c: Conversation) => {
+    setSelected(c);
+    try {
+      setMessages(await listPropertyMessages(c.property.id));
+      await markPropertyMessagesReadByAdmin(c.property.id);
+    } catch (e: any) { toast.error(e.message); }
   };
 
-  const handleSelect = (id: string) => {
-    setSelectedId(id);
-    adminStore.markMessageRead(id);
+  const send = async () => {
+    if (!selected || !text.trim()) return;
+    setSending(true);
+    try {
+      await sendPropertyMessage({
+        property_id: selected.property.id, content: text,
+        sender_role: 'admin', sender_name: 'Administration SapSapHouse',
+      });
+      setText('');
+      setMessages(await listPropertyMessages(selected.property.id));
+      reload();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSending(false); }
   };
 
-  const confirmDelete = () => {
-    if (!deleteId) return;
-    adminStore.deleteMessage(deleteId);
-    toast.success('Conversation supprimée');
-    if (selectedId === deleteId) setSelectedId(messages.find(m => m.id !== deleteId)?.id || '');
-    setDeleteId(null);
-  };
+  const totalUnread = conversations.reduce((s, c) => s + c.unread, 0);
+  const filtered = conversations.filter(c =>
+    !search.trim() ||
+    c.property.title.toLowerCase().includes(search.toLowerCase()) ||
+    c.owner?.full_name?.toLowerCase().includes(search.toLowerCase())
+  );
 
-  return (
-    <div>
-      <AdminPageHeader title="Messages" subtitle={`${messages.reduce((s, m) => s + m.unreadCount, 0)} non lus · ${messages.length} conversations`} />
+  if (loading) {
+    return <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  }
 
-      <div className="flex gap-0 h-[calc(100vh-180px)] rounded-xl border border-border bg-card overflow-hidden">
-        {/* Liste */}
-        <div className="w-[280px] border-r border-border flex flex-col shrink-0">
-          <div className="flex gap-1 p-2 border-b border-border">
-            {(['all', 'whatsapp', 'email', 'app'] as const).map(f => (
-              <button key={f} onClick={() => setFilter(f)} className={`rounded-md px-2 py-1 text-[10px] font-medium ${filter === f ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
-                {f === 'all' ? 'Tous' : f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {filtered.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Aucune conversation</p>}
-            {filtered.map(m => (
-              <div key={m.id} className={`group relative w-full border-b border-border transition-colors ${selectedId === m.id ? 'bg-muted' : 'hover:bg-muted/50'}`}>
-                <button onClick={() => handleSelect(m.id)} className="w-full text-left px-3 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: '#1a3560' }}>
-                      {m.contactName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-foreground truncate">{m.contactName}</span>
-                        {m.unreadCount > 0 && <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{ background: '#e02d2d' }}>{m.unreadCount}</span>}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground truncate">{m.lastMessage}</p>
-                      <p className="text-[10px] text-muted-foreground">{m.lastTime}</p>
-                    </div>
-                  </div>
-                </button>
-                <button onClick={() => setDeleteId(m.id)} title="Supprimer" className="absolute right-2 top-2 w-6 h-6 rounded-md bg-red-50 text-red-600 hover:bg-red-100 opacity-0 group-hover:opacity-100 flex items-center justify-center"><Trash2 size={11} /></button>
-              </div>
-            ))}
-          </div>
-        </div>
+  // Vue détail conversation
+  if (selected) {
+    return (
+      <div className="space-y-3">
+        <button onClick={() => { setSelected(null); reload(); }}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-3.5 w-3.5" /> Retour aux conversations
+        </button>
 
-        {/* Thread */}
-        <div className="flex-1 flex flex-col">
-          {selected ? (
-            <>
-              <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: '#1a3560' }}>
-                  {selected.contactName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">{selected.contactName}</p>
-                  <p className="text-[11px] text-muted-foreground">{selected.contactPhone}</p>
-                </div>
-                <button
-                  onClick={() => { adminStore.setMessageStatus(selected.id, selected.status === 'open' ? 'resolved' : 'open'); toast.success(selected.status === 'open' ? 'Marqué résolu' : 'Réouvert'); }}
-                  className="h-8 px-3 rounded-md text-[11px] font-semibold bg-muted hover:bg-muted/70 flex items-center gap-1"
-                >
-                  <CheckCheck size={12} /> {selected.status === 'open' ? 'Marquer résolu' : 'Réouvrir'}
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {selected.messages.map(msg => (
-                  <div key={msg.id} className={`flex ${msg.from === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${msg.from === 'admin' ? 'text-white' : 'bg-muted text-foreground'}`} style={msg.from === 'admin' ? { background: '#1a3560' } : {}}>
-                      <p className="text-[13px]">{msg.text}</p>
-                      <p className={`text-[10px] mt-1 ${msg.from === 'admin' ? 'text-white/60' : 'text-muted-foreground'}`}>{msg.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="p-3 border-t border-border">
-                <div className="flex gap-1 mb-2 flex-wrap">
-                  {TEMPLATES.map(t => (
-                    <button key={t} onClick={() => setReply(t)} className="rounded-full border border-border px-2.5 py-1 text-[10px] text-muted-foreground hover:bg-muted">{t}</button>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input value={reply} onChange={e => setReply(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSend(); }} placeholder="Écrire un message..." className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-                  <button onClick={handleSend} disabled={!reply.trim()} className="w-10 h-10 rounded-lg flex items-center justify-center text-white disabled:opacity-50" style={{ background: '#1a3560' }}><Send size={16} /></button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Sélectionnez une conversation</div>
-          )}
-        </div>
-
-        {selected && (
-          <div className="w-[240px] border-l border-border p-4 space-y-3 hidden xl:block">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white mx-auto" style={{ background: '#1a3560' }}>
-              {selected.contactName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+        <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col h-[calc(100vh-200px)]">
+          <header className="px-4 py-3 border-b flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+              {selected.property.images?.[0]
+                ? <img src={selected.property.images[0]} alt="" className="w-full h-full object-cover" />
+                : <ImageIcon size={16} className="text-muted-foreground/50" />}
             </div>
-            <p className="text-sm font-semibold text-foreground text-center">{selected.contactName}</p>
-            <p className="text-xs text-muted-foreground text-center">{selected.contactPhone}</p>
-            <div className="flex justify-center"><AdminBadge variant={selected.contactRole} /></div>
-            <p className="text-[11px] text-muted-foreground">Canal : {selected.channel}</p>
-            <div className="text-[11px] text-muted-foreground flex items-center gap-1">Statut : <AdminBadge variant={selected.status === 'open' ? 'pending' : 'completed'} label={selected.status === 'open' ? 'Ouvert' : 'Résolu'} /></div>
-          </div>
-        )}
-      </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-bold truncate">{selected.property.title}</h3>
+              <p className="text-[11px] text-muted-foreground truncate">
+                Propriétaire : {selected.owner?.full_name ?? '—'}
+                {selected.owner?.phone && <> · <Phone size={9} className="inline" /> {selected.owner.phone}</>}
+              </p>
+            </div>
+          </header>
 
-      <ConfirmDialog
-        open={!!deleteId}
-        title="Supprimer la conversation ?"
-        message="Tous les messages seront perdus."
-        destructive
-        confirmLabel="Supprimer"
-        onConfirm={confirmDelete}
-        onCancel={() => setDeleteId(null)}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bg-muted/30">
+            {messages.length === 0 ? (
+              <p className="text-center text-xs text-muted-foreground italic py-6">Aucun message — démarre la conversation ci-dessous.</p>
+            ) : messages.map(m => (
+              <div key={m.id} className={`flex ${m.sender_role === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-xs ${
+                  m.sender_role === 'admin' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'
+                }`}>
+                  <div className="text-[10px] opacity-70 mb-0.5">{m.sender_name} • {new Date(m.created_at).toLocaleString('fr-FR')}</div>
+                  <div className="whitespace-pre-wrap">{m.content}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t p-3 space-y-2 bg-card">
+            <div className="flex gap-1.5 flex-wrap">
+              {TEMPLATES.map(t => (
+                <button key={t} onClick={() => setText(t)}
+                  className="rounded-full border border-border px-2.5 py-1 text-[10px] text-muted-foreground hover:bg-muted">
+                  {t}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <textarea value={text} onChange={e => setText(e.target.value)} rows={2}
+                placeholder="Répondre au propriétaire…"
+                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(); }}
+                className="flex-1 text-xs border border-border rounded-lg px-3 py-2 resize-none bg-background" />
+              <button onClick={send} disabled={sending || !text.trim()}
+                className="self-end px-3 h-8 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 disabled:opacity-50">
+                <Send size={12} /> Envoyer
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">Astuce : ⌘/Ctrl + Entrée pour envoyer rapidement.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Vue liste
+  return (
+    <div className="space-y-4">
+      <AdminPageHeader
+        title="Messages"
+        subtitle={`${totalUnread} non lus · ${conversations.length} conversation${conversations.length > 1 ? 's' : ''} avec les propriétaires`}
       />
+
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Rechercher un bien ou un propriétaire…"
+        className="w-full max-w-md rounded-lg border border-border bg-background px-3 py-2 text-sm"
+      />
+
+      {filtered.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+          <MessageSquare className="h-8 w-8 mx-auto mb-3 text-muted-foreground/60" />
+          <p className="font-medium text-foreground mb-1">Aucune conversation</p>
+          <p className="text-xs">Les échanges avec les propriétaires apparaîtront ici dès qu'un message est échangé via la modération.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(c => (
+            <button key={c.property.id} onClick={() => openConv(c)}
+              className="w-full text-left rounded-xl border border-border bg-card p-3 flex gap-3 items-center hover:bg-muted/40 transition">
+              <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                {c.property.images?.[0]
+                  ? <img src={c.property.images[0]} alt="" className="w-full h-full object-cover" />
+                  : <ImageIcon size={18} className="text-muted-foreground/50" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-semibold truncate">{c.property.title}</h4>
+                  {c.unread > 0 && (
+                    <span className="rounded-full bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5">{c.unread}</span>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {c.owner?.full_name ?? 'Sans propriétaire'} · {c.property.quartier}
+                </p>
+                <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                  {c.lastMessage
+                    ? `${c.lastMessage.sender_name}: ${c.lastMessage.content}`
+                    : 'Aucun message'}
+                </p>
+              </div>
+              {c.lastMessage && (
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {new Date(c.lastMessage.created_at).toLocaleDateString('fr-FR')}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

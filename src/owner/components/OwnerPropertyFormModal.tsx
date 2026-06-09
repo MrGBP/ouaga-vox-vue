@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe } from 'lucide-react';
+import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, isTypeFurnished } from '@/lib/mockData';
 import { FEATURE_CATALOG, FEATURE_CATEGORIES, type FeatureCategoryId } from '@/lib/featureCatalog';
@@ -9,9 +9,12 @@ import MediaUploader from '@/admin/components/MediaUploader';
 import { uploadPropertyMedia, addPropertyMediaUrl, listPropertyMedia } from '@/lib/propertiesService';
 import { Loader2 } from 'lucide-react';
 import type { OwnerPropertyRow } from '../lib/ownerService';
-import { isCommercialType } from '@/lib/typeHelpers';
+import { isCommercialType, isOfficeType } from '@/lib/typeHelpers';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
 import QuartierAutocomplete from '@/components/QuartierAutocomplete';
+import {
+  POI_TYPES, addPoiToProperty, listPoisForProperty, removePoi, type PropertyPoi,
+} from '@/lib/propertyPoisService';
 
 type PendingMedia =
   | { kind: 'image' | 'video'; source: 'file'; file: File; previewUrl: string }
@@ -38,6 +41,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [bedrooms, setBedrooms] = useState<number | ''>(1);
   const [bathrooms, setBathrooms] = useState<number | ''>(1);
   const [surface, setSurface] = useState<number | ''>(50);
+  const [floor, setFloor] = useState<number | ''>(0);
+  const [rooms, setRooms] = useState<number | ''>(3);
+  const [capacity, setCapacity] = useState<number | ''>('');
   const [furnished, setFurnished] = useState(false);
   const [lat, setLat] = useState<number>(12.3714);
   const [lng, setLng] = useState<number>(-1.5197);
@@ -54,13 +60,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [existingMediaCount, setExistingMediaCount] = useState(0);
   const pendingFileRef = useRef<HTMLInputElement>(null);
 
+  // POIs — au moins 1 requis avant publication
+  const [existingPois, setExistingPois] = useState<PropertyPoi[]>([]);
+  const [pendingPois, setPendingPois] = useState<{ name: string; type: string; distance_m?: number }[]>([]);
+  const [poiName, setPoiName] = useState('');
+  const [poiType, setPoiType] = useState<string>(POI_TYPES[0].value);
+  const [poiDist, setPoiDist] = useState<number | ''>('');
+
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    // Reset médias en attente à chaque ouverture
     setPendingMedia(prev => { prev.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl)); return []; });
     setPendingUrl(''); setPendingKind('image'); setExistingMediaCount(0);
+    setPendingPois([]); setExistingPois([]); setPoiName(''); setPoiType(POI_TYPES[0].value); setPoiDist('');
 
     if (initial) {
       (async () => {
@@ -76,15 +89,21 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           const active = FEATURE_CATALOG.filter(c => f[c.key]).map(c => c.key);
           setFeatures(active);
           setCustomFeatures(Array.isArray(f.__custom) ? (f.__custom as string[]) : []);
+          setFloor(typeof f.__floor === 'number' ? f.__floor : 0);
+          setRooms(typeof f.__rooms === 'number' ? f.__rooms : 3);
+          setCapacity(typeof f.__capacity === 'number' ? f.__capacity : '');
           setSavedId(initial.id);
         }
         const media = await listPropertyMedia(initial.id).catch(() => []);
         setExistingMediaCount(media?.length ?? 0);
+        const pois = await listPoisForProperty(initial.id).catch(() => []);
+        setExistingPois(pois);
       })();
     } else {
       setTitle(''); setDescription(''); setType(PROPERTY_TYPES[0].value);
       setPrice(''); setQuartier(mockQuartiers[0]?.name || '');
       setAddress(''); setBedrooms(1); setBathrooms(1); setSurface(50);
+      setFloor(0); setRooms(3); setCapacity('');
       setFurnished(false); setLat(12.3714); setLng(-1.5197);
       setFeatures([]); setCustomFeatures([]); setSavedId(null);
     }
@@ -92,6 +111,18 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     setActiveCat(FEATURE_CATEGORIES[0].id);
     setTimeout(() => titleRef.current?.focus(), 100);
   }, [open, initial]);
+
+  const addPendingPoi = () => {
+    const n = poiName.trim();
+    if (!n) return toast.error('Nom du POI requis');
+    setPendingPois(prev => [...prev, { name: n, type: poiType, distance_m: poiDist === '' ? undefined : Number(poiDist) }]);
+    setPoiName(''); setPoiDist('');
+  };
+  const removePendingPoi = (idx: number) => setPendingPois(prev => prev.filter((_, i) => i !== idx));
+  const removeExistingPoi = async (id: string) => {
+    try { await removePoi(id); setExistingPois(prev => prev.filter(p => p.id !== id)); toast.success('POI supprimé'); }
+    catch (e: any) { toast.error(e.message); }
+  };
 
   const addPendingFiles = (files: FileList | null) => {
     if (!files?.length) return;
@@ -142,14 +173,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return toast.error('Le titre est requis');
-    if (description.trim().length < 20) return toast.error('La description est requise (20 caractères minimum)');
+    if (description.trim().length < 20) return toast.error('La description est obligatoire (20 caractères minimum)');
     if (!price || Number(price) <= 0) return toast.error('Le prix doit être supérieur à 0');
     if (!quartier) return toast.error('Quartier requis');
 
     // Au moins 1 média : pending + existants
     const totalMedia = pendingMedia.length + (isEdit ? existingMediaCount : 0);
     if (totalMedia < 1) {
-      return toast.error('Ajoute au moins 1 média (photo, vidéo ou visite 360°) avant de continuer');
+      return toast.error('Ajoute au moins 1 photo (obligatoire). Vidéo et visite 360° sont optionnelles.');
+    }
+
+    // Au moins 1 POI : pending + existants
+    const totalPois = pendingPois.length + existingPois.length;
+    if (totalPois < 1) {
+      return toast.error('Ajoute au moins 1 Point d\'Intérêt à proximité (école, hôpital, marché…)');
     }
 
     setBusy(true);
@@ -158,7 +195,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       const featuresObj: Record<string, any> = {};
       features.forEach(k => { featuresObj[k] = true; });
       if (customFeatures.length) featuresObj.__custom = customFeatures;
+      if (floor !== '') featuresObj.__floor = Number(floor);
+      if (rooms !== '') featuresObj.__rooms = Number(rooms);
+      if (capacity !== '') featuresObj.__capacity = Number(capacity);
 
+      const commercial = isCommercialType(type);
       const payload = {
         title: title.trim(),
         description: description.trim(),
@@ -168,8 +209,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         address: address.trim() || quartier,
         latitude: lat,
         longitude: lng,
-        bedrooms: Number(bedrooms) || null,
-        bathrooms: Number(bathrooms) || null,
+        bedrooms: commercial ? null : (Number(bedrooms) || null),
+        bathrooms: commercial ? null : (Number(bathrooms) || null),
         surface_area: Number(surface) || null,
         furnished,
         features: featuresObj,
@@ -204,7 +245,6 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         createdPropertyId = propertyId;
       }
 
-
       // Upload atomique des médias en attente
       if (pendingMedia.length) {
         const failures: string[] = [];
@@ -222,20 +262,24 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           }
         }
 
-        // Si rien n'a été uploadé pour une création vierge => rollback
         if (uploaded === 0 && (isEdit ? existingMediaCount : 0) === 0) {
-          if (createdPropertyId) {
-            await supabase.from('properties').delete().eq('id', createdPropertyId);
-          }
+          if (createdPropertyId) await supabase.from('properties').delete().eq('id', createdPropertyId);
           throw new Error(`Aucun média n'a pu être uploadé : ${failures[0] ?? 'erreur inconnue'}. Le bien n'a pas été enregistré.`);
         }
-
         if (failures.length) {
           toast.warning(`${uploaded}/${pendingMedia.length} médias uploadés. ${failures.length} en échec : ${failures[0]}`);
         }
-
         pendingMedia.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl));
         setPendingMedia([]);
+      }
+
+      // Persistance des POIs en attente
+      if (pendingPois.length) {
+        for (const p of pendingPois) {
+          try { await addPoiToProperty(propertyId, { name: p.name, type: p.type, quartier, distance_m: p.distance_m }); }
+          catch (err: any) { console.warn('POI add failed', err); }
+        }
+        setPendingPois([]);
       }
 
       toast.success(
@@ -243,7 +287,6 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           ? (willRequireReview ? 'Bien renvoyé en validation' : 'Bien mis à jour')
           : 'Bien créé. En attente de validation.'
       );
-      // Fermeture automatique — pas de 2e étape
       onClose(true);
     } catch (e: any) {
       toast.error(e?.message ?? 'Erreur');
@@ -314,26 +357,49 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 </div>
 
                 {commercial ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Pièces / bureaux">
-                      <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                    <Field label="Surface (m²)">
-                      <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                  </div>
+                  <>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Field label={isOfficeType(type) ? 'Nombre de bureaux' : 'Nombre de locaux'}>
+                        <input type="number" min={0} value={rooms} onChange={e => setRooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Nombre de pièces">
+                        <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Surface (m²)">
+                        <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Étage">
+                        <input type="number" min={0} value={floor} onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Capacité d'accueil (optionnel)">
+                        <input type="number" min={0} value={capacity} onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder="ex: 12 personnes" />
+                      </Field>
+                    </div>
+                  </>
                 ) : (
-                  <div className="grid grid-cols-3 gap-3">
-                    <Field label="Chambres">
-                      <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                    <Field label="SDB">
-                      <input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                    <Field label="Surface (m²)">
-                      <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-                    </Field>
-                  </div>
+                  <>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Field label="Chambres">
+                        <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Salles de bain">
+                        <input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Surface (m²)">
+                        <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Étage">
+                        <input type="number" min={0} value={floor} onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                      <Field label="Nombre de pièces">
+                        <input type="number" min={0} value={rooms} onChange={e => setRooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                      </Field>
+                    </div>
+                  </>
                 )}
 
                 {!commercial && (
@@ -408,10 +474,63 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             )}
           </div>
 
+          {/* Points d'Intérêt — au moins 1 requis */}
+          <div className="space-y-2 border-t pt-4">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1">
+              <MapPin size={13} /> Points d'Intérêt à proximité * — au moins 1 requis
+            </label>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              École, hôpital, marché, transport, etc. Ces infos enrichissent la fiche pour les locataires.
+            </p>
+            {(existingPois.length > 0 || pendingPois.length > 0) && (
+              <div className="flex flex-wrap gap-1.5">
+                {existingPois.map(p => {
+                  const t = POI_TYPES.find(x => x.value === p.type);
+                  return (
+                    <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-[11px]">
+                      {t?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''}
+                      <button type="button" onClick={() => removeExistingPoi(p.id)} className="ml-1 hover:text-primary/70"><X size={11} /></button>
+                    </span>
+                  );
+                })}
+                {pendingPois.map((p, idx) => {
+                  const t = POI_TYPES.find(x => x.value === p.type);
+                  return (
+                    <span key={`pp-${idx}`} className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 px-2.5 py-1 text-[11px]">
+                      {t?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''} <span className="opacity-60">(à enregistrer)</span>
+                      <button type="button" onClick={() => removePendingPoi(idx)} className="ml-1 hover:text-amber-900"><X size={11} /></button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            <div className="grid grid-cols-12 gap-2">
+              <input
+                value={poiName}
+                onChange={e => setPoiName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingPoi(); } }}
+                placeholder="Nom (ex: École Saint-Joseph)"
+                className="form-input col-span-5"
+              />
+              <select value={poiType} onChange={e => setPoiType(e.target.value)} className="form-input col-span-3">
+                {POI_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
+              </select>
+              <input
+                type="number" min={0} value={poiDist}
+                onChange={e => setPoiDist(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Distance (m)" className="form-input col-span-2"
+              />
+              <button type="button" onClick={addPendingPoi}
+                className="col-span-2 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1">
+                <Plus size={14} /> Ajouter
+              </button>
+            </div>
+          </div>
+
           {/* Médias — toujours disponibles, requis avant validation */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground">
-              Médias * (photos, vidéos, visite 360°) — au moins 1 requis
+              Médias * — au moins 1 photo obligatoire (vidéo et 360° optionnelles)
             </label>
 
             {/* Médias déjà uploadés (édition) */}

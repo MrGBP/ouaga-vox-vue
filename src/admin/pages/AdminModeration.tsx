@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Check, X, AlertTriangle, Send, MessageSquare, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Check, AlertTriangle, Eye, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { adminSetStatus } from '@/lib/propertiesService';
-import {
-  listPropertyMessages, sendPropertyMessage, type PropertyMessageRow,
-} from '@/lib/propertyMessagesService';
+import { sendPropertyMessage } from '@/lib/propertyMessagesService';
+import PropertyReviewPanel from '@/admin/components/PropertyReviewPanel';
 
 type ModRow = {
   id: string; title: string; type: string; quartier: string; address: string;
@@ -139,8 +138,8 @@ export default function AdminModeration() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <button onClick={() => setSelected(row)}
-                  className="px-2.5 h-7 rounded text-[11px] font-medium border border-border bg-card hover:bg-muted flex items-center gap-1">
-                  <MessageSquare size={12} /> Examiner
+                  className="px-2.5 h-7 rounded text-[11px] font-semibold border border-primary text-primary bg-primary/5 hover:bg-primary/10 flex items-center gap-1">
+                  <Eye size={12} /> Examiner
                 </button>
                 {row.admin_status !== 'published' && (
                   <button onClick={() => decide(row, 'published')}
@@ -155,113 +154,12 @@ export default function AdminModeration() {
       )}
 
       {selected && (
-        <ModerationDrawer row={selected} onClose={() => setSelected(null)} onDecide={decide} onChanged={reload} />
+        <PropertyReviewPanel
+          propertyId={selected.id}
+          onClose={() => setSelected(null)}
+          onChanged={reload}
+        />
       )}
-    </div>
-  );
-}
-
-// ─── Drawer ───────────────────────────────────────────────────────────────
-function ModerationDrawer({
-  row, onClose, onDecide, onChanged,
-}: {
-  row: ModRow; onClose: () => void;
-  onDecide: (r: ModRow, s: 'published'|'rejected'|'corrections', note?: string) => Promise<void>;
-  onChanged: () => void;
-}) {
-  const [messages, setMessages] = useState<PropertyMessageRow[]>([]);
-  const [text, setText] = useState('');
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const reload = async () => {
-    setLoading(true);
-    try { setMessages(await listPropertyMessages(row.id)); }
-    catch (e: any) { toast.error(e.message); }
-    finally { setLoading(false); }
-  };
-  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [row.id]);
-
-  const send = async () => {
-    if (!text.trim()) return;
-    setSending(true);
-    try {
-      await sendPropertyMessage({
-        property_id: row.id, content: text,
-        sender_role: 'admin', sender_name: 'Administration SapSapHouse',
-      });
-      setText('');
-      await reload();
-    } catch (e: any) { toast.error(e.message); }
-    finally { setSending(false); }
-  };
-
-  const decideWith = async (s: 'corrections' | 'rejected' | 'published') => {
-    const need = s !== 'published';
-    if (need && !text.trim()) {
-      toast.error('Ajoute un message expliquant la décision au propriétaire.');
-      return;
-    }
-    await onDecide(row, s, text.trim() || undefined);
-    setText('');
-    onChanged();
-  };
-
-  return (
-    <div className="fixed inset-0 z-[300] bg-black/50 flex items-end sm:items-center justify-center p-2 sm:p-6" onClick={onClose}>
-      <div className="bg-card rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        <header className="px-4 py-3 border-b flex items-center justify-between">
-          <div className="min-w-0">
-            <h3 className="text-sm font-bold truncate">{row.title}</h3>
-            <p className="text-[11px] text-muted-foreground truncate">{row.quartier} • {row.address}</p>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center"><X size={16} /></button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bg-muted/30">
-          {loading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
-          ) : messages.length === 0 ? (
-            <p className="text-center text-xs text-muted-foreground italic py-6">Aucun message échangé pour ce bien.</p>
-          ) : messages.map(m => (
-            <div key={m.id} className={`flex ${m.sender_role === 'admin' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-xs ${
-                m.sender_role === 'admin' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'
-              }`}>
-                <div className="text-[10px] opacity-70 mb-0.5">{m.sender_name} • {new Date(m.created_at).toLocaleString('fr-FR')}</div>
-                <div className="whitespace-pre-wrap">{m.content}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="border-t p-3 space-y-2 bg-card">
-          <textarea
-            value={text} onChange={e => setText(e.target.value)} rows={2}
-            placeholder="Message au propriétaire (obligatoire pour refus / corrections)…"
-            className="w-full text-xs border border-border rounded-lg px-3 py-2 resize-none bg-background"
-          />
-          <div className="flex flex-wrap gap-1.5">
-            <button onClick={send} disabled={sending || !text.trim()}
-              className="px-3 h-8 rounded-lg bg-secondary text-secondary-foreground text-xs font-semibold flex items-center gap-1 disabled:opacity-50">
-              <Send size={12} /> Envoyer
-            </button>
-            <span className="flex-1" />
-            <button onClick={() => decideWith('corrections')}
-              className="px-3 h-8 rounded-lg bg-orange-500 text-white text-xs font-semibold flex items-center gap-1 hover:bg-orange-600">
-              <AlertTriangle size={12} /> Demander corrections
-            </button>
-            <button onClick={() => decideWith('rejected')}
-              className="px-3 h-8 rounded-lg bg-red-600 text-white text-xs font-semibold flex items-center gap-1 hover:bg-red-700">
-              <X size={12} /> Refuser
-            </button>
-            <button onClick={() => decideWith('published')}
-              className="px-3 h-8 rounded-lg bg-green-600 text-white text-xs font-semibold flex items-center gap-1 hover:bg-green-700">
-              <Check size={12} /> Publier
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

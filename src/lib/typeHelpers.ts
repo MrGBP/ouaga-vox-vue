@@ -1,6 +1,10 @@
 import { isTypeFurnished } from '@/lib/mockData';
 
+export const OFFICE_TYPES = ['bureau'] as const;
 export const COMMERCIAL_TYPES = ['bureau', 'local_commercial', 'commerce'] as const;
+
+export const isOfficeType = (type: string): boolean =>
+  (OFFICE_TYPES as readonly string[]).includes(type);
 
 export const isCommercialType = (type: string): boolean =>
   (COMMERCIAL_TYPES as readonly string[]).includes(type);

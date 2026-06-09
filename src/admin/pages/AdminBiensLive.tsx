@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Edit, Check, X, Database } from 'lucide-react';
+import { Plus, Trash2, Edit, Check, X, Database, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import {
@@ -9,6 +9,7 @@ import {
 import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, type Property } from '@/lib/mockData';
 import MapPicker from '@/admin/components/MapPicker';
 import MediaUploader from '@/admin/components/MediaUploader';
+import PropertyReviewPanel from '@/admin/components/PropertyReviewPanel';
 
 // All toggleable feature checkboxes (cocher à souhait)
 const FEATURE_DEFS: { key: string; label: string; group: string }[] = [
@@ -40,10 +41,12 @@ const FEATURE_DEFS: { key: string; label: string; group: string }[] = [
 const STATUS_OPTIONS = [
   { value: 'pending', label: 'En attente' },
   { value: 'reviewing', label: 'En révision' },
+  { value: 'corrections', label: 'À corriger' },
   { value: 'published', label: 'Publié' },
   { value: 'rejected', label: 'Refusé' },
+  { value: 'paused', label: 'Suspendu' },
   { value: 'rented', label: 'Loué' },
-  { value: 'inactive', label: 'Inactif' },
+  { value: 'inactive', label: 'Archivé' },
 ];
 
 const propertySchema = z.object({
@@ -79,6 +82,9 @@ export default function AdminBiensLive() {
   const [items, setItems] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<FormState | null>(null);
+  const [reviewId, setReviewId] = useState<string | null>(null);
+  // Statut pending par ligne : utilisateur choisit, puis clique Appliquer
+  const [pendingStatus, setPendingStatus] = useState<Record<string, string>>({});
 
   const reload = async () => {
     setLoading(true);
@@ -110,6 +116,8 @@ export default function AdminBiensLive() {
       delete payload.id;
       if (editing.id) {
         await adminUpdateProperty(editing.id, payload);
+        // Si le statut a changé via le formulaire, on l'applique
+        if (editing.admin_status) await adminSetStatus(editing.id, editing.admin_status as any).catch(() => {});
         toast.success('Bien mis à jour');
       } else {
         const created = await adminCreateProperty(payload);
@@ -129,9 +137,14 @@ export default function AdminBiensLive() {
     catch (e: any) { toast.error(e.message); }
   };
 
-  const setStatus = async (p: Property, status: any) => {
-    try { await adminSetStatus(p.id, status); toast.success('Statut mis à jour'); await reload(); }
-    catch (e: any) { toast.error(e.message); }
+  const applyStatus = async (p: Property) => {
+    const target = pendingStatus[p.id] ?? ((p as any).admin_status ?? 'pending');
+    try {
+      await adminSetStatus(p.id, target as any);
+      toast.success(`Statut → ${STATUS_OPTIONS.find(s => s.value === target)?.label ?? target}`);
+      setPendingStatus(prev => { const n = { ...prev }; delete n[p.id]; return n; });
+      await reload();
+    } catch (e: any) { toast.error(e.message); }
   };
 
   return (
@@ -155,7 +168,7 @@ export default function AdminBiensLive() {
                 <th className="text-left p-2.5">Titre</th>
                 <th className="text-left p-2.5">Quartier</th>
                 <th className="text-right p-2.5">Prix</th>
-                <th className="text-left p-2.5">Statut</th>
+                <th className="text-left p-2.5 min-w-[260px]">Statut → Appliquer</th>
                 <th className="text-right p-2.5">Actions</th>
               </tr>
             </thead>
@@ -163,25 +176,43 @@ export default function AdminBiensLive() {
               {items.length === 0 && (
                 <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Aucun bien en base. Crée le premier !</td></tr>
               )}
-              {items.map(p => (
-                <tr key={p.id} className="border-t border-border hover:bg-muted/40">
-                  <td className="p-2.5 font-medium">{p.title}</td>
-                  <td className="p-2.5 text-muted-foreground">{p.quartier}</td>
-                  <td className="p-2.5 text-right">{p.price.toLocaleString('fr-FR')} F</td>
-                  <td className="p-2.5">
-                    <select value={(p as any).admin_status ?? 'pending'} onChange={e => setStatus(p, e.target.value)}
-                      className="rounded border border-border bg-background px-1.5 py-1 text-[11px]">
-                      {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                    </select>
-                  </td>
-                  <td className="p-2.5 text-right">
-                    <div className="inline-flex gap-1">
-                      <button onClick={() => startEdit(p)} className="p-1.5 rounded hover:bg-muted"><Edit size={13} /></button>
-                      <button onClick={() => remove(p)} className="p-1.5 rounded hover:bg-red-50 text-red-600"><Trash2 size={13} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {items.map(p => {
+                const current = (p as any).admin_status ?? 'pending';
+                const selected = pendingStatus[p.id] ?? current;
+                const dirty = selected !== current;
+                return (
+                  <tr key={p.id} className="border-t border-border hover:bg-muted/40">
+                    <td className="p-2.5 font-medium">{p.title}</td>
+                    <td className="p-2.5 text-muted-foreground">{p.quartier}</td>
+                    <td className="p-2.5 text-right">{p.price.toLocaleString('fr-FR')} F</td>
+                    <td className="p-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <select value={selected}
+                          onChange={e => setPendingStatus(prev => ({ ...prev, [p.id]: e.target.value }))}
+                          className="rounded border border-border bg-background px-1.5 py-1 text-[11px] flex-1">
+                          {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                        <button onClick={() => applyStatus(p)} disabled={!dirty}
+                          className={`px-2 h-7 rounded text-[11px] font-semibold flex items-center gap-1 transition ${
+                            dirty ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed'
+                          }`}>
+                          <Check size={11} /> Appliquer
+                        </button>
+                      </div>
+                    </td>
+                    <td className="p-2.5 text-right">
+                      <div className="inline-flex gap-1">
+                        <button onClick={() => setReviewId(p.id)} title="Examiner"
+                          className="px-2 h-7 rounded text-[11px] font-semibold border border-primary text-primary bg-primary/5 hover:bg-primary/10 flex items-center gap-1">
+                          <Eye size={12} /> Examiner
+                        </button>
+                        <button onClick={() => startEdit(p)} title="Modifier" className="p-1.5 rounded hover:bg-muted"><Edit size={13} /></button>
+                        <button onClick={() => remove(p)} title="Supprimer" className="p-1.5 rounded hover:bg-red-50 text-red-600"><Trash2 size={13} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -189,6 +220,10 @@ export default function AdminBiensLive() {
 
       {editing && (
         <FormModal state={editing} setState={setEditing} onSave={save} onClose={() => setEditing(null)} />
+      )}
+
+      {reviewId && (
+        <PropertyReviewPanel propertyId={reviewId} onClose={() => setReviewId(null)} onChanged={reload} />
       )}
     </div>
   );
