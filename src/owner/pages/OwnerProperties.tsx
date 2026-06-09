@@ -123,6 +123,28 @@ export default function OwnerProperties() {
                     </div>
                   )}
                 </div>
+
+                {/* Correction / rejection banner */}
+                {(p.admin_status === 'corrections' || p.admin_status === 'rejected') && p.last_correction_note && (
+                  <div className={`mt-3 rounded-lg border p-2 text-[11px] ${
+                    p.admin_status === 'rejected'
+                      ? 'border-red-300 bg-red-50 text-red-900'
+                      : 'border-orange-300 bg-orange-50 text-orange-900'
+                  }`}>
+                    <p className="font-semibold flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {p.admin_status === 'rejected' ? 'Bien refusé' : 'Corrections demandées'}
+                      {p.correction_round > 0 && <span className="ml-1 opacity-70">(cycle #{p.correction_round})</span>}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap line-clamp-4">{p.last_correction_note}</p>
+                    {p.last_correction_at && (
+                      <p className="text-[10px] opacity-70 mt-1">
+                        {new Date(p.last_correction_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t">
                   {p.admin_status === 'published' && (
                     <Link to={`/property/${p.id}`} target="_blank" className="flex-1 min-w-[80px]">
@@ -130,6 +152,12 @@ export default function OwnerProperties() {
                         <ExternalLink className="h-3 w-3" /> Voir
                       </Button>
                     </Link>
+                  )}
+                  {p.admin_status === 'corrections' && (
+                    <Button size="sm" className="flex-1 min-w-[140px] text-xs gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+                      onClick={() => resubmit(p)}>
+                      <RefreshCcw className="h-3 w-3" /> Soumettre à nouveau
+                    </Button>
                   )}
                   {(p.admin_status === 'published' || p.admin_status === 'paused') && (
                     <Button size="sm" variant="outline" className="flex-1 min-w-[90px] text-xs gap-1.5" onClick={() => togglePause(p)}>
