@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Check, X, AlertTriangle, Eye, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Check, AlertTriangle, Eye, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { adminSetStatus } from '@/lib/propertiesService';
