@@ -36,10 +36,13 @@ export default function PropertyReviewPanel({ propertyId, onClose, onChanged }: 
   const [media, setMedia] = useState<MediaRow[]>([]);
   const [pois, setPois] = useState<PropertyPoi[]>([]);
   const [owner, setOwner] = useState<OwnerInfo | null>(null);
+  const [thread, setThread] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<string>('pending');
   const [applying, setApplying] = useState(false);
   const [note, setNote] = useState('');
+
+  const requireNote = status === 'corrections' || status === 'rejected';
 
   useEffect(() => {
     let cancelled = false;
@@ -51,12 +54,14 @@ export default function PropertyReviewPanel({ propertyId, onClose, onChanged }: 
         setProperty(prop);
         setStatus(prop?.admin_status ?? 'pending');
 
-        const [m, p] = await Promise.all([
+        const [m, p, msgs] = await Promise.all([
           listPropertyMedia(propertyId).catch(() => []),
           listPoisForProperty(propertyId).catch(() => []),
+          supabase.from('messages').select('*').eq('property_id', propertyId).order('created_at', { ascending: false }).limit(20),
         ]);
         if (cancelled) return;
         setMedia(m as any); setPois(p);
+        setThread(((msgs as any)?.data ?? []).reverse());
 
         if (prop?.owner_id) {
           const { data: o } = await supabase.from('profiles').select('id,full_name,phone').eq('id', prop.owner_id).single();
@@ -70,13 +75,18 @@ export default function PropertyReviewPanel({ propertyId, onClose, onChanged }: 
 
   const apply = async () => {
     if (!property) return;
+    if (requireNote && !note.trim()) {
+      toast.error('Indique un rapport de correction / motif (obligatoire pour « À corriger » ou « Refusé »).');
+      return;
+    }
     setApplying(true);
     try {
-      await adminSetStatus(propertyId, status as any);
+      await adminSetStatus(propertyId, status as any, note.trim() || undefined);
       if (note.trim() && property.owner_id) {
         await supabase.from('messages').insert({
           property_id: propertyId, sender_role: 'admin',
-          sender_name: 'Administration SapSapHouse', content: note.trim(),
+          sender_name: 'Administration SapSapHouse',
+          content: requireNote ? `📋 ${status === 'rejected' ? 'Refus' : 'Demande de correction'} :\n\n${note.trim()}` : note.trim(),
         });
       }
       toast.success('Statut appliqué');
@@ -222,7 +232,44 @@ export default function PropertyReviewPanel({ propertyId, onClose, onChanged }: 
 
             {/* Workflow statut */}
             <section className="border-t pt-4 space-y-2">
-              <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Calendar size={12}/> Workflow</h4>
+              <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
+                <Calendar size={12}/> Workflow {property.correction_round > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-700 text-[10px] font-bold">
+                    Cycle #{property.correction_round}
+                  </span>
+                )}
+              </h4>
+
+              {property.last_correction_note && (
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-2 text-[11px]">
+                  <p className="font-semibold text-orange-800 mb-1">Dernière demande de correction :</p>
+                  <p className="text-orange-900 whitespace-pre-wrap">{property.last_correction_note}</p>
+                  {property.last_correction_at && (
+                    <p className="text-[10px] text-orange-700 mt-1">
+                      {new Date(property.last_correction_at).toLocaleString('fr-FR')}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {thread.length > 0 && (
+                <details className="text-[11px]">
+                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                    Historique des échanges ({thread.length})
+                  </summary>
+                  <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {thread.map(m => (
+                      <div key={m.id} className={`rounded-lg p-2 ${m.sender_role === 'admin' ? 'bg-primary/5 border border-primary/20' : 'bg-muted'}`}>
+                        <p className="text-[10px] font-semibold text-foreground">
+                          {m.sender_role === 'admin' ? '👤 Admin' : '🏠 Propriétaire'} · {new Date(m.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
+                        </p>
+                        <p className="whitespace-pre-wrap text-foreground mt-0.5">{m.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+
               <div className="flex flex-wrap gap-1.5">
                 {STATUS_OPTIONS.map(s => (
                   <button key={s.value} type="button" onClick={() => setStatus(s.value)}
@@ -231,12 +278,16 @@ export default function PropertyReviewPanel({ propertyId, onClose, onChanged }: 
                     }`}>{s.label}</button>
                 ))}
               </div>
-              <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
-                placeholder="Message au propriétaire (optionnel — utile pour 'à corriger' ou 'refusé')…"
-                className="w-full text-xs border border-border rounded-lg px-3 py-2 resize-none bg-background" />
+              <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
+                placeholder={requireNote
+                  ? '⚠ Rapport de correction OBLIGATOIRE — détaille les éléments à modifier (photos manquantes, description incomplète, prix incohérent, etc.)'
+                  : 'Message au propriétaire (optionnel)…'}
+                className={`w-full text-xs border rounded-lg px-3 py-2 resize-none bg-background ${
+                  requireNote && !note.trim() ? 'border-orange-400' : 'border-border'
+                }`} />
               <div className="flex gap-2">
                 <button onClick={onClose} className="flex-1 h-10 rounded-lg border text-xs font-semibold hover:bg-muted">Fermer</button>
-                <button onClick={apply} disabled={applying || status === property.admin_status && !note.trim()}
+                <button onClick={apply} disabled={applying || (status === property.admin_status && !note.trim())}
                   className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60">
                   {applying ? <Loader2 className="h-3.5 w-3.5 animate-spin"/> : <Check size={14}/>}
                   Appliquer ({STATUS_OPTIONS.find(s => s.value === status)?.label})

@@ -67,11 +67,13 @@ export default function AdminModeration() {
 
   const decide = async (row: ModRow, status: 'published' | 'rejected' | 'corrections', note?: string) => {
     try {
-      await adminSetStatus(row.id, status);
+      await adminSetStatus(row.id, status, note);
       if (note && row.owner_id) {
         await sendPropertyMessage({
           property_id: row.id,
-          content: note,
+          content: status === 'corrections' || status === 'rejected'
+            ? `📋 ${status === 'rejected' ? 'Refus' : 'Demande de correction'} :\n\n${note}`
+            : note,
           sender_role: 'admin',
           sender_name: 'Administration SapSapHouse',
         });

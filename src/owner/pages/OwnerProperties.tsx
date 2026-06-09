@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Heart, Loader2, Plus, ExternalLink, Trash2, Pencil, Pause, Play, CalendarOff } from 'lucide-react';
+import { Eye, Heart, Loader2, Plus, ExternalLink, Trash2, Pencil, Pause, Play, CalendarOff, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { fetchMyProperties, ADMIN_STATUS_LABEL, ownerSetPause, type OwnerPropertyRow } from '../lib/ownerService';
+import { fetchMyProperties, ADMIN_STATUS_LABEL, ownerSetPause, ownerResubmitForReview, type OwnerPropertyRow } from '../lib/ownerService';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,6 +63,15 @@ export default function OwnerProperties() {
     } catch (e: any) { toast.error(e?.message ?? 'Erreur'); }
   };
 
+  const resubmit = async (p: OwnerPropertyRow) => {
+    if (!user) return;
+    try {
+      await ownerResubmitForReview(p.id, user.id);
+      toast.success('Bien renvoyé en examen ✅ — l\'administration a été notifiée.');
+      reload();
+    } catch (e: any) { toast.error(e?.message ?? 'Erreur'); }
+  };
+
   const openCreate = () => { setEditing(null); setModalOpen(true); };
   const openEdit = (p: OwnerPropertyRow) => { setEditing(p); setModalOpen(true); };
 
@@ -114,6 +123,28 @@ export default function OwnerProperties() {
                     </div>
                   )}
                 </div>
+
+                {/* Correction / rejection banner */}
+                {(p.admin_status === 'corrections' || p.admin_status === 'rejected') && p.last_correction_note && (
+                  <div className={`mt-3 rounded-lg border p-2 text-[11px] ${
+                    p.admin_status === 'rejected'
+                      ? 'border-red-300 bg-red-50 text-red-900'
+                      : 'border-orange-300 bg-orange-50 text-orange-900'
+                  }`}>
+                    <p className="font-semibold flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {p.admin_status === 'rejected' ? 'Bien refusé' : 'Corrections demandées'}
+                      {p.correction_round > 0 && <span className="ml-1 opacity-70">(cycle #{p.correction_round})</span>}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap line-clamp-4">{p.last_correction_note}</p>
+                    {p.last_correction_at && (
+                      <p className="text-[10px] opacity-70 mt-1">
+                        {new Date(p.last_correction_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t">
                   {p.admin_status === 'published' && (
                     <Link to={`/property/${p.id}`} target="_blank" className="flex-1 min-w-[80px]">
@@ -121,6 +152,12 @@ export default function OwnerProperties() {
                         <ExternalLink className="h-3 w-3" /> Voir
                       </Button>
                     </Link>
+                  )}
+                  {p.admin_status === 'corrections' && (
+                    <Button size="sm" className="flex-1 min-w-[140px] text-xs gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+                      onClick={() => resubmit(p)}>
+                      <RefreshCcw className="h-3 w-3" /> Soumettre à nouveau
+                    </Button>
                   )}
                   {(p.admin_status === 'published' || p.admin_status === 'paused') && (
                     <Button size="sm" variant="outline" className="flex-1 min-w-[90px] text-xs gap-1.5" onClick={() => togglePause(p)}>

@@ -324,6 +324,7 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           comfort_rating: number | null
+          correction_round: number
           created_at: string
           description: string | null
           favorite_count: number
@@ -331,6 +332,8 @@ export type Database = {
           furnished: boolean | null
           id: string
           images: string[] | null
+          last_correction_at: string | null
+          last_correction_note: string | null
           latitude: number
           longitude: number
           owner_id: string | null
@@ -362,6 +365,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           comfort_rating?: number | null
+          correction_round?: number
           created_at?: string
           description?: string | null
           favorite_count?: number
@@ -369,6 +373,8 @@ export type Database = {
           furnished?: boolean | null
           id?: string
           images?: string[] | null
+          last_correction_at?: string | null
+          last_correction_note?: string | null
           latitude: number
           longitude: number
           owner_id?: string | null
@@ -400,6 +406,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           comfort_rating?: number | null
+          correction_round?: number
           created_at?: string
           description?: string | null
           favorite_count?: number
@@ -407,6 +414,8 @@ export type Database = {
           furnished?: boolean | null
           id?: string
           images?: string[] | null
+          last_correction_at?: string | null
+          last_correction_note?: string | null
           latitude?: number
           longitude?: number
           owner_id?: string | null

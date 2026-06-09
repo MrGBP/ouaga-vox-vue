@@ -114,19 +114,32 @@ export async function adminDeleteProperty(id: string) {
   if (error) throw error;
 }
 
-export async function adminSetStatus(id: string, admin_status: 'pending'|'published'|'rejected'|'rented'|'inactive'|'reviewing'|'corrections'|'paused') {
+export async function adminSetStatus(
+  id: string,
+  admin_status: 'pending'|'published'|'rejected'|'rented'|'inactive'|'reviewing'|'corrections'|'paused',
+  note?: string,
+) {
   const { data: userData } = await supabase.auth.getUser();
   const adminId = userData.user?.id ?? null;
   const nowIso = new Date().toISOString();
   const patch: any = { admin_status, reviewed_at: nowIso, reviewed_by: adminId };
   if (admin_status === 'published') patch.published_at = nowIso;
-  // Use .select() to verify a row was actually updated (RLS may silently
-  // return 0 rows if the caller is not an admin).
+
+  // Cycle de correction : on enregistre la note + on incrémente le round
+  if ((admin_status === 'corrections' || admin_status === 'rejected') && note?.trim()) {
+    patch.last_correction_note = note.trim();
+    patch.last_correction_at = nowIso;
+    // increment correction_round via RPC-like fallback: fetch current first
+    const { data: cur } = await supabase
+      .from('properties').select('correction_round').eq('id', id).single();
+    patch.correction_round = (cur?.correction_round ?? 0) + 1;
+  }
+
   const { data, error } = await supabase
     .from('properties')
     .update(patch)
     .eq('id', id)
-    .select('id, admin_status, reviewed_at, published_at');
+    .select('id, admin_status, reviewed_at, published_at, last_correction_note, correction_round');
   if (error) throw error;
   if (!data || data.length === 0) {
     throw new Error("Mise à jour refusée : vous n'avez pas les droits administrateur sur ce bien.");
