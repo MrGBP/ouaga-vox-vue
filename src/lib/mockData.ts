@@ -1,5 +1,5 @@
 // SapSapHouse — 100 biens de démonstration, 16 quartiers, POI catalog
-import { findArrondissement, findCommune, getSecteurCenter, findArrondissementForSecteur, ACCRA_DISTRICTS } from '@/lib/geoConfig';
+import { findArrondissement, findCommune, ACCRA_DISTRICTS } from '@/lib/geoConfig';
 
 export interface AgentPOI {
   label: string;
@@ -217,31 +217,8 @@ const _mockQuartiers: Quartier[] = [
   { id: 'q16', name: 'Nongsin', description: 'Quartier résidentiel calme, nord-ouest', latitude: 12.460, longitude: -1.582, bounds: [[12.443, -1.602], [12.477, -1.562]], image_url: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format' },
 ];
 
-// ─── 55 SECTEURS URBAINS DE OUAGADOUGOU ─────────────────────────────────────
-const SECTEUR_IMAGES = [
-  'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&auto=format',
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&auto=format',
-  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&auto=format',
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&auto=format',
-  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&auto=format',
-];
+// ─── Secteurs génériques supprimés : on utilise uniquement les vrais noms de quartiers ───
 
-const ouagaSecteursQuartiers: Quartier[] = [];
-for (let s = 1; s <= 55; s++) {
-  const arr = findArrondissementForSecteur(s);
-  const [lat, lng] = getSecteurCenter(s);
-  ouagaSecteursQuartiers.push({
-    id: `sec-${s}`,
-    name: `Secteur ${s}`,
-    description: `Secteur ${s} — Arrondissement ${arr ?? '?'} de Ouagadougou`,
-    latitude: lat,
-    longitude: lng,
-    bounds: [[lat - 0.012, lng - 0.012], [lat + 0.012, lng + 0.012]],
-    image_url: SECTEUR_IMAGES[(s - 1) % SECTEUR_IMAGES.length],
-  });
-}
-// Ajout sans casser les références existantes
-_mockQuartiers.push(...ouagaSecteursQuartiers);
 
 // ─── 10 districts of Accra (Ghana) ─────────────────────────────────────────
 const ACCRA_DISTRICT_IMAGES = [
@@ -454,7 +431,7 @@ function generateProperties(): Property[] {
       type: cfg.type,
       price,
       quartier: quartierName,
-      address: `Secteur ${randInt(1, 50)}, ${quartierName}`,
+      address: `${quartierName}, Ouagadougou`,
       latitude: lat,
       longitude: lng,
       location_type: 'precise',
