@@ -284,44 +284,68 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             <p className="text-[10px] text-muted-foreground mt-1">{description.trim().length} / 20 caractères minimum</p>
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Type *">
-              <select value={type} onChange={e => setType(e.target.value)} className="form-input">
-                {PROPERTY_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
-              </select>
-            </Field>
-            <Field label="Prix (FCFA) *">
-              <input type="number" min={0} value={price} onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder="150000" />
-            </Field>
-          </div>
+          {(() => {
+            const commercial = isCommercialType(type);
+            const isFurn = furnished || isTypeFurnished(type);
+            const priceLabel = commercial ? 'Loyer mensuel (FCFA) *' : isFurn ? 'Prix / nuit (FCFA) *' : 'Loyer mensuel (FCFA) *';
+            const priceHint = commercial ? 'Loyer commercial mensuel' : isFurn ? 'Tarif à la nuit (calendrier client)' : 'Loyer longue durée';
+            return (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Type *">
+                    <select value={type} onChange={e => setType(e.target.value)} className="form-input">
+                      {PROPERTY_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
+                    </select>
+                  </Field>
+                  <Field label={priceLabel}>
+                    <input type="number" min={0} value={price} onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder="150000" />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{priceHint}</p>
+                  </Field>
+                </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Quartier *">
-              <select value={quartier} onChange={e => setQuartier(e.target.value)} className="form-input">
-                {mockQuartiers.map(q => <option key={q.id} value={q.name}>{q.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Adresse">
-              <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder="Rue, secteur…" />
-            </Field>
-          </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Quartier *</label>
+                    <QuartierAutocomplete value={quartier} onChange={(q, loc) => { setQuartier(q); if (loc?.lat && loc?.lng) { setLat(loc.lat); setLng(loc.lng); } }} />
+                  </div>
+                  <Field label="Adresse">
+                    <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder="Rue, secteur…" />
+                  </Field>
+                </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Chambres">
-              <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-            </Field>
-            <Field label="SDB">
-              <input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-            </Field>
-            <Field label="Surface (m²)">
-              <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
-            </Field>
-          </div>
+                {commercial ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Pièces / bureaux">
+                      <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                    </Field>
+                    <Field label="Surface (m²)">
+                      <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                    </Field>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-3">
+                    <Field label="Chambres">
+                      <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                    </Field>
+                    <Field label="SDB">
+                      <input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                    </Field>
+                    <Field label="Surface (m²)">
+                      <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
+                    </Field>
+                  </div>
+                )}
 
-          <label className="flex items-center gap-2 text-xs">
-            <input type="checkbox" checked={furnished} onChange={e => setFurnished(e.target.checked)} className="accent-primary h-4 w-4" />
-            <span>Bien meublé (location courte durée possible)</span>
-          </label>
+                {!commercial && (
+                  <label className="flex items-center gap-2 text-xs">
+                    <input type="checkbox" checked={furnished} onChange={e => setFurnished(e.target.checked)} className="accent-primary h-4 w-4" />
+                    <span>Bien meublé (location courte durée possible — calendrier client)</span>
+                  </label>
+                )}
+              </>
+            );
+          })()}
+
 
           {/* Localisation */}
           <Field label="Localisation sur la carte (clique ou déplace le marqueur)">
