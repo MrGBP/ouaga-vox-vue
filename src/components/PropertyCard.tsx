@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { MapPin, Bed, Maximize, Eye, Camera, Heart, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getTypeLabel, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import { resolveFeatures } from '@/lib/featureCatalog';
+import { useCountryConfig } from '@/hooks/useCountryConfig';
 import PropertyImage from '@/components/PropertyImage';
 
 interface Property {
@@ -41,6 +43,8 @@ interface PropertyCardProps {
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 
 const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFavorite, onFocusOnMap }: PropertyCardProps) => {
+  const { t } = useTranslation();
+  const country = useCountryConfig();
   const isFurnished = isTypeFurnished(property.type) || property.furnished || false;
   const nightPrice = isFurnished ? pricePerNight(property.price) : 0;
   const imgSrc = property.images?.[0];
@@ -75,7 +79,7 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
           )}
           {isNew && (
             <Badge className="text-xs px-2 py-0.5 font-semibold" style={{ background: '#1a3560', color: '#fff', borderRadius: 6, fontSize: 10 }}>
-              Nouveau
+              {t('card.nouveau')}
             </Badge>
           )}
         </div>
@@ -84,7 +88,7 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
         {property.location_type === 'quartier_only' && (
           <div className="absolute bottom-3 left-3 z-10">
             <span className="text-[10px] bg-card/95 text-amber-700 rounded-full px-2 py-0.5 font-medium border border-amber-200 shadow-sm">
-              Zone approx.
+              {t('card.zone_approx')}
             </span>
           </div>
         )}
@@ -113,9 +117,9 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
         <div className="mb-3">
           <div className="text-lg font-bold text-primary">
             {fmt(isFurnished && nightPrice > 0 ? nightPrice : property.price)}{' '}
-            {property.currency || 'FCFA'}
+            {property.currency || country.currency_symbol}
             <span className="text-sm font-normal text-muted-foreground">
-              {' '}/{isFurnished ? 'nuit' : 'mois'}
+              {' '}/{isFurnished ? t('bien.nuit') : t('bien.mois')}
             </span>
           </div>
         </div>
@@ -175,13 +179,13 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
             onClick={(e) => { e.stopPropagation(); onFocusOnMap(property.id); }}
             variant="outline" size="icon"
             className="shrink-0 h-9 w-9 border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
-            title="Voir sur la carte"
+            title={t('card.voir_carte')}
           >
             <Map className="h-4 w-4" />
           </Button>
         )}
         <Button onClick={(e) => { e.stopPropagation(); onViewDetails(property); }} className="flex-1 text-sm gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Eye className="h-4 w-4" /> Voir la fiche
+          <Eye className="h-4 w-4" /> {t('card.voir_fiche')}
         </Button>
       </div>
     </motion.article>

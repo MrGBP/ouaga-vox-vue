@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getTypeLabel, getTypeEmoji } from '@/lib/mockData';
 
 interface Property {
@@ -43,6 +44,7 @@ const MobileSearchOverlay = ({
   onSearchQueryChange,
   onOpenFilters,
 }: MobileSearchOverlayProps) => {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [typewriterText, setTypewriterText] = useState('');
   const [phraseIdx, setPhraseIdx] = useState(0);
@@ -193,13 +195,13 @@ const MobileSearchOverlay = ({
               ))}
             </div>
           ) : searchQuery.trim().length > 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">Aucun résultat pour "{searchQuery}"</p>
+            <p className="text-sm text-muted-foreground text-center py-6">{t('search_overlay.aucun_resultat')} "{searchQuery}"</p>
           ) : (
             <button
               onClick={onOpenFilters}
               className="w-full mt-2 py-3 rounded-xl bg-muted text-sm font-medium text-foreground flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
-              ⚙️ Filtres avancés
+              ⚙️ {t('search_overlay.filtres_avances')}
             </button>
           )}
         </div>

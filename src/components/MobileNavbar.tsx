@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Building2, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 
 export type NavLevel = 1 | 2 | 3;
@@ -47,6 +48,7 @@ const MobileNavbar = ({
   isExploring = false,
 }: MobileNavbarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { t } = useTranslation();
   const showBack = level > 1;
   const showHome = level >= 3 || (depth && depth >= 3);
   const dotDepth = depth || level;
@@ -89,7 +91,7 @@ const MobileNavbar = ({
                   className="text-sm font-semibold truncate"
                   style={isExploring ? { color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' } : undefined}
                 >
-                  {quartierName} · <span className={isExploring ? '' : 'text-muted-foreground font-normal'}>{quartierCount} bien{(quartierCount || 0) > 1 ? 's' : ''}</span>
+                  {quartierName} · <span className={isExploring ? '' : 'text-muted-foreground font-normal'}>{quartierCount} {(quartierCount || 0) > 1 ? t('nav.biens_count_other') : t('nav.biens_count_one')}</span>
                 </span>
               ) : (
                 /* Level 3 (fiche bien): pas de titre dupliqué — déjà visible sur la fiche */
@@ -97,7 +99,7 @@ const MobileNavbar = ({
                   className="text-xs font-medium text-muted-foreground truncate"
                   style={isExploring ? { color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' } : undefined}
                 >
-                  Retour
+                  {t('nav.retour')}
                 </span>
               )}
             </>
@@ -117,7 +119,7 @@ const MobileNavbar = ({
             <button
               onClick={onHome}
               className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center min-h-[44px] min-w-[44px]"
-              title="Retour accueil"
+              title={t('nav.retour_accueil')}
             >
               <HomeIcon className="h-4 w-4 text-secondary-foreground" />
             </button>
@@ -152,16 +154,16 @@ const MobileNavbar = ({
               className="fixed top-0 right-0 bottom-0 w-[280px] bg-card shadow-lg z-[201] flex flex-col"
             >
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <span className="text-sm font-bold text-foreground">Menu</span>
+                <span className="text-sm font-bold text-foreground">{t('nav.menu')}</span>
                 <button onClick={() => setDrawerOpen(false)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
                   <X className="h-5 w-5" />
                 </button>
               </div>
               <nav className="flex-1 p-4 space-y-1">
                 {[
-                  { label: 'Biens', icon: HomeIcon, href: '#properties' },
-                  { label: 'Carte', icon: MapPin, href: '#map' },
-                  { label: 'Publier votre bien', icon: FileText, href: '#publish' },
+                  { label: t('nav.biens'), icon: HomeIcon, href: '#properties' },
+                  { label: t('nav.carte'), icon: MapPin, href: '#map' },
+                  { label: t('nav.publier_bien'), icon: FileText, href: '#publish' },
                 ].map(item => (
                   <a
                     key={item.label}
@@ -176,7 +178,7 @@ const MobileNavbar = ({
               </nav>
               <div className="p-4 border-t border-border">
                 <Button className="w-full bg-secondary text-secondary-foreground gap-2">
-                  <Phone className="h-4 w-4" /> Contact
+                  <Phone className="h-4 w-4" /> {t('nav.contact')}
                 </Button>
               </div>
             </motion.div>
