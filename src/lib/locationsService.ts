@@ -12,31 +12,40 @@ export type LocationRow = {
   lng: number | null;
 };
 
-let _cache: LocationRow[] | null = null;
-let _cachePromise: Promise<LocationRow[]> | null = null;
+const _cache = new Map<string, LocationRow[]>();
+const _pending = new Map<string, Promise<LocationRow[]>>();
 
 export async function fetchLocations(countryCode = 'BF'): Promise<LocationRow[]> {
-  if (_cache) return _cache;
-  if (_cachePromise) return _cachePromise;
-  _cachePromise = (async () => {
+  const cc = countryCode.toUpperCase();
+  if (_cache.has(cc)) return _cache.get(cc)!;
+  if (_pending.has(cc)) return _pending.get(cc)!;
+  const p = (async () => {
     const { data, error } = await supabase
       .from('locations')
       .select('id,country_code,country_name,city,quartier,commune,arrondissement,lat,lng')
-      .eq('country_code', countryCode)
+      .eq('country_code', cc)
       .eq('active', true)
       .order('city')
-      .order('quartier');
+      .order('quartier')
+      .limit(2000);
     if (error) throw error;
-    _cache = (data ?? []) as LocationRow[];
-    return _cache;
+    const rows = (data ?? []) as LocationRow[];
+    _cache.set(cc, rows);
+    return rows;
   })();
-  return _cachePromise;
+  _pending.set(cc, p);
+  return p;
 }
 
-export function searchLocations(items: LocationRow[], query: string, limit = 8): LocationRow[] {
+/** Renvoie toutes les localisations filtrées par sous-chaîne (city ou quartier ou commune). */
+export function searchLocations(items: LocationRow[], query: string, limit = 500): LocationRow[] {
   const q = query.trim().toLowerCase();
   if (!q) return items.slice(0, limit);
   return items
-    .filter(l => l.quartier.toLowerCase().includes(q) || l.city.toLowerCase().includes(q))
+    .filter(l =>
+      l.quartier.toLowerCase().includes(q) ||
+      l.city.toLowerCase().includes(q) ||
+      (l.commune?.toLowerCase().includes(q) ?? false)
+    )
     .slice(0, limit);
 }
