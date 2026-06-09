@@ -11,7 +11,13 @@
     "connexion": "Connexion",
     "mon_compte": "Mon compte",
     "contact": "Contact",
-    "nous_contacter": "Nous contacter"
+    "nous_contacter": "Nous contacter",
+    "menu": "Menu",
+    "retour": "Retour",
+    "retour_accueil": "Retour accueil",
+    "publier_bien": "Publier votre bien",
+    "biens_count_one": "bien",
+    "biens_count_other": "biens"
   },
   "hero": {
     "titre": "Trouvez votre logement",
@@ -39,6 +45,35 @@
     "connectez_vous": "Connectez-vous",
     "connectez_vous_desc": "Connectez-vous pour accéder à votre profil, vos réservations et vos alertes.",
     "recapitulatif": "Récapitulatif"
+  },
+  "card": {
+    "nouveau": "Nouveau",
+    "zone_approx": "Zone approx.",
+    "voir_fiche": "Voir la fiche",
+    "voir_carte": "Voir sur la carte"
+  },
+  "search_overlay": {
+    "aucun_resultat": "Aucun résultat pour",
+    "filtres_avances": "Filtres avancés"
+  },
+  "footer": {
+    "contact": "Contact",
+    "navigation": "Navigation",
+    "suivez_nous": "Suivez-nous",
+    "mentions": "Mentions légales",
+    "confidentialite": "Politique de confidentialité",
+    "cgu": "Conditions d'utilisation",
+    "tous_droits": "Tous droits réservés",
+    "tagline": "Mon bien Immo en un clic",
+    "description": "La plateforme immobilière de référence. Trouvez votre bien idéal grâce à notre carte interactive et notre moteur SapSap AI Engine.",
+    "biens_dispos": "Biens disponibles",
+    "carte_interactive": "Carte interactive",
+    "quartiers": "Quartiers",
+    "temoignages": "Témoignages",
+    "propulse_par": "Propulsé par",
+    "confiance": "Ils nous font confiance",
+    "partenaires": "Nos partenaires",
+    "tag_partenaire": "Partenaire"
   },
   "filtre": {
     "titre": "Filtres",
@@ -92,15 +127,6 @@
     "succes_numero": "Numéro de confirmation",
     "fermer": "Fermer",
     "reserve": "Réservé"
-  },
-  "footer": {
-    "contact": "Contact",
-    "navigation": "Navigation",
-    "suivez_nous": "Suivez-nous",
-    "mentions": "Mentions légales",
-    "confidentialite": "Politique de confidentialité",
-    "cgu": "Conditions d'utilisation",
-    "tous_droits": "Tous droits réservés"
   },
   "legal": {
     "en_redaction": "Contenu en cours de rédaction",

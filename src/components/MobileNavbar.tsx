@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Building2, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 
 export type NavLevel = 1 | 2 | 3;
@@ -47,6 +48,7 @@ const MobileNavbar = ({
   isExploring = false,
 }: MobileNavbarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { t } = useTranslation();
   const showBack = level > 1;
   const showHome = level >= 3 || (depth && depth >= 3);
   const dotDepth = depth || level;
@@ -89,7 +91,7 @@ const MobileNavbar = ({
                   className="text-sm font-semibold truncate"
                   style={isExploring ? { color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' } : undefined}
                 >
-                  {quartierName} · <span className={isExploring ? '' : 'text-muted-foreground font-normal'}>{quartierCount} bien{(quartierCount || 0) > 1 ? 's' : ''}</span>
+                  {quartierName} · <span className={isExploring ? '' : 'text-muted-foreground font-normal'}>{quartierCount} {(quartierCount || 0) > 1 ? t('nav.biens_count_other') : t('nav.biens_count_one')}</span>
                 </span>
               ) : (
                 /* Level 3 (fiche bien): pas de titre dupliqué — déjà visible sur la fiche */
@@ -97,7 +99,7 @@ const MobileNavbar = ({
                   className="text-xs font-medium text-muted-foreground truncate"
                   style={isExploring ? { color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' } : undefined}
                 >
-                  Retour
+                  {t('nav.retour')}
                 </span>
               )}
             </>
@@ -117,7 +119,7 @@ const MobileNavbar = ({
             <button
               onClick={onHome}
               className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center min-h-[44px] min-w-[44px]"
-              title="Retour accueil"
+              title={t('nav.retour_accueil')}
             >
               <HomeIcon className="h-4 w-4 text-secondary-foreground" />
             </button>

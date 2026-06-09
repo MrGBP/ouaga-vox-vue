@@ -11,7 +11,13 @@
     "connexion": "Sign in",
     "mon_compte": "My account",
     "contact": "Contact",
-    "nous_contacter": "Contact us"
+    "nous_contacter": "Contact us",
+    "menu": "Menu",
+    "retour": "Back",
+    "retour_accueil": "Back to home",
+    "publier_bien": "List your property",
+    "biens_count_one": "listing",
+    "biens_count_other": "listings"
   },
   "hero": {
     "titre": "Find your home",
@@ -39,6 +45,35 @@
     "connectez_vous": "Sign in",
     "connectez_vous_desc": "Sign in to access your profile, bookings and alerts.",
     "recapitulatif": "Summary"
+  },
+  "card": {
+    "nouveau": "New",
+    "zone_approx": "Approx. area",
+    "voir_fiche": "View details",
+    "voir_carte": "View on map"
+  },
+  "search_overlay": {
+    "aucun_resultat": "No result for",
+    "filtres_avances": "Advanced filters"
+  },
+  "footer": {
+    "contact": "Contact",
+    "navigation": "Navigation",
+    "suivez_nous": "Follow us",
+    "mentions": "Legal notice",
+    "confidentialite": "Privacy policy",
+    "cgu": "Terms of use",
+    "tous_droits": "All rights reserved",
+    "tagline": "My home in one click",
+    "description": "The leading real-estate platform. Find your ideal property thanks to our interactive map and our SapSap AI Engine.",
+    "biens_dispos": "Available listings",
+    "carte_interactive": "Interactive map",
+    "quartiers": "Neighborhoods",
+    "temoignages": "Testimonials",
+    "propulse_par": "Powered by",
+    "confiance": "They trust us",
+    "partenaires": "Our partners",
+    "tag_partenaire": "Partner"
   },
   "filtre": {
     "titre": "Filters",
@@ -92,15 +127,6 @@
     "succes_numero": "Confirmation number",
     "fermer": "Close",
     "reserve": "Booked"
-  },
-  "footer": {
-    "contact": "Contact",
-    "navigation": "Navigation",
-    "suivez_nous": "Follow us",
-    "mentions": "Legal notice",
-    "confidentialite": "Privacy policy",
-    "cgu": "Terms of use",
-    "tous_droits": "All rights reserved"
   },
   "legal": {
     "en_redaction": "Content being drafted",
