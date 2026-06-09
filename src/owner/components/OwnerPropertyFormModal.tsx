@@ -527,10 +527,35 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             </div>
           </div>
 
+          {/* Aperçu carte — tel qu'affiché aux locataires */}
+          <div className="border-t pt-4 space-y-2">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              👁 Aperçu — tel qu'il sera affiché aux locataires
+            </label>
+            <ListingPreviewCard
+              title={title || 'Titre du bien'}
+              type={type}
+              price={typeof price === 'number' ? price : 0}
+              quartier={quartier}
+              bedrooms={typeof bedrooms === 'number' ? bedrooms : 0}
+              bathrooms={typeof bathrooms === 'number' ? bathrooms : 0}
+              surface={typeof surface === 'number' ? surface : 0}
+              furnished={furnished}
+              firstImage={
+                pendingMedia.find(m => m.kind === 'image')?.source === 'file'
+                  ? (pendingMedia.find(m => m.kind === 'image') as any).previewUrl
+                  : (pendingMedia.find(m => m.kind === 'image') as any)?.url ?? null
+              }
+            />
+            <p className="text-[10px] text-muted-foreground">
+              La 1ʳᵉ image (★ Principale) sera la photo de couverture sur la liste, la carte, et le partage.
+            </p>
+          </div>
+
           {/* Médias — toujours disponibles, requis avant validation */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground">
-              Médias * — au moins 1 photo obligatoire (vidéo et 360° optionnelles)
+              Médias * — au moins 1 photo obligatoire (vidéo et 360° optionnelles). La <b>1ʳᵉ image</b> est la <b>photo principale</b>.
             </label>
 
             {/* Médias déjà uploadés (édition) */}
@@ -612,9 +637,15 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                         <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded">
                           {m.kind === 'image' ? <><ImageIcon size={9}/> IMG</> : m.kind === 'video_360' ? <>🔭 360°</> : <><Video size={9}/> VIDEO</>}
                         </span>
-                        <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
-                          #{i + 1}
-                        </span>
+                        {i === 0 ? (
+                          <span className="absolute top-1 left-1 text-[9px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold shadow">
+                            ★ Principale
+                          </span>
+                        ) : (
+                          <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
+                            #{i + 1}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -652,6 +683,48 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <label className="block text-xs font-semibold text-foreground mb-1">{label}</label>
       {children}
+    </div>
+  );
+}
+
+function ListingPreviewCard(props: {
+  title: string; type: string; price: number; quartier: string;
+  bedrooms: number; bathrooms: number; surface: number; furnished: boolean;
+  firstImage: string | null;
+}) {
+  const typeLabel = PROPERTY_TYPES.find(t => t.value === props.type);
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden max-w-sm shadow-sm">
+      <div className="aspect-video bg-muted relative">
+        {props.firstImage ? (
+          <img src={props.firstImage} alt={props.title} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground text-xs">
+            <ImageIcon size={24} className="opacity-40" />
+            <span className="mt-1 opacity-60">Aucune image — ajoute-en une ci-dessous</span>
+          </div>
+        )}
+        <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full">
+          {typeLabel?.emoji} {typeLabel?.label ?? props.type}
+        </span>
+        {props.furnished && (
+          <span className="absolute top-2 right-2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
+            Meublé
+          </span>
+        )}
+      </div>
+      <div className="p-3">
+        <h4 className="text-sm font-bold truncate">{props.title}</h4>
+        <p className="text-[11px] text-muted-foreground truncate">📍 {props.quartier || '—'}</p>
+        <p className="text-sm font-bold text-primary mt-1">
+          {props.price > 0 ? `${props.price.toLocaleString('fr-FR')} FCFA` : '—'}
+        </p>
+        <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+          <span>🛏 {props.bedrooms}</span>
+          <span>🚿 {props.bathrooms}</span>
+          <span>📐 {props.surface} m²</span>
+        </div>
+      </div>
     </div>
   );
 }

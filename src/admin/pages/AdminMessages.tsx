@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Send, MessageSquare, Image as ImageIcon, ArrowLeft, Phone } from 'lucide-react';
+import { Loader2, MessageSquare, Image as ImageIcon, ArrowLeft, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import {
   listAllAdminConversations, listPropertyMessages, sendPropertyMessage,
   markPropertyMessagesReadByAdmin, type PropertyMessageRow,
 } from '@/lib/propertyMessagesService';
+import PropertyChatThread from '@/components/PropertyChatThread';
 
 type Conversation = Awaited<ReturnType<typeof listAllAdminConversations>>[number];
 
@@ -21,7 +22,7 @@ export default function AdminMessages() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<PropertyMessageRow[]>([]);
-  const [text, setText] = useState('');
+  
   const [sending, setSending] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -41,15 +42,15 @@ export default function AdminMessages() {
     } catch (e: any) { toast.error(e.message); }
   };
 
-  const send = async () => {
-    if (!selected || !text.trim()) return;
+  const send = async (content: string, replyToId: string | null) => {
+    if (!selected) return;
     setSending(true);
     try {
       await sendPropertyMessage({
-        property_id: selected.property.id, content: text,
+        property_id: selected.property.id, content,
         sender_role: 'admin', sender_name: 'Administration SapSapHouse',
+        reply_to_id: replyToId,
       });
-      setText('');
       setMessages(await listPropertyMessages(selected.property.id));
       reload();
     } catch (e: any) { toast.error(e.message); }
@@ -92,41 +93,15 @@ export default function AdminMessages() {
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bg-muted/30">
-            {messages.length === 0 ? (
-              <p className="text-center text-xs text-muted-foreground italic py-6">Aucun message — démarre la conversation ci-dessous.</p>
-            ) : messages.map(m => (
-              <div key={m.id} className={`flex ${m.sender_role === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-xs ${
-                  m.sender_role === 'admin' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'
-                }`}>
-                  <div className="text-[10px] opacity-70 mb-0.5">{m.sender_name} • {new Date(m.created_at).toLocaleString('fr-FR')}</div>
-                  <div className="whitespace-pre-wrap">{m.content}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-t p-3 space-y-2 bg-card">
-            <div className="flex gap-1.5 flex-wrap">
-              {TEMPLATES.map(t => (
-                <button key={t} onClick={() => setText(t)}
-                  className="rounded-full border border-border px-2.5 py-1 text-[10px] text-muted-foreground hover:bg-muted">
-                  {t}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <textarea value={text} onChange={e => setText(e.target.value)} rows={2}
-                placeholder="Répondre au propriétaire…"
-                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(); }}
-                className="flex-1 text-xs border border-border rounded-lg px-3 py-2 resize-none bg-background" />
-              <button onClick={send} disabled={sending || !text.trim()}
-                className="self-end px-3 h-8 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 disabled:opacity-50">
-                <Send size={12} /> Envoyer
-              </button>
-            </div>
-            <p className="text-[10px] text-muted-foreground">Astuce : ⌘/Ctrl + Entrée pour envoyer rapidement.</p>
+          <div className="flex-1 overflow-hidden">
+            <PropertyChatThread
+              messages={messages}
+              meRole="admin"
+              sending={sending}
+              templates={TEMPLATES}
+              placeholder="Répondre au propriétaire…"
+              onSend={send}
+            />
           </div>
         </div>
       </div>

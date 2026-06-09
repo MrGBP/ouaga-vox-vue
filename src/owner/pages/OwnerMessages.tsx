@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, MessageSquare, Send, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { Loader2, MessageSquare, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import {
   type PropertyMessageRow,
 } from '@/lib/propertyMessagesService';
 import { supabase } from '@/integrations/supabase/client';
+import PropertyChatThread from '@/components/PropertyChatThread';
 
 type Conversation = Awaited<ReturnType<typeof listMyOwnerConversations>>[number];
 
@@ -18,7 +19,6 @@ export default function OwnerMessages() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<PropertyMessageRow[]>([]);
-  const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
 
   const reload = async () => {
@@ -35,21 +35,20 @@ export default function OwnerMessages() {
     try {
       const msgs = await listPropertyMessages(c.property.id);
       setMessages(msgs);
-      // mark admin messages as read by client (l'owner agit comme client ici)
       await supabase.from('messages').update({ read_by_client: true })
         .eq('property_id', c.property.id).eq('sender_role', 'admin');
     } catch (e: any) { toast.error(e.message); }
   };
 
-  const send = async () => {
-    if (!selected || !text.trim() || !user) return;
+  const send = async (content: string, replyToId: string | null) => {
+    if (!selected || !user) return;
     setSending(true);
     try {
       await sendPropertyMessage({
-        property_id: selected.property.id, content: text,
+        property_id: selected.property.id, content,
         sender_role: 'owner', sender_name: ownerName,
+        reply_to_id: replyToId,
       });
-      setText('');
       const msgs = await listPropertyMessages(selected.property.id);
       setMessages(msgs);
     } catch (e: any) { toast.error(e.message); }
@@ -66,33 +65,19 @@ export default function OwnerMessages() {
         <button onClick={() => { setSelected(null); reload(); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3.5 w-3.5" /> Retour aux conversations
         </button>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden flex flex-col h-[calc(100vh-200px)]">
           <div className="px-4 py-3 border-b">
             <h3 className="text-sm font-bold truncate">{selected.property.title}</h3>
             <p className="text-[11px] text-muted-foreground">Échange avec l'administration</p>
           </div>
-          <div className="p-4 space-y-2.5 max-h-[55vh] overflow-y-auto bg-muted/30">
-            {messages.length === 0 ? (
-              <p className="text-center text-xs text-muted-foreground italic py-6">Aucun message pour le moment.</p>
-            ) : messages.map(m => (
-              <div key={m.id} className={`flex ${m.sender_role === 'owner' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-xs ${
-                  m.sender_role === 'owner' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'
-                }`}>
-                  <div className="text-[10px] opacity-70 mb-0.5">{m.sender_name} • {new Date(m.created_at).toLocaleString('fr-FR')}</div>
-                  <div className="whitespace-pre-wrap">{m.content}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="border-t p-3 flex gap-2 bg-card">
-            <textarea value={text} onChange={e => setText(e.target.value)} rows={2}
+          <div className="flex-1 overflow-hidden">
+            <PropertyChatThread
+              messages={messages}
+              meRole="owner"
+              sending={sending}
               placeholder="Écrire à l'administration…"
-              className="flex-1 text-xs border border-border rounded-lg px-3 py-2 resize-none bg-background" />
-            <button onClick={send} disabled={sending || !text.trim()}
-              className="self-end px-3 h-8 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 disabled:opacity-50">
-              <Send size={12} /> Envoyer
-            </button>
+              onSend={send}
+            />
           </div>
         </Card>
       </div>

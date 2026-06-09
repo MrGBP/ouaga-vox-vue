@@ -12,6 +12,7 @@ export interface PropertyMessageRow {
   read_by_admin: boolean;
   read_by_client: boolean;
   created_at: string;
+  reply_to_id?: string | null;
 }
 
 export async function listPropertyMessages(propertyId: string): Promise<PropertyMessageRow[]> {
@@ -29,15 +30,17 @@ export async function sendPropertyMessage(args: {
   content: string;
   sender_role: 'admin' | 'owner';
   sender_name: string;
+  reply_to_id?: string | null;
 }): Promise<PropertyMessageRow> {
   const { data: { user } } = await supabase.auth.getUser();
-  const payload = {
+  const payload: any = {
     property_id: args.property_id,
     sender_id: user?.id ?? null,
     sender_role: args.sender_role,
     sender_name: (args.sender_name || 'Anonyme').trim(),
     content: args.content.trim(),
   };
+  if (args.reply_to_id) payload.reply_to_id = args.reply_to_id;
   const { data, error } = await supabase.from('messages').insert(payload).select().single();
   if (error) throw error;
   return data as PropertyMessageRow;

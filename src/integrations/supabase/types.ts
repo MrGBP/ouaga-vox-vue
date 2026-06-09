@@ -177,6 +177,7 @@ export type Database = {
           property_id: string | null
           read_by_admin: boolean
           read_by_client: boolean
+          reply_to_id: string | null
           reservation_id: string | null
           sender_id: string | null
           sender_name: string
@@ -189,6 +190,7 @@ export type Database = {
           property_id?: string | null
           read_by_admin?: boolean
           read_by_client?: boolean
+          reply_to_id?: string | null
           reservation_id?: string | null
           sender_id?: string | null
           sender_name: string
@@ -201,12 +203,21 @@ export type Database = {
           property_id?: string | null
           read_by_admin?: boolean
           read_by_client?: boolean
+          reply_to_id?: string | null
           reservation_id?: string | null
           sender_id?: string | null
           sender_name?: string
           sender_role?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
