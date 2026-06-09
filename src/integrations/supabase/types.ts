@@ -587,6 +587,8 @@ export type Database = {
         Args: { _property_id: string; _user_id: string }
         Returns: boolean
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "user" | "owner"
@@ -599,6 +601,7 @@ export type Database = {
         | "rented"
         | "inactive"
         | "rejected"
+        | "paused"
       reservation_kind: "visit" | "booking" | "rental_request"
       reservation_status: "pending" | "confirmed" | "completed" | "cancelled"
     }
@@ -738,6 +741,7 @@ export const Constants = {
         "rented",
         "inactive",
         "rejected",
+        "paused",
       ],
       reservation_kind: ["visit", "booking", "rental_request"],
       reservation_status: ["pending", "confirmed", "completed", "cancelled"],
