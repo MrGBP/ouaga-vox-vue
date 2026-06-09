@@ -154,16 +154,16 @@ const MobileNavbar = ({
               className="fixed top-0 right-0 bottom-0 w-[280px] bg-card shadow-lg z-[201] flex flex-col"
             >
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <span className="text-sm font-bold text-foreground">Menu</span>
+                <span className="text-sm font-bold text-foreground">{t('nav.menu')}</span>
                 <button onClick={() => setDrawerOpen(false)} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
                   <X className="h-5 w-5" />
                 </button>
               </div>
               <nav className="flex-1 p-4 space-y-1">
                 {[
-                  { label: 'Biens', icon: HomeIcon, href: '#properties' },
-                  { label: 'Carte', icon: MapPin, href: '#map' },
-                  { label: 'Publier votre bien', icon: FileText, href: '#publish' },
+                  { label: t('nav.biens'), icon: HomeIcon, href: '#properties' },
+                  { label: t('nav.carte'), icon: MapPin, href: '#map' },
+                  { label: t('nav.publier_bien'), icon: FileText, href: '#publish' },
                 ].map(item => (
                   <a
                     key={item.label}
@@ -178,7 +178,7 @@ const MobileNavbar = ({
               </nav>
               <div className="p-4 border-t border-border">
                 <Button className="w-full bg-secondary text-secondary-foreground gap-2">
-                  <Phone className="h-4 w-4" /> Contact
+                  <Phone className="h-4 w-4" /> {t('nav.contact')}
                 </Button>
               </div>
             </motion.div>
