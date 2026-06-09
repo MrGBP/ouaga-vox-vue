@@ -2,6 +2,7 @@ import { Building2, MapPin, Phone, Menu, X, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -11,6 +12,7 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, openAuthModal } = useAuth();
   const { activeCity, setActiveCity, availableCities } = useGeoCity();
+  const { t } = useTranslation();
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-soft">
@@ -29,9 +31,9 @@ const Header = () => {
 
           {/* Nav desktop */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-            <a href="#properties" className="hover:text-foreground transition-colors">Biens</a>
-            <a href="#map" className="hover:text-foreground transition-colors">Carte</a>
-            <a href="#quartiers" className="hover:text-foreground transition-colors">Quartiers</a>
+            <a href="#properties" className="hover:text-foreground transition-colors">{t('nav.biens')}</a>
+            <a href="#map" className="hover:text-foreground transition-colors">{t('nav.carte')}</a>
+            <a href="#quartiers" className="hover:text-foreground transition-colors">{t('nav.quartiers')}</a>
           </nav>
 
           {/* CTA + contact */}
@@ -58,18 +60,18 @@ const Header = () => {
               <Link to="/mon-compte">
                 <Button size="sm" variant="outline" className="gap-2">
                   <User className="h-3.5 w-3.5" />
-                  Mon compte
+                  {t('nav.mon_compte')}
                 </Button>
               </Link>
             ) : (
               <Button size="sm" variant="outline" className="gap-2" onClick={() => openAuthModal()}>
                 <User className="h-3.5 w-3.5" />
-                Connexion
+                {t('nav.connexion')}
               </Button>
             )}
             <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground gap-2">
               <Phone className="h-3.5 w-3.5" />
-              Contact
+              {t('nav.contact')}
             </Button>
           </div>
 
@@ -93,12 +95,12 @@ const Header = () => {
             className="md:hidden border-t border-border bg-card overflow-hidden"
           >
             <div className="container mx-auto px-4 py-4 flex flex-col gap-3">
-              <a href="#properties" className="text-sm font-medium text-foreground py-2">Biens</a>
-              <a href="#map" className="text-sm font-medium text-foreground py-2">Carte</a>
-              <a href="#quartiers" className="text-sm font-medium text-foreground py-2">Quartiers</a>
+              <a href="#properties" className="text-sm font-medium text-foreground py-2">{t('nav.biens')}</a>
+              <a href="#map" className="text-sm font-medium text-foreground py-2">{t('nav.carte')}</a>
+              <a href="#quartiers" className="text-sm font-medium text-foreground py-2">{t('nav.quartiers')}</a>
               <Button size="sm" className="bg-secondary text-secondary-foreground mt-2 w-full gap-2">
                 <Phone className="h-3.5 w-3.5" />
-                Nous contacter
+                {t('nav.nous_contacter')}
               </Button>
             </div>
           </motion.div>

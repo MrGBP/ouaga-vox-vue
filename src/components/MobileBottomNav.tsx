@@ -1,4 +1,5 @@
 import { Home, Map, Search, Heart, User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -6,15 +7,15 @@ interface MobileBottomNavProps {
   favoritesCount?: number;
 }
 
-const tabs = [
-  { id: 'home', label: 'Accueil', icon: Home, emoji: '🏠' },
-  { id: 'map', label: 'Carte', icon: Map, emoji: '🗺️' },
-  { id: 'search', label: 'Chercher', icon: Search, emoji: '🔍' },
-  { id: 'favorites', label: 'Favoris', icon: Heart, emoji: '❤️' },
-  { id: 'profile', label: 'Profil', icon: User, emoji: '👤' },
-];
-
 const MobileBottomNav = ({ activeTab, onTabChange, favoritesCount = 0 }: MobileBottomNavProps) => {
+  const { t } = useTranslation();
+  const tabs = [
+    { id: 'home', label: t('nav.accueil'), icon: Home, emoji: '🏠' },
+    { id: 'map', label: t('nav.carte'), icon: Map, emoji: '🗺️' },
+    { id: 'search', label: t('nav.chercher'), icon: Search, emoji: '🔍' },
+    { id: 'favorites', label: t('nav.favoris'), icon: Heart, emoji: '❤️' },
+    { id: 'profile', label: t('nav.profil'), icon: User, emoji: '👤' },
+  ];
   return (
     <nav className="flex lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border justify-around items-center z-[90] no-select"
       style={{ height: 'calc(52px + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
