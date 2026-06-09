@@ -48,18 +48,23 @@ export default function QuartierAutocomplete({ value, onChange, countryCode = 'B
       </div>
       {open && suggestions.length > 0 && (
         <div className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
-          {suggestions.map(s => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => { onChange(s.quartier, s); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2"
-            >
-              <MapPin size={12} className="text-primary shrink-0" />
-              <span className="font-medium">{s.quartier}</span>
-              <span className="text-muted-foreground">· {s.city}{s.arrondissement ? ` (Arr. ${s.arrondissement})` : ''}</span>
-            </button>
-          ))}
+          {suggestions.map(s => {
+            const sub = s.commune ?? (s.arrondissement ? `Arrondissement ${s.arrondissement}` : null);
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => { onChange(s.quartier, s); setOpen(false); }}
+                className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2"
+              >
+                <MapPin size={12} className="text-primary shrink-0" />
+                <span className="font-medium">{s.quartier}</span>
+                <span className="text-muted-foreground truncate">
+                  · {s.city}{sub ? ` · ${sub}` : ''}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
