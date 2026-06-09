@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_dates: {
+        Row: {
+          created_at: string
+          date_from: string
+          date_to: string
+          id: string
+          note: string | null
+          owner_id: string
+          property_id: string
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_from: string
+          date_to: string
+          id?: string
+          note?: string | null
+          owner_id: string
+          property_id: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_from?: string
+          date_to?: string
+          id?: string
+          note?: string | null
+          owner_id?: string
+          property_id?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_dates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       country_configs: {
         Row: {
           code: string
@@ -83,6 +127,48 @@ export type Database = {
         }
         Relationships: []
       }
+      locations: {
+        Row: {
+          active: boolean
+          arrondissement: number | null
+          city: string
+          commune: string | null
+          country_code: string
+          country_name: string
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          quartier: string
+        }
+        Insert: {
+          active?: boolean
+          arrondissement?: number | null
+          city: string
+          commune?: string | null
+          country_code: string
+          country_name: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          quartier: string
+        }
+        Update: {
+          active?: boolean
+          arrondissement?: number | null
+          city?: string
+          commune?: string | null
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          quartier?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -119,6 +205,39 @@ export type Database = {
           sender_id?: string | null
           sender_name?: string
           sender_role?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          data: Json | null
+          id: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -565,6 +684,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_dashboard_stats: { Args: never; Returns: Json }
       get_reserved_dates: {
         Args: { _property_id: string }
         Returns: {
