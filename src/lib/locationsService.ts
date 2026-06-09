@@ -18,18 +18,18 @@ let _cachePromise: Promise<LocationRow[]> | null = null;
 export async function fetchLocations(countryCode = 'BF'): Promise<LocationRow[]> {
   if (_cache) return _cache;
   if (_cachePromise) return _cachePromise;
-  _cachePromise = supabase
-    .from('locations')
-    .select('id,country_code,country_name,city,quartier,commune,arrondissement,lat,lng')
-    .eq('country_code', countryCode)
-    .eq('active', true)
-    .order('city')
-    .order('quartier')
-    .then(({ data, error }) => {
-      if (error) throw error;
-      _cache = (data ?? []) as LocationRow[];
-      return _cache;
-    });
+  _cachePromise = (async () => {
+    const { data, error } = await supabase
+      .from('locations')
+      .select('id,country_code,country_name,city,quartier,commune,arrondissement,lat,lng')
+      .eq('country_code', countryCode)
+      .eq('active', true)
+      .order('city')
+      .order('quartier');
+    if (error) throw error;
+    _cache = (data ?? []) as LocationRow[];
+    return _cache;
+  })();
   return _cachePromise;
 }
 
