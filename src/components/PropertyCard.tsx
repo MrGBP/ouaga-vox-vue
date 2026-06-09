@@ -3,6 +3,7 @@ import { MapPin, Bed, Maximize, Eye, Camera, Heart, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getTypeLabel, isTypeFurnished, pricePerNight } from '@/lib/mockData';
+import { resolveFeatures } from '@/lib/featureCatalog';
 import PropertyImage from '@/components/PropertyImage';
 
 interface Property {
@@ -126,19 +127,45 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {property.bedrooms !== undefined && property.bedrooms > 0 && (
-              <div className="flex items-center gap-1">
-                <Bed className="h-3.5 w-3.5" />
-                <span>{property.bedrooms} ch.</span>
+              <div className="flex items-center gap-1" title="Chambres">
+                <span aria-hidden>🛏</span>
+                <span>{property.bedrooms}</span>
+              </div>
+            )}
+            {property.bathrooms !== undefined && property.bathrooms > 0 && (
+              <div className="flex items-center gap-1" title="Salles de bain">
+                <span aria-hidden>🚿</span>
+                <span>{property.bathrooms}</span>
               </div>
             )}
             {property.surface_area && (
-              <div className="flex items-center gap-1">
-                <Maximize className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-1" title="Surface">
+                <span aria-hidden>📐</span>
                 <span>{property.surface_area}m²</span>
               </div>
             )}
           </div>
         </div>
+
+        {/* Emoji feature chips — top 4 caractéristiques */}
+        {(() => {
+          const feats = resolveFeatures(property as any).slice(0, 4);
+          if (!feats.length) return null;
+          return (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {feats.map(f => (
+                <span
+                  key={f.key}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-muted text-foreground border border-border"
+                  title={f.label}
+                >
+                  <span aria-hidden>{f.emoji}</span>
+                  <span className="truncate max-w-[80px]">{f.label}</span>
+                </span>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* CTA */}
