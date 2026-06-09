@@ -92,7 +92,7 @@ export default function OwnerProperties() {
           {items.map(p => (
             <Card key={p.id} className="overflow-hidden flex flex-col">
               <div className="aspect-video bg-muted relative">
-                <img src={p.images?.[0] ?? '/placeholder.svg'} alt={p.title}
+                <PropertyImage src={p.images?.[0]} alt={p.title}
                   className="w-full h-full object-cover" />
                 <Badge variant="outline" className={`absolute top-2 left-2 ${ADMIN_STATUS_LABEL[p.admin_status].color} backdrop-blur`}>
                   {ADMIN_STATUS_LABEL[p.admin_status].label}
