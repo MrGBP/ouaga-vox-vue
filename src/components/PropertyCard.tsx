@@ -3,6 +3,7 @@ import { MapPin, Bed, Maximize, Eye, Camera, Heart, Map } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getTypeLabel, isTypeFurnished, pricePerNight } from '@/lib/mockData';
+import PropertyImage from '@/components/PropertyImage';
 
 interface Property {
   id: string;
@@ -41,7 +42,7 @@ const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigit
 const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFavorite, onFocusOnMap }: PropertyCardProps) => {
   const isFurnished = isTypeFurnished(property.type) || property.furnished || false;
   const nightPrice = isFurnished ? pricePerNight(property.price) : 0;
-  const imgSrc = property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&auto=format&fit=crop';
+  const imgSrc = property.images?.[0];
 
   // Badge "Nouveau" — créé il y a moins de 7 jours
   const isNew = property.created_at
@@ -59,7 +60,7 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
     >
       {/* Image */}
       <div className="relative h-52 overflow-hidden">
-        <img src={imgSrc} alt={property.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+        <PropertyImage src={imgSrc} alt={property.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
 
         {/* Badges top-left */}
         <div className="absolute top-3 left-3 flex gap-2 flex-wrap">

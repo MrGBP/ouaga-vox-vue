@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { track } from '@/lib/analytics';
+import { useLockBackdrop } from '@/hooks/useLockBackdrop';
 
 const WHATSAPP_NUMBER = '22657976660';
 
@@ -27,6 +28,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModalProps) {
+  useLockBackdrop(open);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
   const [busy, setBusy] = useState(false);

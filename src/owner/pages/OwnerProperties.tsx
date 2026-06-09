@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Heart, Loader2, Plus, ExternalLink, Trash2, Pencil, Pause, Play } from 'lucide-react';
+import { Eye, Heart, Loader2, Plus, ExternalLink, Trash2, Pencil, Pause, Play, CalendarOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchMyProperties, ADMIN_STATUS_LABEL, ownerSetPause, type OwnerPropertyRow } from '../lib/ownerService';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import OwnerPropertyFormModal from '../components/OwnerPropertyFormModal';
+import BlockedDatesModal from '../components/BlockedDatesModal';
+import PropertyImage from '@/components/PropertyImage';
+import { isTypeFurnished } from '@/lib/mockData';
 
 export default function OwnerProperties() {
   const { user } = useAuth();
@@ -16,6 +19,7 @@ export default function OwnerProperties() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<OwnerPropertyRow | null>(null);
+  const [blockedFor, setBlockedFor] = useState<OwnerPropertyRow | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const reload = () => {
@@ -88,7 +92,7 @@ export default function OwnerProperties() {
           {items.map(p => (
             <Card key={p.id} className="overflow-hidden flex flex-col">
               <div className="aspect-video bg-muted relative">
-                <img src={p.images?.[0] ?? '/placeholder.svg'} alt={p.title}
+                <PropertyImage src={p.images?.[0]} alt={p.title}
                   className="w-full h-full object-cover" />
                 <Badge variant="outline" className={`absolute top-2 left-2 ${ADMIN_STATUS_LABEL[p.admin_status].color} backdrop-blur`}>
                   {ADMIN_STATUS_LABEL[p.admin_status].label}
@@ -125,6 +129,11 @@ export default function OwnerProperties() {
                         : <><Play className="h-3 w-3" /> Réactiver</>}
                     </Button>
                   )}
+                  {p.admin_status === 'published' && isTypeFurnished(p.type) && (
+                    <Button size="sm" variant="outline" className="flex-1 min-w-[90px] text-xs gap-1.5" onClick={() => setBlockedFor(p)} title="Bloquer des dates">
+                      <CalendarOff className="h-3 w-3" /> Calendrier
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" className="flex-1 min-w-[90px] text-xs gap-1.5" onClick={() => openEdit(p)}>
                     <Pencil className="h-3 w-3" /> Modifier
                   </Button>
@@ -148,6 +157,15 @@ export default function OwnerProperties() {
             setEditing(null);
             if (didChange) reload();
           }}
+        />
+      )}
+      {user && blockedFor && (
+        <BlockedDatesModal
+          open={!!blockedFor}
+          propertyId={blockedFor.id}
+          propertyTitle={blockedFor.title}
+          ownerId={user.id}
+          onClose={() => setBlockedFor(null)}
         />
       )}
     </div>

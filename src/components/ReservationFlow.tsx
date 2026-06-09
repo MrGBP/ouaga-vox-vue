@@ -20,6 +20,8 @@ import { notifyOwner } from '@/lib/notifications';
 import { openWhatsApp, openEmail, openCountrySupport, buildReservationOwnerMessage } from '@/lib/contact';
 import { useCountryConfig } from '@/hooks/useCountryConfig';
 import { MessageCircle, Mail, LifeBuoy } from 'lucide-react';
+import { useLockBackdrop } from '@/hooks/useLockBackdrop';
+import { hasBlockedConflict } from '@/lib/blockedDatesService';
 
 interface Property {
   id: string;
@@ -179,6 +181,8 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const country = useCountryConfig();
+  useLockBackdrop(true);
+
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
@@ -310,6 +314,13 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     }
     setSubmitting(true);
     try {
+      // Vérif : pas de collision avec les périodes bloquées par le propriétaire
+      const blocked = await hasBlockedConflict(property.id, toKey(checkIn), toKey(checkOut)).catch(() => false);
+      if (blocked) {
+        toast({ title: 'Dates indisponibles', description: 'Le propriétaire a bloqué cette période. Choisis d\'autres dates.', variant: 'destructive' });
+        setSubmitting(false);
+        return;
+      }
       const { row, error } = await createPublicReservation({
         property_id: property.id,
         property_title: property.title,
