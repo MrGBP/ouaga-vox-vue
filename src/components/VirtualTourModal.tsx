@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { useLockBackdrop } from '@/hooks/useLockBackdrop';
 
 interface Property {
   id: string;
