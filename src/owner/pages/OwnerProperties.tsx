@@ -159,6 +159,15 @@ export default function OwnerProperties() {
           }}
         />
       )}
+      {user && blockedFor && (
+        <BlockedDatesModal
+          open={!!blockedFor}
+          propertyId={blockedFor.id}
+          propertyTitle={blockedFor.title}
+          ownerId={user.id}
+          onClose={() => setBlockedFor(null)}
+        />
+      )}
     </div>
   );
 }
