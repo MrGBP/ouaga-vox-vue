@@ -28,6 +28,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModalProps) {
+  useLockBackdrop(open);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
   const [busy, setBusy] = useState(false);
