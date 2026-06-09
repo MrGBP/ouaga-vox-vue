@@ -192,7 +192,7 @@ export default function AdminDashboard() {
                   <div className="h-10 w-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center"><Home size={18} /></div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{p.title}</p>
-                    <p className="text-xs text-gray-400">{[p.quartier, p.city].filter(Boolean).join(' · ') || '—'}</p>
+                    <p className="text-xs text-gray-400">{p.quartier ?? '—'}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     <button disabled={busyId === p.id} onClick={() => decide(p.id, 'published')} title="Publier" className="h-7 w-7 flex items-center justify-center rounded-md bg-green-50 text-green-600 hover:bg-green-100 disabled:opacity-50"><Check size={14} /></button>
