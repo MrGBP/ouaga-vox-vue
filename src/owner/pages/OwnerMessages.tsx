@@ -20,7 +20,6 @@ export default function OwnerMessages() {
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<PropertyMessageRow[]>([]);
   const [sending, setSending] = useState(false);
-  const [sending, setSending] = useState(false);
 
   const reload = async () => {
     if (!user) return;
