@@ -63,6 +63,15 @@ export default function OwnerProperties() {
     } catch (e: any) { toast.error(e?.message ?? 'Erreur'); }
   };
 
+  const resubmit = async (p: OwnerPropertyRow) => {
+    if (!user) return;
+    try {
+      await ownerResubmitForReview(p.id, user.id);
+      toast.success('Bien renvoyé en examen ✅ — l\'administration a été notifiée.');
+      reload();
+    } catch (e: any) { toast.error(e?.message ?? 'Erreur'); }
+  };
+
   const openCreate = () => { setEditing(null); setModalOpen(true); };
   const openEdit = (p: OwnerPropertyRow) => { setEditing(p); setModalOpen(true); };
 
