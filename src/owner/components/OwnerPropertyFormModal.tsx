@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe } from 'lucide-react';
 import { toast } from 'sonner';
-import { mockQuartiers, PROPERTY_TYPES } from '@/lib/mockData';
+import { mockQuartiers, PROPERTY_TYPES, isTypeFurnished } from '@/lib/mockData';
 import { FEATURE_CATALOG, FEATURE_CATEGORIES, type FeatureCategoryId } from '@/lib/featureCatalog';
 import { supabase } from '@/integrations/supabase/client';
 import MapPicker from '@/admin/components/MapPicker';
@@ -9,6 +9,9 @@ import MediaUploader from '@/admin/components/MediaUploader';
 import { uploadPropertyMedia, addPropertyMediaUrl, listPropertyMedia } from '@/lib/propertiesService';
 import { Loader2 } from 'lucide-react';
 import type { OwnerPropertyRow } from '../lib/ownerService';
+import { isCommercialType } from '@/lib/typeHelpers';
+import { useLockBackdrop } from '@/hooks/useLockBackdrop';
+import QuartierAutocomplete from '@/components/QuartierAutocomplete';
 
 type PendingMedia =
   | { kind: 'image' | 'video'; source: 'file'; file: File; previewUrl: string }
