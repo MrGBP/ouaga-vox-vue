@@ -684,6 +684,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_country_support: {
+        Args: { _code: string }
+        Returns: {
+          support_email: string
+          support_whatsapp: string
+        }[]
+      }
       get_dashboard_stats: { Args: never; Returns: Json }
       get_reserved_dates: {
         Args: { _property_id: string }
@@ -707,8 +714,6 @@ export type Database = {
         Args: { _property_id: string; _user_id: string }
         Returns: boolean
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "user" | "owner"
