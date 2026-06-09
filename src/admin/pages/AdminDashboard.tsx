@@ -21,17 +21,18 @@ type DashStats = {
 };
 
 type PendingRow = {
-  id: string; title: string; type: string; quartier: string | null; city: string | null;
-  country: string | null; price: number; created_at: string; owner_id: string | null;
+  id: string; title: string; type: string; quartier: string | null;
+  price: number; created_at: string; owner_id: string | null;
 };
 
 type ResRow = {
-  id: string; status: string; check_in: string | null; check_out: string | null;
-  total_price: number | null; created_at: string; user_name: string | null;
+  id: string; status: string; start_date: string | null; end_date: string | null;
+  total_price: number | null; created_at: string; contact_name: string | null;
   properties: { title: string | null; quartier: string | null } | null;
 };
 
-type FeedItem = { id: string; type: 'new_reservation' | 'new_property' | 'status_change'; text: string; time: string };
+type FeedKind = 'new_reservation' | 'new_property' | 'status_change';
+type FeedItem = { id: string; type: FeedKind; text: string; time: string };
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashStats | null>(null);
@@ -47,19 +48,19 @@ export default function AdminDashboard() {
       const [statsRes, pendingRes, resRes] = await Promise.all([
         supabase.rpc('get_dashboard_stats'),
         supabase.from('properties')
-          .select('id, title, type, quartier, city, country, price, created_at, owner_id')
+          .select('id, title, type, quartier, price, created_at, owner_id')
           .eq('admin_status', 'pending')
           .order('created_at', { ascending: false })
           .limit(10),
         supabase.from('reservations')
-          .select('id, status, check_in, check_out, total_price, created_at, user_name, properties(title, quartier)')
+          .select('id, status, start_date, end_date, total_price, created_at, contact_name, properties(title, quartier)')
           .order('created_at', { ascending: false })
           .limit(15),
       ]);
       if (statsRes.error) throw statsRes.error;
       setStats(statsRes.data as unknown as DashStats);
-      setPending((pendingRes.data ?? []) as PendingRow[]);
-      setReservations((resRes.data ?? []) as ResRow[]);
+      setPending(((pendingRes.data ?? []) as unknown) as PendingRow[]);
+      setReservations(((resRes.data ?? []) as unknown) as ResRow[]);
     } catch (e: any) {
       toast.error(e?.message ?? 'Erreur chargement dashboard');
     } finally { setLoading(false); }
@@ -72,21 +73,23 @@ export default function AdminDashboard() {
     const ch = supabase
       .channel('admin-live-feed')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reservations' }, (p) => {
-        setFeed(prev => [{
+        const item: FeedItem = {
           id: (p.new as any).id,
           type: 'new_reservation',
           text: `Nouvelle réservation reçue`,
           time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        }, ...prev].slice(0, 20));
+        };
+        setFeed(prev => [item, ...prev].slice(0, 20));
         load();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'properties' }, (p) => {
-        setFeed(prev => [{
+        const item: FeedItem = {
           id: (p.new as any).id,
           type: 'new_property',
           text: `Nouveau bien soumis : « ${(p.new as any).title ?? '—'} »`,
           time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        }, ...prev].slice(0, 20));
+        };
+        setFeed(prev => [item, ...prev].slice(0, 20));
         load();
       })
       .subscribe();
@@ -223,7 +226,7 @@ export default function AdminDashboard() {
                   {(reservationsByStatus[col] ?? []).slice(0, 5).map(r => (
                     <div key={r.id} className="text-xs border border-gray-200 rounded-md p-2">
                       <div className="font-medium truncate">{r.properties?.title ?? '—'}</div>
-                      <div className="text-gray-500">{r.user_name ?? 'Client'} · {r.check_in?.slice(0, 10) ?? '—'} → {r.check_out?.slice(0, 10) ?? '—'}</div>
+                      <div className="text-gray-500">{r.contact_name ?? 'Client'} · {r.start_date?.slice(0, 10) ?? '—'} → {r.end_date?.slice(0, 10) ?? '—'}</div>
                     </div>
                   ))}
                   {(reservationsByStatus[col] ?? []).length === 0 && (
