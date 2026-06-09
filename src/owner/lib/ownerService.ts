@@ -17,12 +17,15 @@ export type OwnerPropertyRow = {
   published_at: string | null;
   reviewed_at: string | null;
   owner_updated_at: string | null;
+  last_correction_note: string | null;
+  last_correction_at: string | null;
+  correction_round: number;
 };
 
 export async function fetchMyProperties(userId: string): Promise<OwnerPropertyRow[]> {
   const { data, error } = await supabase
     .from('properties')
-    .select('id,title,type,quartier,address,price,images,admin_status,status,view_count,favorite_count,created_at,published_at,reviewed_at,owner_updated_at')
+    .select('id,title,type,quartier,address,price,images,admin_status,status,view_count,favorite_count,created_at,published_at,reviewed_at,owner_updated_at,last_correction_note,last_correction_at,correction_round')
     .eq('owner_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -103,5 +106,22 @@ export async function ownerSetPause(propertyId: string, ownerId: string, paused:
     .select('id, admin_status');
   if (error) throw error;
   if (!data || data.length === 0) throw new Error('Impossible de modifier ce bien (droits insuffisants).');
+  return data[0];
+}
+
+/**
+ * Re-soumet un bien après corrections : repasse en `pending` et signale
+ * la nouvelle version à l'admin via `owner_updated_at`. L'historique
+ * `last_correction_note` / `correction_round` est conservé.
+ */
+export async function ownerResubmitForReview(propertyId: string, ownerId: string) {
+  const { data, error } = await supabase
+    .from('properties')
+    .update({ admin_status: 'pending', owner_updated_at: new Date().toISOString() })
+    .eq('id', propertyId)
+    .eq('owner_id', ownerId)
+    .select('id, admin_status');
+  if (error) throw error;
+  if (!data || data.length === 0) throw new Error('Re-soumission impossible (droits insuffisants).');
   return data[0];
 }
