@@ -15,17 +15,21 @@ import ResultatsPage from "./pages/Resultats";
 import PropertyPage from "./pages/Property";
 import MonCompte from "./pages/MonCompte";
 import NotFound from "./pages/NotFound";
+import { useCountryLocale } from "@/hooks/useCountryLocale";
 
 const AdminLayout = lazy(() => import("@/admin/AdminLayout"));
 const OwnerLayout = lazy(() => import("@/owner/OwnerLayout"));
 
 const queryClient = new QueryClient();
 
+const LocaleSync = () => { useCountryLocale(); return null; };
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
         <NavigationProvider>
+          <LocaleSync />
           <Toaster />
           <Sonner />
           <BrowserRouter>

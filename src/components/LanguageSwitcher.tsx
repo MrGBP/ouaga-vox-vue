@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { LANG_MANUAL_KEY } from '@/hooks/useCountryLocale';
 
 interface LanguageSwitcherProps {
   className?: string;
@@ -7,7 +8,10 @@ interface LanguageSwitcherProps {
 const LanguageSwitcher = ({ className = '' }: LanguageSwitcherProps) => {
   const { i18n } = useTranslation();
   const isFR = i18n.language === 'fr';
-  const toggle = () => i18n.changeLanguage(isFR ? 'en' : 'fr');
+  const toggle = () => {
+    try { localStorage.setItem(LANG_MANUAL_KEY, '1'); } catch {}
+    i18n.changeLanguage(isFR ? 'en' : 'fr');
+  };
   return (
     <button
       onClick={toggle}
