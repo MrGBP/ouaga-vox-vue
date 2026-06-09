@@ -474,10 +474,63 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             )}
           </div>
 
+          {/* Points d'Intérêt — au moins 1 requis */}
+          <div className="space-y-2 border-t pt-4">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1">
+              <MapPin size={13} /> Points d'Intérêt à proximité * — au moins 1 requis
+            </label>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              École, hôpital, marché, transport, etc. Ces infos enrichissent la fiche pour les locataires.
+            </p>
+            {(existingPois.length > 0 || pendingPois.length > 0) && (
+              <div className="flex flex-wrap gap-1.5">
+                {existingPois.map(p => {
+                  const t = POI_TYPES.find(x => x.value === p.type);
+                  return (
+                    <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-[11px]">
+                      {t?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''}
+                      <button type="button" onClick={() => removeExistingPoi(p.id)} className="ml-1 hover:text-primary/70"><X size={11} /></button>
+                    </span>
+                  );
+                })}
+                {pendingPois.map((p, idx) => {
+                  const t = POI_TYPES.find(x => x.value === p.type);
+                  return (
+                    <span key={`pp-${idx}`} className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 px-2.5 py-1 text-[11px]">
+                      {t?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''} <span className="opacity-60">(à enregistrer)</span>
+                      <button type="button" onClick={() => removePendingPoi(idx)} className="ml-1 hover:text-amber-900"><X size={11} /></button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            <div className="grid grid-cols-12 gap-2">
+              <input
+                value={poiName}
+                onChange={e => setPoiName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingPoi(); } }}
+                placeholder="Nom (ex: École Saint-Joseph)"
+                className="form-input col-span-5"
+              />
+              <select value={poiType} onChange={e => setPoiType(e.target.value)} className="form-input col-span-3">
+                {POI_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
+              </select>
+              <input
+                type="number" min={0} value={poiDist}
+                onChange={e => setPoiDist(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Distance (m)" className="form-input col-span-2"
+              />
+              <button type="button" onClick={addPendingPoi}
+                className="col-span-2 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1">
+                <Plus size={14} /> Ajouter
+              </button>
+            </div>
+          </div>
+
           {/* Médias — toujours disponibles, requis avant validation */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground">
-              Médias * (photos, vidéos, visite 360°) — au moins 1 requis
+              Médias * — au moins 1 photo obligatoire (vidéo et 360° optionnelles)
             </label>
 
             {/* Médias déjà uploadés (édition) */}
