@@ -4,9 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, ArrowLeft, SlidersHorizontal, Clock, ChevronUp } from 'lucide-react';
 import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight, type Property } from '@/lib/mockData';
 import { fetchMergedProperties } from '@/lib/propertiesService';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import FilterBar, { type FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import { parseQuery, describeParsed } from '@/lib/smartMatch';
 import { filterProperties } from '@/lib/filterProperties';
+
 
 const FILTERS_KEY = 'sapsap_filters_v1';
 const loadFilters = (): FilterState => {
@@ -83,12 +85,15 @@ const SearchPage = () => {
     setTimeout(() => inputRef.current?.focus(), 80);
   }, []);
 
-  const [allProps, setAllProps] = useState<Property[]>(mockProperties as any);
+  const [allProps, setAllProps] = useState<Property[]>([]);
+  const { activeCity } = useGeoCity();
   useEffect(() => {
     let alive = true;
-    fetchMergedProperties().then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
+    fetchMergedProperties(activeCity?.country).then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, [activeCity?.country]);
+
+
 
   const properties = useMemo(
     () => allProps.filter(p => p.status !== 'rented' && p.available !== false),

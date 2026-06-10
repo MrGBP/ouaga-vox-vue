@@ -204,20 +204,26 @@ const Index = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const cc = activeCity.country;
       const allProps = mockProperties as unknown as Property[];
-      const cityProps = allProps.filter((p: any) => p.city === activeCity.name);
-      const finalPois = mockPois as unknown as POI[];
-      const finalQuartiers = mockQuartiers as unknown as Quartier[];
+      // BF: garde le catalogue démo. Autres pays: pas de mock.
+      const cityProps = cc === 'BF'
+        ? allProps.filter((p: any) => p.country === 'BF')
+        : [];
+      const finalPois = cc === 'BF' ? (mockPois as unknown as POI[]) : [];
+      const finalQuartiers = cc === 'BF' ? (mockQuartiers as unknown as Quartier[]) : [];
 
-      // Merge real published properties from Supabase (newly approved by admin)
+      // Merge real published properties from Supabase scoped to the active country
       let realProps: Property[] = [];
       try {
-        const { data } = await supabase
+        const builder: any = supabase
           .from('properties')
           .select('*')
           .eq('admin_status', 'published')
           .neq('status', 'rented')
-          .order('published_at', { ascending: false, nullsFirst: false });
+          .eq('country_code', cc);
+        const { data } = await builder.order('published_at', { ascending: false, nullsFirst: false });
+
         if (data) {
           const mockIds = new Set(cityProps.map(p => p.id));
           realProps = (data as any[])
@@ -229,6 +235,7 @@ const Index = () => {
               longitude: Number(r.longitude),
               images: r.images ?? [],
               has_video: !!r.video_url,
+              country: r.country_code,
               ...(r.features ?? {}),
             })) as unknown as Property[];
         }
@@ -241,16 +248,15 @@ const Index = () => {
       setQuartiers(finalQuartiers);
     } catch (error: any) {
       console.warn('Error loading data:', error.message);
-      const allProps = mockProperties as unknown as Property[];
-      const cityProps = allProps.filter((p: any) => p.city === activeCity.name);
-      setProperties(cityProps);
-      setFilteredProperties(cityProps);
-      setPois(mockPois as unknown as POI[]);
-      setQuartiers(mockQuartiers as unknown as Quartier[]);
+      setProperties([]);
+      setFilteredProperties([]);
+      setPois([]);
+      setQuartiers([]);
     } finally {
       setLoading(false);
     }
   };
+
 
   const availableProperties = useCallback((props: Property[]) => {
     return props.filter(p => p.status !== 'rented' && p.available !== false);

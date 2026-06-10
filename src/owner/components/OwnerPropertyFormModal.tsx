@@ -12,11 +12,13 @@ import { Loader2 } from 'lucide-react';
 import type { OwnerPropertyRow } from '../lib/ownerService';
 import { isCommercialType, isOfficeType } from '@/lib/typeHelpers';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
-import { useCountryConfig } from '@/hooks/useCountryConfig';
+import { useCountryConfig, useAllCountryConfigs } from '@/hooks/useCountryConfig';
+import { CITIES, COUNTRY_TO_CITY } from '@/lib/geoConfig';
 import QuartierAutocomplete from '@/components/QuartierAutocomplete';
 import {
   POI_TYPES, poiLabel, addPoiToProperty, listPoisForProperty, removePoi, type PropertyPoi,
 } from '@/lib/propertyPoisService';
+
 
 type PendingMedia =
   | { kind: 'image' | 'video'; source: 'file'; file: File; previewUrl: string }
@@ -33,8 +35,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const country = useCountryConfig();
-  const cur = country.currency_symbol;
+  const { data: allCountries } = useAllCountryConfigs();
+  const [selectedCountry, setSelectedCountry] = useState<string>(country.code || 'BF');
+  const cur = (allCountries?.find(c => c.code === selectedCountry)?.currency_symbol) || country.currency_symbol;
   const isEdit = !!initial;
+
   useLockBackdrop(open);
   const [savedId, setSavedId] = useState<string | null>(null); // id du bien après save => active uploader
 
@@ -91,6 +96,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           setBedrooms(data.bedrooms ?? 1); setBathrooms(data.bathrooms ?? 1);
           setSurface(data.surface_area ?? 50); setFurnished(!!data.furnished);
           setLat(Number(data.latitude)); setLng(Number(data.longitude));
+          if ((data as any).country_code) setSelectedCountry((data as any).country_code);
           const f: Record<string, any> = (data.features ?? {}) as Record<string, any>;
           const active = FEATURE_CATALOG.filter(c => f[c.key]).map(c => c.key);
           setFeatures(active);
@@ -106,13 +112,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         setExistingPois(pois);
       })();
     } else {
+      const defaultCity = CITIES[COUNTRY_TO_CITY[country.code] ?? 'ouagadougou'] ?? CITIES.ouagadougou;
       setTitle(''); setDescription(''); setType(PROPERTY_TYPES[0].value);
-      setPrice(''); setQuartier(mockQuartiers[0]?.name || '');
+      setPrice(''); setQuartier('');
       setAddress(''); setBedrooms(1); setBathrooms(1); setSurface(50);
       setFloor(0); setRooms(3); setCapacity('');
-      setFurnished(false); setLat(12.3714); setLng(-1.5197);
+      setFurnished(false);
+      setLat(defaultCity.center[0]); setLng(defaultCity.center[1]);
+      setSelectedCountry(country.code || 'BF');
       setFeatures([]); setCustomFeatures([]); setSavedId(null);
     }
+
     setCustomInput('');
     setActiveCat(FEATURE_CATEGORIES[0].id);
     setTimeout(() => titleRef.current?.focus(), 100);
@@ -206,7 +216,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       if (capacity !== '') featuresObj.__capacity = Number(capacity);
 
       const commercial = isCommercialType(type);
-      const payload = {
+      const defaultCity = CITIES[COUNTRY_TO_CITY[selectedCountry] ?? '']?.name ?? null;
+      const payload: any = {
         title: title.trim(),
         description: description.trim(),
         type,
@@ -221,7 +232,10 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         furnished,
         features: featuresObj,
         owner_id: ownerId,
+        country_code: selectedCountry,
+        city: defaultCity,
       };
+
 
       let propertyId: string;
       let willRequireReview = false;
@@ -352,11 +366,30 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                   </Field>
                 </div>
 
+                <Field label={t('owner.form.country', 'Pays')}>
+                  <select
+                    value={selectedCountry}
+                    onChange={e => {
+                      const cc = e.target.value;
+                      setSelectedCountry(cc);
+                      const c = CITIES[COUNTRY_TO_CITY[cc] ?? ''];
+                      if (c) { setLat(c.center[0]); setLng(c.center[1]); }
+                      setQuartier('');
+                    }}
+                    className="form-input"
+                  >
+                    {(allCountries?.length ? allCountries : [{ code: 'BF', name: 'Burkina Faso', flag_emoji: '🇧🇫' }, { code: 'ML', name: 'Mali', flag_emoji: '🇲🇱' }, { code: 'GH', name: 'Ghana', flag_emoji: '🇬🇭' }]).map((c: any) => (
+                      <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
+                    ))}
+                  </select>
+                </Field>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold mb-1">{t('owner.form.quartier')}</label>
-                    <QuartierAutocomplete value={quartier} onChange={(q, loc) => { setQuartier(q); if (loc?.lat && loc?.lng) { setLat(loc.lat); setLng(loc.lng); } }} />
+                    <QuartierAutocomplete countryCode={selectedCountry} value={quartier} onChange={(q, loc) => { setQuartier(q); if (loc?.lat && loc?.lng) { setLat(loc.lat); setLng(loc.lng); } }} />
                   </div>
+
                   <Field label={t('owner.form.adresse')}>
                     <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder={t('owner.form.adresse_ph')} />
                   </Field>
