@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Building2, Home as HomeIcon } from 'lucide-react';
+import { finalizeSignupProfile } from '@/lib/authProfile';
 
 const signupSchema = z.object({
   full_name: z.string().trim().min(2, 'Nom trop court').max(80),
@@ -42,18 +43,10 @@ export default function Auth() {
           },
         });
         if (error) throw error;
-        // Si l'utilisateur s'inscrit en tant que propriétaire, on ajoute ce rôle
-        // (le trigger handle_new_user a déjà créé le rôle 'user' par défaut).
-        const newUserId = signUpData.user?.id;
-        if (asOwner && newUserId) {
-          const { error: roleErr } = await supabase
-            .from('user_roles')
-            .insert({ user_id: newUserId, role: 'owner' });
-          // En cas d'email confirmation activée, l'INSERT peut échouer car pas encore authentifié.
-          // On stocke alors l'intention pour le faire après la connexion.
-          if (roleErr) {
-            localStorage.setItem('sapsap_pending_owner_role', '1');
-          }
+        if (signUpData.session) {
+          await finalizeSignupProfile({ fullName: parsed.data.full_name, phone: parsed.data.phone, asOwner });
+        } else if (asOwner) {
+          localStorage.setItem('sapsap_pending_owner_role', '1');
         }
         toast.success(asOwner
           ? 'Compte propriétaire créé. Vérifie ta boîte mail si la confirmation est activée.'
