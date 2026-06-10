@@ -35,6 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalReason, setModalReason] = useState<string | undefined>(undefined);
   const pendingActionRef = useRef<(() => void) | null>(null);
+  const userRef = useRef<User | null>(null);
+
+  useEffect(() => { userRef.current = user; }, [user]);
 
   const fetchRoles = async (uid: string) => {
     const { data } = await supabase.from('user_roles').select('role').eq('user_id', uid);
@@ -74,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    const onRolesChanged = () => { if (user) void fetchRoles(user.id); };
+    const onRolesChanged = () => { if (userRef.current) void fetchRoles(userRef.current.id); };
     window.addEventListener('sapsap_roles_changed', onRolesChanged);
     return () => {
       sub.subscription.unsubscribe();
