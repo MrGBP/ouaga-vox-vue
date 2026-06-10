@@ -21,18 +21,23 @@ interface Props {
   onClose: () => void;
 }
 
-const STATUSES: { value: AdminPropertyStatus; label: string }[] = [
-  { value: 'pending', label: 'En attente' },
-  { value: 'reviewing', label: 'En révision' },
-  { value: 'corrections', label: 'Corrections' },
-  { value: 'published', label: 'Publié' },
-  { value: 'rented', label: 'Loué' },
-  { value: 'inactive', label: 'Inactif/Refusé' },
-];
+const STATUS_LABELS: Record<AdminPropertyStatus, { fr: string; en: string }> = {
+  pending:     { fr: 'En attente',       en: 'Pending' },
+  reviewing:   { fr: 'En révision',      en: 'Under review' },
+  corrections: { fr: 'Corrections',      en: 'Corrections requested' },
+  published:   { fr: 'Publié',           en: 'Published' },
+  rented:      { fr: 'Loué',             en: 'Rented' },
+  inactive:    { fr: 'Inactif/Refusé',   en: 'Inactive / Rejected' },
+};
+const STATUS_VALUES: AdminPropertyStatus[] = ['pending', 'reviewing', 'corrections', 'published', 'rented', 'inactive'];
 
 export default function PropertyFormModal({ open, initial, onClose }: Props) {
   const isEdit = !!initial;
   const fileInput = useRef<HTMLInputElement>(null);
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.startsWith('en') ? 'en' : 'fr';
+  const country = useCountryConfig();
+  const currency = country.currency_symbol || 'FCFA';
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
