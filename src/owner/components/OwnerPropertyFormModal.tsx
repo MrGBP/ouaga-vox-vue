@@ -290,8 +290,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
       toast.success(
         isEdit
-          ? (willRequireReview ? 'Bien renvoyé en validation' : 'Bien mis à jour')
-          : 'Bien créé. En attente de validation.'
+          ? (willRequireReview ? t('owner.form.ok_revalidate') : t('owner.form.ok_update'))
+          : t('owner.form.ok_create')
       );
       onClose(true);
     } catch (e: any) {
