@@ -35,8 +35,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const country = useCountryConfig();
-  const cur = country.currency_symbol;
+  const { data: allCountries } = useAllCountryConfigs();
+  const [selectedCountry, setSelectedCountry] = useState<string>(country.code || 'BF');
+  const cur = (allCountries?.find(c => c.code === selectedCountry)?.currency_symbol) || country.currency_symbol;
   const isEdit = !!initial;
+
   useLockBackdrop(open);
   const [savedId, setSavedId] = useState<string | null>(null); // id du bien après save => active uploader
 
