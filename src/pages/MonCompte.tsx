@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { mockProperties } from '@/lib/mockData';
 import ReservationChat from '@/components/ReservationChat';
 import { toast } from 'sonner';
+import { activateOwnerRole, finalizePendingOwnerRole } from '@/lib/authProfile';
 
 export default function MonCompte() {
   const { user, loading, signOut, isOwner, refreshRoles } = useAuth();
@@ -32,14 +33,7 @@ export default function MonCompte() {
     (async () => {
       setDataLoading(true);
       try {
-        // Si une intention "owner" était en attente (signup avec confirm email), on la finalise
-        if (localStorage.getItem('sapsap_pending_owner_role') === '1') {
-          const { error } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'owner' as any });
-          if (!error || error.code === '23505') {
-            localStorage.removeItem('sapsap_pending_owner_role');
-            await refreshRoles();
-          }
-        }
+        if (await finalizePendingOwnerRole()) await refreshRoles();
         const [res, sav, prof] = await Promise.all([
           listMyReservations().catch(() => []),
           listSavedSearches().catch(() => []),
@@ -56,8 +50,7 @@ export default function MonCompte() {
     if (!user) return;
     setBecomingOwner(true);
     try {
-      const { error } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'owner' as any });
-      if (error && error.code !== '23505') throw error;
+      await activateOwnerRole();
       await refreshRoles();
       toast.success('Tu es maintenant propriétaire 🎉');
     } catch (e: any) {
