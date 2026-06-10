@@ -216,13 +216,14 @@ const Index = () => {
       // Merge real published properties from Supabase scoped to the active country
       let realProps: Property[] = [];
       try {
-        const { data } = await supabase
+        const builder: any = supabase
           .from('properties')
           .select('*')
           .eq('admin_status', 'published')
           .neq('status', 'rented')
-          .eq('country_code' as any, cc)
-          .order('published_at', { ascending: false, nullsFirst: false });
+          .eq('country_code', cc);
+        const { data } = await builder.order('published_at', { ascending: false, nullsFirst: false });
+
         if (data) {
           const mockIds = new Set(cityProps.map(p => p.id));
           realProps = (data as any[])
