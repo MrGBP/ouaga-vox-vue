@@ -170,7 +170,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const addCustom = () => {
     const v = customInput.trim();
     if (!v) return;
-    if (customFeatures.some(c => c.toLowerCase() === v.toLowerCase())) { toast.error('Déjà ajoutée'); return; }
+    if (customFeatures.some(c => c.toLowerCase() === v.toLowerCase())) { toast.error(t('owner.form.err_custom_dup')); return; }
     setCustomFeatures(prev => [...prev, v]); setCustomInput('');
   };
 
