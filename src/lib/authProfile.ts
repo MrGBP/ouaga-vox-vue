@@ -1,10 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export async function ensureSignedInProfile(fullName?: string | null, phone?: string | null) {
-  const { error } = await supabase.rpc('ensure_user_profile', {
-    _full_name: fullName ?? null,
-    _phone: phone ?? null,
-  });
+  const args: { _full_name?: string; _phone?: string } = {};
+  if (fullName) args._full_name = fullName;
+  if (phone) args._phone = phone;
+  const { error } = await supabase.rpc('ensure_user_profile', args);
   if (error) throw error;
 }
 
