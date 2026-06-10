@@ -86,14 +86,13 @@ const SearchPage = () => {
   }, []);
 
   const [allProps, setAllProps] = useState<Property[]>([]);
-  // Lazy-load to avoid bundling useGeoCity timing issues
-  const { useGeoCity } = require('@/hooks/useGeoCity');
   const { activeCity } = useGeoCity();
   useEffect(() => {
     let alive = true;
     fetchMergedProperties(activeCity?.country).then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
     return () => { alive = false; };
   }, [activeCity?.country]);
+
 
 
   const properties = useMemo(
