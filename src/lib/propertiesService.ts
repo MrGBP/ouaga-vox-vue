@@ -67,13 +67,14 @@ export async function fetchPublishedProperties(countryCode?: string): Promise<Pr
 export async function fetchMergedProperties(countryCode?: string): Promise<Property[]> {
   const cc = (countryCode || 'BF').toUpperCase();
   try {
-    const { data } = await supabase
+    const builder: any = supabase
       .from('properties')
       .select('*')
       .eq('admin_status', 'published')
       .neq('status', 'rented')
-      .eq('country_code' as any, cc)
-      .order('published_at', { ascending: false, nullsFirst: false });
+      .eq('country_code', cc);
+    const { data } = await builder.order('published_at', { ascending: false, nullsFirst: false });
+
     const real = (data ?? []).map(rowToProperty);
     if (cc === 'BF') {
       const mocks = mockProperties.filter(p => p.status !== 'rented' && (p as any).country === 'BF');
