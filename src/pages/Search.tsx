@@ -83,12 +83,16 @@ const SearchPage = () => {
     setTimeout(() => inputRef.current?.focus(), 80);
   }, []);
 
-  const [allProps, setAllProps] = useState<Property[]>(mockProperties as any);
+  const [allProps, setAllProps] = useState<Property[]>([]);
+  // Lazy-load to avoid bundling useGeoCity timing issues
+  const { useGeoCity } = require('@/hooks/useGeoCity');
+  const { activeCity } = useGeoCity();
   useEffect(() => {
     let alive = true;
-    fetchMergedProperties().then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
+    fetchMergedProperties(activeCity?.country).then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, [activeCity?.country]);
+
 
   const properties = useMemo(
     () => allProps.filter(p => p.status !== 'rented' && p.available !== false),
