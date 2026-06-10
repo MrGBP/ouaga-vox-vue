@@ -13,9 +13,17 @@ import OwnerMessages from './pages/OwnerMessages';
 
 
 export default function OwnerLayout() {
+  const { t } = useTranslation();
   const { user, isOwner, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const notif = useOwnerNotifications(user?.id);
+
+  const NAV = [
+    { to: '/proprietaire', label: t('owner.nav.vue'), icon: LayoutDashboard, end: true, badgeKey: null as null | 'total' },
+    { to: '/proprietaire/biens', label: t('owner.nav.biens'), icon: Home, badgeKey: null },
+    { to: '/proprietaire/reservations', label: t('owner.nav.reservations'), icon: Calendar, badgeKey: 'pendingReservations' as const },
+    { to: '/proprietaire/messages', label: t('owner.nav.messages'), icon: MessageSquare, badgeKey: 'unreadMessages' as const },
+  ];
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth?redirect=/proprietaire');
