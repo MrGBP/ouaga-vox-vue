@@ -305,9 +305,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="sticky top-0 bg-card flex items-center justify-between px-5 py-3 border-b z-10">
           <div>
-            <h2 className="text-base font-bold text-foreground">{isEdit ? 'Modifier le bien' : 'Nouveau bien'}</h2>
+            <h2 className="text-base font-bold text-foreground">{isEdit ? t('owner.form.modifier') : t('owner.form.nouveau')}</h2>
             {!isEdit && (
-              <p className="text-[11px] text-muted-foreground mt-0.5">Sera soumis à validation par l'administration.</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{t('owner.form.soumis')}</p>
             )}
           </div>
           <button onClick={() => onClose(!!savedId)} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center">
@@ -316,11 +316,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <Field label="Titre *">
-            <input ref={titleRef} value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder="Villa moderne à Tampouy" />
+          <Field label={t('owner.form.titre')}>
+            <input ref={titleRef} value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder={t('owner.form.titre_ph')} />
           </Field>
 
-          <Field label="Description *">
+          <Field label={t('owner.form.description')}>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
@@ -328,20 +328,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               minLength={20}
               required
               className="form-input resize-none"
-              placeholder="Décris ton bien (min. 20 caractères)…"
+              placeholder={t('owner.form.description_ph')}
             />
-            <p className="text-[10px] text-muted-foreground mt-1">{description.trim().length} / 20 caractères minimum</p>
+            <p className="text-[10px] text-muted-foreground mt-1">{t('owner.form.desc_count', { n: description.trim().length })}</p>
           </Field>
 
           {(() => {
             const commercial = isCommercialType(type);
             const isFurn = furnished || isTypeFurnished(type);
-            const priceLabel = commercial ? 'Loyer mensuel (FCFA) *' : isFurn ? 'Prix / nuit (FCFA) *' : 'Loyer mensuel (FCFA) *';
-            const priceHint = commercial ? 'Loyer commercial mensuel' : isFurn ? 'Tarif à la nuit (calendrier client)' : 'Loyer longue durée';
+            const priceLabel = commercial ? t('owner.form.loyer_mensuel', { cur }) : isFurn ? t('owner.form.prix_nuit', { cur }) : t('owner.form.loyer_mensuel', { cur });
+            const priceHint = commercial ? t('owner.form.hint_commercial') : isFurn ? t('owner.form.hint_nuit') : t('owner.form.hint_longue');
             return (
               <>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Type *">
+                  <Field label={t('owner.form.type')}>
                     <select value={type} onChange={e => setType(e.target.value)} className="form-input">
                       {PROPERTY_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
                     </select>
