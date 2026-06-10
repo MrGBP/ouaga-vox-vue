@@ -130,7 +130,8 @@ export interface ResolvedFeature {
   isCustom?: boolean;
 }
 
-export function resolveFeatures(prop: Record<string, any>): ResolvedFeature[] {
+export function resolveFeatures(prop: Record<string, any>, lang?: string): ResolvedFeature[] {
+  const pickLabel = (def: FeatureDef) => featureLabel(def, lang);
   const seen = new Set<string>();
   const result: ResolvedFeature[] = [];
 
@@ -140,7 +141,7 @@ export function resolveFeatures(prop: Record<string, any>): ResolvedFeature[] {
     const def = CATALOG_BY_KEY[key];
     if (def && !seen.has(def.key)) {
       seen.add(def.key);
-      result.push({ key: def.key, label: def.label, emoji: def.emoji, category: def.category });
+      result.push({ key: def.key, label: pickLabel(def), emoji: def.emoji, category: def.category });
     }
   }
 
@@ -148,7 +149,7 @@ export function resolveFeatures(prop: Record<string, any>): ResolvedFeature[] {
   for (const [legacy, def] of Object.entries(CATALOG_BY_LEGACY)) {
     if (prop[legacy] && !seen.has(def.key)) {
       seen.add(def.key);
-      result.push({ key: def.key, label: def.label, emoji: def.emoji, category: def.category });
+      result.push({ key: def.key, label: pickLabel(def), emoji: def.emoji, category: def.category });
     }
   }
 
