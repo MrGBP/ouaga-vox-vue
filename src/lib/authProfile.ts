@@ -11,6 +11,7 @@ export async function ensureSignedInProfile(fullName?: string | null, phone?: st
 export async function activateOwnerRole() {
   const { error } = await supabase.rpc('activate_owner_role');
   if (error) throw error;
+  window.dispatchEvent(new Event('sapsap_roles_changed'));
 }
 
 export async function finalizeSignupProfile(input: { fullName?: string | null; phone?: string | null; asOwner?: boolean }) {
