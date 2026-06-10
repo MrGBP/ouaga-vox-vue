@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { track } from '@/lib/analytics';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
+import { finalizeSignupProfile } from '@/lib/authProfile';
 
 const WHATSAPP_NUMBER = '22657976660';
 
@@ -75,14 +76,10 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
           },
         });
         if (error) throw error;
-        const newUserId = signUpData.user?.id;
-        if (asOwner && newUserId) {
-          const { error: roleErr } = await supabase
-            .from('user_roles')
-            .insert({ user_id: newUserId, role: 'owner' });
-          if (roleErr) {
-            localStorage.setItem('sapsap_pending_owner_role', '1');
-          }
+        if (signUpData.session) {
+          await finalizeSignupProfile({ fullName: parsed.data.full_name, phone: parsed.data.phone, asOwner });
+        } else if (asOwner) {
+          localStorage.setItem('sapsap_pending_owner_role', '1');
         }
         toast.success(asOwner ? T.ok_owner_created : T.ok_created);
         track('auth_signup_success', { reason, as_owner: asOwner });
