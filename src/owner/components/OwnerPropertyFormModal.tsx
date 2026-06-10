@@ -362,11 +362,30 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                   </Field>
                 </div>
 
+                <Field label={t('owner.form.country', 'Pays')}>
+                  <select
+                    value={selectedCountry}
+                    onChange={e => {
+                      const cc = e.target.value;
+                      setSelectedCountry(cc);
+                      const c = CITIES[COUNTRY_TO_CITY[cc] ?? ''];
+                      if (c) { setLat(c.center[0]); setLng(c.center[1]); }
+                      setQuartier('');
+                    }}
+                    className="form-input"
+                  >
+                    {(allCountries?.length ? allCountries : [{ code: 'BF', name: 'Burkina Faso', flag_emoji: '🇧🇫' }, { code: 'ML', name: 'Mali', flag_emoji: '🇲🇱' }, { code: 'GH', name: 'Ghana', flag_emoji: '🇬🇭' }]).map((c: any) => (
+                      <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
+                    ))}
+                  </select>
+                </Field>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold mb-1">{t('owner.form.quartier')}</label>
-                    <QuartierAutocomplete value={quartier} onChange={(q, loc) => { setQuartier(q); if (loc?.lat && loc?.lng) { setLat(loc.lat); setLng(loc.lng); } }} />
+                    <QuartierAutocomplete countryCode={selectedCountry} value={quartier} onChange={(q, loc) => { setQuartier(q); if (loc?.lat && loc?.lng) { setLat(loc.lat); setLng(loc.lng); } }} />
                   </div>
+
                   <Field label={t('owner.form.adresse')}>
                     <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder={t('owner.form.adresse_ph')} />
                   </Field>
