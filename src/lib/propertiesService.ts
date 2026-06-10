@@ -46,17 +46,17 @@ function rowToProperty(row: any): Property {
 }
 
 export async function fetchPublishedProperties(countryCode?: string): Promise<Property[]> {
-  let q = supabase
+  const base: any = supabase
     .from('properties')
     .select('*')
     .eq('admin_status', 'published')
-    .neq('status', 'rented')
-    .order('published_at', { ascending: false, nullsFirst: false });
-  if (countryCode) q = q.eq('country_code' as any, countryCode);
-  const { data, error } = await q;
+    .neq('status', 'rented');
+  const q = countryCode ? base.eq('country_code', countryCode) : base;
+  const { data, error } = await q.order('published_at', { ascending: false, nullsFirst: false });
   if (error || !data) return [];
-  return data.map(rowToProperty);
+  return (data as any[]).map(rowToProperty);
 }
+
 
 /**
  * Country-scoped listing. Only properties matching the active country are
