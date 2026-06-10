@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Building2, Mail, Lock, User as UserIcon, Phone, MessageCircle } from 'lucide-react';
+import { X, Building2, Mail, Lock, User as UserIcon, Phone, MessageCircle, Home as HomeIcon } from 'lucide-react';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { track } from '@/lib/analytics';
