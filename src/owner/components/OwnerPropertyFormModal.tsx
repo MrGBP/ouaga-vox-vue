@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
-import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, isTypeFurnished } from '@/lib/mockData';
-import { FEATURE_CATALOG, FEATURE_CATEGORIES, type FeatureCategoryId } from '@/lib/featureCatalog';
+import { useTranslation } from 'react-i18next';
+import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, isTypeFurnished, getTypeLabel } from '@/lib/mockData';
+import { FEATURE_CATALOG, FEATURE_CATEGORIES, featureLabel, categoryLabel, type FeatureCategoryId } from '@/lib/featureCatalog';
 import { supabase } from '@/integrations/supabase/client';
 import MapPicker from '@/admin/components/MapPicker';
 import MediaUploader from '@/admin/components/MediaUploader';
@@ -11,9 +12,10 @@ import { Loader2 } from 'lucide-react';
 import type { OwnerPropertyRow } from '../lib/ownerService';
 import { isCommercialType, isOfficeType } from '@/lib/typeHelpers';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
+import { useCountryConfig } from '@/hooks/useCountryConfig';
 import QuartierAutocomplete from '@/components/QuartierAutocomplete';
 import {
-  POI_TYPES, addPoiToProperty, listPoisForProperty, removePoi, type PropertyPoi,
+  POI_TYPES, poiLabel, addPoiToProperty, listPoisForProperty, removePoi, type PropertyPoi,
 } from '@/lib/propertyPoisService';
 
 type PendingMedia =
