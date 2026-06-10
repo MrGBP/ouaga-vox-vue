@@ -47,12 +47,14 @@ const ResultatsPage = () => {
     } catch { return new Set(); }
   });
 
-  const [allProps, setAllProps] = useState<Property[]>(mockProperties as any);
+  const [allProps, setAllProps] = useState<Property[]>([]);
+  const { activeCity } = useGeoCity();
   useEffect(() => {
     let alive = true;
-    fetchMergedProperties().then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
+    fetchMergedProperties(activeCity?.country).then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, [activeCity?.country]);
+
 
   const results = useMemo(
     () => filterProperties(allProps, appliedQuery, filters, false, favorites),
