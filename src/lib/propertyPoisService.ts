@@ -13,19 +13,22 @@ export interface PropertyPoi {
 }
 
 export const POI_TYPES = [
-  { value: 'school', label: 'École / Université', emoji: '🏫' },
-  { value: 'hospital', label: 'Hôpital / Clinique', emoji: '🏥' },
-  { value: 'pharmacy', label: 'Pharmacie', emoji: '💊' },
-  { value: 'market', label: 'Marché', emoji: '🛒' },
-  { value: 'supermarket', label: 'Supermarché', emoji: '🏬' },
-  { value: 'restaurant', label: 'Restaurant', emoji: '🍽️' },
-  { value: 'bank', label: 'Banque / ATM', emoji: '🏦' },
-  { value: 'transport', label: 'Arrêt transport', emoji: '🚌' },
-  { value: 'mosque', label: 'Mosquée', emoji: '🕌' },
-  { value: 'church', label: 'Église', emoji: '⛪' },
-  { value: 'admin', label: 'Administration', emoji: '🏛️' },
-  { value: 'park', label: 'Parc / Loisirs', emoji: '🌳' },
+  { value: 'school',      label: 'École / Université', labelEn: 'School / University', emoji: '🏫' },
+  { value: 'hospital',    label: 'Hôpital / Clinique', labelEn: 'Hospital / Clinic',   emoji: '🏥' },
+  { value: 'pharmacy',    label: 'Pharmacie',          labelEn: 'Pharmacy',            emoji: '💊' },
+  { value: 'market',      label: 'Marché',             labelEn: 'Market',              emoji: '🛒' },
+  { value: 'supermarket', label: 'Supermarché',        labelEn: 'Supermarket',         emoji: '🏬' },
+  { value: 'restaurant',  label: 'Restaurant',         labelEn: 'Restaurant',          emoji: '🍽️' },
+  { value: 'bank',        label: 'Banque / ATM',       labelEn: 'Bank / ATM',          emoji: '🏦' },
+  { value: 'transport',   label: 'Arrêt transport',    labelEn: 'Transport stop',      emoji: '🚌' },
+  { value: 'mosque',      label: 'Mosquée',            labelEn: 'Mosque',              emoji: '🕌' },
+  { value: 'church',      label: 'Église',             labelEn: 'Church',              emoji: '⛪' },
+  { value: 'admin',       label: 'Administration',     labelEn: 'Administration',      emoji: '🏛️' },
+  { value: 'park',        label: 'Parc / Loisirs',     labelEn: 'Park / Leisure',      emoji: '🌳' },
 ] as const;
+
+export const poiLabel = (p: { label: string; labelEn?: string }, lang?: string) =>
+  lang === 'en' && p.labelEn ? p.labelEn : p.label;
 
 export async function listPoisForProperty(propertyId: string): Promise<PropertyPoi[]> {
   const { data, error } = await supabase
