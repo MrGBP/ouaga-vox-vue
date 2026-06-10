@@ -752,6 +752,20 @@ export type Database = {
         Args: { _property_id: string; _user_id: string }
         Returns: boolean
       }
+      list_country_configs_public: {
+        Args: never
+        Returns: {
+          code: string
+          commission_rate: number
+          currency: string
+          currency_symbol: string
+          enabled: boolean
+          flag_emoji: string
+          id: string
+          language: string
+          name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "owner"

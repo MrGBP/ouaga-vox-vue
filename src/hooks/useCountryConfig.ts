@@ -37,12 +37,9 @@ export function useAllCountryConfigs() {
   return useQuery({
     queryKey: ['country_configs'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('country_configs')
-        .select(PUBLIC_COLS)
-        .order('name');
+      const { data, error } = await supabase.rpc('list_country_configs_public');
       if (error) throw error;
-      return (data || []).map((c: any) => ({
+      return ((data as any[]) || []).map((c: any) => ({
         ...c,
         support_email: null,
         support_whatsapp: null,
@@ -51,6 +48,7 @@ export function useAllCountryConfigs() {
     staleTime: 5 * 60 * 1000,
   });
 }
+
 
 /** Récupère les contacts support (réservé aux utilisateurs authentifiés). */
 export async function fetchCountrySupport(code: string): Promise<{ support_email: string | null; support_whatsapp: string | null } | null> {
