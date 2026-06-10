@@ -1,20 +1,16 @@
 import { useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, useNavigate, Link } from 'react-router-dom';
 import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useOwnerNotifications } from './lib/useOwnerNotifications';
 import OwnerDashboard from './pages/OwnerDashboard';
 import OwnerProperties from './pages/OwnerProperties';
 import OwnerReservations from './pages/OwnerReservations';
 import OwnerMessages from './pages/OwnerMessages';
 
-const NAV = [
-  { to: '/proprietaire', label: 'Vue d\'ensemble', icon: LayoutDashboard, end: true, badgeKey: null as null | 'total' },
-  { to: '/proprietaire/biens', label: 'Mes biens', icon: Home, badgeKey: null },
-  { to: '/proprietaire/reservations', label: 'Réservations', icon: Calendar, badgeKey: 'pendingReservations' as const },
-  { to: '/proprietaire/messages', label: 'Messages', icon: MessageSquare, badgeKey: 'unreadMessages' as const },
-];
 
 export default function OwnerLayout() {
   const { user, isOwner, loading, signOut } = useAuth();
