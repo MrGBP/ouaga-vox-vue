@@ -30,8 +30,33 @@ interface AuthModalProps {
 
 export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModalProps) {
   useLockBackdrop(open);
+  const { i18n } = useTranslation();
+  const isEn = i18n.language?.startsWith('en');
+  const T = {
+    title_login: isEn ? 'Sign in' : 'Connexion',
+    title_signup: isEn ? 'Create an account' : 'Créer un compte',
+    full_name: isEn ? 'Full name' : 'Nom complet',
+    phone: isEn ? 'Phone (optional)' : 'Téléphone (optionnel)',
+    email: 'Email',
+    password: isEn ? 'Password' : 'Mot de passe',
+    submit_login: isEn ? 'Sign in' : 'Se connecter',
+    submit_signup: isEn ? 'Create account' : 'Créer le compte',
+    or: isEn ? 'or' : 'ou',
+    whatsapp: isEn ? 'Continue with WhatsApp' : 'Continuer avec WhatsApp',
+    no_account: isEn ? "No account? Sign up" : "Pas de compte ? S'inscrire",
+    has_account: isEn ? 'Already have an account? Sign in' : 'Déjà un compte ? Se connecter',
+    no_signup: isEn ? 'Continue without an account' : 'Continuer sans compte',
+    connect_for: isEn ? 'Sign in to' : 'Connectez-vous pour',
+    owner_title: isEn ? "I'm a property owner" : 'Je suis propriétaire',
+    owner_desc: isEn ? 'I want to publish my listings. You can also enable it later.' : 'Je veux publier mes biens. Tu pourras aussi l\'activer plus tard.',
+    ok_created: isEn ? 'Account created.' : 'Compte créé.',
+    ok_owner_created: isEn ? 'Owner account created.' : 'Compte propriétaire créé.',
+    ok_signed_in: isEn ? 'Signed in' : 'Connecté',
+    err: isEn ? 'Error' : 'Erreur',
+  };
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
+  const [asOwner, setAsOwner] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -41,7 +66,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
       if (mode === 'signup') {
         const parsed = signupSchema.safeParse(form);
         if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
@@ -50,8 +75,17 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
           },
         });
         if (error) throw error;
-        toast.success('Compte créé. Vérifie ton email si la confirmation est activée.');
-        track('auth_signup_success', { reason });
+        const newUserId = signUpData.user?.id;
+        if (asOwner && newUserId) {
+          const { error: roleErr } = await supabase
+            .from('user_roles')
+            .insert({ user_id: newUserId, role: 'owner' });
+          if (roleErr) {
+            localStorage.setItem('sapsap_pending_owner_role', '1');
+          }
+        }
+        toast.success(asOwner ? T.ok_owner_created : T.ok_created);
+        track('auth_signup_success', { reason, as_owner: asOwner });
         onSuccess?.();
         onClose();
       } else {
@@ -61,15 +95,16 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
           email: parsed.data.email, password: parsed.data.password,
         });
         if (error) throw error;
-        toast.success('Connecté');
+        toast.success(T.ok_signed_in);
         track('auth_signin_success', { reason });
         onSuccess?.();
         onClose();
       }
     } catch (err: any) {
-      toast.error(err.message ?? 'Erreur');
+      toast.error(err.message ?? T.err);
     } finally { setBusy(false); }
   };
+
 
   const continueWithWhatsApp = () => {
     track('auth_whatsapp_continue', { reason });
