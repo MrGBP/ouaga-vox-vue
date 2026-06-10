@@ -120,13 +120,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
   const addPendingPoi = () => {
     const n = poiName.trim();
-    if (!n) return toast.error('Nom du POI requis');
+    if (!n) return toast.error(t('owner.form.err_poi_name'));
     setPendingPois(prev => [...prev, { name: n, type: poiType, distance_m: poiDist === '' ? undefined : Number(poiDist) }]);
     setPoiName(''); setPoiDist('');
   };
   const removePendingPoi = (idx: number) => setPendingPois(prev => prev.filter((_, i) => i !== idx));
   const removeExistingPoi = async (id: string) => {
-    try { await removePoi(id); setExistingPois(prev => prev.filter(p => p.id !== id)); toast.success('POI supprimé'); }
+    try { await removePoi(id); setExistingPois(prev => prev.filter(p => p.id !== id)); toast.success(t('owner.form.ok_poi_deleted')); }
     catch (e: any) { toast.error(e.message); }
   };
 
