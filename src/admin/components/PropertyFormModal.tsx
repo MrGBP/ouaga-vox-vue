@@ -127,8 +127,9 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) { toast.error('Le titre est requis'); return; }
-    if (!price || price <= 0) { toast.error('Le prix doit être supérieur à 0'); return; }
+    if (!title.trim()) { toast.error(lang === 'en' ? 'Title is required' : 'Le titre est requis'); return; }
+    if (!price || price <= 0) { toast.error(lang === 'en' ? 'Price must be greater than 0' : 'Le prix doit être supérieur à 0'); return; }
+    if (!quartier.trim()) { toast.error(lang === 'en' ? 'Neighborhood is required' : 'Quartier requis'); return; }
 
     const payload = {
       title: title.trim(), description: description.trim(),
@@ -142,63 +143,90 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
 
     if (isEdit && initial) {
       adminStore.updateProperty(initial.id, payload);
-      toast.success('Bien mis à jour');
+      toast.success(lang === 'en' ? 'Listing updated' : 'Bien mis à jour');
     } else {
       adminStore.addProperty(payload);
-      toast.success('Bien créé avec succès');
+      toast.success(lang === 'en' ? 'Listing created successfully' : 'Bien créé avec succès');
     }
     onClose();
   };
+
+  const L = lang === 'en'
+    ? {
+        editTitle: 'Edit listing', newTitle: 'New listing',
+        title: 'Title *', titlePh: `Modern villa in ${country.name || 'Accra'}`,
+        description: 'Description', descPh: 'Describe the property...',
+        type: 'Type *', price: `Price (${currency}) *`,
+        quartier: 'Neighborhood *', address: 'Address', addressPh: 'Street, sector...',
+        bedrooms: 'Bedrooms', bathrooms: 'Bathrooms', surface: 'Surface (m²)',
+        status: 'Status',
+        cancel: 'Cancel', update: 'Update', create: 'Create listing',
+      }
+    : {
+        editTitle: 'Modifier le bien', newTitle: 'Nouveau bien',
+        title: 'Titre *', titlePh: 'Villa moderne à Tampouy',
+        description: 'Description', descPh: 'Décrivez le bien...',
+        type: 'Type *', price: `Prix (${currency}) *`,
+        quartier: 'Quartier *', address: 'Adresse', addressPh: 'Rue, secteur...',
+        bedrooms: 'Chambres', bathrooms: 'Salles de bain', surface: 'Surface (m²)',
+        status: 'Statut',
+        cancel: 'Annuler', update: 'Mettre à jour', create: 'Créer le bien',
+      };
 
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="sticky top-0 bg-card flex items-center justify-between px-5 py-3 border-b border-border z-10">
-          <h2 className="text-base font-bold text-foreground">{isEdit ? 'Modifier le bien' : 'Nouveau bien'}</h2>
+          <h2 className="text-base font-bold text-foreground">
+            {isEdit ? L.editTitle : L.newTitle}
+            <span className="ml-2 text-[11px] font-normal text-muted-foreground">
+              {country.flag_emoji} {country.name}
+            </span>
+          </h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center"><X size={16} /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* Titre */}
-          <Field label="Titre *">
-            <input value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder="Villa moderne à Tampouy" />
+          <Field label={L.title}>
+            <input value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder={L.titlePh} />
           </Field>
 
-          <Field label="Description">
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="form-input resize-none" placeholder="Décrivez le bien..." />
+          <Field label={L.description}>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="form-input resize-none" placeholder={L.descPh} />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Type *">
+            <Field label={L.type}>
               <select value={type} onChange={e => setType(e.target.value)} className="form-input">
-                {PROPERTY_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
+                {PROPERTY_TYPES.map(t => (
+                  <option key={t.value} value={t.value}>{t.emoji} {lang === 'en' ? t.labelEn : t.label}</option>
+                ))}
               </select>
             </Field>
-            <Field label="Prix (FCFA) *">
+            <Field label={L.price}>
               <input type="number" value={price} onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder="150000" />
             </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Quartier *">
-              <select value={quartier} onChange={e => setQuartier(e.target.value)} className="form-input">
-                {mockQuartiers.map(q => <option key={q.id} value={q.name}>{q.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Adresse">
-              <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder="Rue, secteur..." />
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1">{L.quartier}</label>
+              <QuartierAutocomplete value={quartier} onChange={(q) => setQuartier(q)} />
+            </div>
+            <Field label={L.address}>
+              <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder={L.addressPh} />
             </Field>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <Field label="Chambres"><input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" /></Field>
-            <Field label="Salles de bain"><input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" /></Field>
-            <Field label="Surface (m²)"><input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" /></Field>
+            <Field label={L.bedrooms}><input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" /></Field>
+            <Field label={L.bathrooms}><input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" /></Field>
+            <Field label={L.surface}><input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" /></Field>
           </div>
 
-          <Field label="Statut">
+          <Field label={L.status}>
             <select value={status} onChange={e => setStatus(e.target.value as AdminPropertyStatus)} className="form-input">
-              {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              {STATUS_VALUES.map(v => <option key={v} value={v}>{STATUS_LABELS[v][lang]}</option>)}
             </select>
           </Field>
 
