@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { mockProperties, type Property } from '@/lib/mockData';
 import { fetchMergedProperties } from '@/lib/propertiesService';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import PropertyCard from '@/components/PropertyCard';
 import { type FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { filterProperties } from '@/lib/filterProperties';
+
 
 const FAV_KEY = 'sapsap_favorites';
 const FILTERS_KEY = 'sapsap_filters_v1';
