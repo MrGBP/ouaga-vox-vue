@@ -216,7 +216,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       if (capacity !== '') featuresObj.__capacity = Number(capacity);
 
       const commercial = isCommercialType(type);
-      const payload = {
+      const defaultCity = CITIES[COUNTRY_TO_CITY[selectedCountry] ?? '']?.name ?? null;
+      const payload: any = {
         title: title.trim(),
         description: description.trim(),
         type,
@@ -231,7 +232,10 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         furnished,
         features: featuresObj,
         owner_id: ownerId,
+        country_code: selectedCountry,
+        city: defaultCity,
       };
+
 
       let propertyId: string;
       let willRequireReview = false;
