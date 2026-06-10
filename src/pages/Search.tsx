@@ -4,9 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, ArrowLeft, SlidersHorizontal, Clock, ChevronUp } from 'lucide-react';
 import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight, type Property } from '@/lib/mockData';
 import { fetchMergedProperties } from '@/lib/propertiesService';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import FilterBar, { type FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import { parseQuery, describeParsed } from '@/lib/smartMatch';
 import { filterProperties } from '@/lib/filterProperties';
+
 
 const FILTERS_KEY = 'sapsap_filters_v1';
 const loadFilters = (): FilterState => {
