@@ -178,21 +178,21 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return toast.error('Le titre est requis');
-    if (description.trim().length < 20) return toast.error('La description est obligatoire (20 caractères minimum)');
-    if (!price || Number(price) <= 0) return toast.error('Le prix doit être supérieur à 0');
-    if (!quartier) return toast.error('Quartier requis');
+    if (!title.trim()) return toast.error(t('owner.form.err_titre'));
+    if (description.trim().length < 20) return toast.error(t('owner.form.err_desc'));
+    if (!price || Number(price) <= 0) return toast.error(t('owner.form.err_prix'));
+    if (!quartier) return toast.error(t('owner.form.err_quartier'));
 
     // Au moins 1 média : pending + existants
     const totalMedia = pendingMedia.length + (isEdit ? existingMediaCount : 0);
     if (totalMedia < 1) {
-      return toast.error('Ajoute au moins 1 photo (obligatoire). Vidéo et visite 360° sont optionnelles.');
+      return toast.error(t('owner.form.err_media'));
     }
 
     // Au moins 1 POI : pending + existants
     const totalPois = pendingPois.length + existingPois.length;
     if (totalPois < 1) {
-      return toast.error('Ajoute au moins 1 Point d\'Intérêt à proximité (école, hôpital, marché…)');
+      return toast.error(t('owner.form.err_poi'));
     }
 
     setBusy(true);
