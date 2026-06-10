@@ -70,7 +70,7 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
       setCustomFeatures(Array.isArray((initial as any).customFeatures) ? (initial as any).customFeatures : []);
     } else {
       setTitle(''); setDescription(''); setType(PROPERTY_TYPES[0].value);
-      setPrice(''); setQuartier(mockQuartiers[0]?.name || '');
+      setPrice(''); setQuartier('');
       setAddress(''); setBedrooms(1); setBathrooms(1); setSurface(50);
       setStatus('pending'); setImages([]);
       setFeatures([]); setCustomFeatures([]);
