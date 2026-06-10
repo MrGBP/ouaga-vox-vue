@@ -286,7 +286,7 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
                       onChange={() => toggleFeature(f.key)}
                     />
                     <span aria-hidden>{f.emoji}</span>
-                    <span className="truncate">{f.label}</span>
+                    <span className="truncate">{featureLabel(f, lang)}</span>
                   </label>
                 );
               })}
