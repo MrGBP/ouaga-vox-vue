@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Building2, Home as HomeIcon } from 'lucide-react';
+import { finalizeSignupProfile } from '@/lib/authProfile';
 
 const signupSchema = z.object({
   full_name: z.string().trim().min(2, 'Nom trop court').max(80),
@@ -19,13 +20,15 @@ const loginSchema = z.object({
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
   const [asOwner, setAsOwner] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (!loading && user) navigate('/'); }, [user, loading, navigate]);
+  useEffect(() => { if (!loading && user) navigate(redirectTo); }, [user, loading, navigate, redirectTo]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,18 +45,10 @@ export default function Auth() {
           },
         });
         if (error) throw error;
-        // Si l'utilisateur s'inscrit en tant que propriétaire, on ajoute ce rôle
-        // (le trigger handle_new_user a déjà créé le rôle 'user' par défaut).
-        const newUserId = signUpData.user?.id;
-        if (asOwner && newUserId) {
-          const { error: roleErr } = await supabase
-            .from('user_roles')
-            .insert({ user_id: newUserId, role: 'owner' });
-          // En cas d'email confirmation activée, l'INSERT peut échouer car pas encore authentifié.
-          // On stocke alors l'intention pour le faire après la connexion.
-          if (roleErr) {
-            localStorage.setItem('sapsap_pending_owner_role', '1');
-          }
+        if (signUpData.session) {
+          await finalizeSignupProfile({ fullName: parsed.data.full_name, phone: parsed.data.phone, asOwner });
+        } else if (asOwner) {
+          localStorage.setItem('sapsap_pending_owner_role', '1');
         }
         toast.success(asOwner
           ? 'Compte propriétaire créé. Vérifie ta boîte mail si la confirmation est activée.'
@@ -66,7 +61,7 @@ export default function Auth() {
         });
         if (error) throw error;
         toast.success('Connecté');
-        navigate('/');
+        navigate(redirectTo);
       }
     } catch (err: any) {
       toast.error(err.message ?? 'Erreur');

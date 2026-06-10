@@ -704,6 +704,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_owner_role: { Args: never; Returns: undefined }
+      ensure_user_profile: {
+        Args: { _full_name?: string; _phone?: string }
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_country_support: {
         Args: { _code: string }
         Returns: {

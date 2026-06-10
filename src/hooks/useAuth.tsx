@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback,
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import AuthModal from '@/components/AuthModal';
+import { finalizePendingOwnerRole, ensureSignedInProfile } from '@/lib/authProfile';
 
 interface AuthCtx {
   user: User | null;
@@ -34,6 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalReason, setModalReason] = useState<string | undefined>(undefined);
   const pendingActionRef = useRef<(() => void) | null>(null);
+  const userRef = useRef<User | null>(null);
+
+  useEffect(() => { userRef.current = user; }, [user]);
 
   const fetchRoles = async (uid: string) => {
     const { data } = await supabase.from('user_roles').select('role').eq('user_id', uid);
@@ -46,7 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        setTimeout(() => { fetchRoles(sess.user.id); }, 0);
+        const fullName = sess.user.user_metadata?.full_name as string | undefined;
+        const phone = sess.user.user_metadata?.phone as string | undefined;
+        setTimeout(() => {
+          ensureSignedInProfile(fullName, phone)
+            .then(() => finalizePendingOwnerRole())
+            .finally(() => fetchRoles(sess.user.id));
+        }, 0);
       } else {
         setIsAdmin(false);
         setIsOwner(false);
@@ -57,13 +67,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        fetchRoles(s.user.id).finally(() => setLoading(false));
+        const fullName = s.user.user_metadata?.full_name as string | undefined;
+        const phone = s.user.user_metadata?.phone as string | undefined;
+        ensureSignedInProfile(fullName, phone)
+          .then(() => finalizePendingOwnerRole())
+          .finally(() => fetchRoles(s.user.id).finally(() => setLoading(false)));
       } else {
         setLoading(false);
       }
     });
 
-    return () => sub.subscription.unsubscribe();
+    const onRolesChanged = () => { if (userRef.current) void fetchRoles(userRef.current.id); };
+    window.addEventListener('sapsap_roles_changed', onRolesChanged);
+    return () => {
+      sub.subscription.unsubscribe();
+      window.removeEventListener('sapsap_roles_changed', onRolesChanged);
+    };
   }, []);
 
   const refreshRoles = async () => { if (user) await fetchRoles(user.id); };
