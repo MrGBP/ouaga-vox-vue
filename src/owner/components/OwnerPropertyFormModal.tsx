@@ -554,14 +554,14 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               }
             />
             <p className="text-[10px] text-muted-foreground">
-              La 1ʳᵉ image (★ Principale) sera la photo de couverture sur la liste, la carte, et le partage.
+              {t('owner.form.preview_hint')}
             </p>
           </div>
 
           {/* Médias — toujours disponibles, requis avant validation */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground">
-              Médias * — au moins 1 photo obligatoire (vidéo et 360° optionnelles). La <b>1ʳᵉ image</b> est la <b>photo principale</b>.
+              {t('owner.form.medias_label')}
             </label>
 
             {/* Médias déjà uploadés (édition) */}
@@ -576,7 +576,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     onClick={() => pendingFileRef.current?.click()}
                     className="flex-1 h-10 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 text-xs hover:bg-muted"
                   >
-                    <Upload size={14} /> Choisir photos / vidéos (multi)
+                    <Upload size={14} /> {t('owner.form.choisir_fichiers')}
                   </button>
                   <input
                     ref={pendingFileRef}
@@ -594,9 +594,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     onChange={e => setPendingKind(e.target.value as any)}
                     className="rounded-lg border border-border bg-background px-2 text-xs"
                   >
-                    <option value="image">Image</option>
-                    <option value="video">Vidéo</option>
-                    <option value="video_360">Visite 360°</option>
+                    <option value="image">{t('owner.form.image')}</option>
+                    <option value="video">{t('owner.form.video')}</option>
+                    <option value="video_360">{t('owner.form.visite_360')}</option>
                   </select>
                   <div className="relative flex-1">
                     <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -604,7 +604,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                       value={pendingUrl}
                       onChange={e => setPendingUrl(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingUrl(); } }}
-                      placeholder="https://… (Matterport, Kuula, YouTube, image…)"
+                      placeholder={t('owner.form.media_url_ph')}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-9 text-xs"
                     />
                   </div>
@@ -613,7 +613,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     onClick={addPendingUrl}
                     className="px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
                   >
-                    Ajouter
+                    {t('owner.form.ajouter')}
                   </button>
                 </div>
 
@@ -629,7 +629,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                           <div className="w-full h-full flex flex-col items-center justify-center text-xs text-muted-foreground p-2 text-center">
                             {m.kind === 'video_360' ? <Globe size={22} /> : <Video size={22} />}
                             <span className="truncate mt-1 w-full text-[10px]">
-                              {m.kind === 'video_360' ? '360°' : 'Vidéo'}
+                              {m.kind === 'video_360' ? '360°' : t('owner.form.video')}
                             </span>
                           </div>
                         )}
@@ -645,7 +645,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                         </span>
                         {i === 0 ? (
                           <span className="absolute top-1 left-1 text-[9px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold shadow">
-                            ★ Principale
+                            {t('owner.form.principale')}
                           </span>
                         ) : (
                           <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
@@ -657,11 +657,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                   </div>
                 ) : (
                   <p className="text-[11px] text-muted-foreground text-center py-3 rounded-lg border border-dashed">
-                    Aucun média sélectionné — ajoute au moins 1 photo, vidéo ou visite 360°
+                    {t('owner.form.aucun_media')}
                   </p>
                 )}
                 <p className="text-[10px] text-muted-foreground">
-                  Les médias seront uploadés à l'enregistrement. Limite : 20 Mo par fichier.
+                  {t('owner.form.upload_limit')}
                 </p>
               </>
             )}
@@ -669,14 +669,15 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
           <div className="flex gap-2 pt-3 border-t">
             <button type="button" onClick={() => onClose(!!savedId)} className="flex-1 h-10 rounded-lg border text-xs font-semibold hover:bg-muted">
-              {savedId ? 'Fermer' : 'Annuler'}
+              {savedId ? t('owner.form.fermer') : t('owner.form.annuler')}
             </button>
             <button type="submit" disabled={busy} className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-60">
               {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {savedId ? 'Mettre à jour' : 'Enregistrer le bien'}
+              {savedId ? t('owner.form.mettre_a_jour') : t('owner.form.enregistrer')}
             </button>
           </div>
         </form>
+
 
         <style>{`.form-input{display:block;width:100%;border:1px solid hsl(var(--border));background:hsl(var(--background));border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.8125rem;outline:none;transition:border-color .15s}.form-input:focus{border-color:hsl(var(--primary))}`}</style>
       </div>
