@@ -367,8 +367,8 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
           </div>
 
           <div className="flex gap-2 pt-3 border-t border-border">
-            <button type="button" onClick={onClose} className="flex-1 h-10 rounded-lg border border-border text-xs font-semibold hover:bg-muted">Annuler</button>
-            <button type="submit" className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">{isEdit ? 'Mettre à jour' : 'Créer le bien'}</button>
+            <button type="button" onClick={onClose} className="flex-1 h-10 rounded-lg border border-border text-xs font-semibold hover:bg-muted">{L.cancel}</button>
+            <button type="submit" className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">{isEdit ? L.update : L.create}</button>
           </div>
         </form>
       </div>
