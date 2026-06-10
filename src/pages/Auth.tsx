@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,13 +20,15 @@ const loginSchema = z.object({
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
   const [asOwner, setAsOwner] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (!loading && user) navigate('/'); }, [user, loading, navigate]);
+  useEffect(() => { if (!loading && user) navigate(redirectTo); }, [user, loading, navigate, redirectTo]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +61,7 @@ export default function Auth() {
         });
         if (error) throw error;
         toast.success('Connecté');
-        navigate('/');
+        navigate(redirectTo);
       }
     } catch (err: any) {
       toast.error(err.message ?? 'Erreur');
