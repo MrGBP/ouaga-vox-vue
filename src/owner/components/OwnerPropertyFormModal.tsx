@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
-import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, isTypeFurnished } from '@/lib/mockData';
-import { FEATURE_CATALOG, FEATURE_CATEGORIES, type FeatureCategoryId } from '@/lib/featureCatalog';
+import { useTranslation } from 'react-i18next';
+import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, isTypeFurnished, getTypeLabel } from '@/lib/mockData';
+import { FEATURE_CATALOG, FEATURE_CATEGORIES, featureLabel, categoryLabel, type FeatureCategoryId } from '@/lib/featureCatalog';
 import { supabase } from '@/integrations/supabase/client';
 import MapPicker from '@/admin/components/MapPicker';
 import MediaUploader from '@/admin/components/MediaUploader';
@@ -11,9 +12,10 @@ import { Loader2 } from 'lucide-react';
 import type { OwnerPropertyRow } from '../lib/ownerService';
 import { isCommercialType, isOfficeType } from '@/lib/typeHelpers';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
+import { useCountryConfig } from '@/hooks/useCountryConfig';
 import QuartierAutocomplete from '@/components/QuartierAutocomplete';
 import {
-  POI_TYPES, addPoiToProperty, listPoisForProperty, removePoi, type PropertyPoi,
+  POI_TYPES, poiLabel, addPoiToProperty, listPoisForProperty, removePoi, type PropertyPoi,
 } from '@/lib/propertyPoisService';
 
 type PendingMedia =
@@ -28,6 +30,10 @@ interface Props {
 }
 
 export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose }: Props) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const country = useCountryConfig();
+  const cur = country.currency_symbol;
   const isEdit = !!initial;
   useLockBackdrop(open);
   const [savedId, setSavedId] = useState<string | null>(null); // id du bien après save => active uploader
@@ -114,13 +120,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
   const addPendingPoi = () => {
     const n = poiName.trim();
-    if (!n) return toast.error('Nom du POI requis');
+    if (!n) return toast.error(t('owner.form.err_poi_name'));
     setPendingPois(prev => [...prev, { name: n, type: poiType, distance_m: poiDist === '' ? undefined : Number(poiDist) }]);
     setPoiName(''); setPoiDist('');
   };
   const removePendingPoi = (idx: number) => setPendingPois(prev => prev.filter((_, i) => i !== idx));
   const removeExistingPoi = async (id: string) => {
-    try { await removePoi(id); setExistingPois(prev => prev.filter(p => p.id !== id)); toast.success('POI supprimé'); }
+    try { await removePoi(id); setExistingPois(prev => prev.filter(p => p.id !== id)); toast.success(t('owner.form.ok_poi_deleted')); }
     catch (e: any) { toast.error(e.message); }
   };
 
@@ -128,7 +134,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     if (!files?.length) return;
     const next: PendingMedia[] = [];
     Array.from(files).forEach(file => {
-      if (file.size > 20_000_000) { toast.error(`${file.name} dépasse 20 Mo`); return; }
+      if (file.size > 20_000_000) { toast.error(t('owner.form.err_size', { name: file.name })); return; }
       const k: 'image' | 'video' = file.type.startsWith('video/') ? 'video' : 'image';
       next.push({ kind: k, source: 'file', file, previewUrl: URL.createObjectURL(file) });
     });
@@ -138,7 +144,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const addPendingUrl = () => {
     const u = pendingUrl.trim();
     if (!u) return;
-    if (!/^https?:\/\//i.test(u)) { toast.error('URL invalide (http/https requis)'); return; }
+    if (!/^https?:\/\//i.test(u)) { toast.error(t('owner.form.err_url')); return; }
     setPendingMedia(prev => [...prev, { kind: pendingKind, source: 'url', url: u }]);
     setPendingUrl('');
   };
@@ -164,7 +170,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const addCustom = () => {
     const v = customInput.trim();
     if (!v) return;
-    if (customFeatures.some(c => c.toLowerCase() === v.toLowerCase())) { toast.error('Déjà ajoutée'); return; }
+    if (customFeatures.some(c => c.toLowerCase() === v.toLowerCase())) { toast.error(t('owner.form.err_custom_dup')); return; }
     setCustomFeatures(prev => [...prev, v]); setCustomInput('');
   };
 
@@ -172,21 +178,21 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return toast.error('Le titre est requis');
-    if (description.trim().length < 20) return toast.error('La description est obligatoire (20 caractères minimum)');
-    if (!price || Number(price) <= 0) return toast.error('Le prix doit être supérieur à 0');
-    if (!quartier) return toast.error('Quartier requis');
+    if (!title.trim()) return toast.error(t('owner.form.err_titre'));
+    if (description.trim().length < 20) return toast.error(t('owner.form.err_desc'));
+    if (!price || Number(price) <= 0) return toast.error(t('owner.form.err_prix'));
+    if (!quartier) return toast.error(t('owner.form.err_quartier'));
 
     // Au moins 1 média : pending + existants
     const totalMedia = pendingMedia.length + (isEdit ? existingMediaCount : 0);
     if (totalMedia < 1) {
-      return toast.error('Ajoute au moins 1 photo (obligatoire). Vidéo et visite 360° sont optionnelles.');
+      return toast.error(t('owner.form.err_media'));
     }
 
     // Au moins 1 POI : pending + existants
     const totalPois = pendingPois.length + existingPois.length;
     if (totalPois < 1) {
-      return toast.error('Ajoute au moins 1 Point d\'Intérêt à proximité (école, hôpital, marché…)');
+      return toast.error(t('owner.form.err_poi'));
     }
 
     setBusy(true);
@@ -284,8 +290,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
       toast.success(
         isEdit
-          ? (willRequireReview ? 'Bien renvoyé en validation' : 'Bien mis à jour')
-          : 'Bien créé. En attente de validation.'
+          ? (willRequireReview ? t('owner.form.ok_revalidate') : t('owner.form.ok_update'))
+          : t('owner.form.ok_create')
       );
       onClose(true);
     } catch (e: any) {
@@ -299,9 +305,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="sticky top-0 bg-card flex items-center justify-between px-5 py-3 border-b z-10">
           <div>
-            <h2 className="text-base font-bold text-foreground">{isEdit ? 'Modifier le bien' : 'Nouveau bien'}</h2>
+            <h2 className="text-base font-bold text-foreground">{isEdit ? t('owner.form.modifier') : t('owner.form.nouveau')}</h2>
             {!isEdit && (
-              <p className="text-[11px] text-muted-foreground mt-0.5">Sera soumis à validation par l'administration.</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{t('owner.form.soumis')}</p>
             )}
           </div>
           <button onClick={() => onClose(!!savedId)} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center">
@@ -310,11 +316,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <Field label="Titre *">
-            <input ref={titleRef} value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder="Villa moderne à Tampouy" />
+          <Field label={t('owner.form.titre')}>
+            <input ref={titleRef} value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder={t('owner.form.titre_ph')} />
           </Field>
 
-          <Field label="Description *">
+          <Field label={t('owner.form.description')}>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
@@ -322,22 +328,22 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               minLength={20}
               required
               className="form-input resize-none"
-              placeholder="Décris ton bien (min. 20 caractères)…"
+              placeholder={t('owner.form.description_ph')}
             />
-            <p className="text-[10px] text-muted-foreground mt-1">{description.trim().length} / 20 caractères minimum</p>
+            <p className="text-[10px] text-muted-foreground mt-1">{t('owner.form.desc_count', { n: description.trim().length })}</p>
           </Field>
 
           {(() => {
             const commercial = isCommercialType(type);
             const isFurn = furnished || isTypeFurnished(type);
-            const priceLabel = commercial ? 'Loyer mensuel (FCFA) *' : isFurn ? 'Prix / nuit (FCFA) *' : 'Loyer mensuel (FCFA) *';
-            const priceHint = commercial ? 'Loyer commercial mensuel' : isFurn ? 'Tarif à la nuit (calendrier client)' : 'Loyer longue durée';
+            const priceLabel = commercial ? t('owner.form.loyer_mensuel', { cur }) : isFurn ? t('owner.form.prix_nuit', { cur }) : t('owner.form.loyer_mensuel', { cur });
+            const priceHint = commercial ? t('owner.form.hint_commercial') : isFurn ? t('owner.form.hint_nuit') : t('owner.form.hint_longue');
             return (
               <>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Type *">
+                  <Field label={t('owner.form.type')}>
                     <select value={type} onChange={e => setType(e.target.value)} className="form-input">
-                      {PROPERTY_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
+                      {PROPERTY_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {getTypeLabel(pt.value, lang)}</option>)}
                     </select>
                   </Field>
                   <Field label={priceLabel}>
@@ -348,54 +354,54 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold mb-1">Quartier *</label>
+                    <label className="block text-xs font-semibold mb-1">{t('owner.form.quartier')}</label>
                     <QuartierAutocomplete value={quartier} onChange={(q, loc) => { setQuartier(q); if (loc?.lat && loc?.lng) { setLat(loc.lat); setLng(loc.lng); } }} />
                   </div>
-                  <Field label="Adresse">
-                    <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder="Rue, secteur…" />
+                  <Field label={t('owner.form.adresse')}>
+                    <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder={t('owner.form.adresse_ph')} />
                   </Field>
                 </div>
 
                 {commercial ? (
                   <>
                     <div className="grid grid-cols-3 gap-3">
-                      <Field label={isOfficeType(type) ? 'Nombre de bureaux' : 'Nombre de locaux'}>
+                      <Field label={isOfficeType(type) ? t('owner.form.nb_bureaux') : t('owner.form.nb_locaux')}>
                         <input type="number" min={0} value={rooms} onChange={e => setRooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Nombre de pièces">
+                      <Field label={t('owner.form.nb_pieces')}>
                         <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Surface (m²)">
+                      <Field label={t('owner.form.surface')}>
                         <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Étage">
+                      <Field label={t('owner.form.etage')}>
                         <input type="number" min={0} value={floor} onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Capacité d'accueil (optionnel)">
-                        <input type="number" min={0} value={capacity} onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder="ex: 12 personnes" />
+                      <Field label={t('owner.form.capacite')}>
+                        <input type="number" min={0} value={capacity} onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder={t('owner.form.capacite_ph')} />
                       </Field>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="grid grid-cols-3 gap-3">
-                      <Field label="Chambres">
+                      <Field label={t('owner.form.chambres')}>
                         <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Salles de bain">
+                      <Field label={t('owner.form.sdb')}>
                         <input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Surface (m²)">
+                      <Field label={t('owner.form.surface')}>
                         <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Étage">
+                      <Field label={t('owner.form.etage')}>
                         <input type="number" min={0} value={floor} onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Nombre de pièces">
+                      <Field label={t('owner.form.nb_pieces')}>
                         <input type="number" min={0} value={rooms} onChange={e => setRooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
                     </div>
@@ -405,7 +411,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 {!commercial && (
                   <label className="flex items-center gap-2 text-xs">
                     <input type="checkbox" checked={furnished} onChange={e => setFurnished(e.target.checked)} className="accent-primary h-4 w-4" />
-                    <span>Bien meublé (location courte durée possible — calendrier client)</span>
+                    <span>{t('owner.form.meuble')}</span>
                   </label>
                 )}
               </>
@@ -414,7 +420,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
 
           {/* Localisation */}
-          <Field label="Localisation sur la carte (clique ou déplace le marqueur)">
+          <Field label={t('owner.form.carte')}>
             <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={240} />
             <p className="text-[10px] text-muted-foreground mt-1">{lat.toFixed(5)}, {lng.toFixed(5)}</p>
           </Field>
@@ -422,7 +428,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Caractéristiques */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-foreground">
-              Caractéristiques ({features.length + customFeatures.length})
+              {t('owner.form.caracteristiques', { n: features.length + customFeatures.length })}
             </label>
             <div className="flex gap-1 overflow-x-auto pb-1">
               {FEATURE_CATEGORIES.map(cat => {
@@ -433,7 +439,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-3 h-8 text-xs font-medium transition ${
                       isActive ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-foreground border-border hover:bg-muted'
                     }`}>
-                    <span>{cat.emoji}</span><span>{cat.label}</span>
+                    <span>{cat.emoji}</span><span>{categoryLabel(cat, lang)}</span>
                     {count > 0 && <span className={`ml-1 rounded-full px-1.5 text-[10px] ${isActive ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'}`}>{count}</span>}
                   </button>
                 );
@@ -449,7 +455,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     }`}>
                     <input type="checkbox" className="accent-primary" checked={checked} onChange={() => toggleFeature(f.key)} />
                     <span aria-hidden>{f.emoji}</span>
-                    <span className="truncate">{f.label}</span>
+                    <span className="truncate">{featureLabel(f, lang)}</span>
                   </label>
                 );
               })}
@@ -457,9 +463,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             <div className="flex gap-2">
               <input value={customInput} onChange={e => setCustomInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } }}
-                className="form-input" placeholder="Caractéristique personnalisée…" />
+                className="form-input" placeholder={t('owner.form.custom_ph')} />
               <button type="button" onClick={addCustom} className="px-3 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1">
-                <Plus size={14} /> Ajouter
+                <Plus size={14} /> {t('owner.form.ajouter')}
               </button>
             </div>
             {customFeatures.length > 0 && (
@@ -477,27 +483,27 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Points d'Intérêt — au moins 1 requis */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-              <MapPin size={13} /> Points d'Intérêt à proximité * — au moins 1 requis
+              <MapPin size={13} /> {t('owner.form.pois_label')}
             </label>
             <p className="text-[10px] text-muted-foreground -mt-1">
-              École, hôpital, marché, transport, etc. Ces infos enrichissent la fiche pour les locataires.
+              {t('owner.form.pois_hint')}
             </p>
             {(existingPois.length > 0 || pendingPois.length > 0) && (
               <div className="flex flex-wrap gap-1.5">
                 {existingPois.map(p => {
-                  const t = POI_TYPES.find(x => x.value === p.type);
+                  const pt = POI_TYPES.find(x => x.value === p.type);
                   return (
                     <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-[11px]">
-                      {t?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''}
+                      {pt?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''}
                       <button type="button" onClick={() => removeExistingPoi(p.id)} className="ml-1 hover:text-primary/70"><X size={11} /></button>
                     </span>
                   );
                 })}
                 {pendingPois.map((p, idx) => {
-                  const t = POI_TYPES.find(x => x.value === p.type);
+                  const pt = POI_TYPES.find(x => x.value === p.type);
                   return (
                     <span key={`pp-${idx}`} className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 px-2.5 py-1 text-[11px]">
-                      {t?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''} <span className="opacity-60">(à enregistrer)</span>
+                      {pt?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''} <span className="opacity-60">{t('owner.form.a_enregistrer')}</span>
                       <button type="button" onClick={() => removePendingPoi(idx)} className="ml-1 hover:text-amber-900"><X size={11} /></button>
                     </span>
                   );
@@ -509,20 +515,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 value={poiName}
                 onChange={e => setPoiName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingPoi(); } }}
-                placeholder="Nom (ex: École Saint-Joseph)"
+                placeholder={t('owner.form.poi_name_ph')}
                 className="form-input col-span-5"
               />
               <select value={poiType} onChange={e => setPoiType(e.target.value)} className="form-input col-span-3">
-                {POI_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
+                {POI_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {poiLabel(pt, lang)}</option>)}
               </select>
               <input
                 type="number" min={0} value={poiDist}
                 onChange={e => setPoiDist(e.target.value === '' ? '' : Number(e.target.value))}
-                placeholder="Distance (m)" className="form-input col-span-2"
+                placeholder={t('owner.form.poi_dist_ph')} className="form-input col-span-2"
               />
               <button type="button" onClick={addPendingPoi}
                 className="col-span-2 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1">
-                <Plus size={14} /> Ajouter
+                <Plus size={14} /> {t('owner.form.ajouter')}
               </button>
             </div>
           </div>
@@ -530,7 +536,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Aperçu carte — tel qu'affiché aux locataires */}
           <div className="border-t pt-4 space-y-2">
             <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              👁 Aperçu — tel qu'il sera affiché aux locataires
+              {t('owner.form.preview')}
             </label>
             <ListingPreviewCard
               title={title || 'Titre du bien'}
@@ -548,14 +554,14 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               }
             />
             <p className="text-[10px] text-muted-foreground">
-              La 1ʳᵉ image (★ Principale) sera la photo de couverture sur la liste, la carte, et le partage.
+              {t('owner.form.preview_hint')}
             </p>
           </div>
 
           {/* Médias — toujours disponibles, requis avant validation */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground">
-              Médias * — au moins 1 photo obligatoire (vidéo et 360° optionnelles). La <b>1ʳᵉ image</b> est la <b>photo principale</b>.
+              {t('owner.form.medias_label')}
             </label>
 
             {/* Médias déjà uploadés (édition) */}
@@ -570,7 +576,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     onClick={() => pendingFileRef.current?.click()}
                     className="flex-1 h-10 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 text-xs hover:bg-muted"
                   >
-                    <Upload size={14} /> Choisir photos / vidéos (multi)
+                    <Upload size={14} /> {t('owner.form.choisir_fichiers')}
                   </button>
                   <input
                     ref={pendingFileRef}
@@ -588,9 +594,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     onChange={e => setPendingKind(e.target.value as any)}
                     className="rounded-lg border border-border bg-background px-2 text-xs"
                   >
-                    <option value="image">Image</option>
-                    <option value="video">Vidéo</option>
-                    <option value="video_360">Visite 360°</option>
+                    <option value="image">{t('owner.form.image')}</option>
+                    <option value="video">{t('owner.form.video')}</option>
+                    <option value="video_360">{t('owner.form.visite_360')}</option>
                   </select>
                   <div className="relative flex-1">
                     <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -598,7 +604,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                       value={pendingUrl}
                       onChange={e => setPendingUrl(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingUrl(); } }}
-                      placeholder="https://… (Matterport, Kuula, YouTube, image…)"
+                      placeholder={t('owner.form.media_url_ph')}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-9 text-xs"
                     />
                   </div>
@@ -607,7 +613,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     onClick={addPendingUrl}
                     className="px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
                   >
-                    Ajouter
+                    {t('owner.form.ajouter')}
                   </button>
                 </div>
 
@@ -623,7 +629,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                           <div className="w-full h-full flex flex-col items-center justify-center text-xs text-muted-foreground p-2 text-center">
                             {m.kind === 'video_360' ? <Globe size={22} /> : <Video size={22} />}
                             <span className="truncate mt-1 w-full text-[10px]">
-                              {m.kind === 'video_360' ? '360°' : 'Vidéo'}
+                              {m.kind === 'video_360' ? '360°' : t('owner.form.video')}
                             </span>
                           </div>
                         )}
@@ -639,7 +645,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                         </span>
                         {i === 0 ? (
                           <span className="absolute top-1 left-1 text-[9px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold shadow">
-                            ★ Principale
+                            {t('owner.form.principale')}
                           </span>
                         ) : (
                           <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
@@ -651,11 +657,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                   </div>
                 ) : (
                   <p className="text-[11px] text-muted-foreground text-center py-3 rounded-lg border border-dashed">
-                    Aucun média sélectionné — ajoute au moins 1 photo, vidéo ou visite 360°
+                    {t('owner.form.aucun_media')}
                   </p>
                 )}
                 <p className="text-[10px] text-muted-foreground">
-                  Les médias seront uploadés à l'enregistrement. Limite : 20 Mo par fichier.
+                  {t('owner.form.upload_limit')}
                 </p>
               </>
             )}
@@ -663,14 +669,15 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
           <div className="flex gap-2 pt-3 border-t">
             <button type="button" onClick={() => onClose(!!savedId)} className="flex-1 h-10 rounded-lg border text-xs font-semibold hover:bg-muted">
-              {savedId ? 'Fermer' : 'Annuler'}
+              {savedId ? t('owner.form.fermer') : t('owner.form.annuler')}
             </button>
             <button type="submit" disabled={busy} className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-60">
               {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {savedId ? 'Mettre à jour' : 'Enregistrer le bien'}
+              {savedId ? t('owner.form.mettre_a_jour') : t('owner.form.enregistrer')}
             </button>
           </div>
         </form>
+
 
         <style>{`.form-input{display:block;width:100%;border:1px solid hsl(var(--border));background:hsl(var(--background));border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.8125rem;outline:none;transition:border-color .15s}.form-input:focus{border-color:hsl(var(--primary))}`}</style>
       </div>
