@@ -255,7 +255,7 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
                     }`}
                   >
                     <span>{cat.emoji}</span>
-                    <span>{cat.label}</span>
+                    <span>{featureLabel(cat, lang)}</span>
                     {count > 0 && (
                       <span className={`ml-1 rounded-full px-1.5 text-[10px] ${isActive ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'}`}>
                         {count}
