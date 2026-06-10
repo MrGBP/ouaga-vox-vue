@@ -420,7 +420,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
 
           {/* Localisation */}
-          <Field label="Localisation sur la carte (clique ou déplace le marqueur)">
+          <Field label={t('owner.form.carte')}>
             <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={240} />
             <p className="text-[10px] text-muted-foreground mt-1">{lat.toFixed(5)}, {lng.toFixed(5)}</p>
           </Field>
@@ -428,7 +428,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Caractéristiques */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-foreground">
-              Caractéristiques ({features.length + customFeatures.length})
+              {t('owner.form.caracteristiques', { n: features.length + customFeatures.length })}
             </label>
             <div className="flex gap-1 overflow-x-auto pb-1">
               {FEATURE_CATEGORIES.map(cat => {
@@ -439,7 +439,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-3 h-8 text-xs font-medium transition ${
                       isActive ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-foreground border-border hover:bg-muted'
                     }`}>
-                    <span>{cat.emoji}</span><span>{cat.label}</span>
+                    <span>{cat.emoji}</span><span>{categoryLabel(cat, lang)}</span>
                     {count > 0 && <span className={`ml-1 rounded-full px-1.5 text-[10px] ${isActive ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'}`}>{count}</span>}
                   </button>
                 );
@@ -455,7 +455,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     }`}>
                     <input type="checkbox" className="accent-primary" checked={checked} onChange={() => toggleFeature(f.key)} />
                     <span aria-hidden>{f.emoji}</span>
-                    <span className="truncate">{f.label}</span>
+                    <span className="truncate">{featureLabel(f, lang)}</span>
                   </label>
                 );
               })}
@@ -463,9 +463,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             <div className="flex gap-2">
               <input value={customInput} onChange={e => setCustomInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } }}
-                className="form-input" placeholder="Caractéristique personnalisée…" />
+                className="form-input" placeholder={t('owner.form.custom_ph')} />
               <button type="button" onClick={addCustom} className="px-3 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1">
-                <Plus size={14} /> Ajouter
+                <Plus size={14} /> {t('owner.form.ajouter')}
               </button>
             </div>
             {customFeatures.length > 0 && (
@@ -483,27 +483,27 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Points d'Intérêt — au moins 1 requis */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-              <MapPin size={13} /> Points d'Intérêt à proximité * — au moins 1 requis
+              <MapPin size={13} /> {t('owner.form.pois_label')}
             </label>
             <p className="text-[10px] text-muted-foreground -mt-1">
-              École, hôpital, marché, transport, etc. Ces infos enrichissent la fiche pour les locataires.
+              {t('owner.form.pois_hint')}
             </p>
             {(existingPois.length > 0 || pendingPois.length > 0) && (
               <div className="flex flex-wrap gap-1.5">
                 {existingPois.map(p => {
-                  const t = POI_TYPES.find(x => x.value === p.type);
+                  const pt = POI_TYPES.find(x => x.value === p.type);
                   return (
                     <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-[11px]">
-                      {t?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''}
+                      {pt?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''}
                       <button type="button" onClick={() => removeExistingPoi(p.id)} className="ml-1 hover:text-primary/70"><X size={11} /></button>
                     </span>
                   );
                 })}
                 {pendingPois.map((p, idx) => {
-                  const t = POI_TYPES.find(x => x.value === p.type);
+                  const pt = POI_TYPES.find(x => x.value === p.type);
                   return (
                     <span key={`pp-${idx}`} className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 px-2.5 py-1 text-[11px]">
-                      {t?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''} <span className="opacity-60">(à enregistrer)</span>
+                      {pt?.emoji ?? '📍'} {p.name}{p.distance_m ? ` · ${p.distance_m}m` : ''} <span className="opacity-60">{t('owner.form.a_enregistrer')}</span>
                       <button type="button" onClick={() => removePendingPoi(idx)} className="ml-1 hover:text-amber-900"><X size={11} /></button>
                     </span>
                   );
@@ -515,20 +515,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 value={poiName}
                 onChange={e => setPoiName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingPoi(); } }}
-                placeholder="Nom (ex: École Saint-Joseph)"
+                placeholder={t('owner.form.poi_name_ph')}
                 className="form-input col-span-5"
               />
               <select value={poiType} onChange={e => setPoiType(e.target.value)} className="form-input col-span-3">
-                {POI_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
+                {POI_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {poiLabel(pt, lang)}</option>)}
               </select>
               <input
                 type="number" min={0} value={poiDist}
                 onChange={e => setPoiDist(e.target.value === '' ? '' : Number(e.target.value))}
-                placeholder="Distance (m)" className="form-input col-span-2"
+                placeholder={t('owner.form.poi_dist_ph')} className="form-input col-span-2"
               />
               <button type="button" onClick={addPendingPoi}
                 className="col-span-2 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1">
-                <Plus size={14} /> Ajouter
+                <Plus size={14} /> {t('owner.form.ajouter')}
               </button>
             </div>
           </div>
@@ -536,7 +536,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Aperçu carte — tel qu'affiché aux locataires */}
           <div className="border-t pt-4 space-y-2">
             <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              👁 Aperçu — tel qu'il sera affiché aux locataires
+              {t('owner.form.preview')}
             </label>
             <ListingPreviewCard
               title={title || 'Titre du bien'}
