@@ -341,16 +341,18 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
             <label className="text-xs font-semibold text-foreground">Images ({images.length})</label>
             <div className="flex gap-2">
               <button type="button" onClick={() => fileInput.current?.click()} className="flex-1 h-10 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 text-xs text-muted-foreground hover:bg-muted transition-colors">
-                <Upload size={14} /> Uploader
+                <Upload size={14} /> {lang === 'en' ? 'Upload' : 'Uploader'}
               </button>
               <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={e => handleFiles(e.target.files)} />
             </div>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input value={imageUrlInput} onChange={e => setImageUrlInput(e.target.value)} className="form-input pl-9" placeholder="https://exemple.com/image.jpg" />
+                <input value={imageUrlInput} onChange={e => setImageUrlInput(e.target.value)} className="form-input pl-9" placeholder="https://example.com/image.jpg" />
               </div>
-              <button type="button" onClick={addUrlImage} className="px-3 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 hover:bg-primary/90"><Plus size={14} /> Ajouter</button>
+              <button type="button" onClick={addUrlImage} className="px-3 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 hover:bg-primary/90">
+                <Plus size={14} /> {lang === 'en' ? 'Add' : 'Ajouter'}
+              </button>
             </div>
             {images.length > 0 && (
               <div className="grid grid-cols-4 gap-2">
