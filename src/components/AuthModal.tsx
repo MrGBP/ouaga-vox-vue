@@ -140,9 +140,10 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                 <Building2 size={22} className="text-white" />
               </div>
               <h2 className="text-base font-bold">SapSapHouse</h2>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{mode === 'login' ? T.title_login : T.title_signup}</p>
               {reason && (
                 <p className="text-xs text-muted-foreground mt-1.5 text-center px-4">
-                  Connectez-vous pour <span className="font-medium text-foreground">{reason}</span>
+                  {T.connect_for} <span className="font-medium text-foreground">{reason}</span>
                 </p>
               )}
             </div>
@@ -154,7 +155,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                     <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                       className="w-full rounded-lg border pl-9 pr-3 py-2.5 text-sm"
-                      placeholder="Nom complet"
+                      placeholder={T.full_name}
                       value={form.full_name}
                       onChange={e => setForm({ ...form, full_name: e.target.value })}
                     />
@@ -163,7 +164,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                       className="w-full rounded-lg border pl-9 pr-3 py-2.5 text-sm"
-                      placeholder="Téléphone (optionnel)"
+                      placeholder={T.phone}
                       value={form.phone}
                       onChange={e => setForm({ ...form, phone: e.target.value })}
                     />
@@ -175,7 +176,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                 <input
                   type="email"
                   className="w-full rounded-lg border pl-9 pr-3 py-2.5 text-sm"
-                  placeholder="Email"
+                  placeholder={T.email}
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                 />
@@ -185,11 +186,26 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                 <input
                   type="password"
                   className="w-full rounded-lg border pl-9 pr-3 py-2.5 text-sm"
-                  placeholder="Mot de passe"
+                  placeholder={T.password}
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                 />
               </div>
+
+              {mode === 'signup' && (
+                <label className="flex items-start gap-2.5 mt-1 px-3 py-2.5 rounded-lg border cursor-pointer hover:bg-slate-50 transition">
+                  <input
+                    type="checkbox"
+                    checked={asOwner}
+                    onChange={e => setAsOwner(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-[#1a3560]"
+                  />
+                  <span className="text-xs leading-relaxed">
+                    <span className="font-semibold flex items-center gap-1.5"><HomeIcon size={13} /> {T.owner_title}</span>
+                    <span className="text-muted-foreground">{T.owner_desc}</span>
+                  </span>
+                </label>
+              )}
 
               <button
                 disabled={busy}
@@ -197,13 +213,13 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                 className="w-full h-11 rounded-lg text-sm font-semibold text-white disabled:opacity-50 transition"
                 style={{ background: '#1a3560' }}
               >
-                {busy ? '…' : mode === 'login' ? 'Se connecter' : 'Créer le compte'}
+                {busy ? '…' : mode === 'login' ? T.submit_login : T.submit_signup}
               </button>
             </form>
 
             <div className="flex items-center gap-2 my-3">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">ou</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{T.or}</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
@@ -213,21 +229,21 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
               style={{ background: '#25D366' }}
             >
               <MessageCircle className="h-4 w-4" />
-              Continuer avec WhatsApp
+              {T.whatsapp}
             </button>
 
             <button
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
               className="w-full text-center text-xs text-muted-foreground mt-3 hover:underline"
             >
-              {mode === 'login' ? "Pas de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
+              {mode === 'login' ? T.no_account : T.has_account}
             </button>
 
             <button
               onClick={onClose}
               className="w-full text-center text-[11px] text-muted-foreground mt-2 hover:text-foreground"
             >
-              Continuer sans compte
+              {T.no_signup}
             </button>
           </motion.div>
         </motion.div>
@@ -235,3 +251,4 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
     </AnimatePresence>
   );
 }
+
