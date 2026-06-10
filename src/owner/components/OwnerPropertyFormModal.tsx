@@ -30,6 +30,10 @@ interface Props {
 }
 
 export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose }: Props) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const country = useCountryConfig();
+  const cur = country.currency_symbol;
   const isEdit = !!initial;
   useLockBackdrop(open);
   const [savedId, setSavedId] = useState<string | null>(null); // id du bien après save => active uploader
