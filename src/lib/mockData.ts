@@ -108,30 +108,30 @@ export interface Quartier {
 
 // ─── 7 TYPES OFFICIELS ──────────────────────────────────────────────────────
 export const PROPERTY_TYPES = [
-  { value: 'maison_villa_meublee', label: 'Villa meublée', emoji: '🏡', furnished: true },
-  { value: 'maison_villa_simple', label: 'Villa', emoji: '🏘️', furnished: false },
-  { value: 'appartement_meuble', label: 'Appartement meublé', emoji: '🏢', furnished: true },
-  { value: 'appartement_simple', label: 'Appartement', emoji: '🏢', furnished: false },
-  { value: 'studio_meuble', label: 'Studio meublé', emoji: '🛋️', furnished: true },
-  { value: 'bureau', label: 'Bureau', emoji: '💼', furnished: false },
-  { value: 'local_commercial', label: 'Local commercial', emoji: '🏪', furnished: false },
+  { value: 'maison_villa_meublee', label: 'Villa meublée',      labelEn: 'Furnished villa',     emoji: '🏡', furnished: true },
+  { value: 'maison_villa_simple',  label: 'Villa',              labelEn: 'Villa',               emoji: '🏘️', furnished: false },
+  { value: 'appartement_meuble',   label: 'Appartement meublé', labelEn: 'Furnished apartment', emoji: '🏢', furnished: true },
+  { value: 'appartement_simple',   label: 'Appartement',        labelEn: 'Apartment',           emoji: '🏢', furnished: false },
+  { value: 'studio_meuble',        label: 'Studio meublé',      labelEn: 'Furnished studio',    emoji: '🛋️', furnished: true },
+  { value: 'bureau',               label: 'Bureau',             labelEn: 'Office',              emoji: '💼', furnished: false },
+  { value: 'local_commercial',     label: 'Local commercial',   labelEn: 'Commercial space',    emoji: '🏪', furnished: false },
 ] as const;
 
 /** Configuration étendue : emoji + label + color par type (utilisé pour pins, badges, etc.) */
-export const PROPERTY_TYPE_CONFIG: Record<string, { emoji: string; label: string; color: string }> = {
-  villa_meublee:    { emoji: '🏡', label: 'Villa meublée',    color: '#1a3560' },
-  maison_villa_meublee: { emoji: '🏡', label: 'Villa meublée', color: '#1a3560' },
-  villa:            { emoji: '🏘️', label: 'Villa',            color: '#1a3560' },
-  maison_villa_simple: { emoji: '🏘️', label: 'Villa',         color: '#1a3560' },
-  appartement:      { emoji: '🏢', label: 'Appartement',      color: '#2563eb' },
-  appartement_simple: { emoji: '🏢', label: 'Appartement',    color: '#2563eb' },
-  appartement_meuble: { emoji: '🏢', label: 'Appartement meublé', color: '#2563eb' },
-  studio_meuble:    { emoji: '🛋️', label: 'Studio meublé',    color: '#7c3aed' },
-  maison:           { emoji: '🏠', label: 'Maison',           color: '#059669' },
-  bureau:           { emoji: '💼', label: 'Bureau',           color: '#d97706' },
-  local_commercial: { emoji: '🏪', label: 'Local commercial', color: '#dc2626' },
-  chambre_meublee:  { emoji: '🛏️', label: 'Chambre meublée',  color: '#0891b2' },
-  duplex:           { emoji: '🏗️', label: 'Duplex',           color: '#65a30d' },
+export const PROPERTY_TYPE_CONFIG: Record<string, { emoji: string; label: string; labelEn?: string; color: string }> = {
+  villa_meublee:        { emoji: '🏡', label: 'Villa meublée',       labelEn: 'Furnished villa',     color: '#1a3560' },
+  maison_villa_meublee: { emoji: '🏡', label: 'Villa meublée',       labelEn: 'Furnished villa',     color: '#1a3560' },
+  villa:                { emoji: '🏘️', label: 'Villa',               labelEn: 'Villa',               color: '#1a3560' },
+  maison_villa_simple:  { emoji: '🏘️', label: 'Villa',               labelEn: 'Villa',               color: '#1a3560' },
+  appartement:          { emoji: '🏢', label: 'Appartement',         labelEn: 'Apartment',           color: '#2563eb' },
+  appartement_simple:   { emoji: '🏢', label: 'Appartement',         labelEn: 'Apartment',           color: '#2563eb' },
+  appartement_meuble:   { emoji: '🏢', label: 'Appartement meublé',  labelEn: 'Furnished apartment', color: '#2563eb' },
+  studio_meuble:        { emoji: '🛋️', label: 'Studio meublé',       labelEn: 'Furnished studio',    color: '#7c3aed' },
+  maison:               { emoji: '🏠', label: 'Maison',              labelEn: 'House',               color: '#059669' },
+  bureau:               { emoji: '💼', label: 'Bureau',              labelEn: 'Office',              color: '#d97706' },
+  local_commercial:     { emoji: '🏪', label: 'Local commercial',    labelEn: 'Commercial space',    color: '#dc2626' },
+  chambre_meublee:      { emoji: '🛏️', label: 'Chambre meublée',     labelEn: 'Furnished room',      color: '#0891b2' },
+  duplex:               { emoji: '🏗️', label: 'Duplex',              labelEn: 'Duplex',              color: '#65a30d' },
 };
 
 export type PropertyType = typeof PROPERTY_TYPES[number]['value'];
@@ -139,8 +139,12 @@ export type PropertyType = typeof PROPERTY_TYPES[number]['value'];
 export const isTypeFurnished = (type: string): boolean =>
   PROPERTY_TYPES.find(t => t.value === type)?.furnished ?? false;
 
-export const getTypeLabel = (type: string): string =>
-  PROPERTY_TYPE_CONFIG[type]?.label ?? PROPERTY_TYPES.find(t => t.value === type)?.label ?? type;
+export const getTypeLabel = (type: string, lang?: string): string => {
+  const cfg = PROPERTY_TYPE_CONFIG[type];
+  const fromTypes = PROPERTY_TYPES.find(t => t.value === type);
+  if (lang === 'en') return cfg?.labelEn ?? fromTypes?.labelEn ?? cfg?.label ?? fromTypes?.label ?? type;
+  return cfg?.label ?? fromTypes?.label ?? type;
+};
 
 export const getTypeEmoji = (type: string): string =>
   PROPERTY_TYPE_CONFIG[type]?.emoji ?? PROPERTY_TYPES.find(t => t.value === type)?.emoji ?? '📍';
