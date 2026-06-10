@@ -12,11 +12,13 @@ import { Loader2 } from 'lucide-react';
 import type { OwnerPropertyRow } from '../lib/ownerService';
 import { isCommercialType, isOfficeType } from '@/lib/typeHelpers';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
-import { useCountryConfig } from '@/hooks/useCountryConfig';
+import { useCountryConfig, useAllCountryConfigs } from '@/hooks/useCountryConfig';
+import { CITIES, COUNTRY_TO_CITY } from '@/lib/geoConfig';
 import QuartierAutocomplete from '@/components/QuartierAutocomplete';
 import {
   POI_TYPES, poiLabel, addPoiToProperty, listPoisForProperty, removePoi, type PropertyPoi,
 } from '@/lib/propertyPoisService';
+
 
 type PendingMedia =
   | { kind: 'image' | 'video'; source: 'file'; file: File; previewUrl: string }
