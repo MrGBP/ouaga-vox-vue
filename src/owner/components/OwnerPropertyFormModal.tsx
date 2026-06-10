@@ -134,7 +134,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     if (!files?.length) return;
     const next: PendingMedia[] = [];
     Array.from(files).forEach(file => {
-      if (file.size > 20_000_000) { toast.error(`${file.name} dépasse 20 Mo`); return; }
+      if (file.size > 20_000_000) { toast.error(t('owner.form.err_size', { name: file.name })); return; }
       const k: 'image' | 'video' = file.type.startsWith('video/') ? 'video' : 'image';
       next.push({ kind: k, source: 'file', file, previewUrl: URL.createObjectURL(file) });
     });
@@ -144,7 +144,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const addPendingUrl = () => {
     const u = pendingUrl.trim();
     if (!u) return;
-    if (!/^https?:\/\//i.test(u)) { toast.error('URL invalide (http/https requis)'); return; }
+    if (!/^https?:\/\//i.test(u)) { toast.error(t('owner.form.err_url')); return; }
     setPendingMedia(prev => [...prev, { kind: pendingKind, source: 'url', url: u }]);
     setPendingUrl('');
   };
