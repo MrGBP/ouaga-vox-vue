@@ -294,21 +294,23 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
 
             {/* Champ libre */}
             <div className="space-y-1.5">
-              <label className="text-[11px] text-muted-foreground">Caractéristique personnalisée</label>
+              <label className="text-[11px] text-muted-foreground">
+                {lang === 'en' ? 'Custom feature' : 'Caractéristique personnalisée'}
+              </label>
               <div className="flex gap-2">
                 <input
                   value={customInput}
                   onChange={e => setCustomInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } }}
                   className="form-input"
-                  placeholder="Ex : Vue sur le fleuve"
+                  placeholder={lang === 'en' ? 'e.g. River view' : 'Ex : Vue sur le fleuve'}
                 />
                 <button
                   type="button"
                   onClick={addCustom}
                   className="px-3 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 hover:bg-primary/90"
                 >
-                  <Plus size={14} /> Ajouter
+                  <Plus size={14} /> {lang === 'en' ? 'Add' : 'Ajouter'}
                 </button>
               </div>
               {customFeatures.length > 0 && (
