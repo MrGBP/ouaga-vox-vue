@@ -334,8 +334,10 @@ export type Database = {
           available: boolean | null
           bathrooms: number | null
           bedrooms: number | null
+          city: string | null
           comfort_rating: number | null
           correction_round: number
+          country_code: string
           created_at: string
           description: string | null
           favorite_count: number
@@ -375,8 +377,10 @@ export type Database = {
           available?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
+          city?: string | null
           comfort_rating?: number | null
           correction_round?: number
+          country_code?: string
           created_at?: string
           description?: string | null
           favorite_count?: number
@@ -416,8 +420,10 @@ export type Database = {
           available?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
+          city?: string | null
           comfort_rating?: number | null
           correction_round?: number
+          country_code?: string
           created_at?: string
           description?: string | null
           favorite_count?: number
