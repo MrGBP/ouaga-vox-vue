@@ -50,16 +50,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
+        setLoading(true);
         const fullName = sess.user.user_metadata?.full_name as string | undefined;
         const phone = sess.user.user_metadata?.phone as string | undefined;
         setTimeout(() => {
           ensureSignedInProfile(fullName, phone)
             .then(() => finalizePendingOwnerRole())
-            .finally(() => fetchRoles(sess.user.id));
+            .finally(() => fetchRoles(sess.user.id).finally(() => setLoading(false)));
         }, 0);
       } else {
         setIsAdmin(false);
         setIsOwner(false);
+        setLoading(false);
       }
     });
 
