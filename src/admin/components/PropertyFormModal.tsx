@@ -238,56 +238,46 @@ export default function PropertyFormModal({ open, initial, onClose }: Props) {
               </label>
             </div>
 
-            {/* Onglets catégories */}
-            <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+            {/* Toutes les catégories affichées en sections (style ancien) */}
+            <div className="space-y-3 rounded-lg border border-border p-3 bg-muted/30">
               {FEATURE_CATEGORIES.map(cat => {
-                const count = featuresByCat[cat.id].filter(f => features.includes(f.key)).length;
-                const isActive = activeCat === cat.id;
+                const items = featuresByCat[cat.id];
+                if (!items?.length) return null;
+                const count = items.filter(f => features.includes(f.key)).length;
                 return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setActiveCat(cat.id)}
-                    className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-3 h-8 text-xs font-medium transition-colors ${
-                      isActive
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-card text-foreground border-border hover:bg-muted'
-                    }`}
-                  >
-                    <span>{cat.emoji}</span>
-                    <span>{featureLabel(cat, lang)}</span>
-                    {count > 0 && (
-                      <span className={`ml-1 rounded-full px-1.5 text-[10px] ${isActive ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'}`}>
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Checkboxes de la catégorie active */}
-            <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-border p-2 bg-muted/30">
-              {featuresByCat[activeCat].map(f => {
-                const checked = features.includes(f.key);
-                return (
-                  <label
-                    key={f.key}
-                    className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs cursor-pointer border transition-colors ${
-                      checked
-                        ? 'bg-primary/10 border-primary/40 text-foreground'
-                        : 'bg-card border-border hover:bg-muted'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="accent-primary"
-                      checked={checked}
-                      onChange={() => toggleFeature(f.key)}
-                    />
-                    <span aria-hidden>{f.emoji}</span>
-                    <span className="truncate">{featureLabel(f, lang)}</span>
-                  </label>
+                  <div key={cat.id} className="space-y-1.5">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                      <span aria-hidden>{cat.emoji}</span>
+                      <span>{featureLabel(cat, lang)}</span>
+                      {count > 0 && (
+                        <span className="rounded-full bg-primary/10 text-primary px-1.5 text-[10px]">{count}</span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {items.map(f => {
+                        const checked = features.includes(f.key);
+                        return (
+                          <label
+                            key={f.key}
+                            className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs cursor-pointer border transition-colors ${
+                              checked
+                                ? 'bg-primary/10 border-primary/40 text-foreground'
+                                : 'bg-card border-border hover:bg-muted'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="accent-primary"
+                              checked={checked}
+                              onChange={() => toggleFeature(f.key)}
+                            />
+                            <span aria-hidden>{f.emoji}</span>
+                            <span className="truncate">{featureLabel(f, lang)}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
               })}
             </div>
