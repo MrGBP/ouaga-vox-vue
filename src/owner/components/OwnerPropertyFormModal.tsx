@@ -343,7 +343,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 <div className="grid grid-cols-2 gap-3">
                   <Field label={t('owner.form.type')}>
                     <select value={type} onChange={e => setType(e.target.value)} className="form-input">
-                      {PROPERTY_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
+                      {PROPERTY_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {getTypeLabel(pt.value, lang)}</option>)}
                     </select>
                   </Field>
                   <Field label={priceLabel}>
@@ -354,54 +354,54 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold mb-1">Quartier *</label>
+                    <label className="block text-xs font-semibold mb-1">{t('owner.form.quartier')}</label>
                     <QuartierAutocomplete value={quartier} onChange={(q, loc) => { setQuartier(q); if (loc?.lat && loc?.lng) { setLat(loc.lat); setLng(loc.lng); } }} />
                   </div>
-                  <Field label="Adresse">
-                    <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder="Rue, secteur…" />
+                  <Field label={t('owner.form.adresse')}>
+                    <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder={t('owner.form.adresse_ph')} />
                   </Field>
                 </div>
 
                 {commercial ? (
                   <>
                     <div className="grid grid-cols-3 gap-3">
-                      <Field label={isOfficeType(type) ? 'Nombre de bureaux' : 'Nombre de locaux'}>
+                      <Field label={isOfficeType(type) ? t('owner.form.nb_bureaux') : t('owner.form.nb_locaux')}>
                         <input type="number" min={0} value={rooms} onChange={e => setRooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Nombre de pièces">
+                      <Field label={t('owner.form.nb_pieces')}>
                         <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Surface (m²)">
+                      <Field label={t('owner.form.surface')}>
                         <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Étage">
+                      <Field label={t('owner.form.etage')}>
                         <input type="number" min={0} value={floor} onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Capacité d'accueil (optionnel)">
-                        <input type="number" min={0} value={capacity} onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder="ex: 12 personnes" />
+                      <Field label={t('owner.form.capacite')}>
+                        <input type="number" min={0} value={capacity} onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder={t('owner.form.capacite_ph')} />
                       </Field>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="grid grid-cols-3 gap-3">
-                      <Field label="Chambres">
+                      <Field label={t('owner.form.chambres')}>
                         <input type="number" min={0} value={bedrooms} onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Salles de bain">
+                      <Field label={t('owner.form.sdb')}>
                         <input type="number" min={0} value={bathrooms} onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Surface (m²)">
+                      <Field label={t('owner.form.surface')}>
                         <input type="number" min={0} value={surface} onChange={e => setSurface(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Étage">
+                      <Field label={t('owner.form.etage')}>
                         <input type="number" min={0} value={floor} onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
-                      <Field label="Nombre de pièces">
+                      <Field label={t('owner.form.nb_pieces')}>
                         <input type="number" min={0} value={rooms} onChange={e => setRooms(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" />
                       </Field>
                     </div>
@@ -411,7 +411,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 {!commercial && (
                   <label className="flex items-center gap-2 text-xs">
                     <input type="checkbox" checked={furnished} onChange={e => setFurnished(e.target.checked)} className="accent-primary h-4 w-4" />
-                    <span>Bien meublé (location courte durée possible — calendrier client)</span>
+                    <span>{t('owner.form.meuble')}</span>
                   </label>
                 )}
               </>
