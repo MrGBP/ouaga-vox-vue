@@ -96,6 +96,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           setBedrooms(data.bedrooms ?? 1); setBathrooms(data.bathrooms ?? 1);
           setSurface(data.surface_area ?? 50); setFurnished(!!data.furnished);
           setLat(Number(data.latitude)); setLng(Number(data.longitude));
+          if ((data as any).country_code) setSelectedCountry((data as any).country_code);
           const f: Record<string, any> = (data.features ?? {}) as Record<string, any>;
           const active = FEATURE_CATALOG.filter(c => f[c.key]).map(c => c.key);
           setFeatures(active);
@@ -111,13 +112,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         setExistingPois(pois);
       })();
     } else {
+      const defaultCity = CITIES[COUNTRY_TO_CITY[country.code] ?? 'ouagadougou'] ?? CITIES.ouagadougou;
       setTitle(''); setDescription(''); setType(PROPERTY_TYPES[0].value);
-      setPrice(''); setQuartier(mockQuartiers[0]?.name || '');
+      setPrice(''); setQuartier('');
       setAddress(''); setBedrooms(1); setBathrooms(1); setSurface(50);
       setFloor(0); setRooms(3); setCapacity('');
-      setFurnished(false); setLat(12.3714); setLng(-1.5197);
+      setFurnished(false);
+      setLat(defaultCity.center[0]); setLng(defaultCity.center[1]);
+      setSelectedCountry(country.code || 'BF');
       setFeatures([]); setCustomFeatures([]); setSavedId(null);
     }
+
     setCustomInput('');
     setActiveCat(FEATURE_CATEGORIES[0].id);
     setTimeout(() => titleRef.current?.focus(), 100);
