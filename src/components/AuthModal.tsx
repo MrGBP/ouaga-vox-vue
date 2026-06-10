@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Building2, Mail, Lock, User as UserIcon, Phone, MessageCircle } from 'lucide-react';
+import { X, Building2, Mail, Lock, User as UserIcon, Phone, MessageCircle, Home as HomeIcon } from 'lucide-react';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { track } from '@/lib/analytics';
@@ -29,8 +30,33 @@ interface AuthModalProps {
 
 export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModalProps) {
   useLockBackdrop(open);
+  const { i18n } = useTranslation();
+  const isEn = i18n.language?.startsWith('en');
+  const T = {
+    title_login: isEn ? 'Sign in' : 'Connexion',
+    title_signup: isEn ? 'Create an account' : 'Créer un compte',
+    full_name: isEn ? 'Full name' : 'Nom complet',
+    phone: isEn ? 'Phone (optional)' : 'Téléphone (optionnel)',
+    email: 'Email',
+    password: isEn ? 'Password' : 'Mot de passe',
+    submit_login: isEn ? 'Sign in' : 'Se connecter',
+    submit_signup: isEn ? 'Create account' : 'Créer le compte',
+    or: isEn ? 'or' : 'ou',
+    whatsapp: isEn ? 'Continue with WhatsApp' : 'Continuer avec WhatsApp',
+    no_account: isEn ? "No account? Sign up" : "Pas de compte ? S'inscrire",
+    has_account: isEn ? 'Already have an account? Sign in' : 'Déjà un compte ? Se connecter',
+    no_signup: isEn ? 'Continue without an account' : 'Continuer sans compte',
+    connect_for: isEn ? 'Sign in to' : 'Connectez-vous pour',
+    owner_title: isEn ? "I'm a property owner" : 'Je suis propriétaire',
+    owner_desc: isEn ? 'I want to publish my listings. You can also enable it later.' : 'Je veux publier mes biens. Tu pourras aussi l\'activer plus tard.',
+    ok_created: isEn ? 'Account created.' : 'Compte créé.',
+    ok_owner_created: isEn ? 'Owner account created.' : 'Compte propriétaire créé.',
+    ok_signed_in: isEn ? 'Signed in' : 'Connecté',
+    err: isEn ? 'Error' : 'Erreur',
+  };
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
+  const [asOwner, setAsOwner] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -40,7 +66,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
       if (mode === 'signup') {
         const parsed = signupSchema.safeParse(form);
         if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
@@ -49,8 +75,17 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
           },
         });
         if (error) throw error;
-        toast.success('Compte créé. Vérifie ton email si la confirmation est activée.');
-        track('auth_signup_success', { reason });
+        const newUserId = signUpData.user?.id;
+        if (asOwner && newUserId) {
+          const { error: roleErr } = await supabase
+            .from('user_roles')
+            .insert({ user_id: newUserId, role: 'owner' });
+          if (roleErr) {
+            localStorage.setItem('sapsap_pending_owner_role', '1');
+          }
+        }
+        toast.success(asOwner ? T.ok_owner_created : T.ok_created);
+        track('auth_signup_success', { reason, as_owner: asOwner });
         onSuccess?.();
         onClose();
       } else {
@@ -60,15 +95,16 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
           email: parsed.data.email, password: parsed.data.password,
         });
         if (error) throw error;
-        toast.success('Connecté');
+        toast.success(T.ok_signed_in);
         track('auth_signin_success', { reason });
         onSuccess?.();
         onClose();
       }
     } catch (err: any) {
-      toast.error(err.message ?? 'Erreur');
+      toast.error(err.message ?? T.err);
     } finally { setBusy(false); }
   };
+
 
   const continueWithWhatsApp = () => {
     track('auth_whatsapp_continue', { reason });
@@ -104,9 +140,10 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                 <Building2 size={22} className="text-white" />
               </div>
               <h2 className="text-base font-bold">SapSapHouse</h2>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{mode === 'login' ? T.title_login : T.title_signup}</p>
               {reason && (
                 <p className="text-xs text-muted-foreground mt-1.5 text-center px-4">
-                  Connectez-vous pour <span className="font-medium text-foreground">{reason}</span>
+                  {T.connect_for} <span className="font-medium text-foreground">{reason}</span>
                 </p>
               )}
             </div>
@@ -118,7 +155,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                     <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                       className="w-full rounded-lg border pl-9 pr-3 py-2.5 text-sm"
-                      placeholder="Nom complet"
+                      placeholder={T.full_name}
                       value={form.full_name}
                       onChange={e => setForm({ ...form, full_name: e.target.value })}
                     />
@@ -127,7 +164,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                       className="w-full rounded-lg border pl-9 pr-3 py-2.5 text-sm"
-                      placeholder="Téléphone (optionnel)"
+                      placeholder={T.phone}
                       value={form.phone}
                       onChange={e => setForm({ ...form, phone: e.target.value })}
                     />
@@ -139,7 +176,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                 <input
                   type="email"
                   className="w-full rounded-lg border pl-9 pr-3 py-2.5 text-sm"
-                  placeholder="Email"
+                  placeholder={T.email}
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                 />
@@ -149,11 +186,26 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                 <input
                   type="password"
                   className="w-full rounded-lg border pl-9 pr-3 py-2.5 text-sm"
-                  placeholder="Mot de passe"
+                  placeholder={T.password}
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                 />
               </div>
+
+              {mode === 'signup' && (
+                <label className="flex items-start gap-2.5 mt-1 px-3 py-2.5 rounded-lg border cursor-pointer hover:bg-slate-50 transition">
+                  <input
+                    type="checkbox"
+                    checked={asOwner}
+                    onChange={e => setAsOwner(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-[#1a3560]"
+                  />
+                  <span className="text-xs leading-relaxed">
+                    <span className="font-semibold flex items-center gap-1.5"><HomeIcon size={13} /> {T.owner_title}</span>
+                    <span className="text-muted-foreground">{T.owner_desc}</span>
+                  </span>
+                </label>
+              )}
 
               <button
                 disabled={busy}
@@ -161,13 +213,13 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
                 className="w-full h-11 rounded-lg text-sm font-semibold text-white disabled:opacity-50 transition"
                 style={{ background: '#1a3560' }}
               >
-                {busy ? '…' : mode === 'login' ? 'Se connecter' : 'Créer le compte'}
+                {busy ? '…' : mode === 'login' ? T.submit_login : T.submit_signup}
               </button>
             </form>
 
             <div className="flex items-center gap-2 my-3">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">ou</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{T.or}</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
@@ -177,21 +229,21 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
               style={{ background: '#25D366' }}
             >
               <MessageCircle className="h-4 w-4" />
-              Continuer avec WhatsApp
+              {T.whatsapp}
             </button>
 
             <button
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
               className="w-full text-center text-xs text-muted-foreground mt-3 hover:underline"
             >
-              {mode === 'login' ? "Pas de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
+              {mode === 'login' ? T.no_account : T.has_account}
             </button>
 
             <button
               onClick={onClose}
               className="w-full text-center text-[11px] text-muted-foreground mt-2 hover:text-foreground"
             >
-              Continuer sans compte
+              {T.no_signup}
             </button>
           </motion.div>
         </motion.div>
@@ -199,3 +251,4 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
     </AnimatePresence>
   );
 }
+
