@@ -42,19 +42,22 @@ export default function OwnerLayout() {
         <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Link to="/" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4" /> Site
+              <ArrowLeft className="h-4 w-4" /> {t('owner.site')}
             </Link>
             <span className="h-5 w-px bg-border" />
-            <h1 className="text-sm font-bold text-foreground truncate">Espace propriétaire</h1>
+            <h1 className="text-sm font-bold text-foreground truncate">{t('owner.espace')}</h1>
             {notif.total > 0 && (
               <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-[10px] font-bold">
                 {notif.total}
               </span>
             )}
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5">
-            <LogOut className="h-4 w-4" /><span className="hidden sm:inline">Déconnexion</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5">
+              <LogOut className="h-4 w-4" /><span className="hidden sm:inline">{t('owner.deconnexion')}</span>
+            </Button>
+          </div>
         </div>
         {/* Tabs */}
         <nav className="container mx-auto px-2 sm:px-4 flex gap-1 overflow-x-auto scrollbar-none">
