@@ -39,45 +39,54 @@ function rowToProperty(row: any): Property {
     agent_phone: row.agent_phone ?? undefined,
     agent_photo: row.agent_photo ?? undefined,
     created_at: row.created_at,
+    country: row.country_code ?? undefined,
+    city: row.city ?? undefined,
     ...Object.fromEntries(FEATURE_KEYS.map(k => [k, !!features[k]])),
   } as Property;
 }
 
-export async function fetchPublishedProperties(): Promise<Property[]> {
-  const { data, error } = await supabase
+export async function fetchPublishedProperties(countryCode?: string): Promise<Property[]> {
+  let q = supabase
     .from('properties')
     .select('*')
     .eq('admin_status', 'published')
     .neq('status', 'rented')
     .order('published_at', { ascending: false, nullsFirst: false });
-  if (error || !data || data.length === 0) {
-    return mockProperties.filter(p => p.status !== 'rented');
-  }
+  if (countryCode) q = q.eq('country_code' as any, countryCode);
+  const { data, error } = await q;
+  if (error || !data) return [];
   return data.map(rowToProperty);
 }
 
 /**
- * Merge real published Supabase properties with the mock catalog so that
- * newly approved listings show up immediately on the public site without
- * removing the demo content. Real items appear first (most recent approval).
+ * Country-scoped listing. Only properties matching the active country are
+ * returned. For BF we also merge the demo mock catalog so the site is never
+ * empty during onboarding. Other countries return only real listings — owners
+ * start fresh and create their own.
  */
-export async function fetchMergedProperties(): Promise<Property[]> {
-  const mocks = mockProperties.filter(p => p.status !== 'rented');
+export async function fetchMergedProperties(countryCode?: string): Promise<Property[]> {
+  const cc = (countryCode || 'BF').toUpperCase();
   try {
     const { data } = await supabase
       .from('properties')
       .select('*')
       .eq('admin_status', 'published')
       .neq('status', 'rented')
+      .eq('country_code' as any, cc)
       .order('published_at', { ascending: false, nullsFirst: false });
-    if (!data || data.length === 0) return mocks;
-    const mockIds = new Set(mocks.map(p => p.id));
-    const real = data.filter(r => !mockIds.has(r.id)).map(rowToProperty);
-    return [...real, ...mocks];
+    const real = (data ?? []).map(rowToProperty);
+    if (cc === 'BF') {
+      const mocks = mockProperties.filter(p => p.status !== 'rented' && (p as any).country === 'BF');
+      const mockIds = new Set(mocks.map(p => p.id));
+      const merged = real.filter(r => !mockIds.has(r.id));
+      return [...merged, ...mocks];
+    }
+    return real;
   } catch {
-    return mocks;
+    return cc === 'BF' ? mockProperties.filter(p => p.status !== 'rented' && (p as any).country === 'BF') : [];
   }
 }
+
 
 export async function fetchAllPropertiesAdmin(): Promise<Property[]> {
   const { data, error } = await supabase.from('properties').select('*').order('created_at', { ascending: false });
