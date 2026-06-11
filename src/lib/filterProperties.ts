@@ -12,9 +12,9 @@ const OR_GROUPS = [
  * Shared property filtering — single source of truth used by both the home
  * controller (Index.tsx) and the dedicated results page (Resultats.tsx).
  *
- * The text query is interpreted via smartFilter (typo tolerance, synonyms,
- * multi-token AND logic) so that "Bureau climatisé Zogona" or even
- * "burau climatize zogna" returns the right properties.
+ * Quartier list passed to smartFilter is derived from the *current* property
+ * source (any country) plus the BF demo catalog, so search works identically
+ * for BF, ML, GH, and any future country.
  */
 export function filterProperties(
   source: Property[],
@@ -27,7 +27,9 @@ export function filterProperties(
   if (favsOnly) result = result.filter(p => favSet.has(p.id));
 
   if (query.trim()) {
-    const quartierNames = mockQuartiers.map(q => q.name);
+    const dynamic = Array.from(new Set(source.map(p => p.quartier).filter(Boolean)));
+    const mockNames = mockQuartiers.map(q => q.name);
+    const quartierNames = Array.from(new Set([...dynamic, ...mockNames]));
     result = smartFilter(result, query, quartierNames);
   }
 

@@ -213,6 +213,32 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
       const commercial = isCommercialType(type);
       const defaultCity = CITIES[COUNTRY_TO_CITY[selectedCountry] ?? '']?.name ?? null;
+      const cityCenter = CITIES[COUNTRY_TO_CITY[selectedCountry] ?? '']?.center;
+
+      // Fallback : si le propriétaire n'a pas déplacé le pin depuis le centre
+      // ville par défaut, on tente de le placer automatiquement sur les
+      // coordonnées du quartier choisi (table locations) — comme ça la carte
+      // affichera toujours un emplacement cohérent même sans GPS précis.
+      let finalLat = lat;
+      let finalLng = lng;
+      const stillOnCityCenter = cityCenter && Math.abs(lat - cityCenter[0]) < 1e-4 && Math.abs(lng - cityCenter[1]) < 1e-4;
+      if (stillOnCityCenter && quartier) {
+        try {
+          const { data: locRow } = await supabase
+            .from('locations')
+            .select('lat,lng')
+            .eq('country_code', selectedCountry)
+            .ilike('quartier', quartier)
+            .not('lat', 'is', null)
+            .limit(1)
+            .maybeSingle();
+          if (locRow?.lat && locRow?.lng) {
+            finalLat = Number(locRow.lat);
+            finalLng = Number(locRow.lng);
+          }
+        } catch {/* silent */}
+      }
+
       const payload: any = {
         title: title.trim(),
         description: description.trim(),
@@ -220,8 +246,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         price: Number(price),
         quartier,
         address: address.trim() || quartier,
-        latitude: lat,
-        longitude: lng,
+        latitude: finalLat,
+        longitude: finalLng,
         bedrooms: commercial ? null : (Number(bedrooms) || null),
         bathrooms: commercial ? null : (Number(bathrooms) || null),
         surface_area: Number(surface) || null,
@@ -451,8 +477,39 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Localisation */}
           <Field label={t('owner.form.carte')}>
             <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={240} />
-            <p className="text-[10px] text-muted-foreground mt-1">{lat.toFixed(5)}, {lng.toFixed(5)}</p>
+            <div className="flex items-center justify-between gap-2 mt-1">
+              <p className="text-[10px] text-muted-foreground">{lat.toFixed(5)}, {lng.toFixed(5)}</p>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!quartier) { toast.error('Choisis un quartier d\'abord'); return; }
+                  try {
+                    const { data } = await supabase
+                      .from('locations')
+                      .select('lat,lng')
+                      .eq('country_code', selectedCountry)
+                      .ilike('quartier', quartier)
+                      .not('lat', 'is', null)
+                      .limit(1)
+                      .maybeSingle();
+                    if (data?.lat && data?.lng) {
+                      setLat(Number(data.lat)); setLng(Number(data.lng));
+                      toast.success('Pin centré sur le quartier');
+                    } else {
+                      toast.warning('Aucune coordonnée pour ce quartier');
+                    }
+                  } catch { /* silent */ }
+                }}
+                className="text-[10px] underline text-primary hover:text-primary/80"
+              >
+                Centrer sur le quartier
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Astuce : si tu ne déplaces pas le pin, on le placera automatiquement sur le quartier choisi.
+            </p>
           </Field>
+
 
           {/* Caractéristiques */}
           <div className="space-y-2">
