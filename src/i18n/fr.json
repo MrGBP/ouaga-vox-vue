@@ -213,7 +213,19 @@
       "ok_create": "Bien créé. En attente de validation.",
       "ok_update": "Bien mis à jour",
       "ok_revalidate": "Bien renvoyé en validation",
-      "ok_poi_deleted": "POI supprimé"
+      "ok_poi_deleted": "POI supprimé",
+      "country": "Pays",
+      "poi_intro": "Tape librement ce qui se trouve près du bien (école, marché, hôpital, station…). On le présentera proprement aux locataires.",
+      "poi_name_free_ph": "Ex : École Saint-Joseph, Marché central, Pharmacie…",
+      "poi_distance_ph": "Distance (m)",
+      "poi_category_hint": "(catégorie — optionnel)",
+      "poi_optional": "(optionnel)",
+      "default_title": "Titre du bien",
+      "center_on_quartier": "Centrer sur le quartier",
+      "choose_quartier_first": "Choisis un quartier d'abord",
+      "pin_centered": "Pin centré sur le quartier",
+      "no_quartier_coords": "Aucune coordonnée pour ce quartier",
+      "map_hint": "Astuce : si tu ne déplaces pas le pin, on le placera automatiquement sur le quartier choisi."
     }
   }
 }

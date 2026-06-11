@@ -213,7 +213,19 @@
       "ok_create": "Listing created. Pending review.",
       "ok_update": "Listing updated",
       "ok_revalidate": "Listing resubmitted for review",
-      "ok_poi_deleted": "POI removed"
+      "ok_poi_deleted": "POI removed",
+      "country": "Country",
+      "poi_intro": "Type freely whatever is near the property (school, market, hospital, station…). We'll display it neatly to tenants.",
+      "poi_name_free_ph": "e.g. Ridge School, Central Market, Pharmacy…",
+      "poi_distance_ph": "Distance (m)",
+      "poi_category_hint": "(category — optional)",
+      "poi_optional": "(optional)",
+      "default_title": "Listing title",
+      "center_on_quartier": "Center on neighborhood",
+      "choose_quartier_first": "Pick a neighborhood first",
+      "pin_centered": "Pin centered on neighborhood",
+      "no_quartier_coords": "No coordinates for this neighborhood",
+      "map_hint": "Tip: if you don't move the pin, we'll place it automatically on the selected neighborhood."
     }
   }
 }

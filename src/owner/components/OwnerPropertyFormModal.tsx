@@ -32,11 +32,14 @@ interface Props {
 }
 
 export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose }: Props) {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const { i18n } = useTranslation();
   const country = useCountryConfig();
   const { data: allCountries } = useAllCountryConfigs();
   const [selectedCountry, setSelectedCountry] = useState<string>(country.code || 'BF');
+  // Anglais forcé pour le Ghana ; sinon on suit la langue globale.
+  const formLang = selectedCountry === 'GH' ? 'en' : (i18n.language || 'fr');
+  const t = useMemo(() => i18n.getFixedT(formLang), [formLang, i18n]);
+  const lang = formLang;
   const cur = (allCountries?.find(c => c.code === selectedCountry)?.currency_symbol) || country.currency_symbol;
   const isEdit = !!initial;
 
@@ -482,7 +485,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               <button
                 type="button"
                 onClick={async () => {
-                  if (!quartier) { toast.error('Choisis un quartier d\'abord'); return; }
+                  if (!quartier) { toast.error(t('owner.form.choose_quartier_first')); return; }
                   try {
                     const { data } = await supabase
                       .from('locations')
@@ -494,19 +497,19 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                       .maybeSingle();
                     if (data?.lat && data?.lng) {
                       setLat(Number(data.lat)); setLng(Number(data.lng));
-                      toast.success('Pin centré sur le quartier');
+                      toast.success(t('owner.form.pin_centered'));
                     } else {
-                      toast.warning('Aucune coordonnée pour ce quartier');
+                      toast.warning(t('owner.form.no_quartier_coords'));
                     }
                   } catch { /* silent */ }
                 }}
                 className="text-[10px] underline text-primary hover:text-primary/80"
               >
-                Centrer sur le quartier
+                {t('owner.form.center_on_quartier')}
               </button>
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              Astuce : si tu ne déplaces pas le pin, on le placera automatiquement sur le quartier choisi.
+              {t('owner.form.map_hint')}
             </p>
           </Field>
 
@@ -572,10 +575,10 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Points d'Intérêt — saisie libre, simple et intuitive */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-              <MapPin size={13} /> {t('owner.form.pois_label')} <span className="text-muted-foreground font-normal">(optionnel)</span>
+              <MapPin size={13} /> {t('owner.form.pois_label')} <span className="text-muted-foreground font-normal">{t('owner.form.poi_optional')}</span>
             </label>
             <p className="text-[10px] text-muted-foreground -mt-1">
-              Tape librement ce qui se trouve près du bien (école, marché, hôpital, station…). On le présentera proprement aux locataires.
+              {t('owner.form.poi_intro')}
             </p>
             {(existingPois.length > 0 || pendingPois.length > 0) && (
               <div className="flex flex-wrap gap-1.5">
@@ -604,20 +607,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 value={poiName}
                 onChange={e => setPoiName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingPoi(); } }}
-                placeholder="Ex : École Saint-Joseph, Marché central, Pharmacie…"
+                placeholder={t('owner.form.poi_name_free_ph')}
                 className="form-input col-span-7"
               />
               <input
                 type="number" min={0} value={poiDist}
                 onChange={e => setPoiDist(e.target.value === '' ? '' : Number(e.target.value))}
-                placeholder="Distance (m)" className="form-input col-span-3"
+                placeholder={t('owner.form.poi_distance_ph')} className="form-input col-span-3"
               />
               <button type="button" onClick={addPendingPoi}
                 className="col-span-2 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1">
                 <Plus size={14} /> {t('owner.form.ajouter')}
               </button>
               <select value={poiType} onChange={e => setPoiType(e.target.value)} className="form-input col-span-12 text-[11px]">
-                {POI_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {poiLabel(pt, lang)} (catégorie — optionnel)</option>)}
+                {POI_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {poiLabel(pt, lang)} {t('owner.form.poi_category_hint')}</option>)}
               </select>
             </div>
           </div>
@@ -629,7 +632,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               {t('owner.form.preview')}
             </label>
             <ListingPreviewCard
-              title={title || 'Titre du bien'}
+              title={title || t('owner.form.default_title')}
               type={type}
               price={typeof price === 'number' ? price : 0}
               currency={cur}
