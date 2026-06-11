@@ -379,22 +379,33 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         createdPropertyId = propertyId;
       }
 
-      // Upload atomique des médias en attente
+      // Upload atomique des médias en attente — en parallèle (4 à la fois) pour gagner du temps
       if (pendingMedia.length) {
         const failures: string[] = [];
         let uploaded = 0;
-        for (const m of pendingMedia) {
-          try {
-            if (m.source === 'file') {
-              await uploadPropertyMedia(propertyId, m.file, m.kind);
-            } else {
-              await addPropertyMediaUrl(propertyId, m.url, m.kind);
+        setUploadProgress({ done: 0, total: pendingMedia.length });
+
+        const CONCURRENCY = 4;
+        const queue = [...pendingMedia];
+        const runWorker = async () => {
+          while (queue.length) {
+            const m = queue.shift();
+            if (!m) break;
+            try {
+              if (m.source === 'file') {
+                await uploadPropertyMedia(propertyId, m.file, m.kind);
+              } else {
+                await addPropertyMediaUrl(propertyId, m.url, m.kind);
+              }
+              uploaded++;
+            } catch (err: any) {
+              failures.push(err?.message ?? 'erreur inconnue');
             }
-            uploaded++;
-          } catch (err: any) {
-            failures.push(err?.message ?? 'erreur inconnue');
+            setUploadProgress({ done: uploaded + failures.length, total: pendingMedia.length });
           }
-        }
+        };
+        await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pendingMedia.length) }, runWorker));
+        setUploadProgress(null);
 
         if (uploaded === 0 && (isEdit ? existingMediaCount : 0) === 0) {
           if (createdPropertyId) await supabase.from('properties').delete().eq('id', createdPropertyId);
