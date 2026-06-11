@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AuthCallback from "./pages/AuthCallback";
 import SearchPage from "./pages/Search";
 import ResultatsPage from "./pages/Resultats";
 import PropertyPage from "./pages/Property";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/resultats" element={<ResultatsPage />} />
               <Route path="/property/:id" element={<PropertyPage />} />
