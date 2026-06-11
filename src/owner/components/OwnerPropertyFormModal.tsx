@@ -485,7 +485,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               <button
                 type="button"
                 onClick={async () => {
-                  if (!quartier) { toast.error('Choisis un quartier d\'abord'); return; }
+                  if (!quartier) { toast.error(t('owner.form.choose_quartier_first')); return; }
                   try {
                     const { data } = await supabase
                       .from('locations')
@@ -497,19 +497,19 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                       .maybeSingle();
                     if (data?.lat && data?.lng) {
                       setLat(Number(data.lat)); setLng(Number(data.lng));
-                      toast.success('Pin centré sur le quartier');
+                      toast.success(t('owner.form.pin_centered'));
                     } else {
-                      toast.warning('Aucune coordonnée pour ce quartier');
+                      toast.warning(t('owner.form.no_quartier_coords'));
                     }
                   } catch { /* silent */ }
                 }}
                 className="text-[10px] underline text-primary hover:text-primary/80"
               >
-                Centrer sur le quartier
+                {t('owner.form.center_on_quartier')}
               </button>
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              Astuce : si tu ne déplaces pas le pin, on le placera automatiquement sur le quartier choisi.
+              {t('owner.form.map_hint')}
             </p>
           </Field>
 
