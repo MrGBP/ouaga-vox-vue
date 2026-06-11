@@ -937,6 +937,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
         <style>{`.form-input{display:block;width:100%;border:1px solid hsl(var(--border));background:hsl(var(--background));border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.8125rem;outline:none;transition:border-color .15s}.form-input:focus{border-color:hsl(var(--primary))}`}</style>
       </div>
+      <CustomTypeSuggestModal open={showCustomType} onClose={() => setShowCustomType(false)} />
     </div>
   );
 }
