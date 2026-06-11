@@ -80,6 +80,8 @@ export default function AdminBiens() {
         </div>
       </div>
 
+      <PendingCustomTypesPanel />
+
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="relative flex-1 min-w-[200px]">
