@@ -287,8 +287,21 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     : 0;
 
   const isFurnished = isTypeFurnished(property.type || '') || property.furnished || false;
-  const nightlyPrice = isFurnished ? pricePerNightCalc(property.price) : Math.round(property.price / 30);
-  const totalPrice = nightlyPrice * nights;
+  // Cadence : Ghana meublé long terme = "mois", BF/ML meublé court séjour = "nuit"
+  const rentMode = getRentMode(property as any);
+  const isMonthlyMode = isFurnished && rentMode === 'mois';
+  // Nombre d'unités selon la cadence (nuits ou mois). On garde "nights" comme nom de variable historique
+  // mais on calcule en mois (arrondi sup, min 1) si le bien est en location mensuelle.
+  const months = checkIn && checkOut
+    ? Math.max(1, Math.ceil(((checkOut.getTime() - checkIn.getTime()) / 86400000) / 30))
+    : 0;
+  const unitCount = isMonthlyMode ? months : nights;
+  const unitPrice = isMonthlyMode
+    ? Number(property.price)
+    : (isFurnished ? pricePerNightCalc(property.price) : Math.round(property.price / 30));
+  const nightlyPrice = unitPrice; // alias retro-compat
+  const totalPrice = unitPrice * unitCount;
+  const unitLabelShort = isMonthlyMode ? (unitCount > 1 ? 'mois' : 'mois') : (unitCount > 1 ? t('reservation.nuits') : t('reservation.nuit'));
 
   const formatDate = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }) : '';
   const formatDateLong = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
