@@ -265,8 +265,8 @@ const InteractiveMap = ({
     setSelectedQuartier(null);
     setActiveRadius(null);
     mapInst.current.setMinZoom(10);
-    mapInst.current.setMaxBounds(OUAGA_BOUNDS);
-    mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
+    mapInst.current.setMaxBounds(getCityBounds());
+    mapInst.current.flyTo(getCityCenter(), activeCityRef.current?.zoom ?? 13, { duration: 0.7 });
   }, [resetTrigger]);
 
   // Init map
