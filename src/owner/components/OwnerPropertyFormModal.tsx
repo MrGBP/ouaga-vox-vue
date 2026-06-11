@@ -214,11 +214,24 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     if (!price || Number(price) <= 0) return toast.error(t('owner.form.err_prix'));
     if (!quartier) return toast.error(t('owner.form.err_quartier'));
 
+    // Contacts — WhatsApp obligatoire, format E.164 strict (indicatif pays + 6-14 chiffres locaux)
+    const waDigits = waLocal.replace(/\D/g, '');
+    if (waDigits.length < 6 || waDigits.length > 14) {
+      return toast.error(t('owner.form.err_whatsapp'));
+    }
+    const phoneDigits = phoneLocal.replace(/\D/g, '');
+    if (phoneDigits && (phoneDigits.length < 6 || phoneDigits.length > 14)) {
+      return toast.error(t('owner.form.err_phone'));
+    }
+    const whatsappE164 = `${phonePrefix}${waDigits}`;
+    const phoneE164 = phoneDigits ? `${phonePrefix}${phoneDigits}` : null;
+
     // Au moins 1 média : pending + existants
     const totalMedia = pendingMedia.length + (isEdit ? existingMediaCount : 0);
     if (totalMedia < 1) {
       return toast.error(t('owner.form.err_media'));
     }
+
 
     // POIs optionnels : on ne bloque plus la validation si aucun n'est renseigné.
 
@@ -277,6 +290,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         owner_id: ownerId,
         country_code: selectedCountry,
         city: defaultCity,
+        whatsapp_phone: whatsappE164,
+        agent_phone: phoneE164,
       };
 
 
