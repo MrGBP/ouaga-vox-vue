@@ -22,3 +22,27 @@ export function getActionMode(type: string, furnishedFlag?: boolean): ActionMode
   if (isTypeFurnished(type) || furnishedFlag) return 'reserve';
   return 'visit';
 }
+
+/**
+ * Cadence de facturation d'un bien meublé :
+ *  - 'nuit' : courte durée (par défaut BF/ML pour meublé)
+ *  - 'mois' : moyenne/longue durée (par défaut Ghana, ou si propriétaire l'a explicité)
+ * Le propriétaire peut forcer la valeur via `features.__rent_mode`.
+ */
+export type RentMode = 'nuit' | 'mois';
+
+export function getRentMode(p: {
+  type?: string;
+  furnished?: boolean | null;
+  country_code?: string | null;
+  features?: any;
+}): RentMode {
+  const stored = (p?.features?.__rent_mode) as RentMode | undefined;
+  if (stored === 'nuit' || stored === 'mois') return stored;
+  const furn = isTypeFurnished(p?.type ?? '') || !!p?.furnished;
+  if (!furn) return 'mois';
+  const cc = (p?.country_code || 'BF').toUpperCase();
+  if (cc === 'GH') return 'mois';
+  return 'nuit';
+}
+
