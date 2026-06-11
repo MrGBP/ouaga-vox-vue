@@ -225,7 +225,16 @@
       "choose_quartier_first": "Choisis un quartier d'abord",
       "pin_centered": "Pin centré sur le quartier",
       "no_quartier_coords": "Aucune coordonnée pour ce quartier",
-      "map_hint": "Astuce : si tu ne déplaces pas le pin, on le placera automatiquement sur le quartier choisi."
+      "map_hint": "Astuce : si tu ne déplaces pas le pin, on le placera automatiquement sur le quartier choisi.",
+      "contacts_label": "Contacts du propriétaire",
+      "contacts_intro": "L'indicatif {{prefix}} est ajouté automatiquement selon le pays du bien. Saisis uniquement les chiffres locaux.",
+      "whatsapp_label": "WhatsApp (obligatoire)",
+      "whatsapp_ph": "70 00 00 00",
+      "whatsapp_hint": "C'est ce numéro qui recevra les messages des locataires (bouton WhatsApp sur la fiche).",
+      "phone_label": "Téléphone secondaire",
+      "phone_ph": "75 12 34 56",
+      "err_whatsapp": "Numéro WhatsApp invalide (6 à 14 chiffres après l'indicatif)",
+      "err_phone": "Téléphone secondaire invalide (6 à 14 chiffres après l'indicatif)"
     }
   }
 }

@@ -67,6 +67,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [activeCat, setActiveCat] = useState<FeatureCategoryId>(FEATURE_CATEGORIES[0].id);
   const [busy, setBusy] = useState(false);
 
+  // Contacts — WhatsApp obligatoire (E.164), téléphone secondaire optionnel.
+  // L'indicatif est dérivé du pays sélectionné pour éviter toute ambigüité.
+  const PHONE_PREFIX: Record<string, string> = { BF: '+226', ML: '+223', GH: '+233', CI: '+225', SN: '+221', TG: '+228', BJ: '+229', NE: '+227' };
+  const phonePrefix = PHONE_PREFIX[selectedCountry] || '+226';
+  const [waLocal, setWaLocal] = useState('');         // WhatsApp — chiffres locaux (sans indicatif)
+  const [phoneLocal, setPhoneLocal] = useState('');   // Téléphone secondaire — chiffres locaux
+
   // Médias en attente (création) + compteur médias existants (édition)
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
   const [pendingUrl, setPendingUrl] = useState('');
@@ -108,6 +115,16 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           setRooms(typeof f.__rooms === 'number' ? f.__rooms : 3);
           setCapacity(typeof f.__capacity === 'number' ? f.__capacity : '');
           setSavedId(initial.id);
+
+          // Préremplissage des contacts (on retire l'indicatif si présent)
+          const pref = PHONE_PREFIX[(data as any).country_code as string] || phonePrefix;
+          const stripPrefix = (raw: string | null) => {
+            if (!raw) return '';
+            const s = raw.replace(/[\s\-()]/g, '');
+            return s.startsWith(pref) ? s.slice(pref.length) : s.replace(/^\+\d+/, '');
+          };
+          setWaLocal(stripPrefix((data as any).whatsapp_phone ?? ''));
+          setPhoneLocal(stripPrefix((data as any).agent_phone ?? ''));
         }
         const media = await listPropertyMedia(initial.id).catch(() => []);
         setExistingMediaCount(media?.length ?? 0);
@@ -124,6 +141,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       setLat(defaultCity.center[0]); setLng(defaultCity.center[1]);
       setSelectedCountry(country.code || 'BF');
       setFeatures([]); setCustomFeatures([]); setSavedId(null);
+      setWaLocal(''); setPhoneLocal('');
     }
 
     setCustomInput('');
@@ -196,11 +214,24 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     if (!price || Number(price) <= 0) return toast.error(t('owner.form.err_prix'));
     if (!quartier) return toast.error(t('owner.form.err_quartier'));
 
+    // Contacts — WhatsApp obligatoire, format E.164 strict (indicatif pays + 6-14 chiffres locaux)
+    const waDigits = waLocal.replace(/\D/g, '');
+    if (waDigits.length < 6 || waDigits.length > 14) {
+      return toast.error(t('owner.form.err_whatsapp'));
+    }
+    const phoneDigits = phoneLocal.replace(/\D/g, '');
+    if (phoneDigits && (phoneDigits.length < 6 || phoneDigits.length > 14)) {
+      return toast.error(t('owner.form.err_phone'));
+    }
+    const whatsappE164 = `${phonePrefix}${waDigits}`;
+    const phoneE164 = phoneDigits ? `${phonePrefix}${phoneDigits}` : null;
+
     // Au moins 1 média : pending + existants
     const totalMedia = pendingMedia.length + (isEdit ? existingMediaCount : 0);
     if (totalMedia < 1) {
       return toast.error(t('owner.form.err_media'));
     }
+
 
     // POIs optionnels : on ne bloque plus la validation si aucun n'est renseigné.
 
@@ -259,6 +290,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         owner_id: ownerId,
         country_code: selectedCountry,
         city: defaultCity,
+        whatsapp_phone: whatsappE164,
+        agent_phone: phoneE164,
       };
 
 
@@ -475,6 +508,50 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               </>
             );
           })()}
+
+
+          {/* Contacts du propriétaire — WhatsApp obligatoire + téléphone secondaire optionnel.
+              L'indicatif est verrouillé sur le pays sélectionné, donc impossible de se tromper. */}
+          <div className="space-y-2 border-t pt-4">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              💬 {t('owner.form.contacts_label')}
+            </label>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              {t('owner.form.contacts_intro', { prefix: phonePrefix })}
+            </p>
+
+            <Field label={`${t('owner.form.whatsapp_label')} *`}>
+              <div className="flex gap-2">
+                <span className="inline-flex items-center px-3 h-10 rounded-lg border border-border bg-muted text-xs font-mono text-muted-foreground select-none">
+                  {phonePrefix}
+                </span>
+                <input
+                  type="tel" inputMode="numeric" maxLength={14}
+                  value={waLocal}
+                  onChange={e => setWaLocal(e.target.value.replace(/[^\d\s\-]/g, ''))}
+                  placeholder={t('owner.form.whatsapp_ph')}
+                  className="form-input flex-1"
+                  required
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">{t('owner.form.whatsapp_hint')}</p>
+            </Field>
+
+            <Field label={`${t('owner.form.phone_label')} (${t('owner.form.poi_optional').replace(/[()]/g, '')})`}>
+              <div className="flex gap-2">
+                <span className="inline-flex items-center px-3 h-10 rounded-lg border border-border bg-muted text-xs font-mono text-muted-foreground select-none">
+                  {phonePrefix}
+                </span>
+                <input
+                  type="tel" inputMode="numeric" maxLength={14}
+                  value={phoneLocal}
+                  onChange={e => setPhoneLocal(e.target.value.replace(/[^\d\s\-]/g, ''))}
+                  placeholder={t('owner.form.phone_ph')}
+                  className="form-input flex-1"
+                />
+              </div>
+            </Field>
+          </div>
 
 
           {/* Localisation */}
