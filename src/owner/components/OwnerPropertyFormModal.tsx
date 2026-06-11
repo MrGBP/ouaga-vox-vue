@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe, MapPin } from 'lucide-react';
+import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe, MapPin, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import DescriptionParser, { type ParsedProperty } from '@/components/owner/DescriptionParser';
+import CustomTypeSuggestModal from '@/components/owner/CustomTypeSuggestModal';
 import { useTranslation } from 'react-i18next';
 import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, isTypeFurnished, getTypeLabel } from '@/lib/mockData';
 import { FEATURE_CATALOG, FEATURE_CATEGORIES, featureLabel, categoryLabel, type FeatureCategoryId } from '@/lib/featureCatalog';
