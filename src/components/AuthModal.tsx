@@ -59,6 +59,18 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
   const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
   const [asOwner, setAsOwner] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showResendOption, setShowResendOption] = useState(false);
+
+  const resendConfirmation = async () => {
+    if (!form.email) { toast.error(isEn ? 'Enter your email' : 'Entrez votre email'); return; }
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: form.email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) toast.error(error.message);
+    else toast.success(isEn ? '📧 Email resent!' : '📧 Email renvoyé !');
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,27 +83,42 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: { full_name: parsed.data.full_name, phone: parsed.data.phone ?? '' },
           },
         });
         if (error) throw error;
         if (signUpData.session) {
           await finalizeSignupProfile({ fullName: parsed.data.full_name, phone: parsed.data.phone, asOwner });
-        } else if (asOwner) {
-          localStorage.setItem('sapsap_pending_owner_role', '1');
+          toast.success(asOwner ? T.ok_owner_created : T.ok_created);
+          track('auth_signup_success', { reason, as_owner: asOwner });
+          onSuccess?.();
+          onClose();
+        } else {
+          if (asOwner) localStorage.setItem('sapsap_pending_owner_role', '1');
+          toast.success(
+            isEn
+              ? `📧 Check your email — a confirmation link was sent to ${parsed.data.email}.`
+              : `📧 Vérifiez votre email — un lien de confirmation a été envoyé à ${parsed.data.email}.`,
+            { duration: 8000 }
+          );
+          track('auth_signup_pending_confirmation', { reason });
+          setShowResendOption(true);
         }
-        toast.success(asOwner ? T.ok_owner_created : T.ok_created);
-        track('auth_signup_success', { reason, as_owner: asOwner });
-        onSuccess?.();
-        onClose();
       } else {
         const parsed = loginSchema.safeParse(form);
         if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
         const { error } = await supabase.auth.signInWithPassword({
           email: parsed.data.email, password: parsed.data.password,
         });
-        if (error) throw error;
+        if (error) {
+          if (/email not confirmed/i.test(error.message)) {
+            setShowResendOption(true);
+            toast.error(isEn ? '📧 Email not verified. Check your inbox.' : '📧 Email non vérifié. Vérifiez votre boîte mail.');
+            return;
+          }
+          throw error;
+        }
         toast.success(T.ok_signed_in);
         track('auth_signin_success', { reason });
         onSuccess?.();
