@@ -942,6 +942,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 <p className="text-[10px] text-muted-foreground">
                   {t('owner.form.upload_limit')}
                 </p>
+                {uploadProgress && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <span>Upload… {uploadProgress.done}/{uploadProgress.total}</span>
+                      <span>{Math.round((uploadProgress.done / uploadProgress.total) * 100)}%</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded overflow-hidden">
+                      <div className="h-full bg-primary transition-all" style={{ width: `${(uploadProgress.done / uploadProgress.total) * 100}%` }} />
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
