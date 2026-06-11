@@ -92,6 +92,58 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
   const titleRef = useRef<HTMLInputElement>(null);
 
+  // Module 2 — AI parser & Module 3 — custom type suggestion
+  const [showParser, setShowParser] = useState(false);
+  const [showCustomType, setShowCustomType] = useState(false);
+
+  // Map AI type strings to existing PROPERTY_TYPES values
+  const TYPE_AI_MAP: Record<string, string> = {
+    villa_meublee: 'maison_villa_meublee',
+    villa: 'maison_villa_simple',
+    maison: 'maison_villa_simple',
+    appartement: 'appartement_simple',
+    appartement_meuble: 'appartement_meuble',
+    studio: 'studio_meuble',
+    bureau: 'bureau',
+    local: 'local_commercial',
+    chambre: 'studio_meuble',
+    hotel: 'maison_villa_meublee',
+    residence: 'maison_villa_simple',
+  };
+  // Map AI amenity keys to FEATURE_CATALOG keys (most already match)
+  const AMENITY_AI_MAP: Record<string, string> = {
+    parking: 'parking_interne',
+  };
+
+  const applyParsed = (p: ParsedProperty) => {
+    if (p.title_suggestion) setTitle(p.title_suggestion.slice(0, 80));
+    if (p.description) setDescription(p.description);
+    if (p.type) {
+      const mapped = TYPE_AI_MAP[p.type] ?? p.type;
+      if (PROPERTY_TYPES.some(pt => pt.value === mapped)) setType(mapped);
+    }
+    if (typeof p.price === 'number') setPrice(p.price);
+    if (typeof p.bedrooms === 'number') setBedrooms(p.bedrooms);
+    if (typeof p.bathrooms === 'number') setBathrooms(p.bathrooms);
+    if (typeof p.surface_area === 'number') setSurface(p.surface_area);
+    if (p.quartier) setQuartier(p.quartier);
+    if (typeof p.furnished === 'boolean') setFurnished(p.furnished);
+
+    if (p.amenities) {
+      const validKeys = new Set(FEATURE_CATALOG.map(f => f.key));
+      const next: string[] = [...features];
+      Object.entries(p.amenities).forEach(([rawKey, on]) => {
+        if (!on) return;
+        const key = AMENITY_AI_MAP[rawKey] ?? rawKey;
+        if (validKeys.has(key) && !next.includes(key)) next.push(key);
+      });
+      setFeatures(next);
+    }
+
+    setShowParser(false);
+    toast.success('Formulaire pré-rempli — vérifie et ajuste si besoin.');
+  };
+
   useEffect(() => {
     if (!open) return;
     setPendingMedia(prev => { prev.forEach(p => p.source === 'file' && URL.revokeObjectURL(p.previewUrl)); return []; });
