@@ -226,11 +226,21 @@ const InteractiveMap = ({
 
   // Géo : recentrer la carte quand la ville active change
   const { activeCity } = useGeoCity();
+  const activeCityRef = useRef(activeCity);
+  useEffect(() => { activeCityRef.current = activeCity; }, [activeCity]);
+  const getCityCenter = (): [number, number] => activeCityRef.current?.center ?? OUAGA_CENTER;
+  const getCityBounds = () => {
+    const c = activeCityRef.current;
+    return c ? L.latLngBounds(L.latLng(c.bounds[0][0], c.bounds[0][1]), L.latLng(c.bounds[1][0], c.bounds[1][1])) : OUAGA_BOUNDS;
+  };
   useEffect(() => {
     if (!mapInst.current || !activeCity) return;
     const b = L.latLngBounds(L.latLng(activeCity.bounds[0][0], activeCity.bounds[0][1]), L.latLng(activeCity.bounds[1][0], activeCity.bounds[1][1]));
     mapInst.current.setMaxBounds(b);
     mapInst.current.flyTo(activeCity.center, activeCity.zoom, { animate: true, duration: 0.8 });
+    // Reset any quartier focus when switching countries
+    setSelectedQuartier(null);
+    setActiveRadius(null);
   }, [activeCity?.id]);
 
   // Stable refs for callbacks to break re-render loops
@@ -255,16 +265,19 @@ const InteractiveMap = ({
     setSelectedQuartier(null);
     setActiveRadius(null);
     mapInst.current.setMinZoom(10);
-    mapInst.current.setMaxBounds(OUAGA_BOUNDS);
-    mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
+    mapInst.current.setMaxBounds(getCityBounds());
+    mapInst.current.flyTo(getCityCenter(), activeCityRef.current?.zoom ?? 13, { duration: 0.7 });
   }, [resetTrigger]);
 
   // Init map
   useEffect(() => {
     if (!mapRef.current || mapInst.current) return;
+    const initCenter = getCityCenter();
+    const initBounds = getCityBounds();
+    const initZoom = activeCityRef.current?.zoom ?? 13;
     const map = L.map(mapRef.current, {
-      center: OUAGA_CENTER, zoom: 13, zoomControl: false,
-      maxBounds: OUAGA_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 18,
+      center: initCenter, zoom: initZoom, zoomControl: false,
+      maxBounds: initBounds, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 18,
     });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     const tile = L.tileLayer(TILE_DEFAULT, { attribution: '© <a href="https://openstreetmap.org">OSM</a>', maxZoom: 18 }).addTo(map);
@@ -631,7 +644,7 @@ const InteractiveMap = ({
   useEffect(() => {
     if (!externalQuartierSelect || !mapInst.current) return;
     mapInst.current.setMinZoom(11);
-    mapInst.current.setMaxBounds(OUAGA_BOUNDS);
+    mapInst.current.setMaxBounds(getCityBounds());
     setSelectedQuartier(externalQuartierSelect);
     if (onExternalQuartierHandled) onExternalQuartierHandled();
   }, [externalQuartierSelect, onExternalQuartierHandled]);
@@ -725,8 +738,8 @@ const InteractiveMap = ({
     onFocusClearRef.current?.();
     if (mapInst.current) {
       mapInst.current.setMinZoom(10);
-      mapInst.current.setMaxBounds(OUAGA_BOUNDS);
-      mapInst.current.flyTo(OUAGA_CENTER, 13, { duration: 0.7 });
+      mapInst.current.setMaxBounds(getCityBounds());
+      mapInst.current.flyTo(getCityCenter(), activeCityRef.current?.zoom ?? 13, { duration: 0.7 });
     }
   };
 
