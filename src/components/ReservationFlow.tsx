@@ -15,6 +15,7 @@ import {
 } from '@/lib/reservationsPublicService';
 import { sendConfirmationEmail } from '@/lib/emailTemplates';
 import { isTypeFurnished, pricePerNight as pricePerNightCalc } from '@/lib/mockData';
+import { getRentMode } from '@/lib/typeHelpers';
 import { track } from '@/lib/analytics';
 import { notifyOwner } from '@/lib/notifications';
 import { openWhatsApp, openEmail, openCountrySupport, buildReservationOwnerMessage } from '@/lib/contact';
@@ -37,6 +38,8 @@ interface Property {
   agent_phone?: string;
   whatsapp_phone?: string;
   furnished?: boolean;
+  country_code?: string;
+  features?: any;
 }
 
 interface ReservationFlowProps {
@@ -284,8 +287,21 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     : 0;
 
   const isFurnished = isTypeFurnished(property.type || '') || property.furnished || false;
-  const nightlyPrice = isFurnished ? pricePerNightCalc(property.price) : Math.round(property.price / 30);
-  const totalPrice = nightlyPrice * nights;
+  // Cadence : Ghana meublé long terme = "mois", BF/ML meublé court séjour = "nuit"
+  const rentMode = getRentMode(property as any);
+  const isMonthlyMode = isFurnished && rentMode === 'mois';
+  // Nombre d'unités selon la cadence (nuits ou mois). On garde "nights" comme nom de variable historique
+  // mais on calcule en mois (arrondi sup, min 1) si le bien est en location mensuelle.
+  const months = checkIn && checkOut
+    ? Math.max(1, Math.ceil(((checkOut.getTime() - checkIn.getTime()) / 86400000) / 30))
+    : 0;
+  const unitCount = isMonthlyMode ? months : nights;
+  const unitPrice = isMonthlyMode
+    ? Number(property.price)
+    : (isFurnished ? pricePerNightCalc(property.price) : Math.round(property.price / 30));
+  const nightlyPrice = unitPrice; // alias retro-compat
+  const totalPrice = unitPrice * unitCount;
+  const unitLabelShort = isMonthlyMode ? (unitCount > 1 ? 'mois' : 'mois') : (unitCount > 1 ? t('reservation.nuits') : t('reservation.nuit'));
 
   const formatDate = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }) : '';
   const formatDateLong = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
@@ -390,7 +406,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               <div className="flex justify-between"><span className="text-muted-foreground">Bien</span><span className="font-semibold">{property.title}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{nights} {t('reservation.nuits')}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{unitCount} {unitLabelShort}</span></div>
               <div className="flex justify-between pt-2 border-t border-border text-base font-bold"><span>{t('reservation.total')}</span><span className="text-primary">{fmt(totalPrice)} FCFA</span></div>
             </div>
 
@@ -572,10 +588,10 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">{t('reservation.depart')}</p>
                     <p className="font-semibold">{checkOut ? formatDate(checkOut) : '—'}</p>
                   </div>
-                  {nights > 0 && (
+                  {unitCount > 0 && (
                     <div className="text-right">
                       <p className="text-[10px] text-muted-foreground uppercase font-bold">Durée</p>
-                      <p className="font-semibold">{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')}</p>
+                      <p className="font-semibold">{unitCount} {unitLabelShort}</p>
                     </div>
                   )}
                 </div>
@@ -645,13 +661,13 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               <div className="bg-muted/50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{unitCount} {unitLabelShort}</span></div>
                 
               </div>
 
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex justify-between text-sm text-foreground">
-                  <span>{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')} × {fmt(nightlyPrice)} {(property as any).currency || 'FCFA'}</span>
+                  <span>{unitCount} {unitLabelShort} × {fmt(unitPrice)} {(property as any).currency || 'FCFA'}</span>
                   <span className="font-semibold">{fmt(totalPrice)} {(property as any).currency || 'FCFA'}</span>
                 </div>
                 <div className="flex justify-between pt-2 mt-2 border-t border-border text-base font-bold">

@@ -38,6 +38,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const country = useCountryConfig();
   const { data: allCountries } = useAllCountryConfigs();
   const [selectedCountry, setSelectedCountry] = useState<string>(country.code || 'BF');
+  // Quand l'utilisateur passe un nouveau bien au Ghana, le mode meublé bascule sur "mois" (long terme).
+  useEffect(() => {
+    if (!initial && (furnished || isTypeFurnished(type))) {
+      setRentMode(selectedCountry === 'GH' ? 'mois' : 'nuit');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCountry]);
   // Anglais forcé pour le Ghana ; sinon on suit la langue globale.
   const formLang = selectedCountry === 'GH' ? 'en' : (i18n.language || 'fr');
   const t = useMemo(() => i18n.getFixedT(formLang), [formLang, i18n]);
@@ -61,6 +68,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [rooms, setRooms] = useState<number | ''>(3);
   const [capacity, setCapacity] = useState<number | ''>('');
   const [furnished, setFurnished] = useState(false);
+  // Cadence de facturation pour les meublés : par défaut 'nuit' (BF/ML), 'mois' (GH long terme).
+  const [rentMode, setRentMode] = useState<'nuit' | 'mois'>('nuit');
   const [lat, setLat] = useState<number>(12.3714);
   const [lng, setLng] = useState<number>(-1.5197);
   const [features, setFeatures] = useState<string[]>([]);
@@ -130,6 +139,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     if (typeof p.surface_area === 'number') setSurface(p.surface_area);
     if (p.quartier) setQuartier(p.quartier);
     if (typeof p.furnished === 'boolean') setFurnished(p.furnished);
+    // Cadence de facturation détectée par l'IA (Ghana → mois par défaut, BF/ML court séjour → nuit auto)
+    const aiMode = (p as any).rent_mode ?? (p as any).price_type;
+    if (aiMode === 'nuit' || aiMode === 'mois') setRentMode(aiMode);
+    else if (selectedCountry === 'GH') setRentMode('mois');
+    else if ((p as any).is_short_stay) setRentMode('nuit');
 
     if (p.amenities) {
       const validKeys = new Set(FEATURE_CATALOG.map(f => f.key));
@@ -170,6 +184,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           setFloor(typeof f.__floor === 'number' ? f.__floor : 0);
           setRooms(typeof f.__rooms === 'number' ? f.__rooms : 3);
           setCapacity(typeof f.__capacity === 'number' ? f.__capacity : '');
+          const storedMode = f.__rent_mode === 'mois' || f.__rent_mode === 'nuit' ? f.__rent_mode : null;
+          setRentMode(storedMode ?? (((data as any).country_code === 'GH') ? 'mois' : 'nuit'));
           setSavedId(initial.id);
 
           // Préremplissage des contacts (on retire l'indicatif si présent)
@@ -300,6 +316,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       if (floor !== '') featuresObj.__floor = Number(floor);
       if (rooms !== '') featuresObj.__rooms = Number(rooms);
       if (capacity !== '') featuresObj.__capacity = Number(capacity);
+      // Cadence de facturation (utile surtout pour le Ghana où meublé = long terme par défaut)
+      if (furnished || isTypeFurnished(type)) featuresObj.__rent_mode = rentMode;
 
       const commercial = isCommercialType(type);
       const defaultCity = CITIES[COUNTRY_TO_CITY[selectedCountry] ?? '']?.name ?? null;
@@ -499,8 +517,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {(() => {
             const commercial = isCommercialType(type);
             const isFurn = furnished || isTypeFurnished(type);
-            const priceLabel = commercial ? t('owner.form.loyer_mensuel', { cur }) : isFurn ? t('owner.form.prix_nuit', { cur }) : t('owner.form.loyer_mensuel', { cur });
-            const priceHint = commercial ? t('owner.form.hint_commercial') : isFurn ? t('owner.form.hint_nuit') : t('owner.form.hint_longue');
+            const effectiveMode: 'nuit' | 'mois' = isFurn ? rentMode : 'mois';
+            const priceLabel = commercial
+              ? t('owner.form.loyer_mensuel', { cur })
+              : isFurn && effectiveMode === 'nuit'
+                ? t('owner.form.prix_nuit', { cur })
+                : t('owner.form.loyer_mensuel', { cur });
+            const priceHint = commercial
+              ? t('owner.form.hint_commercial')
+              : isFurn && effectiveMode === 'nuit'
+                ? t('owner.form.hint_nuit')
+                : t('owner.form.hint_longue');
             return (
               <>
                 <div className="grid grid-cols-2 gap-3">
@@ -521,6 +548,34 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     <p className="text-[10px] text-muted-foreground mt-0.5">{priceHint}</p>
                   </Field>
                 </div>
+
+                {/* Cadence de facturation : visible uniquement pour un meublé non commercial */}
+                {isFurn && !commercial && (
+                  <Field label={selectedCountry === 'GH' ? 'Billing cadence' : 'Cadence de facturation'}>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRentMode('nuit')}
+                        className={`flex-1 h-10 rounded-lg border text-xs font-semibold transition ${rentMode === 'nuit' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:border-primary/50'}`}
+                      >
+                        {selectedCountry === 'GH' ? '🌙 Per night (short stay)' : '🌙 À la nuitée (court séjour)'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRentMode('mois')}
+                        className={`flex-1 h-10 rounded-lg border text-xs font-semibold transition ${rentMode === 'mois' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:border-primary/50'}`}
+                      >
+                        {selectedCountry === 'GH' ? '📅 Per month (long term)' : '📅 Au mois (longue durée)'}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {selectedCountry === 'GH'
+                        ? 'Ghana: furnished homes are often rented 6+ months. Switch to "Per night" only for short-stay listings.'
+                        : 'Burkina/Mali : meublé = nuitée par défaut. Bascule sur "Au mois" pour une location moyenne/longue durée.'}
+                    </p>
+                  </Field>
+                )}
+
 
                 <Field label={t('owner.form.country', 'Pays')}>
                   <select

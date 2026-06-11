@@ -9,6 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { POI_CATALOG, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
+import { getRentMode } from '@/lib/typeHelpers';
 import { resolveFeatures } from '@/lib/featureCatalog';
 import { usePropertyMedia } from '@/hooks/usePropertyMedia';
 import { useNearbyPOI } from '@/hooks/useNearbyPOI';
@@ -158,7 +159,10 @@ const PropertyDetailPanel = ({
 
   const fallbackImg = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800';
   const isFurnished = isTypeFurnished(property.type) || property.furnished || false;
-  const nightPrice = isFurnished ? pricePerNight(property.price) : 0;
+  // Cadence (nuit/mois) — Ghana meublé long terme par défaut, ou choix explicite via features.__rent_mode
+  const rentMode = getRentMode(property as any);
+  const showNightly = isFurnished && rentMode === 'nuit';
+  const nightPrice = showNightly ? pricePerNight(property.price) : 0;
 
   // Médias unifiés : Supabase property_media en priorité, sinon legacy (images[], video_url, virtual_tour_url)
   const { items: unifiedMedia } = usePropertyMedia(property.id, {
@@ -249,7 +253,7 @@ const PropertyDetailPanel = ({
   // ── Partage ──
   const baseShareOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://sapsaphouse.lovable.app';
   const shareUrl = `${baseShareOrigin}/bien/${property.id}`;
-  const shareText = `${property.title} — ${property.quartier}, Ouagadougou\n${fmt(property.price)} FCFA/${isFurnished ? 'nuit' : 'mois'}\n${shareUrl}`;
+  const shareText = `${property.title} — ${property.quartier}, Ouagadougou\n${fmt(property.price)} FCFA/${showNightly ? 'nuit' : 'mois'}\n${shareUrl}`;
   const handleShare = async () => {
     if (typeof navigator !== 'undefined' && (navigator as any).share) {
       try {
@@ -376,10 +380,10 @@ const PropertyDetailPanel = ({
         <div>
           <h3 className="text-lg font-bold text-foreground">{property.title}</h3>
           <div className="text-2xl font-bold text-primary mt-1">
-            {fmt(isFurnished && nightPrice > 0 ? nightPrice : property.price)}{' '}
+            {fmt(showNightly && nightPrice > 0 ? nightPrice : property.price)}{' '}
             {(property as any).currency || 'FCFA'}
             <span className="text-sm font-medium text-muted-foreground">
-              {' '}/{isFurnished ? 'nuit' : 'mois'}
+              {' '}/{showNightly ? 'nuit' : 'mois'}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -654,7 +658,7 @@ const PropertyDetailPanel = ({
               return (
                 <div className="flex gap-2.5 pt-1">
                   <button onClick={openReservation} className="flex-1 h-12 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97]">
-                    📅 Réserver · {nightPrice > 0 ? `${fmt(nightPrice)} FCFA/nuit` : `${fmt(property.price)} FCFA/mois`}
+                    📅 Réserver · {showNightly && nightPrice > 0 ? `${fmt(nightPrice)} FCFA/nuit` : `${fmt(property.price)} FCFA/mois`}
                   </button>
                 </div>
               );
