@@ -141,6 +141,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       setLat(defaultCity.center[0]); setLng(defaultCity.center[1]);
       setSelectedCountry(country.code || 'BF');
       setFeatures([]); setCustomFeatures([]); setSavedId(null);
+      setWaLocal(''); setPhoneLocal('');
     }
 
     setCustomInput('');
