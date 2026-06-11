@@ -39,12 +39,20 @@ export async function markAllRead(userId: string) {
   await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false);
 }
 
-export function subscribeToNotifications(userId: string, onInsert: (n: AppNotification) => void) {
+export function subscribeToNotifications(
+  userId: string,
+  onInsert: (n: AppNotification) => void,
+  onUpdate?: (n: AppNotification) => void,
+) {
   const channel = supabase
     .channel(`notif-${userId}`)
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
       (payload) => onInsert(payload.new as AppNotification)
+    )
+    .on('postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+      (payload) => onUpdate?.(payload.new as AppNotification)
     )
     .subscribe();
   return () => { supabase.removeChannel(channel); };
