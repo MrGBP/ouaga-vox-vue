@@ -199,11 +199,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       return toast.error(t('owner.form.err_media'));
     }
 
-    // Au moins 1 POI : pending + existants
-    const totalPois = pendingPois.length + existingPois.length;
-    if (totalPois < 1) {
-      return toast.error(t('owner.form.err_poi'));
-    }
+    // POIs optionnels : on ne bloque plus la validation si aucun n'est renseigné.
 
     setBusy(true);
     let createdPropertyId: string | null = null;
@@ -578,6 +574,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               title={title || 'Titre du bien'}
               type={type}
               price={typeof price === 'number' ? price : 0}
+              currency={cur}
               quartier={quartier}
               bedrooms={typeof bedrooms === 'number' ? bedrooms : 0}
               bathrooms={typeof bathrooms === 'number' ? bathrooms : 0}
@@ -731,11 +728,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function ListingPreviewCard(props: {
-  title: string; type: string; price: number; quartier: string;
+  title: string; type: string; price: number; currency?: string; quartier: string;
   bedrooms: number; bathrooms: number; surface: number; furnished: boolean;
   firstImage: string | null;
 }) {
   const typeLabel = PROPERTY_TYPES.find(t => t.value === props.type);
+  const cur = props.currency || 'FCFA';
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden max-w-sm shadow-sm">
       <div className="aspect-video bg-muted relative">
@@ -760,7 +758,7 @@ function ListingPreviewCard(props: {
         <h4 className="text-sm font-bold truncate">{props.title}</h4>
         <p className="text-[11px] text-muted-foreground truncate">📍 {props.quartier || '—'}</p>
         <p className="text-sm font-bold text-primary mt-1">
-          {props.price > 0 ? `${props.price.toLocaleString('fr-FR')} FCFA` : '—'}
+          {props.price > 0 ? `${props.price.toLocaleString('fr-FR')} ${cur}` : '—'}
         </p>
         <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
           <span>🛏 {props.bedrooms}</span>
