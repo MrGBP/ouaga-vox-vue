@@ -35,6 +35,7 @@ interface Property {
   images?: string[];
   agent_name?: string;
   agent_phone?: string;
+  whatsapp_phone?: string;
   furnished?: boolean;
 }
 
@@ -349,11 +350,14 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
         agent_name: property.agent_name,
         agent_phone: property.agent_phone,
       });
-      // Lot 3: notifier le propriétaire (in-app + email + WhatsApp deep link)
+      // Lot 3: notifier le propriétaire (in-app + email + WhatsApp deep link).
+      // Le WhatsApp obligatoire (whatsapp_phone) est prioritaire, sinon on retombe
+      // sur le numéro secondaire (agent_phone) pour ne pas casser les anciens biens.
+      const ownerWa = (property as any).whatsapp_phone || property.agent_phone;
       notifyOwner({
         propertyId: property.id,
         reservationId: row.id,
-        ownerPhone: property.agent_phone,
+        ownerPhone: ownerWa,
         ownerEmail: (property as any).agent_email,
         title: `Nouvelle réservation — ${property.title}`,
         body: `${name.trim()} a réservé du ${toKey(checkIn)} au ${toKey(checkOut)} (${nights} nuit${nights > 1 ? 's' : ''}).\nTél: ${phone.trim()}\nEmail: ${email.trim()}`,
@@ -411,8 +415,8 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <Button
                     type="button"
-                    onClick={() => openWhatsApp(property.agent_phone, ownerMsg)}
-                    disabled={!property.agent_phone}
+                    onClick={() => openWhatsApp((property as any).whatsapp_phone || property.agent_phone, ownerMsg)}
+                    disabled={!((property as any).whatsapp_phone || property.agent_phone)}
                     className="h-11 bg-[#25D366] hover:bg-[#1ebd58] text-white"
                   >
                     <MessageCircle className="h-4 w-4 mr-1.5" /> WhatsApp
