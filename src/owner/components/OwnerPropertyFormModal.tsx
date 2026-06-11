@@ -213,6 +213,32 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
       const commercial = isCommercialType(type);
       const defaultCity = CITIES[COUNTRY_TO_CITY[selectedCountry] ?? '']?.name ?? null;
+      const cityCenter = CITIES[COUNTRY_TO_CITY[selectedCountry] ?? '']?.center;
+
+      // Fallback : si le propriétaire n'a pas déplacé le pin depuis le centre
+      // ville par défaut, on tente de le placer automatiquement sur les
+      // coordonnées du quartier choisi (table locations) — comme ça la carte
+      // affichera toujours un emplacement cohérent même sans GPS précis.
+      let finalLat = lat;
+      let finalLng = lng;
+      const stillOnCityCenter = cityCenter && Math.abs(lat - cityCenter[0]) < 1e-4 && Math.abs(lng - cityCenter[1]) < 1e-4;
+      if (stillOnCityCenter && quartier) {
+        try {
+          const { data: locRow } = await supabase
+            .from('locations')
+            .select('lat,lng')
+            .eq('country_code', selectedCountry)
+            .ilike('quartier', quartier)
+            .not('lat', 'is', null)
+            .limit(1)
+            .maybeSingle();
+          if (locRow?.lat && locRow?.lng) {
+            finalLat = Number(locRow.lat);
+            finalLng = Number(locRow.lng);
+          }
+        } catch {/* silent */}
+      }
+
       const payload: any = {
         title: title.trim(),
         description: description.trim(),
@@ -220,8 +246,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         price: Number(price),
         quartier,
         address: address.trim() || quartier,
-        latitude: lat,
-        longitude: lng,
+        latitude: finalLat,
+        longitude: finalLng,
         bedrooms: commercial ? null : (Number(bedrooms) || null),
         bathrooms: commercial ? null : (Number(bathrooms) || null),
         surface_area: Number(surface) || null,
