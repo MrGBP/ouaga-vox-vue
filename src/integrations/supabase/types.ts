@@ -365,6 +365,7 @@ export type Database = {
           video_url: string | null
           view_count: number
           virtual_tour_url: string | null
+          whatsapp_phone: string | null
           year_built: number | null
         }
         Insert: {
@@ -408,6 +409,7 @@ export type Database = {
           video_url?: string | null
           view_count?: number
           virtual_tour_url?: string | null
+          whatsapp_phone?: string | null
           year_built?: number | null
         }
         Update: {
@@ -451,6 +453,7 @@ export type Database = {
           video_url?: string | null
           view_count?: number
           virtual_tour_url?: string | null
+          whatsapp_phone?: string | null
           year_built?: number | null
         }
         Relationships: []
