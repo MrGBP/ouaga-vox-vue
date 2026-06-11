@@ -406,7 +406,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               <div className="flex justify-between"><span className="text-muted-foreground">Bien</span><span className="font-semibold">{property.title}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{nights} {t('reservation.nuits')}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{unitCount} {unitLabelShort}</span></div>
               <div className="flex justify-between pt-2 border-t border-border text-base font-bold"><span>{t('reservation.total')}</span><span className="text-primary">{fmt(totalPrice)} FCFA</span></div>
             </div>
 
