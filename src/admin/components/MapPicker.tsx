@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import 'leaflet/dist/leaflet.css';
 
 interface Props {
