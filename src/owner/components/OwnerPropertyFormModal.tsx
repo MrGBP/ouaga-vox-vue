@@ -574,6 +574,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               title={title || 'Titre du bien'}
               type={type}
               price={typeof price === 'number' ? price : 0}
+              currency={cur}
               quartier={quartier}
               bedrooms={typeof bedrooms === 'number' ? bedrooms : 0}
               bathrooms={typeof bathrooms === 'number' ? bathrooms : 0}
