@@ -81,6 +81,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [pendingUrl, setPendingUrl] = useState('');
   const [pendingKind, setPendingKind] = useState<'image' | 'video' | 'video_360'>('image');
   const [existingMediaCount, setExistingMediaCount] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const pendingFileRef = useRef<HTMLInputElement>(null);
 
   // POIs — au moins 1 requis avant publication
@@ -377,22 +379,33 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         createdPropertyId = propertyId;
       }
 
-      // Upload atomique des médias en attente
+      // Upload atomique des médias en attente — en parallèle (4 à la fois) pour gagner du temps
       if (pendingMedia.length) {
         const failures: string[] = [];
         let uploaded = 0;
-        for (const m of pendingMedia) {
-          try {
-            if (m.source === 'file') {
-              await uploadPropertyMedia(propertyId, m.file, m.kind);
-            } else {
-              await addPropertyMediaUrl(propertyId, m.url, m.kind);
+        setUploadProgress({ done: 0, total: pendingMedia.length });
+
+        const CONCURRENCY = 4;
+        const queue = [...pendingMedia];
+        const runWorker = async () => {
+          while (queue.length) {
+            const m = queue.shift();
+            if (!m) break;
+            try {
+              if (m.source === 'file') {
+                await uploadPropertyMedia(propertyId, m.file, m.kind);
+              } else {
+                await addPropertyMediaUrl(propertyId, m.url, m.kind);
+              }
+              uploaded++;
+            } catch (err: any) {
+              failures.push(err?.message ?? 'erreur inconnue');
             }
-            uploaded++;
-          } catch (err: any) {
-            failures.push(err?.message ?? 'erreur inconnue');
+            setUploadProgress({ done: uploaded + failures.length, total: pendingMedia.length });
           }
-        }
+        };
+        await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pendingMedia.length) }, runWorker));
+        setUploadProgress(null);
 
         if (uploaded === 0 && (isEdit ? existingMediaCount : 0) === 0) {
           if (createdPropertyId) await supabase.from('properties').delete().eq('id', createdPropertyId);
@@ -826,14 +839,24 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             {/* Staging : pré-upload avant la création */}
             {!savedId && (
               <>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => pendingFileRef.current?.click()}
-                    className="flex-1 h-10 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 text-xs hover:bg-muted"
-                  >
-                    <Upload size={14} /> {t('owner.form.choisir_fichiers')}
-                  </button>
+                <div
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={e => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    addPendingFiles(e.dataTransfer.files);
+                  }}
+                  onClick={() => pendingFileRef.current?.click()}
+                  className={`cursor-pointer rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 py-6 px-3 text-center transition ${
+                    dragOver ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'
+                  }`}
+                >
+                  <Upload size={22} className="text-primary" />
+                  <span className="text-xs font-semibold">{t('owner.form.choisir_fichiers')}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {t('owner.form.bulk_hint') ?? 'Drag & drop or select multiple photos/videos at once'}
+                  </span>
                   <input
                     ref={pendingFileRef}
                     type="file"
@@ -919,6 +942,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 <p className="text-[10px] text-muted-foreground">
                   {t('owner.form.upload_limit')}
                 </p>
+                {uploadProgress && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <span>Upload… {uploadProgress.done}/{uploadProgress.total}</span>
+                      <span>{Math.round((uploadProgress.done / uploadProgress.total) * 100)}%</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded overflow-hidden">
+                      <div className="h-full bg-primary transition-all" style={{ width: `${(uploadProgress.done / uploadProgress.total) * 100}%` }} />
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
