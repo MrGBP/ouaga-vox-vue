@@ -644,7 +644,7 @@ const InteractiveMap = ({
   useEffect(() => {
     if (!externalQuartierSelect || !mapInst.current) return;
     mapInst.current.setMinZoom(11);
-    mapInst.current.setMaxBounds(OUAGA_BOUNDS);
+    mapInst.current.setMaxBounds(getCityBounds());
     setSelectedQuartier(externalQuartierSelect);
     if (onExternalQuartierHandled) onExternalQuartierHandled();
   }, [externalQuartierSelect, onExternalQuartierHandled]);
