@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Loader2, MessageSquare, Image as ImageIcon, ArrowLeft, Phone } from 'lucide-react';
+import { Loader2, MessageSquare, Image as ImageIcon, ArrowLeft, Phone, Check, RotateCcw, X as XIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import AdminPageHeader from '@/admin/components/AdminPageHeader';
 import {
   listAllAdminConversations, listPropertyMessages, sendPropertyMessage,
@@ -15,6 +16,14 @@ const TEMPLATES = [
   'Merci, quelques corrections nécessaires :',
   'Manque(s) : photos / description / POI',
   'Nous vous recontactons sous 24h.',
+];
+
+const QUICK_REMARKS = [
+  { label: '📷 Photos',       message: "Les photos sont insuffisantes ou de mauvaise qualité. Merci d'en ajouter au moins 5 en lumière naturelle." },
+  { label: '💰 Prix',         message: "Le prix indiqué semble incohérent avec le marché du quartier. Merci de le revoir." },
+  { label: '📝 Description',  message: "La description du bien est trop courte. Merci d'ajouter plus de détails sur les équipements et l'environnement." },
+  { label: '📍 Localisation', message: "La localisation du bien n'est pas précise. Merci de repositionner le pin sur la carte." },
+  { label: '📄 Documents',    message: "Des documents justificatifs sont requis pour valider ce bien. Merci de les fournir." },
 ];
 
 export default function AdminMessages() {
