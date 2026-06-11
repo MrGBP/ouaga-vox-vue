@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AuthCallback from "./pages/AuthCallback";
 import SearchPage from "./pages/Search";
 import ResultatsPage from "./pages/Resultats";
 import PropertyPage from "./pages/Property";
