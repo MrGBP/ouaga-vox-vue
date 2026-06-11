@@ -225,7 +225,16 @@
       "choose_quartier_first": "Pick a neighborhood first",
       "pin_centered": "Pin centered on neighborhood",
       "no_quartier_coords": "No coordinates for this neighborhood",
-      "map_hint": "Tip: if you don't move the pin, we'll place it automatically on the selected neighborhood."
+      "map_hint": "Tip: if you don't move the pin, we'll place it automatically on the selected neighborhood.",
+      "contacts_label": "Owner contacts",
+      "contacts_intro": "The {{prefix}} country code is added automatically based on the listing's country. Just enter the local digits.",
+      "whatsapp_label": "WhatsApp (required)",
+      "whatsapp_ph": "24 000 0000",
+      "whatsapp_hint": "This number will receive tenant messages (WhatsApp button on the listing page).",
+      "phone_label": "Secondary phone",
+      "phone_ph": "55 123 4567",
+      "err_whatsapp": "Invalid WhatsApp number (6 to 14 digits after the country code)",
+      "err_phone": "Invalid secondary phone (6 to 14 digits after the country code)"
     }
   }
 }
