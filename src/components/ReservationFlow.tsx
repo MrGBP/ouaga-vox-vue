@@ -38,6 +38,8 @@ interface Property {
   agent_phone?: string;
   whatsapp_phone?: string;
   furnished?: boolean;
+  country_code?: string;
+  features?: any;
 }
 
 interface ReservationFlowProps {
