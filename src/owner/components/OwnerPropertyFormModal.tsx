@@ -575,10 +575,10 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Points d'Intérêt — saisie libre, simple et intuitive */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-              <MapPin size={13} /> {t('owner.form.pois_label')} <span className="text-muted-foreground font-normal">(optionnel)</span>
+              <MapPin size={13} /> {t('owner.form.pois_label')} <span className="text-muted-foreground font-normal">{t('owner.form.poi_optional')}</span>
             </label>
             <p className="text-[10px] text-muted-foreground -mt-1">
-              Tape librement ce qui se trouve près du bien (école, marché, hôpital, station…). On le présentera proprement aux locataires.
+              {t('owner.form.poi_intro')}
             </p>
             {(existingPois.length > 0 || pendingPois.length > 0) && (
               <div className="flex flex-wrap gap-1.5">
@@ -607,20 +607,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 value={poiName}
                 onChange={e => setPoiName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingPoi(); } }}
-                placeholder="Ex : École Saint-Joseph, Marché central, Pharmacie…"
+                placeholder={t('owner.form.poi_name_free_ph')}
                 className="form-input col-span-7"
               />
               <input
                 type="number" min={0} value={poiDist}
                 onChange={e => setPoiDist(e.target.value === '' ? '' : Number(e.target.value))}
-                placeholder="Distance (m)" className="form-input col-span-3"
+                placeholder={t('owner.form.poi_distance_ph')} className="form-input col-span-3"
               />
               <button type="button" onClick={addPendingPoi}
                 className="col-span-2 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1">
                 <Plus size={14} /> {t('owner.form.ajouter')}
               </button>
               <select value={poiType} onChange={e => setPoiType(e.target.value)} className="form-input col-span-12 text-[11px]">
-                {POI_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {poiLabel(pt, lang)} (catégorie — optionnel)</option>)}
+                {POI_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {poiLabel(pt, lang)} {t('owner.form.poi_category_hint')}</option>)}
               </select>
             </div>
           </div>
@@ -632,7 +632,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               {t('owner.form.preview')}
             </label>
             <ListingPreviewCard
-              title={title || 'Titre du bien'}
+              title={title || t('owner.form.default_title')}
               type={type}
               price={typeof price === 'number' ? price : 0}
               currency={cur}
