@@ -102,7 +102,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
               : `📧 Vérifiez votre email — un lien de confirmation a été envoyé à ${parsed.data.email}.`,
             { duration: 8000 }
           );
-          track('auth_signup_pending_confirmation', { reason });
+          track('auth_signup_success', { reason, as_owner: asOwner, pending_confirmation: true });
           setShowResendOption(true);
         }
       } else {
