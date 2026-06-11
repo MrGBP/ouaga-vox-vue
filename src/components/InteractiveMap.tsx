@@ -226,11 +226,21 @@ const InteractiveMap = ({
 
   // Géo : recentrer la carte quand la ville active change
   const { activeCity } = useGeoCity();
+  const activeCityRef = useRef(activeCity);
+  useEffect(() => { activeCityRef.current = activeCity; }, [activeCity]);
+  const getCityCenter = (): [number, number] => activeCityRef.current?.center ?? OUAGA_CENTER;
+  const getCityBounds = () => {
+    const c = activeCityRef.current;
+    return c ? L.latLngBounds(L.latLng(c.bounds[0][0], c.bounds[0][1]), L.latLng(c.bounds[1][0], c.bounds[1][1])) : OUAGA_BOUNDS;
+  };
   useEffect(() => {
     if (!mapInst.current || !activeCity) return;
     const b = L.latLngBounds(L.latLng(activeCity.bounds[0][0], activeCity.bounds[0][1]), L.latLng(activeCity.bounds[1][0], activeCity.bounds[1][1]));
     mapInst.current.setMaxBounds(b);
     mapInst.current.flyTo(activeCity.center, activeCity.zoom, { animate: true, duration: 0.8 });
+    // Reset any quartier focus when switching countries
+    setSelectedQuartier(null);
+    setActiveRadius(null);
   }, [activeCity?.id]);
 
   // Stable refs for callbacks to break re-render loops
