@@ -67,6 +67,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [activeCat, setActiveCat] = useState<FeatureCategoryId>(FEATURE_CATEGORIES[0].id);
   const [busy, setBusy] = useState(false);
 
+  // Contacts — WhatsApp obligatoire (E.164), téléphone secondaire optionnel.
+  // L'indicatif est dérivé du pays sélectionné pour éviter toute ambigüité.
+  const PHONE_PREFIX: Record<string, string> = { BF: '+226', ML: '+223', GH: '+233', CI: '+225', SN: '+221', TG: '+228', BJ: '+229', NE: '+227' };
+  const phonePrefix = PHONE_PREFIX[selectedCountry] || '+226';
+  const [waLocal, setWaLocal] = useState('');         // WhatsApp — chiffres locaux (sans indicatif)
+  const [phoneLocal, setPhoneLocal] = useState('');   // Téléphone secondaire — chiffres locaux
+
   // Médias en attente (création) + compteur médias existants (édition)
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
   const [pendingUrl, setPendingUrl] = useState('');
@@ -108,6 +115,16 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           setRooms(typeof f.__rooms === 'number' ? f.__rooms : 3);
           setCapacity(typeof f.__capacity === 'number' ? f.__capacity : '');
           setSavedId(initial.id);
+
+          // Préremplissage des contacts (on retire l'indicatif si présent)
+          const pref = PHONE_PREFIX[(data as any).country_code as string] || phonePrefix;
+          const stripPrefix = (raw: string | null) => {
+            if (!raw) return '';
+            const s = raw.replace(/[\s\-()]/g, '');
+            return s.startsWith(pref) ? s.slice(pref.length) : s.replace(/^\+\d+/, '');
+          };
+          setWaLocal(stripPrefix((data as any).whatsapp_phone ?? ''));
+          setPhoneLocal(stripPrefix((data as any).agent_phone ?? ''));
         }
         const media = await listPropertyMedia(initial.id).catch(() => []);
         setExistingMediaCount(media?.length ?? 0);
