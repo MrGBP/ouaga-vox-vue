@@ -658,7 +658,7 @@ const PropertyDetailPanel = ({
               return (
                 <div className="flex gap-2.5 pt-1">
                   <button onClick={openReservation} className="flex-1 h-12 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97]">
-                    📅 Réserver · {nightPrice > 0 ? `${fmt(nightPrice)} FCFA/nuit` : `${fmt(property.price)} FCFA/mois`}
+                    📅 Réserver · {showNightly && nightPrice > 0 ? `${fmt(nightPrice)} FCFA/nuit` : `${fmt(property.price)} FCFA/mois`}
                   </button>
                 </div>
               );
