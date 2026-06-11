@@ -24,12 +24,23 @@ export default function NotificationBell({ className = '' }: { className?: strin
   useEffect(() => {
     if (!user) { setCount(0); setItems([]); return; }
     let mounted = true;
-    fetchUnreadCount(user.id).then(c => mounted && setCount(c)).catch(() => {});
-    fetchNotifications(user.id).then(list => mounted && setItems(list)).catch(() => {});
-    const unsub = subscribeToNotifications(user.id, (n) => {
-      setItems(prev => [n, ...prev].slice(0, 30));
-      setCount(c => c + 1);
-    });
+    const refresh = () => {
+      fetchUnreadCount(user.id).then(c => mounted && setCount(c)).catch(() => {});
+      fetchNotifications(user.id).then(list => mounted && setItems(list)).catch(() => {});
+    };
+    refresh();
+    const unsub = subscribeToNotifications(
+      user.id,
+      (n) => {
+        setItems(prev => [n, ...prev].slice(0, 30));
+        setCount(c => c + 1);
+      },
+      (n) => {
+        // read state changed elsewhere → re-sync
+        setItems(prev => prev.map(i => i.id === n.id ? { ...i, ...n } : i));
+        fetchUnreadCount(user.id).then(c => mounted && setCount(c)).catch(() => {});
+      },
+    );
     return () => { mounted = false; unsub(); };
   }, [user]);
 
