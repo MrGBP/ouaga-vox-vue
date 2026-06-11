@@ -495,6 +495,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     <select value={type} onChange={e => setType(e.target.value)} className="form-input">
                       {PROPERTY_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {getTypeLabel(pt.value, lang)}</option>)}
                     </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomType(true)}
+                      className="mt-1.5 text-[10px] text-muted-foreground hover:text-primary underline underline-offset-2 flex items-center gap-1"
+                    >
+                      <Plus size={10} /> Mon type de bien n'est pas dans la liste
+                    </button>
                   </Field>
                   <Field label={priceLabel}>
                     <input type="number" min={0} value={price} onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder="150000" />
