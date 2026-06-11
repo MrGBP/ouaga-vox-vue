@@ -13,6 +13,8 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
   const [busy, setBusy] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [kind, setKind] = useState<'image'|'video'|'video_360'>('image');
+  const [dragOver, setDragOver] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const reload = () => listPropertyMedia(propertyId).then(d => setItems(d as any));
@@ -20,19 +22,39 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
 
   const handleFiles = async (files: FileList | null) => {
     if (!files?.length) return;
+    const list = Array.from(files).filter(f => {
+      if (f.size > 20_000_000) { toast.error(`${f.name} dépasse 20 Mo`); return false; }
+      return true;
+    });
+    if (!list.length) return;
     setBusy(true);
-    try {
-      let pos = items.length;
-      for (const file of Array.from(files)) {
-        if (file.size > 20_000_000) { toast.error(`${file.name} dépasse 20 Mo`); continue; }
+    setProgress({ done: 0, total: list.length });
+    let done = 0;
+    const failures: string[] = [];
+
+    const CONCURRENCY = 4;
+    const queue = [...list];
+    const worker = async () => {
+      while (queue.length) {
+        const file = queue.shift();
+        if (!file) break;
         const k: 'image'|'video' = file.type.startsWith('video/') ? 'video' : 'image';
-        await uploadPropertyMedia(propertyId, file, k);
-        pos++;
+        try {
+          await uploadPropertyMedia(propertyId, file, k);
+        } catch (e: any) {
+          failures.push(`${file.name}: ${e?.message ?? 'erreur'}`);
+        }
+        done++;
+        setProgress({ done, total: list.length });
       }
+    };
+    try {
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, worker));
       await reload();
-      toast.success('Médias uploadés');
+      if (failures.length) toast.warning(`${list.length - failures.length}/${list.length} uploadés. ${failures[0]}`);
+      else toast.success(`${list.length} média(s) uploadé(s)`);
     } catch (e: any) { toast.error(e.message); }
-    finally { setBusy(false); }
+    finally { setBusy(false); setProgress(null); }
   };
 
   const addUrl = async () => {
