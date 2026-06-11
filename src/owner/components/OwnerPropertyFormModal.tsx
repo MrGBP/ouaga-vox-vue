@@ -309,6 +309,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       if (floor !== '') featuresObj.__floor = Number(floor);
       if (rooms !== '') featuresObj.__rooms = Number(rooms);
       if (capacity !== '') featuresObj.__capacity = Number(capacity);
+      // Cadence de facturation (utile surtout pour le Ghana où meublé = long terme par défaut)
+      if (furnished || isTypeFurnished(type)) featuresObj.__rent_mode = rentMode;
 
       const commercial = isCommercialType(type);
       const defaultCity = CITIES[COUNTRY_TO_CITY[selectedCountry] ?? '']?.name ?? null;
