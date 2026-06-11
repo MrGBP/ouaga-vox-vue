@@ -775,6 +775,10 @@ export type Database = {
           name: string
         }[]
       }
+      sync_property_images_from_media: {
+        Args: { _property_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "owner"
