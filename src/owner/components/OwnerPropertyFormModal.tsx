@@ -32,11 +32,14 @@ interface Props {
 }
 
 export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose }: Props) {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const { i18n } = useTranslation();
   const country = useCountryConfig();
   const { data: allCountries } = useAllCountryConfigs();
   const [selectedCountry, setSelectedCountry] = useState<string>(country.code || 'BF');
+  // Anglais forcé pour le Ghana ; sinon on suit la langue globale.
+  const formLang = selectedCountry === 'GH' ? 'en' : (i18n.language || 'fr');
+  const t = useMemo(() => i18n.getFixedT(formLang), [formLang, i18n]);
+  const lang = formLang;
   const cur = (allCountries?.find(c => c.code === selectedCountry)?.currency_symbol) || country.currency_symbol;
   const isEdit = !!initial;
 
