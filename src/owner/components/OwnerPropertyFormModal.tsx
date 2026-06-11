@@ -477,8 +477,39 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {/* Localisation */}
           <Field label={t('owner.form.carte')}>
             <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={240} />
-            <p className="text-[10px] text-muted-foreground mt-1">{lat.toFixed(5)}, {lng.toFixed(5)}</p>
+            <div className="flex items-center justify-between gap-2 mt-1">
+              <p className="text-[10px] text-muted-foreground">{lat.toFixed(5)}, {lng.toFixed(5)}</p>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!quartier) { toast.error('Choisis un quartier d\'abord'); return; }
+                  try {
+                    const { data } = await supabase
+                      .from('locations')
+                      .select('lat,lng')
+                      .eq('country_code', selectedCountry)
+                      .ilike('quartier', quartier)
+                      .not('lat', 'is', null)
+                      .limit(1)
+                      .maybeSingle();
+                    if (data?.lat && data?.lng) {
+                      setLat(Number(data.lat)); setLng(Number(data.lng));
+                      toast.success('Pin centré sur le quartier');
+                    } else {
+                      toast.warning('Aucune coordonnée pour ce quartier');
+                    }
+                  } catch { /* silent */ }
+                }}
+                className="text-[10px] underline text-primary hover:text-primary/80"
+              >
+                Centrer sur le quartier
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Astuce : si tu ne déplaces pas le pin, on le placera automatiquement sur le quartier choisi.
+            </p>
           </Field>
+
 
           {/* Caractéristiques */}
           <div className="space-y-2">
