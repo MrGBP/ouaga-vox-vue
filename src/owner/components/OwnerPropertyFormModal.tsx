@@ -728,11 +728,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function ListingPreviewCard(props: {
-  title: string; type: string; price: number; quartier: string;
+  title: string; type: string; price: number; currency?: string; quartier: string;
   bedrooms: number; bathrooms: number; surface: number; furnished: boolean;
   firstImage: string | null;
 }) {
   const typeLabel = PROPERTY_TYPES.find(t => t.value === props.type);
+  const cur = props.currency || 'FCFA';
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden max-w-sm shadow-sm">
       <div className="aspect-video bg-muted relative">
@@ -757,7 +758,7 @@ function ListingPreviewCard(props: {
         <h4 className="text-sm font-bold truncate">{props.title}</h4>
         <p className="text-[11px] text-muted-foreground truncate">📍 {props.quartier || '—'}</p>
         <p className="text-sm font-bold text-primary mt-1">
-          {props.price > 0 ? `${props.price.toLocaleString('fr-FR')} FCFA` : '—'}
+          {props.price > 0 ? `${props.price.toLocaleString('fr-FR')} ${cur}` : '—'}
         </p>
         <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
           <span>🛏 {props.bedrooms}</span>
