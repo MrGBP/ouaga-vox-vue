@@ -636,7 +636,9 @@ const PropertyDetailPanel = ({
           };
           const openContact = () => {
             track('contact_requested', { property_id: property.id });
-            if (property.agent_phone) window.location.href = `tel:${property.agent_phone}`;
+            // Priorité : WhatsApp (canal obligatoire) → sinon appel direct
+            if (waRaw) window.open(`https://wa.me/${waRaw}`, '_blank', 'noopener,noreferrer');
+            else if (callRaw) window.location.href = `tel:+${callRaw}`;
           };
 
           if (isMobile) {
@@ -722,23 +724,23 @@ const PropertyDetailPanel = ({
             </div>
             {hasAnyContact && (
               <div className="flex gap-2 mt-2.5">
-                {hasPhone && (
+                {hasWhatsApp && (
                   <a
-                    href={`tel:${property.agent_phone}`}
-                    onClick={() => track('contact_phone_clicked', { property_id: property.id })}
-                    className="flex-1 h-11 flex items-center justify-center gap-2 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
-                  >
-                    <Phone className="h-3.5 w-3.5" /> Appeler
-                  </a>
-                )}
-                {hasPhone && (
-                  <a
-                    href={`https://wa.me/${agentPhoneRaw}`}
+                    href={`https://wa.me/${waRaw}`}
                     target="_blank" rel="noopener noreferrer"
                     onClick={() => track('contact_whatsapp_clicked', { property_id: property.id })}
                     className="flex-1 h-11 flex items-center justify-center gap-2 bg-[#25D366] text-white rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
                   >
                     <span>💬</span> WhatsApp
+                  </a>
+                )}
+                {hasPhone && (
+                  <a
+                    href={`tel:+${callRaw}`}
+                    onClick={() => track('contact_phone_clicked', { property_id: property.id })}
+                    className="flex-1 h-11 flex items-center justify-center gap-2 bg-primary/10 text-primary rounded-xl text-sm font-semibold active:scale-[0.97] transition-transform"
+                  >
+                    <Phone className="h-3.5 w-3.5" /> Appeler
                   </a>
                 )}
                 {hasEmail && (
