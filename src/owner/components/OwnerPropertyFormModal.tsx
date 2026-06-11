@@ -132,6 +132,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     if (typeof p.surface_area === 'number') setSurface(p.surface_area);
     if (p.quartier) setQuartier(p.quartier);
     if (typeof p.furnished === 'boolean') setFurnished(p.furnished);
+    // Cadence de facturation détectée par l'IA (Ghana → mois par défaut, BF/ML court séjour → nuit auto)
+    const aiMode = (p as any).rent_mode ?? (p as any).price_type;
+    if (aiMode === 'nuit' || aiMode === 'mois') setRentMode(aiMode);
+    else if (selectedCountry === 'GH') setRentMode('mois');
+    else if ((p as any).is_short_stay) setRentMode('nuit');
 
     if (p.amenities) {
       const validKeys = new Set(FEATURE_CATALOG.map(f => f.key));
