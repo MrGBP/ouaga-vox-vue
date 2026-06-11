@@ -61,6 +61,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [rooms, setRooms] = useState<number | ''>(3);
   const [capacity, setCapacity] = useState<number | ''>('');
   const [furnished, setFurnished] = useState(false);
+  // Cadence de facturation pour les meublés : par défaut 'nuit' (BF/ML), 'mois' (GH long terme).
+  const [rentMode, setRentMode] = useState<'nuit' | 'mois'>('nuit');
   const [lat, setLat] = useState<number>(12.3714);
   const [lng, setLng] = useState<number>(-1.5197);
   const [features, setFeatures] = useState<string[]>([]);
