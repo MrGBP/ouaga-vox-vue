@@ -38,6 +38,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const country = useCountryConfig();
   const { data: allCountries } = useAllCountryConfigs();
   const [selectedCountry, setSelectedCountry] = useState<string>(country.code || 'BF');
+  // Quand l'utilisateur passe un nouveau bien au Ghana, le mode meublé bascule sur "mois" (long terme).
+  useEffect(() => {
+    if (!initial && (furnished || isTypeFurnished(type))) {
+      setRentMode(selectedCountry === 'GH' ? 'mois' : 'nuit');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCountry]);
   // Anglais forcé pour le Ghana ; sinon on suit la langue globale.
   const formLang = selectedCountry === 'GH' ? 'en' : (i18n.language || 'fr');
   const t = useMemo(() => i18n.getFixedT(formLang), [formLang, i18n]);
