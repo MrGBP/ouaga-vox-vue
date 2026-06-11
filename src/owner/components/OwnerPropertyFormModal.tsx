@@ -172,6 +172,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           setFloor(typeof f.__floor === 'number' ? f.__floor : 0);
           setRooms(typeof f.__rooms === 'number' ? f.__rooms : 3);
           setCapacity(typeof f.__capacity === 'number' ? f.__capacity : '');
+          const storedMode = f.__rent_mode === 'mois' || f.__rent_mode === 'nuit' ? f.__rent_mode : null;
+          setRentMode(storedMode ?? (((data as any).country_code === 'GH') ? 'mois' : 'nuit'));
           setSavedId(initial.id);
 
           // Préremplissage des contacts (on retire l'indicatif si présent)
