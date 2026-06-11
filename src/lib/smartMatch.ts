@@ -185,7 +185,16 @@ export function smartFilter(properties: Property[], query: string, allQuartiers:
     if (freeTokens.length === 0) return true;
 
     const haystack = normalize(
-      [p.title, p.quartier, getTypeLabel(p.type), p.description || '', String(p.price)].join(' ')
+      [
+        p.title,
+        p.quartier,
+        getTypeLabel(p.type),
+        p.type,
+        p.description || '',
+        (p as any).address || '',
+        (p as any).city || '',
+        String(p.price),
+      ].join(' ')
     );
     const haystackWords = haystack.split(' ');
     return freeTokens.every(tok =>
