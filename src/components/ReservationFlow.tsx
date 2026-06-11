@@ -588,10 +588,10 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">{t('reservation.depart')}</p>
                     <p className="font-semibold">{checkOut ? formatDate(checkOut) : '—'}</p>
                   </div>
-                  {nights > 0 && (
+                  {unitCount > 0 && (
                     <div className="text-right">
                       <p className="text-[10px] text-muted-foreground uppercase font-bold">Durée</p>
-                      <p className="font-semibold">{nights} {nights > 1 ? t('reservation.nuits') : t('reservation.nuit')}</p>
+                      <p className="font-semibold">{unitCount} {unitLabelShort}</p>
                     </div>
                   )}
                 </div>
