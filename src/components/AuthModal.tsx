@@ -256,6 +256,22 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
               {T.whatsapp}
             </button>
 
+            {showResendOption && (
+              <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-center">
+                <p className="text-[11px] text-amber-900 mb-1.5">
+                  {isEn ? "Didn't receive the email?" : "Vous n'avez pas reçu l'email ?"}
+                </p>
+                <button
+                  type="button"
+                  onClick={resendConfirmation}
+                  className="text-xs font-semibold underline underline-offset-2 text-[#1a3560]"
+                >
+                  {isEn ? 'Resend confirmation email' : "Renvoyer l'email de confirmation"}
+                </button>
+              </div>
+            )}
+
+
             <button
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
               className="w-full text-center text-xs text-muted-foreground mt-3 hover:underline"
