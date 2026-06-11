@@ -839,14 +839,24 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             {/* Staging : pré-upload avant la création */}
             {!savedId && (
               <>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => pendingFileRef.current?.click()}
-                    className="flex-1 h-10 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 text-xs hover:bg-muted"
-                  >
-                    <Upload size={14} /> {t('owner.form.choisir_fichiers')}
-                  </button>
+                <div
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={e => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    addPendingFiles(e.dataTransfer.files);
+                  }}
+                  onClick={() => pendingFileRef.current?.click()}
+                  className={`cursor-pointer rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 py-6 px-3 text-center transition ${
+                    dragOver ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'
+                  }`}
+                >
+                  <Upload size={22} className="text-primary" />
+                  <span className="text-xs font-semibold">{t('owner.form.choisir_fichiers')}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {t('owner.form.bulk_hint') ?? 'Drag & drop or select multiple photos/videos at once'}
+                  </span>
                   <input
                     ref={pendingFileRef}
                     type="file"
