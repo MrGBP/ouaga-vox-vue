@@ -158,6 +158,24 @@ export async function adminSetStatus(
 }
 
 // ─── MEDIA ────────────────────────────────────────────────────────────────
+
+/**
+ * Rebuild properties.images[] from property_media rows of kind='image',
+ * ordered by position. This is what PropertyCard reads, so without this
+ * sync the cover/featured image never appears in lists.
+ */
+export async function syncPropertyImagesFromMedia(propertyId: string) {
+  const { data, error } = await supabase
+    .from('property_media')
+    .select('url, kind, position')
+    .eq('property_id', propertyId)
+    .eq('kind', 'image')
+    .order('position');
+  if (error) return;
+  const urls = (data ?? []).map((r: any) => r.url).filter(Boolean);
+  await supabase.from('properties').update({ images: urls }).eq('id', propertyId);
+}
+
 export async function uploadPropertyMedia(propertyId: string, file: File, kind: 'image'|'video'|'video_360' = 'image') {
   const ext = file.name.split('.').pop();
   const path = `${propertyId}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
@@ -168,6 +186,7 @@ export async function uploadPropertyMedia(propertyId: string, file: File, kind: 
     property_id: propertyId, kind, url: pub.publicUrl, storage_path: path,
   }).select().single();
   if (error) throw error;
+  if (kind === 'image') await syncPropertyImagesFromMedia(propertyId);
   return data;
 }
 
@@ -176,6 +195,7 @@ export async function addPropertyMediaUrl(propertyId: string, url: string, kind:
     property_id: propertyId, url, kind,
   }).select().single();
   if (error) throw error;
+  if (kind === 'image') await syncPropertyImagesFromMedia(propertyId);
   return data;
 }
 
@@ -186,9 +206,11 @@ export async function listPropertyMedia(propertyId: string) {
 }
 
 export async function deletePropertyMedia(mediaId: string, storagePath?: string | null) {
+  const { data: row } = await supabase.from('property_media').select('property_id, kind').eq('id', mediaId).maybeSingle();
   if (storagePath) await supabase.storage.from('property-media').remove([storagePath]);
   const { error } = await supabase.from('property_media').delete().eq('id', mediaId);
   if (error) throw error;
+  if (row?.property_id && row.kind === 'image') await syncPropertyImagesFromMedia(row.property_id);
 }
 
 export async function updateMediaPosition(mediaId: string, position: number) {
@@ -198,4 +220,9 @@ export async function updateMediaPosition(mediaId: string, position: number) {
 
 export async function reorderPropertyMedia(items: { id: string; position: number }[]) {
   await Promise.all(items.map(it => updateMediaPosition(it.id, it.position)));
+  if (items[0]) {
+    const { data } = await supabase.from('property_media').select('property_id').eq('id', items[0].id).maybeSingle();
+    if (data?.property_id) await syncPropertyImagesFromMedia(data.property_id);
+  }
 }
+
