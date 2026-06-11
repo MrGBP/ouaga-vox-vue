@@ -22,13 +22,19 @@ export default function MapPicker({ lat, lng, onChange, height = 280 }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
 
+  const { activeCity } = useGeoCity();
+  const fallbackCenter: [number, number] = activeCity?.center ?? [12.3714, -1.5197];
+  const initZoom = activeCity?.zoom ?? 13;
+
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current).setView([lat || 12.3714, lng || -1.5197], 13);
+    const startLat = lat || fallbackCenter[0];
+    const startLng = lng || fallbackCenter[1];
+    const map = L.map(containerRef.current).setView([startLat, startLng], initZoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '© OpenStreetMap',
     }).addTo(map);
-    const marker = L.marker([lat || 12.3714, lng || -1.5197], { draggable: true, icon: PIN }).addTo(map);
+    const marker = L.marker([startLat, startLng], { draggable: true, icon: PIN }).addTo(map);
     marker.on('dragend', () => {
       const p = marker.getLatLng();
       onChange(+p.lat.toFixed(6), +p.lng.toFixed(6));
