@@ -442,6 +442,30 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Module 2 — Remplissage automatique par IA */}
+          {showParser ? (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <DescriptionParser onConfirm={applyParsed} onCancel={() => setShowParser(false)} />
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-primary/40 bg-primary/[0.03] p-3 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Sparkles size={16} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold">Remplissage automatique</p>
+                <p className="text-[11px] text-muted-foreground">Décris ton bien en texte libre, l'IA remplit le formulaire pour toi.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowParser(true)}
+                className="text-xs text-primary font-semibold underline underline-offset-2 shrink-0"
+              >
+                Utiliser →
+              </button>
+            </div>
+          )}
+
           <Field label={t('owner.form.titre')}>
             <input ref={titleRef} value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder={t('owner.form.titre_ph')} />
           </Field>
