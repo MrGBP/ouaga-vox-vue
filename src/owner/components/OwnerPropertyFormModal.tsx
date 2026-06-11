@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe, MapPin } from 'lucide-react';
+import { X, Plus, Upload, Link2, Trash2, Image as ImageIcon, Video, Globe, MapPin, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import DescriptionParser, { type ParsedProperty } from '@/components/owner/DescriptionParser';
+import CustomTypeSuggestModal from '@/components/owner/CustomTypeSuggestModal';
 import { useTranslation } from 'react-i18next';
 import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, isTypeFurnished, getTypeLabel } from '@/lib/mockData';
 import { FEATURE_CATALOG, FEATURE_CATEGORIES, featureLabel, categoryLabel, type FeatureCategoryId } from '@/lib/featureCatalog';
@@ -89,6 +91,58 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [poiDist, setPoiDist] = useState<number | ''>('');
 
   const titleRef = useRef<HTMLInputElement>(null);
+
+  // Module 2 — AI parser & Module 3 — custom type suggestion
+  const [showParser, setShowParser] = useState(false);
+  const [showCustomType, setShowCustomType] = useState(false);
+
+  // Map AI type strings to existing PROPERTY_TYPES values
+  const TYPE_AI_MAP: Record<string, string> = {
+    villa_meublee: 'maison_villa_meublee',
+    villa: 'maison_villa_simple',
+    maison: 'maison_villa_simple',
+    appartement: 'appartement_simple',
+    appartement_meuble: 'appartement_meuble',
+    studio: 'studio_meuble',
+    bureau: 'bureau',
+    local: 'local_commercial',
+    chambre: 'studio_meuble',
+    hotel: 'maison_villa_meublee',
+    residence: 'maison_villa_simple',
+  };
+  // Map AI amenity keys to FEATURE_CATALOG keys (most already match)
+  const AMENITY_AI_MAP: Record<string, string> = {
+    parking: 'parking_interne',
+  };
+
+  const applyParsed = (p: ParsedProperty) => {
+    if (p.title_suggestion) setTitle(p.title_suggestion.slice(0, 80));
+    if (p.description) setDescription(p.description);
+    if (p.type) {
+      const mapped = TYPE_AI_MAP[p.type] ?? p.type;
+      if (PROPERTY_TYPES.some(pt => pt.value === mapped)) setType(mapped);
+    }
+    if (typeof p.price === 'number') setPrice(p.price);
+    if (typeof p.bedrooms === 'number') setBedrooms(p.bedrooms);
+    if (typeof p.bathrooms === 'number') setBathrooms(p.bathrooms);
+    if (typeof p.surface_area === 'number') setSurface(p.surface_area);
+    if (p.quartier) setQuartier(p.quartier);
+    if (typeof p.furnished === 'boolean') setFurnished(p.furnished);
+
+    if (p.amenities) {
+      const validKeys = new Set(FEATURE_CATALOG.map(f => f.key));
+      const next: string[] = [...features];
+      Object.entries(p.amenities).forEach(([rawKey, on]) => {
+        if (!on) return;
+        const key = AMENITY_AI_MAP[rawKey] ?? rawKey;
+        if (validKeys.has(key) && !next.includes(key)) next.push(key);
+      });
+      setFeatures(next);
+    }
+
+    setShowParser(false);
+    toast.success('Formulaire pré-rempli — vérifie et ajuste si besoin.');
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -388,6 +442,30 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Module 2 — Remplissage automatique par IA */}
+          {showParser ? (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <DescriptionParser onConfirm={applyParsed} onCancel={() => setShowParser(false)} />
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-primary/40 bg-primary/[0.03] p-3 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Sparkles size={16} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold">Remplissage automatique</p>
+                <p className="text-[11px] text-muted-foreground">Décris ton bien en texte libre, l'IA remplit le formulaire pour toi.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowParser(true)}
+                className="text-xs text-primary font-semibold underline underline-offset-2 shrink-0"
+              >
+                Utiliser →
+              </button>
+            </div>
+          )}
+
           <Field label={t('owner.form.titre')}>
             <input ref={titleRef} value={title} onChange={e => setTitle(e.target.value)} className="form-input" placeholder={t('owner.form.titre_ph')} />
           </Field>
@@ -417,6 +495,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     <select value={type} onChange={e => setType(e.target.value)} className="form-input">
                       {PROPERTY_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.emoji} {getTypeLabel(pt.value, lang)}</option>)}
                     </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomType(true)}
+                      className="mt-1.5 text-[10px] text-muted-foreground hover:text-primary underline underline-offset-2 flex items-center gap-1"
+                    >
+                      <Plus size={10} /> Mon type de bien n'est pas dans la liste
+                    </button>
                   </Field>
                   <Field label={priceLabel}>
                     <input type="number" min={0} value={price} onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))} className="form-input" placeholder="150000" />
@@ -852,6 +937,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
         <style>{`.form-input{display:block;width:100%;border:1px solid hsl(var(--border));background:hsl(var(--background));border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.8125rem;outline:none;transition:border-color .15s}.form-input:focus{border-color:hsl(var(--primary))}`}</style>
       </div>
+      <CustomTypeSuggestModal open={showCustomType} onClose={() => setShowCustomType(false)} />
     </div>
   );
 }

@@ -106,6 +106,42 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_property_types: {
+        Row: {
+          admin_note: string | null
+          approved_key: string | null
+          created_at: string
+          description: string | null
+          id: string
+          label: string
+          status: string
+          suggested_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          approved_key?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          label: string
+          status?: string
+          suggested_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          approved_key?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          label?: string
+          status?: string
+          suggested_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string

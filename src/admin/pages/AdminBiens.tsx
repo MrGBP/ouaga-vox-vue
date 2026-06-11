@@ -8,6 +8,7 @@ import AdminBadge from '@/admin/components/AdminBadge';
 import PropertyFormModal from '@/admin/components/PropertyFormModal';
 import ConfirmDialog from '@/admin/components/ConfirmDialog';
 import type { AdminPropertyStatus, AdminProperty } from '@/admin/types';
+import PendingCustomTypesPanel from '@/admin/components/PendingCustomTypesPanel';
 
 const TYPE_COLORS: Record<string, string> = {
   maison_villa_meublee: '#1a3560', maison_villa_simple: '#475569',
@@ -78,6 +79,8 @@ export default function AdminBiens() {
           <button onClick={handleNew} className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5"><Plus size={14} /> Nouveau bien</button>
         </div>
       </div>
+
+      <PendingCustomTypesPanel />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-4">
