@@ -253,7 +253,7 @@ const PropertyDetailPanel = ({
   // ── Partage ──
   const baseShareOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://sapsaphouse.lovable.app';
   const shareUrl = `${baseShareOrigin}/bien/${property.id}`;
-  const shareText = `${property.title} — ${property.quartier}, Ouagadougou\n${fmt(property.price)} FCFA/${isFurnished ? 'nuit' : 'mois'}\n${shareUrl}`;
+  const shareText = `${property.title} — ${property.quartier}, Ouagadougou\n${fmt(property.price)} FCFA/${showNightly ? 'nuit' : 'mois'}\n${shareUrl}`;
   const handleShare = async () => {
     if (typeof navigator !== 'undefined' && (navigator as any).share) {
       try {
