@@ -8,6 +8,7 @@ import AdminBadge from '@/admin/components/AdminBadge';
 import PropertyFormModal from '@/admin/components/PropertyFormModal';
 import ConfirmDialog from '@/admin/components/ConfirmDialog';
 import type { AdminPropertyStatus, AdminProperty } from '@/admin/types';
+import PendingCustomTypesPanel from '@/admin/components/PendingCustomTypesPanel';
 
 const TYPE_COLORS: Record<string, string> = {
   maison_villa_meublee: '#1a3560', maison_villa_simple: '#475569',
