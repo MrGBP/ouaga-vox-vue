@@ -80,7 +80,13 @@ export default function NotificationBell({ className = '' }: { className?: strin
           ) : items.map(n => (
             <button
               key={n.id}
-              onClick={() => markNotificationRead(n.id)}
+              onClick={async () => {
+                if (!n.read) {
+                  setItems(prev => prev.map(i => i.id === n.id ? { ...i, read: true } : i));
+                  setCount(c => Math.max(0, c - 1));
+                  await markNotificationRead(n.id);
+                }
+              }}
               className={`w-full text-left px-3 py-2.5 border-b last:border-b-0 hover:bg-muted ${!n.read ? 'bg-primary/5' : ''}`}
             >
               <div className="text-xs font-semibold text-foreground">{n.title}</div>
