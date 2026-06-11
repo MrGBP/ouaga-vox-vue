@@ -199,11 +199,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       return toast.error(t('owner.form.err_media'));
     }
 
-    // Au moins 1 POI : pending + existants
-    const totalPois = pendingPois.length + existingPois.length;
-    if (totalPois < 1) {
-      return toast.error(t('owner.form.err_poi'));
-    }
+    // POIs optionnels : on ne bloque plus la validation si aucun n'est renseigné.
 
     setBusy(true);
     let createdPropertyId: string | null = null;
