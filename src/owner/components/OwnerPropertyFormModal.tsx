@@ -81,6 +81,8 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [pendingUrl, setPendingUrl] = useState('');
   const [pendingKind, setPendingKind] = useState<'image' | 'video' | 'video_360'>('image');
   const [existingMediaCount, setExistingMediaCount] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const pendingFileRef = useRef<HTMLInputElement>(null);
 
   // POIs — au moins 1 requis avant publication
