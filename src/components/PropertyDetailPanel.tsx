@@ -159,7 +159,10 @@ const PropertyDetailPanel = ({
 
   const fallbackImg = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800';
   const isFurnished = isTypeFurnished(property.type) || property.furnished || false;
-  const nightPrice = isFurnished ? pricePerNight(property.price) : 0;
+  // Cadence (nuit/mois) — Ghana meublé long terme par défaut, ou choix explicite via features.__rent_mode
+  const rentMode = getRentMode(property as any);
+  const showNightly = isFurnished && rentMode === 'nuit';
+  const nightPrice = showNightly ? pricePerNight(property.price) : 0;
 
   // Médias unifiés : Supabase property_media en priorité, sinon legacy (images[], video_url, virtual_tour_url)
   const { items: unifiedMedia } = usePropertyMedia(property.id, {
