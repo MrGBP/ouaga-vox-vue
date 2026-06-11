@@ -40,7 +40,7 @@ export default function Auth() {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: parsed.data.email, password: parsed.data.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: { full_name: parsed.data.full_name, phone: parsed.data.phone ?? '' },
           },
         });
