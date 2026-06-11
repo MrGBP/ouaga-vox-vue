@@ -24,12 +24,23 @@ export default function NotificationBell({ className = '' }: { className?: strin
   useEffect(() => {
     if (!user) { setCount(0); setItems([]); return; }
     let mounted = true;
-    fetchUnreadCount(user.id).then(c => mounted && setCount(c)).catch(() => {});
-    fetchNotifications(user.id).then(list => mounted && setItems(list)).catch(() => {});
-    const unsub = subscribeToNotifications(user.id, (n) => {
-      setItems(prev => [n, ...prev].slice(0, 30));
-      setCount(c => c + 1);
-    });
+    const refresh = () => {
+      fetchUnreadCount(user.id).then(c => mounted && setCount(c)).catch(() => {});
+      fetchNotifications(user.id).then(list => mounted && setItems(list)).catch(() => {});
+    };
+    refresh();
+    const unsub = subscribeToNotifications(
+      user.id,
+      (n) => {
+        setItems(prev => [n, ...prev].slice(0, 30));
+        setCount(c => c + 1);
+      },
+      (n) => {
+        // read state changed elsewhere → re-sync
+        setItems(prev => prev.map(i => i.id === n.id ? { ...i, ...n } : i));
+        fetchUnreadCount(user.id).then(c => mounted && setCount(c)).catch(() => {});
+      },
+    );
     return () => { mounted = false; unsub(); };
   }, [user]);
 
@@ -69,7 +80,13 @@ export default function NotificationBell({ className = '' }: { className?: strin
           ) : items.map(n => (
             <button
               key={n.id}
-              onClick={() => markNotificationRead(n.id)}
+              onClick={async () => {
+                if (!n.read) {
+                  setItems(prev => prev.map(i => i.id === n.id ? { ...i, read: true } : i));
+                  setCount(c => Math.max(0, c - 1));
+                  await markNotificationRead(n.id);
+                }
+              }}
               className={`w-full text-left px-3 py-2.5 border-b last:border-b-0 hover:bg-muted ${!n.read ? 'bg-primary/5' : ''}`}
             >
               <div className="text-xs font-semibold text-foreground">{n.title}</div>
