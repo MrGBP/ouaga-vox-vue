@@ -272,9 +272,12 @@ const InteractiveMap = ({
   // Init map
   useEffect(() => {
     if (!mapRef.current || mapInst.current) return;
+    const initCenter = getCityCenter();
+    const initBounds = getCityBounds();
+    const initZoom = activeCityRef.current?.zoom ?? 13;
     const map = L.map(mapRef.current, {
-      center: OUAGA_CENTER, zoom: 13, zoomControl: false,
-      maxBounds: OUAGA_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 18,
+      center: initCenter, zoom: initZoom, zoomControl: false,
+      maxBounds: initBounds, maxBoundsViscosity: 1.0, minZoom: 10, maxZoom: 18,
     });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     const tile = L.tileLayer(TILE_DEFAULT, { attribution: '© <a href="https://openstreetmap.org">OSM</a>', maxZoom: 18 }).addTo(map);
