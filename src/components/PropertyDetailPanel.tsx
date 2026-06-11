@@ -259,11 +259,16 @@ const PropertyDetailPanel = ({
     }
     setShowSharePanel(true);
   };
-  const agentPhoneRaw = property.agent_phone?.replace(/\D/g, '') ?? '';
+  // WhatsApp = numéro saisi par le propriétaire (obligatoire). Téléphone d'appel = secondaire optionnel,
+  // sinon on retombe sur le WhatsApp pour ne pas casser le bouton "Appeler".
+  const waRaw = (property.whatsapp_phone || property.agent_phone || '').replace(/\D/g, '');
+  const callRaw = (property.agent_phone || property.whatsapp_phone || '').replace(/\D/g, '');
+  const agentPhoneRaw = waRaw; // compat (utilisé plus bas)
   const agentEmail = property.agent_email?.trim() ?? '';
-  const hasPhone = agentPhoneRaw.length > 0;
+  const hasWhatsApp = waRaw.length > 0;
+  const hasPhone = callRaw.length > 0;
   const hasEmail = agentEmail.length > 0;
-  const hasAnyContact = hasPhone || hasEmail;
+  const hasAnyContact = hasWhatsApp || hasPhone || hasEmail;
 
   const currentMedia = mediaItems[mediaIdx];
 
