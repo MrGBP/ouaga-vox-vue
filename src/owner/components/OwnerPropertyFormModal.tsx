@@ -510,6 +510,50 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           })()}
 
 
+          {/* Contacts du propriétaire — WhatsApp obligatoire + téléphone secondaire optionnel.
+              L'indicatif est verrouillé sur le pays sélectionné, donc impossible de se tromper. */}
+          <div className="space-y-2 border-t pt-4">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              💬 {t('owner.form.contacts_label')}
+            </label>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              {t('owner.form.contacts_intro', { prefix: phonePrefix })}
+            </p>
+
+            <Field label={`${t('owner.form.whatsapp_label')} *`}>
+              <div className="flex gap-2">
+                <span className="inline-flex items-center px-3 h-10 rounded-lg border border-border bg-muted text-xs font-mono text-muted-foreground select-none">
+                  {phonePrefix}
+                </span>
+                <input
+                  type="tel" inputMode="numeric" maxLength={14}
+                  value={waLocal}
+                  onChange={e => setWaLocal(e.target.value.replace(/[^\d\s\-]/g, ''))}
+                  placeholder={t('owner.form.whatsapp_ph')}
+                  className="form-input flex-1"
+                  required
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">{t('owner.form.whatsapp_hint')}</p>
+            </Field>
+
+            <Field label={`${t('owner.form.phone_label')} (${t('owner.form.poi_optional').replace(/[()]/g, '')})`}>
+              <div className="flex gap-2">
+                <span className="inline-flex items-center px-3 h-10 rounded-lg border border-border bg-muted text-xs font-mono text-muted-foreground select-none">
+                  {phonePrefix}
+                </span>
+                <input
+                  type="tel" inputMode="numeric" maxLength={14}
+                  value={phoneLocal}
+                  onChange={e => setPhoneLocal(e.target.value.replace(/[^\d\s\-]/g, ''))}
+                  placeholder={t('owner.form.phone_ph')}
+                  className="form-input flex-1"
+                />
+              </div>
+            </Field>
+          </div>
+
+
           {/* Localisation */}
           <Field label={t('owner.form.carte')}>
             <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={240} />
