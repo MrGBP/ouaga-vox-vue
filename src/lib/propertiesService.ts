@@ -37,6 +37,7 @@ function rowToProperty(row: any): Property {
     status: row.status ?? 'available',
     agent_name: row.agent_name ?? undefined,
     agent_phone: row.agent_phone ?? undefined,
+    whatsapp_phone: row.whatsapp_phone ?? undefined,
     agent_photo: row.agent_photo ?? undefined,
     created_at: row.created_at,
     country: row.country_code ?? undefined,
