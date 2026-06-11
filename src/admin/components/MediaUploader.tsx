@@ -98,13 +98,32 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2">
-        <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
-          className="flex-1 h-10 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 text-xs hover:bg-muted disabled:opacity-50">
-          <Upload size={14} /> Uploader image / vidéo (multi)
-        </button>
-        <input ref={fileRef} type="file" accept="image/*,video/*" multiple hidden onChange={e => handleFiles(e.target.files)} />
+      <div
+        onDragOver={e => { e.preventDefault(); if (!busy) setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={e => { e.preventDefault(); setDragOver(false); if (!busy) handleFiles(e.dataTransfer.files); }}
+        onClick={() => !busy && fileRef.current?.click()}
+        className={`cursor-pointer rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 py-6 px-3 text-center transition ${
+          dragOver ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'
+        } ${busy ? 'opacity-60 pointer-events-none' : ''}`}
+      >
+        <Upload size={22} className="text-primary" />
+        <span className="text-xs font-semibold">Upload photos & videos (bulk)</span>
+        <span className="text-[10px] text-muted-foreground">Drag & drop or click — select many files at once</span>
+        <input ref={fileRef} type="file" accept="image/*,video/*" multiple hidden onChange={e => { handleFiles(e.target.files); if (fileRef.current) fileRef.current.value = ''; }} />
       </div>
+
+      {progress && (
+        <div className="space-y-1">
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>Upload… {progress.done}/{progress.total}</span>
+            <span>{Math.round((progress.done / progress.total) * 100)}%</span>
+          </div>
+          <div className="h-1.5 bg-muted rounded overflow-hidden">
+            <div className="h-full bg-primary transition-all" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2">
         <select value={kind} onChange={e => setKind(e.target.value as any)} className="rounded-lg border border-border bg-background px-2 text-xs">
