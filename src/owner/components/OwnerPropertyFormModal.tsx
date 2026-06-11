@@ -510,8 +510,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           {(() => {
             const commercial = isCommercialType(type);
             const isFurn = furnished || isTypeFurnished(type);
-            const priceLabel = commercial ? t('owner.form.loyer_mensuel', { cur }) : isFurn ? t('owner.form.prix_nuit', { cur }) : t('owner.form.loyer_mensuel', { cur });
-            const priceHint = commercial ? t('owner.form.hint_commercial') : isFurn ? t('owner.form.hint_nuit') : t('owner.form.hint_longue');
+            const effectiveMode: 'nuit' | 'mois' = isFurn ? rentMode : 'mois';
+            const priceLabel = commercial
+              ? t('owner.form.loyer_mensuel', { cur })
+              : isFurn && effectiveMode === 'nuit'
+                ? t('owner.form.prix_nuit', { cur })
+                : t('owner.form.loyer_mensuel', { cur });
+            const priceHint = commercial
+              ? t('owner.form.hint_commercial')
+              : isFurn && effectiveMode === 'nuit'
+                ? t('owner.form.hint_nuit')
+                : t('owner.form.hint_longue');
             return (
               <>
                 <div className="grid grid-cols-2 gap-3">
@@ -532,6 +541,34 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     <p className="text-[10px] text-muted-foreground mt-0.5">{priceHint}</p>
                   </Field>
                 </div>
+
+                {/* Cadence de facturation : visible uniquement pour un meublé non commercial */}
+                {isFurn && !commercial && (
+                  <Field label={selectedCountry === 'GH' ? 'Billing cadence' : 'Cadence de facturation'}>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRentMode('nuit')}
+                        className={`flex-1 h-10 rounded-lg border text-xs font-semibold transition ${rentMode === 'nuit' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:border-primary/50'}`}
+                      >
+                        {selectedCountry === 'GH' ? '🌙 Per night (short stay)' : '🌙 À la nuitée (court séjour)'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRentMode('mois')}
+                        className={`flex-1 h-10 rounded-lg border text-xs font-semibold transition ${rentMode === 'mois' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:border-primary/50'}`}
+                      >
+                        {selectedCountry === 'GH' ? '📅 Per month (long term)' : '📅 Au mois (longue durée)'}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {selectedCountry === 'GH'
+                        ? 'Ghana: furnished homes are often rented 6+ months. Switch to "Per night" only for short-stay listings.'
+                        : 'Burkina/Mali : meublé = nuitée par défaut. Bascule sur "Au mois" pour une location moyenne/longue durée.'}
+                    </p>
+                  </Field>
+                )}
+
 
                 <Field label={t('owner.form.country', 'Pays')}>
                   <select
