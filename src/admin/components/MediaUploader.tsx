@@ -5,11 +5,6 @@ import {
   uploadPropertyMedia, listPropertyMedia, deletePropertyMedia,
   reorderPropertyMedia, addPropertyMediaUrl,
 } from '@/lib/propertiesService';
-import { toast } from 'sonner';
-import {
-  uploadPropertyMedia, listPropertyMedia, deletePropertyMedia,
-  reorderPropertyMedia,
-} from '@/lib/propertiesService';
 
 interface Media { id: string; kind: 'image'|'video'|'video_360'; url: string; storage_path: string | null; position: number; }
 
