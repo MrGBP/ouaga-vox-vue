@@ -141,6 +141,13 @@ const PropertyPage = () => {
   };
 
   const goToMapWithFocus = (pid: string) => {
+    // Pose les flags AVANT la navigation pour que MobileApp les lise à son
+    // useEffect de montage (sinon ils sont posés trop tard par Index.tsx et
+    // l'utilisateur voit brièvement l'accueil avant la carte).
+    try {
+      sessionStorage.setItem('sapsap_force_tab', 'map');
+      sessionStorage.setItem('sapsap_focus_property', pid);
+    } catch { /* noop */ }
     navigate(`/?property=${encodeURIComponent(pid)}&exploreMap=1`);
   };
 
