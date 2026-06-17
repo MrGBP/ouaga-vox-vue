@@ -192,3 +192,23 @@
 }
 .quartier-zone-label::before { display: none; }
 
+
+/* Read-only admin: visually disable every actionable control in the admin area */
+.admin-readonly button:not([data-readonly-allowed]),
+.admin-readonly [role="button"]:not([data-readonly-allowed]),
+.admin-readonly a[href*="/admin/"][data-mutation],
+.admin-readonly input:not([type="search"]):not([type="text"]):not([readonly]),
+.admin-readonly textarea,
+.admin-readonly select {
+  pointer-events: none !important;
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+}
+.admin-readonly button[data-nav],
+.admin-readonly button[data-readonly-allowed],
+.admin-readonly [role="button"][data-readonly-allowed],
+.admin-readonly a:not([data-mutation]) {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
