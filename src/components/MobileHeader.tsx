@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import NotificationBell from '@/components/NotificationBell';
 
 const MobileHeader = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -35,13 +36,17 @@ const MobileHeader = () => {
           <span className="text-base font-bold text-foreground tracking-tight">SapSapHouse</span>
         </div>
 
-        {/* Hamburger */}
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
-        >
-          <Menu className="h-5 w-5 text-foreground" />
-        </button>
+        {/* Right side : Notifications + Hamburger */}
+        <div className="flex items-center gap-1">
+          {user && <NotificationBell />}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+            aria-label="Menu"
+          >
+            <Menu className="h-5 w-5 text-foreground" />
+          </button>
+        </div>
       </header>
 
       {/* Drawer overlay */}
