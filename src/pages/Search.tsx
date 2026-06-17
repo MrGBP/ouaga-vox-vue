@@ -210,6 +210,23 @@ const SearchPage = () => {
 
   const close = () => navigate(-1);
 
+  const handleBottomNav = (tab: string) => {
+    switch (tab) {
+      case 'home':
+      case 'map':
+        navigate('/');
+        break;
+      case 'search':
+        break;
+      case 'favorites':
+        navigate('/?favorites=1');
+        break;
+      case 'profile':
+        navigate('/mon-compte');
+        break;
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header */}
@@ -279,7 +296,10 @@ const SearchPage = () => {
       </AnimatePresence>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto scrollable">
+      <div
+        className="flex-1 overflow-y-auto scrollable"
+        style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}
+      >
         {fuzzy.length > 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
@@ -361,7 +381,7 @@ const SearchPage = () => {
                 Suggestions
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {['Villa meublée', 'Studio Koulouba', 'Ouaga 2000', 'Bureau', 'Avec piscine', 'Moins de 150 000', 'Tampouy', 'Climatisé'].map(s => (
+                {searchSuggestions.map(s => (
                   <button
                     key={s}
                     onClick={() => { setQuery(s); submit(s); }}
@@ -425,6 +445,11 @@ const SearchPage = () => {
           )}
         </AnimatePresence>
       </div>
+
+      <MobileBottomNav
+        activeTab="search"
+        onTabChange={handleBottomNav}
+      />
     </div>
   );
 };
