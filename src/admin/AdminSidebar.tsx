@@ -14,10 +14,8 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   const NAV_ITEMS = [
     { label: 'Tableau de bord', icon: LayoutDashboard, path: '/admin', end: true, badge: 0 },
     { label: 'Modération', icon: ShieldCheck, path: '/admin/moderation', badge: notif.pendingProperties },
-    { label: 'Biens (production)', icon: Database, path: '/admin/biens-live', badge: 0 },
-    { label: 'Biens (démo)', icon: Home, path: '/admin/biens', badge: 0 },
-    { label: 'Utilisateurs (production)', icon: UserCog, path: '/admin/users-live', badge: 0 },
-    { label: 'Utilisateurs (démo)', icon: Users, path: '/admin/users', badge: 0 },
+    { label: 'Biens', icon: Database, path: '/admin/biens-live', badge: 0 },
+    { label: 'Utilisateurs', icon: UserCog, path: '/admin/users-live', badge: 0 },
     { label: 'Réservations', icon: CalendarDays, path: '/admin/reservations', badge: notif.pendingReservations },
     { label: 'Boosts', icon: Zap, path: '/admin/boosts', badge: 0 },
     { label: 'Messages', icon: MessageSquare, path: '/admin/messages', badge: notif.unreadMessages },
