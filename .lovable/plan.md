@@ -1,91 +1,98 @@
-# Plan — 5 modules prioritaires SapSapHouse
+## Refonte `OwnerPropertyFormModal` — 13 points demandés
 
-## Module 1 — Auth OTP style TikTok (WhatsApp + Email)
+Périmètre : `src/owner/components/OwnerPropertyFormModal.tsx` (formulaire propriétaire uniquement, **on ne touche PAS** au formulaire admin `AdminBiensLive.tsx` qui reste comme avant — l'utilisateur a confirmé que la version admin est "nettement mieux", c'est seulement le formulaire propriétaire qui est refondu).
 
-**Remplacer entièrement** `src/components/AuthModal.tsx` et `src/pages/Auth.tsx` par un flux OTP sans mot de passe.
+### 1. Nouvelle structure en 4 étapes
 
-Écrans :
-1. Choix méthode : 2 gros boutons "Continuer avec WhatsApp" / "Continuer avec l'email"
-2. Saisie : sélecteur pays (BF +226 / ML +223 / GH +233, auto-sélection via `useGeoCity`), champ unique (téléphone E.164 ou email)
-3. OTP : 6 cases (composant `OTPInput`), focus auto, paste auto, validation auto au 6ème chiffre, countdown 60s + bouton renvoyer
-4. 1ère connexion : champ prénom uniquement → upsert dans `profiles.full_name`
+```
+Étape 1 — Informations principales
+  Titre, description, type de bien, prix (+ cadence si meublé)
 
-API Supabase :
-- WhatsApp : `supabase.auth.signInWithOtp({ phone, options: { channel: 'whatsapp' } })`
-- Email : `supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: undefined } })`
-- Vérif : `supabase.auth.verifyOtp({ phone|email, token, type: 'sms'|'email' })`
+Étape 2 — Détails du bien & Médias
+  Chambres*, SDB, pièces* (+aide), surface, étage, capacité
+  Caractéristiques (cocher) — DÉPLACÉ depuis l'étape 3
+  À proximité (POI cochables) — NOUVELLE UX
+  Médias (photos/vidéos) avec choix image principale
 
-Note : l'envoi WhatsApp OTP nécessite un provider SMS configuré côté Supabase (Twilio avec channel WhatsApp). Si non configuré, l'envoi retournera une erreur lisible à l'utilisateur — on ne peut pas l'activer depuis le code. À indiquer après la livraison.
+Étape 3 — Localisation
+  Ville (auto-déduite du pays détecté), Quartier (autocomplete),
+  Adresse, MapPicker auto-centré sur le quartier choisi
+  Contacts : WhatsApp (pré-rempli depuis profil) + tél. secondaire
 
-Supprimer : l'ancien formulaire email+mot de passe, la page `/auth`, `/forgot-password`, `/reset-password` (garder les routes mais rediriger vers la nouvelle modale, ou les supprimer si non utilisées ailleurs).
+Étape 4 — Aperçu & validation finale
+  Récapitulatif complet read-only + case "Je confirme…"
+  Bouton "Publier" actif uniquement si case cochée + contrôles OK
+```
 
-## Module 2 — Formulaire publication simplifié
+### 2. Suppressions
 
-Dans `src/admin/components/PropertyFormModal.tsx` et `src/owner/components/OwnerPropertyFormModal.tsx` :
-- Retirer la section "Visite 360° (URL)" et tout champ "Ajouter un lien et valider"
-- Dans `MediaUploader` : retirer les onglets/cases "image / vidéo / 360", garder un seul uploader universel qui détecte le `kind` automatiquement à partir du MIME (image/* → image, video/* → video, image avec ratio 2:1 → 360 — ou simplement tout marquer `image` par défaut et laisser le rendu décider). Garder le champ `kind` en DB pour compatibilité.
+- Champ "Pays" (sélecteur `selectedCountry` retiré de l'UI ; on garde la variable interne dérivée de `useCountryConfig()` pour l'indicatif téléphone et l'enregistrement BDD).
+- Toggle "Bien meublé" manuel : le caractère meublé est **dérivé automatiquement** de `isTypeFurnished(type)` (déjà présent dans `mockData`). La cadence nuit/mois reste car nécessaire pour les meublés.
+- Champ libre "distance en mètres" pour les POI (remplacé par un message d'aide invitant à citer des repères connus).
 
-## Module 3 — SapSapHouse comme propriétaire officiel
+### 3. Validations renforcées
 
-DB :
-- Ajouter colonne `is_official BOOLEAN DEFAULT false` sur `properties` (migration)
-- Le profil officiel ne peut pas avoir un id "sapsaphouse-official-id" littéral (les profils sont liés à `auth.users.id` UUID). À la place :
-  - Créer un compte auth dédié `official@sapsaphouse.com` manuellement (ou via flag `is_official` sur `profiles`)
-  - Ajouter colonne `is_official BOOLEAN DEFAULT false` sur `profiles`
-- Le contact "officiel" est lu depuis `country_configs.support_whatsapp` selon le pays du bien
+- **Chambres obligatoires** (≥ 1) pour tous types sauf bureau/local commercial.
+- **Pièces obligatoires** (≥ 1) avec tooltip d'aide : *"Le nombre de pièces correspond au total des espaces principaux : salon, chambres, bureau, salle à manger…"*
+- **Contrôle de cohérence non-bloquant** : si `rooms < bedrooms + 1 (salon implicite)`, afficher avertissement *"Le nombre de pièces semble inférieur…"* avec bouton "Confirmer quand même".
+- WhatsApp obligatoire (déjà en place) + format E.164.
+- Contrôles bloquants à l'étape 4 : titre, prix, quartier, lat/lng, WhatsApp, ≥ 1 média, chambres si requis.
 
-Front :
-- `PropertyDetailPanel` : si `property.is_official === true` → badge "✓ Bien SapSapHouse Officiel", nom = "SapSapHouse", téléphone = `countryConfig.support_whatsapp` du pays du bien
-- Sinon : nom + téléphone du propriétaire (logique actuelle)
+### 4. WhatsApp depuis le profil
 
-Formulaires admin/owner : ajouter checkbox "Publier comme bien SapSapHouse Officiel" (visible **uniquement aux admins**)
+- Au montage : lire `profiles.phone` de l'utilisateur connecté → pré-remplir `waLocal`.
+- Si l'utilisateur modifie le numéro et publie : proposer (toast léger, non-bloquant) *"Mettre à jour votre numéro principal dans votre profil ?"* avec action `Mettre à jour`.
+- Numéro secondaire facultatif inchangé.
 
-## Module 4 — RLS réservations corrigé
+### 5. Carte auto-centrée sur le quartier
 
-Migration :
-- Remplacer la policy INSERT existante par une qui exige `auth.uid() IS NOT NULL AND user_id = auth.uid()`
-- Garder la lecture pour user + owner + admin (déjà en place via `is_property_owner` / `has_role`)
-- Ajouter colonne `confirmation_number TEXT UNIQUE` sur `reservations` si absente
+- Quand `quartier` change : `SELECT lat,lng FROM locations WHERE name = quartier AND country_code = X` ; si trouvé, repositionner `lat`/`lng` sur ce point (l'utilisateur garde la possibilité de l'ajuster via `MapPicker`).
+- Fallback : centre de la ville (déjà en place).
 
-Front (`ReservationFlow.tsx`) :
-- Vérifier `auth.getUser()` avant insert, sinon `requireAuth(...)` puis retry
-- Toujours envoyer `user_id: user.id` dans le payload
-- Générer `confirmation_number` style `SSH-XXXXXX` côté front
-- Toast d'erreur explicite si RLS bloque, navigation vers écran de confirmation au succès
+### 6. POI simplifiés
 
-## Module 5 — Calendrier réservation
+- Liste cochable de catégories courantes (école, université, marché, mosquée, église, pharmacie, hôpital, centre commercial, supermarché, station-service).
+- Pour chaque catégorie cochée : un champ texte facultatif *"Nom (facultatif)"*.
+- À la publication : on enregistre dans `property_pois` avec `distance_m = NULL` (la vérification web/calcul automatique = travail futur côté serveur, hors scope front).
+- Section ouverte par défaut, libellée avec une note explicative sur l'utilité des repères connus.
 
-Dans le composant calendrier de `ReservationFlow.tsx` :
-- `disabled={{ before: today }}` pour bloquer dates passées
-- Charger via `Promise.all` : reservations actives (pending/confirmed) + blocked_dates ≥ aujourd'hui
-- Calculer un `Set<string>` de jours indisponibles, les marquer `modifiers={{ unavailable }}` en rouge avec tooltip
-- À la sélection d'une plage : vérifier immédiatement chevauchement, afficher alerte inline
-- Bouton "Confirmer" `disabled` si : dates manquantes / chevauchement / coordonnées incomplètes
+### 7. Autosave (brouillon local)
 
-## Détails techniques
+- Clé `localStorage` : `sapsap_owner_draft_v1` (un seul brouillon actif par utilisateur, écrasé à chaque publication réussie).
+- Sauvegarde **debounced 800 ms** à chaque changement d'état (titre, description, prix, features, contacts, step…). Pas de médias `File` (impossible à sérialiser) — uniquement les URLs et métadonnées.
+- À l'ouverture du modal (mode création uniquement) : si brouillon présent + `updated_at` < 7 jours, proposer une bannière *"Annonce non terminée du DATE — Reprendre / Recommencer"*.
+- Suppression du brouillon : après publication OK, après "Recommencer", après "Quitter et abandonner".
 
-- **OTP UI** : utiliser le composant existant `src/components/ui/input-otp.tsx` (déjà basé sur `input-otp`)
-- **Sélecteur pays auth** : 3 entrées en dur (BF/ML/GH) avec drapeau + indicatif, défaut = `activeCity?.country`
-- **Profil officiel** : créé manuellement via SQL une fois (insertion d'une ligne dans `profiles` avec un UUID stable, et marquage `is_official=true`). Le `id` reste un vrai UUID — pas de string littéral.
-- **`is_official` sur properties** : exposé en lecture publique (déjà couvert par la policy SELECT existante sur `properties`)
-- **Migrations à créer** :
-  1. ALTER TABLE properties ADD COLUMN is_official BOOLEAN DEFAULT false
-  2. ALTER TABLE profiles ADD COLUMN is_official BOOLEAN DEFAULT false
-  3. ALTER TABLE reservations ADD COLUMN confirmation_number TEXT UNIQUE
-  4. DROP + CREATE POLICY pour reservations INSERT
-- **Configuration Supabase requise (action utilisateur)** : activer le provider Phone (Twilio + WhatsApp channel). Sans ça l'OTP WhatsApp ne partira pas. L'OTP email fonctionne sans config supplémentaire.
+### 8. Confirmation avant abandon
 
-## Ordre d'exécution
+- Si `dirty === true` (au moins un champ modifié) et l'utilisateur clique sur la croix de fermeture ou presse `Escape` :
+  - Afficher un `ConfirmDialog` (composant existant `src/admin/components/ConfirmDialog.tsx`) :
+    - *"Vous êtes sur le point de quitter. Vos modifications non publiées sont sauvegardées en brouillon. Continuer l'édition ou Quitter ?"*
+  - Boutons : `Continuer l'édition` (annule) / `Quitter` (ferme + garde brouillon).
+- `beforeunload` listener pour la fermeture navigateur.
 
-1. Migrations DB (modules 3, 4)
-2. Refonte AuthModal (module 1)
-3. Simplification formulaires + MediaUploader (module 2)
-4. PropertyDetailPanel + checkbox officiel (module 3)
-5. ReservationFlow + calendrier (modules 4, 5)
-6. Insertion du profil SapSapHouse officiel (data seed)
+### 9. Étape 4 — Aperçu
 
-## Points à confirmer avant build
+Composant `<StepReview>` interne affichant :
+- Section "Le bien" : titre, type, prix, surface, chambres/SDB/pièces, description.
+- Section "Caractéristiques" : badges des features cochées + customs.
+- Section "À proximité" : liste des POI cochés.
+- Section "Localisation" : adresse, quartier, mini-carte read-only.
+- Section "Contacts" : WhatsApp + tél secondaire.
+- Section "Médias" : grille de miniatures avec étiquette "Image principale" sur la première.
+- Case *"☐ Je confirme que toutes les informations fournies sont exactes."* (obligatoire).
+- Bouton "Publier" désactivé tant que case décochée OU contrôles bloquants en échec ; les erreurs sont listées dessus.
 
-- **Numéro WhatsApp officiel SapSapHouse par pays** : déjà en DB (`country_configs.support_whatsapp`). Confirmé pour BF (+226 57 97 66 60), à vérifier pour ML et GH (actuellement hérite de BF).
-- **Twilio/WhatsApp provider Supabase** : à activer manuellement par l'utilisateur dans la console Cloud après livraison. Sinon seul l'OTP email fonctionnera.
-- **Compte officiel SapSapHouse** : je crée un UUID stable + ligne `profiles` marquée `is_official=true`, sans compte `auth.users` lié (le bien sera créé par un admin qui coche la case, pas connecté en tant que "SapSapHouse"). OK ?
+### Détails techniques
+
+- Fichier modifié : `src/owner/components/OwnerPropertyFormModal.tsx` (édition lourde mais ciblée, pas de réécriture complète — on garde la logique upload média/POI/save existante).
+- Pas de migration BDD nécessaire (schéma actuel suffit).
+- Nouveau hook léger inline `useDraftAutosave(state, key)` ou simple `useEffect + setTimeout` dans le composant.
+- Internationalisation : ajout des clés FR/EN nécessaires dans `src/i18n/fr.json` et `en.json` sous `owner.form.*` (ex. `step4_title`, `confirm_quit`, `confirm_truthful`, `rooms_help`, `bedrooms_required`, `coherence_warning`, `resume_draft`).
+- Aucun changement d'API ou de service backend.
+
+### Ce qui n'est PAS fait dans cette itération
+
+- La vérification web automatique des POI (recherche internet du nom de l'école/marché et calcul de distance) : ce sera une edge function ultérieure. Pour l'instant on stocke nom + catégorie + `distance_m = NULL` et l'UI publique affichera "à proximité" sans distance.
+- Aucun changement sur `AdminBiensLive.tsx` (formulaire admin reste tel quel).
+- Aucun changement sur les pages publiques d'affichage du bien.
