@@ -622,8 +622,23 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       if (poiChoices.length) {
         for (const p of poiChoices) {
           const name = p.name.trim() || p.label;
-          try { await addPoiToProperty(propertyId, { name, type: p.type, quartier, distance_m: null as any }); }
-          catch (err: any) { console.warn('POI add failed', err); }
+          let distance_m: number | null = null;
+          if (Number.isFinite(p.latitude) && Number.isFinite(p.longitude) && Number.isFinite(lat) && Number.isFinite(lng)) {
+            const R = 6371000;
+            const φ1 = (lat * Math.PI) / 180;
+            const φ2 = (p.latitude! * Math.PI) / 180;
+            const Δφ = ((p.latitude! - lat) * Math.PI) / 180;
+            const Δλ = ((p.longitude! - lng) * Math.PI) / 180;
+            const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+            distance_m = Math.round(2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+          }
+          try {
+            await addPoiToProperty(propertyId, {
+              name, type: p.type, quartier,
+              latitude: p.latitude, longitude: p.longitude,
+              distance_m: distance_m as any,
+            });
+          } catch (err: any) { console.warn('POI add failed', err); }
         }
       }
 
