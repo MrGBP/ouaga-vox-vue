@@ -103,20 +103,21 @@ const MonthCalendar = ({
           if (!day) return <span key={`e${i}`} />;
           const key = toKey(day);
           const isPast = day < today;
+          // Les dates passées sont totalement masquées (cellule vide) pour
+          // que le calendrier "commence" visuellement au jour d'aujourd'hui.
+          if (isPast) return <span key={`p${i}`} aria-hidden />;
           const isBooked = bookedNights.has(key);
           const isToday = isSameDay(day, today);
           const isCheckIn = checkIn && isSameDay(day, checkIn);
           const isCheckOut = checkOut && isSameDay(day, checkOut);
           const inRange = rangeStart && rangeEnd && day > rangeStart && day < rangeEnd;
           const isExtremity = isCheckIn || isCheckOut;
-          const isDisabled = isPast || isBooked;
+          const isDisabled = isBooked;
 
           let cellClass = 'relative h-10 w-full flex flex-col items-center justify-center text-xs font-medium transition-colors ';
           let inner: React.ReactNode = day.getDate();
 
-          if (isPast) {
-            cellClass += 'text-muted-foreground/40 line-through cursor-not-allowed';
-          } else if (isBooked) {
+          if (isBooked) {
             cellClass += 'cursor-not-allowed';
             inner = (
               <>
@@ -134,7 +135,7 @@ const MonthCalendar = ({
             cellClass += 'text-foreground hover:bg-muted rounded-lg cursor-pointer';
           }
 
-          const bgClass = isBooked && !isPast ? 'bg-[#fee2e2]' : '';
+          const bgClass = isBooked ? 'bg-[#fee2e2]' : '';
 
           return (
             <button
