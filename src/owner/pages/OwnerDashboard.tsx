@@ -187,48 +187,4 @@ function Bar({ icon, label, value, max, color, highlight }: {
   );
 }
 
-function DemoCountrySwitcher() {
-  const { activeCity, setActiveCity, availableCities } = useGeoCity();
-  const current = activeCity?.country?.toUpperCase() || 'BF';
-  const FLAGS: Record<string, string> = { BF: '🇧🇫', ML: '🇲🇱', GH: '🇬🇭' };
-  const NAMES: Record<string, string> = { BF: 'Burkina Faso', ML: 'Mali', GH: 'Ghana' };
-
-  // Find a city for each country target
-  const cityFor = (cc: string) =>
-    availableCities.find(c => (c.country || '').toUpperCase() === cc)?.id;
-
-  const switchTo = (cc: string) => {
-    const id = cityFor(cc);
-    if (!id) return toast.error(`Aucune ville configurée pour ${NAMES[cc]}`);
-    setActiveCity(id);
-    toast.success(`Mode démo : tu publies maintenant pour le ${NAMES[cc]} ${FLAGS[cc]}`);
-  };
-
-  return (
-    <Card className="p-3 border-dashed border-primary/40 bg-primary/5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="text-xs">
-          <p className="font-semibold text-foreground">Mode démo pays</p>
-          <p className="text-muted-foreground text-[11px]">
-            Bascule sur un pays pour publier et tester depuis ton compte actuel — actif : {FLAGS[current]} {NAMES[current] ?? current}
-          </p>
-        </div>
-        <div className="flex gap-1.5">
-          {(['BF', 'ML', 'GH'] as const).map(cc => (
-            <button
-              key={cc}
-              type="button"
-              onClick={() => switchTo(cc)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition ${
-                current === cc ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border hover:bg-muted'
-              }`}
-            >
-              {FLAGS[cc]} {cc}
-            </button>
-          ))}
-        </div>
-      </div>
-    </Card>
-  );
-}
 
