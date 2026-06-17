@@ -2,13 +2,26 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Calendar as CalIcon, Phone, User as UserIcon, MessageSquare, Check, X } from 'lucide-react';
+import { Loader2, Calendar as CalIcon, Phone, User as UserIcon, MessageSquare, Check, X, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchMyPropertyReservations } from '../lib/ownerService';
 import { reservationKindLabel, reservationStatusLabel, updateReservationStatus, type ReservationRow } from '@/lib/reservationsService';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
+type PeriodKey = 'month' | 'quarter' | 'semester' | 'year';
+const PERIODS: { key: PeriodKey; label: string; days: number }[] = [
+  { key: 'month',    label: 'Mois',       days: 30 },
+  { key: 'quarter',  label: 'Trimestre',  days: 90 },
+  { key: 'semester', label: '6 mois',     days: 180 },
+  { key: 'year',     label: 'Année',      days: 365 },
+];
+
+function refDate(r: ReservationRow): Date | null {
+  const d = r.visit_at || r.start_date || r.created_at;
+  return d ? new Date(d) : null;
+}
 
 export default function OwnerReservations() {
   const { user } = useAuth();
