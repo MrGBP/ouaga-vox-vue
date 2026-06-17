@@ -150,10 +150,12 @@ const FilterBar = ({
   // Real bounds from the dataset, with safe fallbacks.
   const PRICE_MIN = priceBounds?.min ?? 20000;
   const PRICE_MAX = priceBounds?.max ?? 2000000;
-  // Only show types that actually have at least one matching property.
-  const visibleTypes = availableTypeValues
-    ? PROPERTY_TYPES.filter(t => availableTypeValues.includes(t.value))
-    : PROPERTY_TYPES;
+  // Show ALL property types from the catalog so users can discover every
+  // available category, even if no listing currently matches. Types with
+  // zero matches are still selectable but visually faded.
+  const visibleTypes = PROPERTY_TYPES;
+  const typeHasMatches = (value: string) =>
+    !availableTypeValues || availableTypeValues.includes(value);
 
   // Build a defaults object that respects the real dataset bounds.
   const dynamicDefaults: FilterState = {
