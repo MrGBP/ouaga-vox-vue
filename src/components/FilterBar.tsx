@@ -250,21 +250,28 @@ const FilterBar = ({
       <div>
         <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Type de bien</h4>
         <div className="grid grid-cols-2 gap-2">
-          {visibleTypes.map(t => (
-            <button
-              key={t.value}
-              onClick={() => toggleType(t.value)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all active:scale-[0.98] ${
-                draft.type === t.value
-                  ? 'bg-primary/10 border-primary text-primary'
-                  : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
-              }`}
-            >
-              <span>{t.emoji}</span>
-              <span className="text-xs">{t.label}</span>
-              {draft.type === t.value && <Check className="h-3.5 w-3.5 ml-auto" />}
-            </button>
-          ))}
+          {visibleTypes.map(t => {
+            const hasMatches = typeHasMatches(t.value);
+            const isActive = draft.type === t.value;
+            return (
+              <button
+                key={t.value}
+                onClick={() => toggleType(t.value)}
+                title={hasMatches ? t.label : `${t.label} — aucun bien disponible actuellement`}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all active:scale-[0.98] ${
+                  isActive
+                    ? 'bg-primary/10 border-primary text-primary'
+                    : hasMatches
+                      ? 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
+                      : 'bg-muted/30 border-transparent text-muted-foreground/60 hover:bg-muted/60'
+                }`}
+              >
+                <span>{t.emoji}</span>
+                <span className="text-xs">{t.label}</span>
+                {isActive && <Check className="h-3.5 w-3.5 ml-auto" />}
+              </button>
+            );
+          })}
         </div>
       </div>
 
