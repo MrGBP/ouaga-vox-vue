@@ -6,6 +6,7 @@ import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNi
 import { fetchMergedProperties } from '@/lib/propertiesService';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import FilterBar, { type FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import { parseQuery, describeParsed } from '@/lib/smartMatch';
 import { filterProperties } from '@/lib/filterProperties';
 
@@ -19,16 +20,43 @@ const loadFilters = (): FilterState => {
   return DEFAULT_FILTERS;
 };
 
-const TYPEWRITER_PHRASES = [
-  "Villa meublée 4 chambres à Tampouy...",
-  "Studio climatisé proche école à Koulouba...",
-  "Appartement 2ch avec parking à Ouaga 2000...",
-  "Bureau 60m² route goudronnée à Zogona...",
-  "Maison avec gardien et groupe électrogène...",
-  "Local commercial moins de 150 000 FCFA à Pissy...",
-  "Studio meublé wifi à Patte d'Oie...",
-  "Villa avec piscine et clôture à Ouaga 2000...",
-];
+const SEARCH_COPY_BY_COUNTRY: Record<string, { typewriter: string[]; suggestions: string[] }> = {
+  BF: {
+    typewriter: [
+      "Villa meublée 4 chambres à Tampouy...",
+      "Studio climatisé proche école à Koulouba...",
+      "Appartement 2ch avec parking à Ouaga 2000...",
+      "Bureau 60m² route goudronnée à Zogona...",
+      "Maison avec gardien et groupe électrogène...",
+      "Local commercial moins de 150 000 FCFA à Pissy...",
+      "Studio meublé wifi à Patte d'Oie...",
+      "Villa avec piscine et clôture à Ouaga 2000...",
+    ],
+    suggestions: ['Villa meublée', 'Studio Koulouba', 'Ouaga 2000', 'Bureau', 'Avec piscine', 'Moins de 150 000', 'Tampouy', 'Climatisé'],
+  },
+  ML: {
+    typewriter: [
+      "Appartement 2 chambres à ACI 2000...",
+      "Villa meublée avec cour à Badalabougou...",
+      "Studio climatisé à Hamdallaye...",
+      "Bureau proche centre-ville à Bamako...",
+      "Maison familiale avec gardien à Sotuba...",
+      "Local commercial moins de 150 000 FCFA...",
+    ],
+    suggestions: ['Villa meublée', 'ACI 2000', 'Badalabougou', 'Hamdallaye', 'Bureau', 'Avec cour', 'Moins de 150 000', 'Climatisé'],
+  },
+  GH: {
+    typewriter: [
+      "Furnished apartment in East Legon...",
+      "Studio near Osu with air conditioning...",
+      "Office space around Airport Residential...",
+      "Townhouse with parking in Cantonments...",
+      "Commercial shop under 2,000 GHS in Accra...",
+      "Guesthouse room with Wi‑Fi in Labone...",
+    ],
+    suggestions: ['Furnished apartment', 'East Legon', 'Osu', 'Office space', 'Cantonments', 'Under 2,000 GHS', 'Labone', 'Air conditioning'],
+  },
+};
 
 const RECENT_KEY = 'sapsap_recent_searches';
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
@@ -61,20 +89,30 @@ const SearchPage = () => {
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const twActive = query.length === 0;
+  const { activeCity } = useGeoCity();
+  const countrySearchCopy = SEARCH_COPY_BY_COUNTRY[activeCity?.country || 'BF'] || SEARCH_COPY_BY_COUNTRY.BF;
+  const typewriterPhrases = countrySearchCopy.typewriter;
+  const searchSuggestions = countrySearchCopy.suggestions;
 
   useEffect(() => {
     if (!twActive) return;
-    const phrase = TYPEWRITER_PHRASES[phraseIdx];
+    const phrase = typewriterPhrases[phraseIdx] || typewriterPhrases[0];
     let t: ReturnType<typeof setTimeout>;
     if (!isDeleting) {
       if (twText.length < phrase.length) t = setTimeout(() => setTwText(phrase.slice(0, twText.length + 1)), 45);
       else t = setTimeout(() => setIsDeleting(true), 1500);
     } else {
       if (twText.length > 0) t = setTimeout(() => setTwText(twText.slice(0, -1)), 25);
-      else { setIsDeleting(false); setPhraseIdx((phraseIdx + 1) % TYPEWRITER_PHRASES.length); }
+      else { setIsDeleting(false); setPhraseIdx((phraseIdx + 1) % typewriterPhrases.length); }
     }
     return () => clearTimeout(t);
-  }, [twText, isDeleting, phraseIdx, twActive]);
+  }, [twText, isDeleting, phraseIdx, twActive, typewriterPhrases]);
+
+  useEffect(() => {
+    setTwText('');
+    setPhraseIdx(0);
+    setIsDeleting(false);
+  }, [activeCity?.country]);
 
   // Load recents
   useEffect(() => {
@@ -86,7 +124,6 @@ const SearchPage = () => {
   }, []);
 
   const [allProps, setAllProps] = useState<Property[]>([]);
-  const { activeCity } = useGeoCity();
   useEffect(() => {
     let alive = true;
     fetchMergedProperties(activeCity?.country).then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
@@ -173,6 +210,23 @@ const SearchPage = () => {
 
   const close = () => navigate(-1);
 
+  const handleBottomNav = (tab: string) => {
+    switch (tab) {
+      case 'home':
+      case 'map':
+        navigate('/');
+        break;
+      case 'search':
+        break;
+      case 'favorites':
+        navigate('/?favorites=1');
+        break;
+      case 'profile':
+        navigate('/mon-compte');
+        break;
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header */}
@@ -242,7 +296,10 @@ const SearchPage = () => {
       </AnimatePresence>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto scrollable">
+      <div
+        className="flex-1 overflow-y-auto scrollable"
+        style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}
+      >
         {fuzzy.length > 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
@@ -324,7 +381,7 @@ const SearchPage = () => {
                 Suggestions
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {['Villa meublée', 'Studio Koulouba', 'Ouaga 2000', 'Bureau', 'Avec piscine', 'Moins de 150 000', 'Tampouy', 'Climatisé'].map(s => (
+                {searchSuggestions.map(s => (
                   <button
                     key={s}
                     onClick={() => { setQuery(s); submit(s); }}
@@ -388,6 +445,11 @@ const SearchPage = () => {
           )}
         </AnimatePresence>
       </div>
+
+      <MobileBottomNav
+        activeTab="search"
+        onTabChange={handleBottomNav}
+      />
     </div>
   );
 };
