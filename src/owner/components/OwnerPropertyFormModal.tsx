@@ -741,8 +741,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               </div>
             </Field>
           </div>
+          </div>)}
 
-
+          {step === 3 && (<div className="space-y-4">
           {/* Localisation */}
           <Field label={t('owner.form.carte')}>
             <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={240} />
@@ -1047,15 +1048,29 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               </>
             )}
           </div>
+          </div>)}
 
+          {/* Wizard navigation */}
           <div className="flex gap-2 pt-3 border-t">
-            <button type="button" onClick={() => onClose(!!savedId)} className="flex-1 h-10 rounded-lg border text-xs font-semibold hover:bg-muted">
-              {savedId ? t('owner.form.fermer') : t('owner.form.annuler')}
-            </button>
-            <button type="submit" disabled={busy} className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-60">
-              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {savedId ? t('owner.form.mettre_a_jour') : t('owner.form.enregistrer')}
-            </button>
+            {step > 1 ? (
+              <button type="button" onClick={goBack} className="flex-1 h-10 rounded-lg border text-xs font-semibold hover:bg-muted">
+                ← {t('owner.form.precedent', 'Précédent')}
+              </button>
+            ) : (
+              <button type="button" onClick={() => onClose(!!savedId)} className="flex-1 h-10 rounded-lg border text-xs font-semibold hover:bg-muted">
+                {savedId ? t('owner.form.fermer') : t('owner.form.annuler')}
+              </button>
+            )}
+            {step < 3 ? (
+              <button type="button" onClick={goNext} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">
+                {t('owner.form.suivant', 'Suivant')} →
+              </button>
+            ) : (
+              <button type="submit" disabled={busy} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-60">
+                {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {savedId ? t('owner.form.mettre_a_jour') : t('owner.form.enregistrer')}
+              </button>
+            )}
           </div>
         </form>
 
