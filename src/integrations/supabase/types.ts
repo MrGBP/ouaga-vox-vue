@@ -799,10 +799,12 @@ export type Database = {
         Args: { _property_id: string }
         Returns: undefined
       }
+      is_any_admin: { Args: { _user_id: string }; Returns: boolean }
       is_property_owner: {
         Args: { _property_id: string; _user_id: string }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       list_country_configs_public: {
         Args: never
         Returns: {
