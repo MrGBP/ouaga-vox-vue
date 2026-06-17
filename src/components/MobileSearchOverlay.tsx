@@ -69,6 +69,8 @@ const MobileSearchOverlay = ({
   onOpenFilters,
 }: MobileSearchOverlayProps) => {
   const { t } = useTranslation();
+  const { activeCity } = useGeoCity();
+  const TYPEWRITER_PHRASES = TYPEWRITER_BY_COUNTRY[activeCity?.country || 'BF'] || TYPEWRITER_BY_COUNTRY.BF;
   const inputRef = useRef<HTMLInputElement>(null);
   const [typewriterText, setTypewriterText] = useState('');
   const [phraseIdx, setPhraseIdx] = useState(0);
