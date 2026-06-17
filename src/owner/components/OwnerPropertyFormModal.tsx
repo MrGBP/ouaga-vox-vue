@@ -959,34 +959,6 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                   />
                 </div>
 
-                <div className="flex gap-2">
-                  <select
-                    value={pendingKind}
-                    onChange={e => setPendingKind(e.target.value as any)}
-                    className="rounded-lg border border-border bg-background px-2 text-xs"
-                  >
-                    <option value="image">{t('owner.form.image')}</option>
-                    <option value="video">{t('owner.form.video')}</option>
-                    <option value="video_360">{t('owner.form.visite_360')}</option>
-                  </select>
-                  <div className="relative flex-1">
-                    <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      value={pendingUrl}
-                      onChange={e => setPendingUrl(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingUrl(); } }}
-                      placeholder={t('owner.form.media_url_ph')}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-9 text-xs"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addPendingUrl}
-                    className="px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
-                  >
-                    {t('owner.form.ajouter')}
-                  </button>
-                </div>
 
                 {pendingMedia.length > 0 ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
