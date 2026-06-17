@@ -78,6 +78,25 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [activeCat, setActiveCat] = useState<FeatureCategoryId>(FEATURE_CATEGORIES[0].id);
   const [busy, setBusy] = useState(false);
 
+  // Wizard publication — 3 étapes
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const STEP_LABELS = ['Type & description', 'Détails du bien', 'Localisation & médias'];
+  const goNext = () => {
+    if (step === 1) {
+      if (!title.trim()) return toast.error(t('owner.form.err_titre'));
+      if (description.trim().length < 20) return toast.error(t('owner.form.err_desc'));
+    }
+    if (step === 2) {
+      if (!price || Number(price) <= 0) return toast.error(t('owner.form.err_prix'));
+      if (!quartier) return toast.error(t('owner.form.err_quartier'));
+      const waDigits = waLocal.replace(/\D/g, '');
+      if (waDigits.length < 6 || waDigits.length > 14) return toast.error(t('owner.form.err_whatsapp'));
+    }
+    setStep(s => (Math.min(3, s + 1) as 1 | 2 | 3));
+    setTimeout(() => document.querySelector('[data-wizard-scroll]')?.scrollTo({ top: 0, behavior: 'smooth' }), 0);
+  };
+  const goBack = () => setStep(s => (Math.max(1, s - 1) as 1 | 2 | 3));
+
   // Contacts — WhatsApp obligatoire (E.164), téléphone secondaire optionnel.
   // L'indicatif est dérivé du pays sélectionné pour éviter toute ambigüité.
   const PHONE_PREFIX: Record<string, string> = { BF: '+226', ML: '+223', GH: '+233', CI: '+225', SN: '+221', TG: '+228', BJ: '+229', NE: '+227' };
@@ -218,6 +237,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
     setCustomInput('');
     setActiveCat(FEATURE_CATEGORIES[0].id);
+    setStep(1);
     setTimeout(() => titleRef.current?.focus(), 100);
   }, [open, initial]);
 
@@ -459,7 +479,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 p-3" onClick={() => onClose(!!savedId)}>
-      <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div data-wizard-scroll className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="sticky top-0 bg-card flex items-center justify-between px-5 py-3 border-b z-10">
           <div>
             <h2 className="text-base font-bold text-foreground">{isEdit ? t('owner.form.modifier') : t('owner.form.nouveau')}</h2>
