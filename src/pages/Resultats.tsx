@@ -57,9 +57,10 @@ const ResultatsPage = () => {
 
 
   const results = useMemo(
-    () => filterProperties(allProps, appliedQuery, filters, false, favorites),
-    [allProps, appliedQuery, filters, favorites]
+    () => filterProperties(allProps, appliedQuery, filters, false, favorites, activeCity?.name),
+    [allProps, appliedQuery, filters, favorites, activeCity?.name]
   );
+
 
   const toggleFavorite = useCallback((id: string) => {
     setFavorites(prev => {

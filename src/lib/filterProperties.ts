@@ -21,10 +21,20 @@ export function filterProperties(
   query: string,
   f: FilterState,
   favsOnly: boolean = false,
-  favSet: Set<string> = new Set()
+  favSet: Set<string> = new Set(),
+  cityName?: string
 ): Property[] {
   let result = source.filter(p => p.status !== 'rented' && p.available !== false);
   if (favsOnly) result = result.filter(p => favSet.has(p.id));
+
+  // City scope — when an active city is provided, restrict to properties
+  // whose city matches (case-insensitive). Legacy items without a city
+  // are kept to avoid hiding data.
+  if (cityName && cityName.trim()) {
+    const target = cityName.trim().toLowerCase();
+    result = result.filter(p => !p.city || p.city.trim().toLowerCase() === target);
+  }
+
 
   if (query.trim()) {
     const dynamic = Array.from(new Set(source.map(p => p.quartier).filter(Boolean)));
