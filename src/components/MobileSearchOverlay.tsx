@@ -139,7 +139,7 @@ const MobileSearchOverlay = ({
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="absolute left-0 right-0 bg-card rounded-t-[20px]"
         style={{
-          bottom: `calc(52px + env(safe-area-inset-bottom) + ${kbHeight}px)`,
+          bottom: kbHeight > 0 ? `${kbHeight}px` : 0,
           maxHeight: '70vh',
         }}
       >
