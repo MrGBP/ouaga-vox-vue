@@ -144,7 +144,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [existingPois, setExistingPois] = useState<PropertyPoi[]>([]);
 
   // POI auto-détectés via OpenStreetMap (Overpass) autour du point sélectionné
-  const overpassEnabled = open && step === 2 && Number.isFinite(lat) && Number.isFinite(lng);
+  const overpassEnabled = open && Number.isFinite(lat) && Number.isFinite(lng);
   const { pois: osmPois, loading: osmLoading } = useOverpassPOI(
     overpassEnabled ? lat : null,
     overpassEnabled ? lng : null,
