@@ -90,7 +90,7 @@ const POI_PRESETS: { type: string; emoji: string; label: string; labelEn: string
   { type: 'restaurant',  emoji: '🍽️', label: 'Restaurant',      labelEn: 'Restaurant' },
 ];
 
-type PoiChoice = { key: string; type: string; emoji: string; label: string; name: string };
+type PoiChoice = { key: string; type: string; emoji: string; label: string; name: string; latitude?: number; longitude?: number };
 
 export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose }: Props) {
   const { i18n } = useTranslation();
