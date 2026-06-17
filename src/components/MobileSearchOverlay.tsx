@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getTypeLabel, getTypeEmoji } from '@/lib/mockData';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 interface Property {
   id: string;
