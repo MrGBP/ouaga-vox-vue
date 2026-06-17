@@ -23,16 +23,39 @@ interface MobileSearchOverlayProps {
   onOpenFilters: () => void;
 }
 
-const TYPEWRITER_PHRASES = [
-  "Villa meublée 4 chambres à Tampouy...",
-  "Studio climatisé proche école à Koulouba...",
-  "Appartement 2ch avec parking à Ouaga 2000...",
-  "Bureau 60m² route goudronnée à Zogona...",
-  "Maison avec gardien et groupe électrogène...",
-  "Local commercial moins de 150 000 FCFA à Pissy...",
-  "Studio meublé wifi à Patte d'Oie...",
-  "Villa avec piscine et clôture à Ouaga 2000...",
-];
+const TYPEWRITER_BY_COUNTRY: Record<string, string[]> = {
+  BF: [
+    "Villa meublée 4 chambres à Tampouy...",
+    "Studio climatisé proche école à Koulouba...",
+    "Appartement 2ch avec parking à Ouaga 2000...",
+    "Bureau 60m² route goudronnée à Zogona...",
+    "Maison avec gardien et groupe électrogène...",
+    "Local commercial moins de 150 000 FCFA à Pissy...",
+    "Studio meublé wifi à Patte d'Oie...",
+    "Villa avec piscine et clôture à Ouaga 2000...",
+  ],
+  ML: [
+    "Villa meublée 4 chambres à Hamdallaye...",
+    "Studio climatisé proche école à Badalabougou...",
+    "Appartement 2ch avec parking à ACI 2000...",
+    "Bureau 60m² goudron à Hippodrome...",
+    "Maison avec gardien et groupe électrogène à Faladié...",
+    "Local commercial moins de 150 000 FCFA à Magnambougou...",
+    "Studio meublé wifi à Sotuba...",
+    "Villa avec piscine et clôture à ACI 2000...",
+  ],
+  GH: [
+    "Furnished 4-bedroom villa in East Legon...",
+    "Air-conditioned studio near school in Osu...",
+    "2-bedroom apartment with parking in Cantonments...",
+    "60sqm office on tarred road in Airport Residential...",
+    "House with security and generator in Tema...",
+    "Commercial space under 3,000 GHS in Madina...",
+    "Furnished studio with wifi in Spintex...",
+    "Villa with pool and fence in Trasacco...",
+  ],
+};
+
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 
