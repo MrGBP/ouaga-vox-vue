@@ -1,12 +1,25 @@
-import { Building2, Menu, X, Home, MapPin, Phone, FileText } from 'lucide-react';
+import { Building2, Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 const MobileHeader = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user, isOwner, isAdmin, openAuthModal, requireAuth, signOut } = useAuth();
+
+  const goPublish = () => {
+    setDrawerOpen(false);
+    requireAuth('publier un bien', () => {
+      if (isOwner || isAdmin) navigate('/proprietaire');
+      else navigate('/mon-compte');
+    });
+  };
+
 
   return (
     <>
