@@ -493,6 +493,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Stepper wizard 3 étapes */}
+          <div className="flex items-center gap-2 pb-1">
+            {[1, 2, 3].map(n => (
+              <div key={n} className="flex items-center gap-2 flex-1">
+                <div className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold border transition ${step >= n ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border'}`}>{n}</div>
+                <span className={`text-[10px] sm:text-[11px] font-semibold leading-tight ${step >= n ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {STEP_LABELS[n - 1]}
+                </span>
+                {n < 3 && <div className={`flex-1 h-0.5 ${step > n ? 'bg-primary' : 'bg-border'}`} />}
+              </div>
+            ))}
+          </div>
+
+          {step === 1 && (<div className="space-y-4">
           {/* Module 2 — Remplissage automatique par IA */}
           {showParser ? (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
@@ -533,7 +547,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             />
             <p className="text-[10px] text-muted-foreground mt-1">{t('owner.form.desc_count', { n: description.trim().length })}</p>
           </Field>
+          </div>)}
 
+          {step === 2 && (<div className="space-y-4">
           {(() => {
             const commercial = isCommercialType(type);
             const isFurn = furnished || isTypeFurnished(type);
