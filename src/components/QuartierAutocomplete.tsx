@@ -63,7 +63,7 @@ export default function QuartierAutocomplete({ value, onChange, countryCode, pla
         />
       </div>
       {open && suggestions.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full max-h-72 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+        <div className="absolute z-[1100] mt-1 w-full max-h-72 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
           <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40 sticky top-0">
             {items.length} quartiers · {grouped.length} villes
           </div>
