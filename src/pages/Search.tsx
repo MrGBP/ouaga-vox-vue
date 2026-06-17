@@ -6,6 +6,7 @@ import { mockProperties, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNi
 import { fetchMergedProperties } from '@/lib/propertiesService';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import FilterBar, { type FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import { parseQuery, describeParsed } from '@/lib/smartMatch';
 import { filterProperties } from '@/lib/filterProperties';
 
@@ -19,16 +20,43 @@ const loadFilters = (): FilterState => {
   return DEFAULT_FILTERS;
 };
 
-const TYPEWRITER_PHRASES = [
-  "Villa meublée 4 chambres à Tampouy...",
-  "Studio climatisé proche école à Koulouba...",
-  "Appartement 2ch avec parking à Ouaga 2000...",
-  "Bureau 60m² route goudronnée à Zogona...",
-  "Maison avec gardien et groupe électrogène...",
-  "Local commercial moins de 150 000 FCFA à Pissy...",
-  "Studio meublé wifi à Patte d'Oie...",
-  "Villa avec piscine et clôture à Ouaga 2000...",
-];
+const SEARCH_COPY_BY_COUNTRY: Record<string, { typewriter: string[]; suggestions: string[] }> = {
+  BF: {
+    typewriter: [
+      "Villa meublée 4 chambres à Tampouy...",
+      "Studio climatisé proche école à Koulouba...",
+      "Appartement 2ch avec parking à Ouaga 2000...",
+      "Bureau 60m² route goudronnée à Zogona...",
+      "Maison avec gardien et groupe électrogène...",
+      "Local commercial moins de 150 000 FCFA à Pissy...",
+      "Studio meublé wifi à Patte d'Oie...",
+      "Villa avec piscine et clôture à Ouaga 2000...",
+    ],
+    suggestions: ['Villa meublée', 'Studio Koulouba', 'Ouaga 2000', 'Bureau', 'Avec piscine', 'Moins de 150 000', 'Tampouy', 'Climatisé'],
+  },
+  ML: {
+    typewriter: [
+      "Appartement 2 chambres à ACI 2000...",
+      "Villa meublée avec cour à Badalabougou...",
+      "Studio climatisé à Hamdallaye...",
+      "Bureau proche centre-ville à Bamako...",
+      "Maison familiale avec gardien à Sotuba...",
+      "Local commercial moins de 150 000 FCFA...",
+    ],
+    suggestions: ['Villa meublée', 'ACI 2000', 'Badalabougou', 'Hamdallaye', 'Bureau', 'Avec cour', 'Moins de 150 000', 'Climatisé'],
+  },
+  GH: {
+    typewriter: [
+      "Furnished apartment in East Legon...",
+      "Studio near Osu with air conditioning...",
+      "Office space around Airport Residential...",
+      "Townhouse with parking in Cantonments...",
+      "Commercial shop under 2,000 GHS in Accra...",
+      "Guesthouse room with Wi‑Fi in Labone...",
+    ],
+    suggestions: ['Furnished apartment', 'East Legon', 'Osu', 'Office space', 'Cantonments', 'Under 2,000 GHS', 'Labone', 'Air conditioning'],
+  },
+};
 
 const RECENT_KEY = 'sapsap_recent_searches';
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
