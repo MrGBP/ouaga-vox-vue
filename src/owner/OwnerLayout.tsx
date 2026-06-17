@@ -4,7 +4,7 @@ import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, Log
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+
 import { useOwnerNotifications } from './lib/useOwnerNotifications';
 import OwnerDashboard from './pages/OwnerDashboard';
 import OwnerProperties from './pages/OwnerProperties';
