@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ user, session, isAdmin, isOwner, loading, refreshRoles, signOut, requireAuth, openAuthModal }}>
+    <Ctx.Provider value={{ user, session, isAdmin, isReadOnlyAdmin, isSuperAdmin, isOwner, loading, refreshRoles, signOut, requireAuth, openAuthModal }}>
       {children}
       <AuthModal
         open={modalOpen}
