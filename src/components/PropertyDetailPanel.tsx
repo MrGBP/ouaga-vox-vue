@@ -15,6 +15,7 @@ import { usePropertyMedia } from '@/hooks/usePropertyMedia';
 import { useNearbyPOI } from '@/hooks/useNearbyPOI';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useCountryConfig, useAllCountryConfigs, fetchCountrySupport } from '@/hooks/useCountryConfig';
 import { getTrustBadge } from '@/lib/trustSystem';
 import { track } from '@/lib/analytics';
 import ReservationFlow from './ReservationFlow';
