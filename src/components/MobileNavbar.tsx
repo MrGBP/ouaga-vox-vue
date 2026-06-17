@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Building2, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin } from 'lucide-react';
+import { Building2, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 export type NavLevel = 1 | 2 | 3;
 
