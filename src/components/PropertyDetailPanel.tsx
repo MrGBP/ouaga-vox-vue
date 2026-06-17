@@ -724,16 +724,23 @@ const PropertyDetailPanel = ({
           <Share2 className="h-3.5 w-3.5" /> Partager ce bien
         </Button>
 
-        {/* Agent : afficher uniquement les canaux renseignés */}
-        {property.agent_name && (
+        {/* Agent : affiche soit le propriétaire, soit SapSapHouse (bien officiel) */}
+        {(contactName || isOfficialListing) && (
           <div className="bg-muted/50 rounded-xl p-3">
+            {isOfficialListing && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                  <svg viewBox="0 0 12 12" className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-6"/></svg>
+                </div>
+                <span className="text-xs font-semibold text-primary">Bien SapSapHouse Officiel</span>
+              </div>
+            )}
             <div className="flex items-center gap-3">
-              {property.agent_photo && <img src={property.agent_photo} alt={property.agent_name} className="w-10 h-10 rounded-full object-cover" />}
+              {!isOfficialListing && property.agent_photo && <img src={property.agent_photo} alt={contactName || ''} className="w-10 h-10 rounded-full object-cover" />}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="text-sm font-semibold text-foreground">{property.agent_name}</p>
-                  {(() => {
-                    // Trust badge (mock stats for now — real signals will come from owner profile)
+                  <p className="text-sm font-semibold text-foreground">{contactName}</p>
+                  {!isOfficialListing && (() => {
                     const badge = getTrustBadge({ idVerified: true, propertiesCount: 1, completedReservations: 3 });
                     return (
                       <span
@@ -751,6 +758,7 @@ const PropertyDetailPanel = ({
                 </p>
               </div>
             </div>
+
             {hasAnyContact && (
               <div className="flex gap-2 mt-2.5">
                 {hasWhatsApp && (
