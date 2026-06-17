@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getTypeLabel, getTypeEmoji } from '@/lib/mockData';
+import { useGeoCity } from '@/hooks/useGeoCity';
 
 interface Property {
   id: string;
@@ -22,16 +23,39 @@ interface MobileSearchOverlayProps {
   onOpenFilters: () => void;
 }
 
-const TYPEWRITER_PHRASES = [
-  "Villa meublée 4 chambres à Tampouy...",
-  "Studio climatisé proche école à Koulouba...",
-  "Appartement 2ch avec parking à Ouaga 2000...",
-  "Bureau 60m² route goudronnée à Zogona...",
-  "Maison avec gardien et groupe électrogène...",
-  "Local commercial moins de 150 000 FCFA à Pissy...",
-  "Studio meublé wifi à Patte d'Oie...",
-  "Villa avec piscine et clôture à Ouaga 2000...",
-];
+const TYPEWRITER_BY_COUNTRY: Record<string, string[]> = {
+  BF: [
+    "Villa meublée 4 chambres à Tampouy...",
+    "Studio climatisé proche école à Koulouba...",
+    "Appartement 2ch avec parking à Ouaga 2000...",
+    "Bureau 60m² route goudronnée à Zogona...",
+    "Maison avec gardien et groupe électrogène...",
+    "Local commercial moins de 150 000 FCFA à Pissy...",
+    "Studio meublé wifi à Patte d'Oie...",
+    "Villa avec piscine et clôture à Ouaga 2000...",
+  ],
+  ML: [
+    "Villa meublée 4 chambres à Hamdallaye...",
+    "Studio climatisé proche école à Badalabougou...",
+    "Appartement 2ch avec parking à ACI 2000...",
+    "Bureau 60m² goudron à Hippodrome...",
+    "Maison avec gardien et groupe électrogène à Faladié...",
+    "Local commercial moins de 150 000 FCFA à Magnambougou...",
+    "Studio meublé wifi à Sotuba...",
+    "Villa avec piscine et clôture à ACI 2000...",
+  ],
+  GH: [
+    "Furnished 4-bedroom villa in East Legon...",
+    "Air-conditioned studio near school in Osu...",
+    "2-bedroom apartment with parking in Cantonments...",
+    "60sqm office on tarred road in Airport Residential...",
+    "House with security and generator in Tema...",
+    "Commercial space under 3,000 GHS in Madina...",
+    "Furnished studio with wifi in Spintex...",
+    "Villa with pool and fence in Trasacco...",
+  ],
+};
+
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 
@@ -45,6 +69,8 @@ const MobileSearchOverlay = ({
   onOpenFilters,
 }: MobileSearchOverlayProps) => {
   const { t } = useTranslation();
+  const { activeCity } = useGeoCity();
+  const TYPEWRITER_PHRASES = TYPEWRITER_BY_COUNTRY[activeCity?.country || 'BF'] || TYPEWRITER_BY_COUNTRY.BF;
   const inputRef = useRef<HTMLInputElement>(null);
   const [typewriterText, setTypewriterText] = useState('');
   const [phraseIdx, setPhraseIdx] = useState(0);
@@ -128,7 +154,7 @@ const MobileSearchOverlay = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed left-0 right-0 top-0 z-[85]"
-      style={{ bottom: kbHeight > 0 ? 0 : 'calc(52px + env(safe-area-inset-bottom))' }}
+      style={{ bottom: 'calc(52px + env(safe-area-inset-bottom))' }}
     >
       <div className="absolute inset-0 bg-foreground/45" onClick={onClose} />
 
