@@ -1,6 +1,8 @@
-// Service hybride : essaie Supabase, fallback sur les mocks pour ne rien casser.
+// Service hybride : Supabase d'abord. Le catalogue mock BF n'est injecté
+// que si MOCK_MODE est activé (isMockEnabled()).
 import { supabase } from '@/integrations/supabase/client';
 import { mockProperties, type Property } from '@/lib/mockData';
+import { isMockEnabled } from '@/lib/mockMode';
 
 const FEATURE_KEYS = [
   'has_ac','has_guardian','has_generator','has_garden','has_water','has_internet',
