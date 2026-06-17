@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { ChevronLeft, Heart, Share2 } from 'lucide-react';
 import { mockProperties, mockPois } from '@/lib/mockData';
 import { supabase } from '@/integrations/supabase/client';
