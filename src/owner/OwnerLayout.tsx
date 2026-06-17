@@ -53,7 +53,6 @@ export default function OwnerLayout() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <LanguageSwitcher />
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5">
               <LogOut className="h-4 w-4" /><span className="hidden sm:inline">{t('owner.deconnexion')}</span>
             </Button>
