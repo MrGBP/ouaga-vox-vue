@@ -5,8 +5,8 @@
 import type { PublicReservationRow } from './reservationsPublicService';
 
 const SUPPORT = {
-  email: 'support@sapsaphouse.com', // à mettre à jour
-  whatsapp: '+226 XX XX XX XX', // à mettre à jour
+  email: 'support@sapsaphouse.com',
+  whatsapp: '+226 57 97 66 60',
 };
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
