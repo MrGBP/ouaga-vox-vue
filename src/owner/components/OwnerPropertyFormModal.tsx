@@ -280,6 +280,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     });
   };
 
+  const setPendingAsMain = (idx: number) => {
+    setPendingMedia(prev => {
+      if (idx <= 0 || idx >= prev.length) return prev;
+      const next = [...prev];
+      const [picked] = next.splice(idx, 1);
+      next.unshift(picked);
+      return next;
+    });
+    toast.success('Image principale mise à jour');
+  };
+
   const featuresByCat = useMemo(() => {
     const map: Record<string, typeof FEATURE_CATALOG> = {};
     FEATURE_CATEGORIES.forEach(c => { map[c.id] = []; });
@@ -959,6 +970,32 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                   />
                 </div>
 
+                {/* Ajout par URL — utile pour vidéos hébergées (YouTube, Vimeo) ou images distantes */}
+                <div className="grid grid-cols-12 gap-2 items-stretch">
+                  <select
+                    value={pendingKind}
+                    onChange={e => setPendingKind(e.target.value as 'image' | 'video' | 'video_360')}
+                    className="form-input col-span-3 text-[11px]"
+                  >
+                    <option value="image">🖼️ Image</option>
+                    <option value="video">🎬 Vidéo</option>
+                    <option value="video_360">🔭 360°</option>
+                  </select>
+                  <input
+                    value={pendingUrl}
+                    onChange={e => setPendingUrl(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPendingUrl(); } }}
+                    placeholder="https://… (lien image, vidéo ou visite 360°)"
+                    className="form-input col-span-7"
+                  />
+                  <button
+                    type="button"
+                    onClick={addPendingUrl}
+                    className="col-span-2 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1"
+                  >
+                    <Link2 size={13} /> {t('owner.form.ajouter')}
+                  </button>
+                </div>
 
                 {pendingMedia.length > 0 ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -980,6 +1017,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                           type="button"
                           onClick={() => removePending(i)}
                           className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center"
+                          title="Supprimer"
                         >
                           <Trash2 size={11} />
                         </button>
@@ -988,12 +1026,24 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                         </span>
                         {i === 0 ? (
                           <span className="absolute top-1 left-1 text-[9px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold shadow">
-                            {t('owner.form.principale')}
+                            ⭐ {t('owner.form.principale')}
                           </span>
                         ) : (
-                          <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
-                            #{i + 1}
-                          </span>
+                          <>
+                            <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
+                              #{i + 1}
+                            </span>
+                            {m.kind === 'image' && (
+                              <button
+                                type="button"
+                                onClick={() => setPendingAsMain(i)}
+                                className="absolute inset-x-1 top-1 mx-auto w-fit px-2 py-0.5 rounded bg-black/70 text-white text-[9px] font-semibold opacity-0 group-hover:opacity-100 hover:bg-yellow-400 hover:text-black transition flex items-center gap-1"
+                                title="Définir comme image principale — l'aperçu se met à jour"
+                              >
+                                ⭐ Définir principale
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     ))}
@@ -1003,6 +1053,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                     {t('owner.form.aucun_media')}
                   </p>
                 )}
+                <p className="text-[10px] text-muted-foreground">
+                  💡 Survole une image et clique « ⭐ Définir principale » pour choisir la photo de couverture. L'aperçu ci-dessus se met à jour en direct.
+                </p>
                 <p className="text-[10px] text-muted-foreground">
                   {t('owner.form.upload_limit')}
                 </p>

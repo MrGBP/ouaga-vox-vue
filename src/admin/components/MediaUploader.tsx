@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Upload, Trash2, Image as ImageIcon, Video, Globe, ArrowUp, ArrowDown } from 'lucide-react';
+import { Upload, Trash2, Image as ImageIcon, Video, Globe, ArrowUp, ArrowDown, Star, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   uploadPropertyMedia, listPropertyMedia, deletePropertyMedia,
-  reorderPropertyMedia,
+  reorderPropertyMedia, addPropertyMediaUrl,
 } from '@/lib/propertiesService';
 
 interface Media { id: string; kind: 'image'|'video'|'video_360'; url: string; storage_path: string | null; position: number; }
@@ -13,7 +13,36 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [urlInput, setUrlInput] = useState('');
+  const [urlKind, setUrlKind] = useState<'image'|'video'|'video_360'>('image');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const addUrl = async () => {
+    const u = urlInput.trim();
+    if (!u) return;
+    if (!/^https?:\/\//i.test(u)) { toast.error('URL invalide (doit commencer par http(s)://)'); return; }
+    try {
+      await addPropertyMediaUrl(propertyId, u, urlKind);
+      setUrlInput('');
+      await reload();
+      toast.success('Média ajouté');
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const setAsMain = async (index: number) => {
+    if (index <= 0) return;
+    const reordered = [...items];
+    const [picked] = reordered.splice(index, 1);
+    reordered.unshift(picked);
+    setItems(reordered);
+    try {
+      await reorderPropertyMedia(reordered.map((m, i) => ({ id: m.id, position: i })));
+      toast.success('Image principale mise à jour');
+    } catch {
+      toast.error('Échec — réessaie');
+      reload();
+    }
+  };
 
   const reload = () => listPropertyMedia(propertyId).then(d => setItems(d as any));
   useEffect(() => { reload(); }, [propertyId]);
@@ -111,6 +140,25 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
         </div>
       )}
 
+      <div className="grid grid-cols-12 gap-2 items-stretch">
+        <select value={urlKind} onChange={e => setUrlKind(e.target.value as any)} className="form-input col-span-3 text-[11px]">
+          <option value="image">🖼️ Image</option>
+          <option value="video">🎬 Vidéo</option>
+          <option value="video_360">🔭 360°</option>
+        </select>
+        <input
+          value={urlInput}
+          onChange={e => setUrlInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } }}
+          placeholder="https://… (lien image, vidéo ou visite 360°)"
+          className="form-input col-span-7"
+        />
+        <button type="button" onClick={addUrl}
+          className="col-span-2 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1">
+          <Link2 size={13} /> Ajouter
+        </button>
+      </div>
+
       {items.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {items.map((m, i) => (
@@ -142,9 +190,24 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
               <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded">
                 {kindBadge(m.kind)}
               </span>
-              <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
-                #{i + 1}
-              </span>
+              {i === 0 ? (
+                <span className="absolute top-1 right-8 text-[9px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold shadow flex items-center gap-0.5">
+                  <Star size={9} className="fill-current" /> Principale
+                </span>
+              ) : (
+                <>
+                  <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
+                    #{i + 1}
+                  </span>
+                  {m.kind === 'image' && (
+                    <button type="button" onClick={() => setAsMain(i)}
+                      title="Définir comme image principale"
+                      className="absolute inset-x-1 top-1 mx-auto w-fit px-2 py-0.5 rounded bg-black/70 text-white text-[9px] font-semibold opacity-0 group-hover:opacity-100 hover:bg-yellow-400 hover:text-black transition flex items-center gap-1">
+                      <Star size={9} /> Définir principale
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           ))}
         </div>
