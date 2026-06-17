@@ -874,6 +874,46 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               <p className="text-[10px] text-muted-foreground -mt-1">
                 Cochez les lieux présents à proximité (rayon ~500 m). Plus vous renseignez d'informations précises, mieux les visiteurs comprendront l'emplacement. Le nom du lieu est facultatif mais recommandé — nous le vérifierons et calculerons la distance automatiquement quand c'est possible.
               </p>
+
+              {/* Suggestions automatiques OpenStreetMap autour du quartier sélectionné */}
+              {(osmLoading || osmSuggestions.length > 0) && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-1.5">
+                  <div className="text-[10px] font-semibold text-primary flex items-center gap-1">
+                    <Sparkles size={11} />
+                    {lang === 'en' ? 'Auto-detected nearby (OpenStreetMap)' : 'Détectés automatiquement autour (OpenStreetMap)'}
+                    {osmLoading && <Loader2 size={10} className="animate-spin" />}
+                  </div>
+                  {osmSuggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {osmSuggestions.slice(0, 20).map(s => {
+                        const key = `osm_${s.id}`;
+                        const checked = !!poiChoices.find(c => c.key === key);
+                        return (
+                          <label key={key} className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] cursor-pointer border transition ${checked ? 'bg-primary/15 border-primary text-primary' : 'bg-card border-border hover:bg-muted'}`}>
+                            <input
+                              type="checkbox"
+                              className="accent-primary"
+                              checked={checked}
+                              onChange={() => {
+                                setPoiChoices(prev => {
+                                  if (prev.find(p => p.key === key)) return prev.filter(p => p.key !== key);
+                                  return [...prev, { key, type: s.type, emoji: s.emoji, label: s.label, name: s.name }];
+                                });
+                              }}
+                            />
+                            <span aria-hidden>{s.emoji}</span>
+                            <span className="truncate max-w-[150px]">{s.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {!osmLoading && osmSuggestions.length === 0 && (
+                    <div className="text-[10px] text-muted-foreground">Aucun lieu détecté automatiquement.</div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                 {POI_PRESETS.map(p => {
                   const key = `${p.type}__${p.label}`;
