@@ -13,7 +13,36 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [urlInput, setUrlInput] = useState('');
+  const [urlKind, setUrlKind] = useState<'image'|'video'|'video_360'>('image');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const addUrl = async () => {
+    const u = urlInput.trim();
+    if (!u) return;
+    if (!/^https?:\/\//i.test(u)) { toast.error('URL invalide (doit commencer par http(s)://)'); return; }
+    try {
+      await addPropertyMediaUrl(propertyId, u, urlKind);
+      setUrlInput('');
+      await reload();
+      toast.success('Média ajouté');
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const setAsMain = async (index: number) => {
+    if (index <= 0) return;
+    const reordered = [...items];
+    const [picked] = reordered.splice(index, 1);
+    reordered.unshift(picked);
+    setItems(reordered);
+    try {
+      await reorderPropertyMedia(reordered.map((m, i) => ({ id: m.id, position: i })));
+      toast.success('Image principale mise à jour');
+    } catch {
+      toast.error('Échec — réessaie');
+      reload();
+    }
+  };
 
   const reload = () => listPropertyMedia(propertyId).then(d => setItems(d as any));
   useEffect(() => { reload(); }, [propertyId]);
