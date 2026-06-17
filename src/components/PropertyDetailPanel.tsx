@@ -268,14 +268,35 @@ const PropertyDetailPanel = ({
   };
   // WhatsApp = numéro saisi par le propriétaire (obligatoire). Téléphone d'appel = secondaire optionnel,
   // sinon on retombe sur le WhatsApp pour ne pas casser le bouton "Appeler".
-  const waRaw = (property.whatsapp_phone || property.agent_phone || '').replace(/\D/g, '');
-  const callRaw = (property.agent_phone || property.whatsapp_phone || '').replace(/\D/g, '');
-  const agentPhoneRaw = waRaw; // compat (utilisé plus bas)
-  const agentEmail = property.agent_email?.trim() ?? '';
+  const isOfficialListing = property.is_official === true;
+  const countryCfg = useCountryConfig();
+  const { data: allCountries } = useAllCountryConfigs();
+  const [officialSupport, setOfficialSupport] = useState<{ email: string | null; whatsapp: string | null } | null>(null);
+  useEffect(() => {
+    if (!isOfficialListing) { setOfficialSupport(null); return; }
+    const code = property.country_code || countryCfg.code || 'BF';
+    fetchCountrySupport(code).then(s => {
+      if (s) setOfficialSupport({ email: s.support_email, whatsapp: s.support_whatsapp });
+    }).catch(() => {});
+  }, [isOfficialListing, property.country_code, countryCfg.code]);
+
+  const officialWa = (officialSupport?.whatsapp || countryCfg.support_whatsapp || '').replace(/\D/g, '');
+  const officialEmail = officialSupport?.email || countryCfg.support_email || '';
+
+  const waRaw = isOfficialListing
+    ? officialWa
+    : (property.whatsapp_phone || property.agent_phone || '').replace(/\D/g, '');
+  const callRaw = isOfficialListing
+    ? officialWa
+    : (property.agent_phone || property.whatsapp_phone || '').replace(/\D/g, '');
+  const agentPhoneRaw = waRaw;
+  const agentEmail = isOfficialListing ? officialEmail : (property.agent_email?.trim() ?? '');
   const hasWhatsApp = waRaw.length > 0;
   const hasPhone = callRaw.length > 0;
   const hasEmail = agentEmail.length > 0;
   const hasAnyContact = hasWhatsApp || hasPhone || hasEmail;
+  const contactName = isOfficialListing ? 'SapSapHouse' : property.agent_name;
+
 
   const currentMedia = mediaItems[mediaIdx];
 
