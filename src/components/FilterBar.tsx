@@ -150,10 +150,12 @@ const FilterBar = ({
   // Real bounds from the dataset, with safe fallbacks.
   const PRICE_MIN = priceBounds?.min ?? 20000;
   const PRICE_MAX = priceBounds?.max ?? 2000000;
-  // Only show types that actually have at least one matching property.
-  const visibleTypes = availableTypeValues
-    ? PROPERTY_TYPES.filter(t => availableTypeValues.includes(t.value))
-    : PROPERTY_TYPES;
+  // Show ALL property types from the catalog so users can discover every
+  // available category, even if no listing currently matches. Types with
+  // zero matches are still selectable but visually faded.
+  const visibleTypes = PROPERTY_TYPES;
+  const typeHasMatches = (value: string) =>
+    !availableTypeValues || availableTypeValues.includes(value);
 
   // Build a defaults object that respects the real dataset bounds.
   const dynamicDefaults: FilterState = {
@@ -248,21 +250,28 @@ const FilterBar = ({
       <div>
         <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Type de bien</h4>
         <div className="grid grid-cols-2 gap-2">
-          {visibleTypes.map(t => (
-            <button
-              key={t.value}
-              onClick={() => toggleType(t.value)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all active:scale-[0.98] ${
-                draft.type === t.value
-                  ? 'bg-primary/10 border-primary text-primary'
-                  : 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
-              }`}
-            >
-              <span>{t.emoji}</span>
-              <span className="text-xs">{t.label}</span>
-              {draft.type === t.value && <Check className="h-3.5 w-3.5 ml-auto" />}
-            </button>
-          ))}
+          {visibleTypes.map(t => {
+            const hasMatches = typeHasMatches(t.value);
+            const isActive = draft.type === t.value;
+            return (
+              <button
+                key={t.value}
+                onClick={() => toggleType(t.value)}
+                title={hasMatches ? t.label : `${t.label} — aucun bien disponible actuellement`}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all active:scale-[0.98] ${
+                  isActive
+                    ? 'bg-primary/10 border-primary text-primary'
+                    : hasMatches
+                      ? 'bg-muted/50 border-transparent text-foreground hover:bg-muted'
+                      : 'bg-muted/30 border-transparent text-muted-foreground/60 hover:bg-muted/60'
+                }`}
+              >
+                <span>{t.emoji}</span>
+                <span className="text-xs">{t.label}</span>
+                {isActive && <Check className="h-3.5 w-3.5 ml-auto" />}
+              </button>
+            );
+          })}
         </div>
       </div>
 
