@@ -280,6 +280,17 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
     });
   };
 
+  const setPendingAsMain = (idx: number) => {
+    setPendingMedia(prev => {
+      if (idx <= 0 || idx >= prev.length) return prev;
+      const next = [...prev];
+      const [picked] = next.splice(idx, 1);
+      next.unshift(picked);
+      return next;
+    });
+    toast.success('Image principale mise à jour');
+  };
+
   const featuresByCat = useMemo(() => {
     const map: Record<string, typeof FEATURE_CATALOG> = {};
     FEATURE_CATEGORIES.forEach(c => { map[c.id] = []; });
