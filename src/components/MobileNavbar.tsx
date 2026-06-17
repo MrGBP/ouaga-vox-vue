@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Building2, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin } from 'lucide-react';
+import { Building2, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 export type NavLevel = 1 | 2 | 3;
 
@@ -49,9 +51,19 @@ const MobileNavbar = ({
 }: MobileNavbarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user, isOwner, isAdmin, openAuthModal, requireAuth, signOut } = useAuth();
   const showBack = level > 1;
   const showHome = level >= 3 || (depth && depth >= 3);
   const dotDepth = depth || level;
+
+  const goPublish = () => {
+    setDrawerOpen(false);
+    requireAuth('publier un bien', () => {
+      if (isOwner || isAdmin) navigate('/proprietaire');
+      else navigate('/mon-compte');
+    });
+  };
 
   return (
     <>
@@ -159,22 +171,60 @@ const MobileNavbar = ({
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <nav className="flex-1 p-4 space-y-1">
+              <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                 {[
-                  { label: t('nav.biens'), icon: HomeIcon, href: '#properties' },
-                  { label: t('nav.carte'), icon: MapPin, href: '#map' },
-                  { label: t('nav.publier_bien'), icon: FileText, href: '#publish' },
+                  { label: t('nav.biens'), icon: HomeIcon, onClick: () => { setDrawerOpen(false); navigate('/'); } },
+                  { label: t('nav.carte'), icon: MapPin, onClick: () => { setDrawerOpen(false); navigate('/?exploreMap=1'); } },
+                  { label: t('nav.publier_bien'), icon: FileText, onClick: goPublish },
                 ].map(item => (
-                  <a
+                  <button
                     key={item.label}
-                    href={item.href}
-                    onClick={() => setDrawerOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                    onClick={item.onClick}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors text-left"
                   >
                     <item.icon className="h-4 w-4 text-muted-foreground" />
                     {item.label}
-                  </a>
+                  </button>
                 ))}
+
+                {/* Auth section */}
+                <div className="pt-3 mt-3 border-t border-border space-y-1">
+                  {user ? (
+                    <>
+                      <button
+                        onClick={() => { setDrawerOpen(false); navigate('/mon-compte'); }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-muted text-left"
+                      >
+                        <UserIcon className="h-4 w-4 text-muted-foreground" />
+                        {user.user_metadata?.full_name || user.email}
+                      </button>
+                      <button
+                        onClick={() => { setDrawerOpen(false); signOut(); }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-muted text-left"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Se déconnecter
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => { setDrawerOpen(false); openAuthModal('se connecter'); }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-muted text-left"
+                      >
+                        <LogIn className="h-4 w-4 text-muted-foreground" />
+                        Se connecter
+                      </button>
+                      <button
+                        onClick={() => { setDrawerOpen(false); openAuthModal('créer un compte'); }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-muted text-left"
+                      >
+                        <UserPlus className="h-4 w-4 text-muted-foreground" />
+                        Créer un compte
+                      </button>
+                    </>
+                  )}
+                </div>
               </nav>
               <div className="p-4 border-t border-border">
                 <Button className="w-full bg-secondary text-secondary-foreground gap-2">
