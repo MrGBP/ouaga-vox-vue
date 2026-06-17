@@ -185,7 +185,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         };
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       } catch { /* quota or other */ }
-    }, 800);
+    }, 5000);
     return () => clearTimeout(tm);
   }, [open, isEdit, step, title, description, type, price, rentMode, bedrooms, bathrooms, surface, floor, rooms, capacity, features, customFeatures, poiChoices, quartier, address, lat, lng, selectedCountry, waLocal, phoneLocal, pendingMedia]);
 
@@ -933,25 +933,23 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
           {/* ÉTAPE 3 — Localisation + contacts */}
           {step === 3 && (<div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1">{t('owner.form.quartier')} *</label>
-                <QuartierAutocomplete countryCode={selectedCountry} value={quartier} onChange={(q, loc) => { setQuartier(q); if (loc?.lat && loc?.lng) { setLat(loc.lat); setLng(loc.lng); } }} />
-              </div>
-              <Field label={t('owner.form.adresse')}>
-                <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder={t('owner.form.adresse_ph')} />
-              </Field>
+            <div className="relative z-[1100]">
+              <label className="block text-xs font-semibold mb-1">{t('owner.form.quartier')} *</label>
+              <QuartierAutocomplete countryCode={selectedCountry} value={quartier} onChange={(q, loc) => { setQuartier(q); if (loc?.lat && loc?.lng) { setLat(loc.lat); setLng(loc.lng); } }} />
+              <p className="text-[10px] text-muted-foreground mt-1">Sélectionnez d'abord le quartier — la carte se centrera automatiquement dessus.</p>
             </div>
 
+            <Field label={t('owner.form.adresse')}>
+              <input value={address} onChange={e => setAddress(e.target.value)} className="form-input" placeholder={t('owner.form.adresse_ph')} />
+            </Field>
+
             <Field label={t('owner.form.carte')}>
-              <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={240} />
+              <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={260} satellite locked lockRadiusKm={0.8} />
               <p className="text-[10px] text-muted-foreground mt-1">
-                📍 La carte est automatiquement centrée sur le quartier choisi. Ajustez le marqueur si nécessaire.
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                💡 Astuce : dans la description, mentionnez plutôt des repères connus (« près de la Pharmacie X », « derrière le Grand Marché ») — c'est plus utile que des distances en mètres.
+                🛰️ Vue satellite centrée sur le quartier sélectionné. Déplacez le marqueur pour indiquer l'emplacement exact du bien.
               </p>
             </Field>
+
 
             {/* Contacts */}
             <div className="space-y-2 border-t pt-4">
