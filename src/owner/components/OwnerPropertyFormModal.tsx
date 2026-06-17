@@ -22,6 +22,39 @@ import {
   POI_TYPES, poiLabel, addPoiToProperty, listPoisForProperty, removePoi, type PropertyPoi,
 } from '@/lib/propertyPoisService';
 import { useAuth } from '@/hooks/useAuth';
+import { useOverpassPOI } from '@/hooks/useOverpassPOI';
+
+// Mapping OSM type → préréglage POI (emoji + libellé FR/EN)
+const OSM_TYPE_TO_PRESET: Record<string, { type: string; emoji: string; label: string; labelEn: string }> = {
+  school:           { type: 'school',      emoji: '🏫', label: 'École',             labelEn: 'School' },
+  university:       { type: 'school',      emoji: '🎓', label: 'Université',        labelEn: 'University' },
+  college:          { type: 'school',      emoji: '🎓', label: 'Collège',           labelEn: 'College' },
+  marketplace:      { type: 'market',      emoji: '🛒', label: 'Marché',            labelEn: 'Market' },
+  place_of_worship: { type: 'mosque',      emoji: '🕌', label: 'Lieu de culte',     labelEn: 'Place of worship' },
+  pharmacy:         { type: 'pharmacy',    emoji: '💊', label: 'Pharmacie',         labelEn: 'Pharmacy' },
+  hospital:         { type: 'hospital',    emoji: '🏥', label: 'Hôpital',           labelEn: 'Hospital' },
+  clinic:           { type: 'hospital',    emoji: '🏥', label: 'Clinique',          labelEn: 'Clinic' },
+  doctors:          { type: 'hospital',    emoji: '🩺', label: 'Cabinet médical',   labelEn: 'Doctors' },
+  supermarket:      { type: 'supermarket', emoji: '🛍️', label: 'Supermarché',       labelEn: 'Supermarket' },
+  convenience:      { type: 'supermarket', emoji: '🏪', label: 'Épicerie',          labelEn: 'Convenience' },
+  mall:             { type: 'supermarket', emoji: '🏬', label: 'Centre commercial', labelEn: 'Mall' },
+  fuel:             { type: 'transport',   emoji: '⛽', label: 'Station-service',   labelEn: 'Gas station' },
+  bus_station:      { type: 'transport',   emoji: '🚌', label: 'Gare routière',     labelEn: 'Bus station' },
+  taxi:             { type: 'transport',   emoji: '🚖', label: 'Station taxi',      labelEn: 'Taxi stand' },
+  bank:             { type: 'bank',        emoji: '🏦', label: 'Banque',            labelEn: 'Bank' },
+  atm:              { type: 'bank',        emoji: '🏧', label: 'Distributeur',      labelEn: 'ATM' },
+  restaurant:       { type: 'restaurant',  emoji: '🍽️', label: 'Restaurant',        labelEn: 'Restaurant' },
+  cafe:             { type: 'restaurant',  emoji: '☕', label: 'Café',              labelEn: 'Cafe' },
+  fast_food:        { type: 'restaurant',  emoji: '🍔', label: 'Fast-food',         labelEn: 'Fast food' },
+  bar:              { type: 'restaurant',  emoji: '🍻', label: 'Bar',               labelEn: 'Bar' },
+  park:             { type: 'park',        emoji: '🌳', label: 'Parc',              labelEn: 'Park' },
+  playground:       { type: 'park',        emoji: '🛝', label: 'Aire de jeux',      labelEn: 'Playground' },
+  sports_centre:    { type: 'park',        emoji: '🏟️', label: 'Centre sportif',    labelEn: 'Sports centre' },
+  police:           { type: 'admin',       emoji: '🚓', label: 'Police',            labelEn: 'Police' },
+  fire_station:     { type: 'admin',       emoji: '🚒', label: 'Caserne pompiers',  labelEn: 'Fire station' },
+  hotel:            { type: 'admin',       emoji: '🏨', label: 'Hôtel',             labelEn: 'Hotel' },
+  attraction:       { type: 'park',        emoji: '🎡', label: 'Attraction',        labelEn: 'Attraction' },
+};
 
 type PendingMedia =
   | { kind: 'image' | 'video'; source: 'file'; file: File; previewUrl: string }
@@ -57,7 +90,7 @@ const POI_PRESETS: { type: string; emoji: string; label: string; labelEn: string
   { type: 'restaurant',  emoji: '🍽️', label: 'Restaurant',      labelEn: 'Restaurant' },
 ];
 
-type PoiChoice = { key: string; type: string; emoji: string; label: string; name: string };
+type PoiChoice = { key: string; type: string; emoji: string; label: string; name: string; latitude?: number; longitude?: number };
 
 export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose }: Props) {
   const { i18n } = useTranslation();
@@ -106,9 +139,26 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   // Étape 4 — Aperçu
   const [confirmTruthful, setConfirmTruthful] = useState(false);
 
-  // POI cochables (key = type+label)
+  // POI cochables (key = type+label, ou osm_<id> pour les suggestions OSM)
   const [poiChoices, setPoiChoices] = useState<PoiChoice[]>([]);
   const [existingPois, setExistingPois] = useState<PropertyPoi[]>([]);
+
+  // POI auto-détectés via OpenStreetMap (Overpass) autour du point sélectionné
+  const overpassEnabled = open && Number.isFinite(lat) && Number.isFinite(lng);
+  const { pois: osmPois, loading: osmLoading } = useOverpassPOI(
+    overpassEnabled ? lat : null,
+    overpassEnabled ? lng : null,
+    overpassEnabled,
+  );
+  const osmSuggestions = useMemo(() => {
+    return (osmPois ?? [])
+      .map(p => {
+        const preset = OSM_TYPE_TO_PRESET[p.type];
+        if (!preset) return null;
+        return { id: p.id, name: p.name, latitude: p.latitude, longitude: p.longitude, ...preset };
+      })
+      .filter(Boolean) as Array<{ id: string; name: string; latitude: number; longitude: number; type: string; emoji: string; label: string; labelEn: string }>;
+  }, [osmPois]);
 
   // Médias
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
@@ -572,8 +622,23 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       if (poiChoices.length) {
         for (const p of poiChoices) {
           const name = p.name.trim() || p.label;
-          try { await addPoiToProperty(propertyId, { name, type: p.type, quartier, distance_m: null as any }); }
-          catch (err: any) { console.warn('POI add failed', err); }
+          let distance_m: number | null = null;
+          if (Number.isFinite(p.latitude) && Number.isFinite(p.longitude) && Number.isFinite(lat) && Number.isFinite(lng)) {
+            const R = 6371000;
+            const φ1 = (lat * Math.PI) / 180;
+            const φ2 = (p.latitude! * Math.PI) / 180;
+            const Δφ = ((p.latitude! - lat) * Math.PI) / 180;
+            const Δλ = ((p.longitude! - lng) * Math.PI) / 180;
+            const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+            distance_m = Math.round(2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+          }
+          try {
+            await addPoiToProperty(propertyId, {
+              name, type: p.type, quartier,
+              latitude: p.latitude, longitude: p.longitude,
+              distance_m: distance_m as any,
+            });
+          } catch (err: any) { console.warn('POI add failed', err); }
         }
       }
 
@@ -824,6 +889,46 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               <p className="text-[10px] text-muted-foreground -mt-1">
                 Cochez les lieux présents à proximité (rayon ~500 m). Plus vous renseignez d'informations précises, mieux les visiteurs comprendront l'emplacement. Le nom du lieu est facultatif mais recommandé — nous le vérifierons et calculerons la distance automatiquement quand c'est possible.
               </p>
+
+              {/* Suggestions automatiques OpenStreetMap autour du quartier sélectionné */}
+              {(osmLoading || osmSuggestions.length > 0) && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-1.5">
+                  <div className="text-[10px] font-semibold text-primary flex items-center gap-1">
+                    <Sparkles size={11} />
+                    {lang === 'en' ? 'Auto-detected nearby (OpenStreetMap)' : 'Détectés automatiquement autour (OpenStreetMap)'}
+                    {osmLoading && <Loader2 size={10} className="animate-spin" />}
+                  </div>
+                  {osmSuggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {osmSuggestions.slice(0, 20).map(s => {
+                        const key = `osm_${s.id}`;
+                        const checked = !!poiChoices.find(c => c.key === key);
+                        return (
+                          <label key={key} className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] cursor-pointer border transition ${checked ? 'bg-primary/15 border-primary text-primary' : 'bg-card border-border hover:bg-muted'}`}>
+                            <input
+                              type="checkbox"
+                              className="accent-primary"
+                              checked={checked}
+                              onChange={() => {
+                                setPoiChoices(prev => {
+                                  if (prev.find(p => p.key === key)) return prev.filter(p => p.key !== key);
+                                  return [...prev, { key, type: s.type, emoji: s.emoji, label: s.label, name: s.name, latitude: s.latitude, longitude: s.longitude }];
+                                });
+                              }}
+                            />
+                            <span aria-hidden>{s.emoji}</span>
+                            <span className="truncate max-w-[150px]">{s.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {!osmLoading && osmSuggestions.length === 0 && (
+                    <div className="text-[10px] text-muted-foreground">Aucun lieu détecté automatiquement.</div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                 {POI_PRESETS.map(p => {
                   const key = `${p.type}__${p.label}`;
