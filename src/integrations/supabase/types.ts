@@ -381,6 +381,7 @@ export type Database = {
           furnished: boolean | null
           id: string
           images: string[] | null
+          is_official: boolean
           last_correction_at: string | null
           last_correction_note: string | null
           latitude: number
@@ -425,6 +426,7 @@ export type Database = {
           furnished?: boolean | null
           id?: string
           images?: string[] | null
+          is_official?: boolean
           last_correction_at?: string | null
           last_correction_note?: string | null
           latitude: number
@@ -469,6 +471,7 @@ export type Database = {
           furnished?: boolean | null
           id?: string
           images?: string[] | null
+          is_official?: boolean
           last_correction_at?: string | null
           last_correction_note?: string | null
           latitude?: number
@@ -628,6 +631,7 @@ export type Database = {
       reservations: {
         Row: {
           admin_notes: string | null
+          confirmation_number: string | null
           contact_email: string | null
           contact_name: string
           contact_phone: string
@@ -647,6 +651,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          confirmation_number?: string | null
           contact_email?: string | null
           contact_name: string
           contact_phone: string
@@ -666,6 +671,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          confirmation_number?: string | null
           contact_email?: string | null
           contact_name?: string
           contact_phone?: string
