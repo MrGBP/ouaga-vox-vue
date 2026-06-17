@@ -77,6 +77,9 @@ export default function OwnerReservations() {
         <p className="text-sm text-muted-foreground">Toutes les demandes reçues sur tes biens.</p>
       </div>
 
+      {!loading && reservations.length > 0 && <SynthesisCard reservations={reservations} />}
+
+
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
       ) : (
