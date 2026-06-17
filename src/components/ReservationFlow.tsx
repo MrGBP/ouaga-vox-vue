@@ -320,6 +320,15 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
 
   const handleConfirm = async () => {
     if (!checkIn || !checkOut || nights === 0) return;
+    if (conflict) {
+      toast({ title: 'Dates indisponibles', description: 'Choisissez d\'autres dates.', variant: 'destructive' }); return;
+    }
+    // Vérif d'authentification — l'utilisateur doit être connecté pour réserver
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: 'Connexion requise', description: 'Connectez-vous pour confirmer votre réservation.', variant: 'destructive' });
+      return;
+    }
     if (!name.trim() || name.trim().length < 2) {
       toast({ title: 'Nom requis', variant: 'destructive' }); return;
     }
@@ -330,6 +339,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
       toast({ title: 'Téléphone requis', variant: 'destructive' }); return;
     }
     setSubmitting(true);
+
     try {
       // Vérif : pas de collision avec les périodes bloquées par le propriétaire
       const blocked = await hasBlockedConflict(property.id, toKey(checkIn), toKey(checkOut)).catch(() => false);
