@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import DescriptionParser, { type ParsedProperty } from '@/components/owner/DescriptionParser';
 import CustomTypeSuggestModal from '@/components/owner/CustomTypeSuggestModal';
 import { useTranslation } from 'react-i18next';
-import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, isTypeFurnished, getTypeLabel } from '@/lib/mockData';
+import { PROPERTY_TYPES, isTypeFurnished, getTypeLabel } from '@/lib/mockData';
 import { FEATURE_CATALOG, FEATURE_CATEGORIES, featureLabel, categoryLabel, type FeatureCategoryId } from '@/lib/featureCatalog';
 import { supabase } from '@/integrations/supabase/client';
 import MapPicker from '@/admin/components/MapPicker';

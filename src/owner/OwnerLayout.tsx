@@ -4,7 +4,7 @@ import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, Log
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+
 import { useOwnerNotifications } from './lib/useOwnerNotifications';
 import OwnerDashboard from './pages/OwnerDashboard';
 import OwnerProperties from './pages/OwnerProperties';
@@ -53,7 +53,6 @@ export default function OwnerLayout() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <LanguageSwitcher />
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5">
               <LogOut className="h-4 w-4" /><span className="hidden sm:inline">{t('owner.deconnexion')}</span>
             </Button>
