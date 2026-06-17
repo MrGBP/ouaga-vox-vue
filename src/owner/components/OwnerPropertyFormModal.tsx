@@ -139,9 +139,26 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   // Étape 4 — Aperçu
   const [confirmTruthful, setConfirmTruthful] = useState(false);
 
-  // POI cochables (key = type+label)
+  // POI cochables (key = type+label, ou osm_<id> pour les suggestions OSM)
   const [poiChoices, setPoiChoices] = useState<PoiChoice[]>([]);
   const [existingPois, setExistingPois] = useState<PropertyPoi[]>([]);
+
+  // POI auto-détectés via OpenStreetMap (Overpass) autour du point sélectionné
+  const overpassEnabled = open && step === 2 && Number.isFinite(lat) && Number.isFinite(lng);
+  const { pois: osmPois, loading: osmLoading } = useOverpassPOI(
+    overpassEnabled ? lat : null,
+    overpassEnabled ? lng : null,
+    overpassEnabled,
+  );
+  const osmSuggestions = useMemo(() => {
+    return (osmPois ?? [])
+      .map(p => {
+        const preset = OSM_TYPE_TO_PRESET[p.type];
+        if (!preset) return null;
+        return { id: p.id, name: p.name, latitude: p.latitude, longitude: p.longitude, ...preset };
+      })
+      .filter(Boolean) as Array<{ id: string; name: string; latitude: number; longitude: number; type: string; emoji: string; label: string; labelEn: string }>;
+  }, [osmPois]);
 
   // Médias
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
