@@ -107,15 +107,18 @@ export interface Quartier {
   bounds?: [[number, number], [number, number]];
 }
 
-// ─── 7 TYPES OFFICIELS ──────────────────────────────────────────────────────
+// ─── TYPES DE BIENS — 10 catégories officielles (compat totale avec anciens slugs) ──
 export const PROPERTY_TYPES = [
-  { value: 'maison_villa_meublee', label: 'Villa meublée',      labelEn: 'Furnished villa',     emoji: '🏡', furnished: true },
+  { value: 'maison_villa_meublee', label: 'Villa meublée',      labelEn: 'Furnished villa',     emoji: '🏡', furnished: true  },
   { value: 'maison_villa_simple',  label: 'Villa',              labelEn: 'Villa',               emoji: '🏘️', furnished: false },
-  { value: 'appartement_meuble',   label: 'Appartement meublé', labelEn: 'Furnished apartment', emoji: '🏢', furnished: true },
   { value: 'appartement_simple',   label: 'Appartement',        labelEn: 'Apartment',           emoji: '🏢', furnished: false },
-  { value: 'studio_meuble',        label: 'Studio meublé',      labelEn: 'Furnished studio',    emoji: '🛋️', furnished: true },
+  { value: 'appartement_meuble',   label: 'Appartement meublé', labelEn: 'Furnished apartment', emoji: '🏢', furnished: true  },
+  { value: 'studio_meuble',        label: 'Studio meublé',      labelEn: 'Furnished studio',    emoji: '🛋️', furnished: true  },
+  { value: 'maison',               label: 'Maison',             labelEn: 'House',               emoji: '🏠', furnished: false },
   { value: 'bureau',               label: 'Bureau',             labelEn: 'Office',              emoji: '💼', furnished: false },
   { value: 'local_commercial',     label: 'Local commercial',   labelEn: 'Commercial space',    emoji: '🏪', furnished: false },
+  { value: 'chambre_meublee',      label: 'Chambre meublée',    labelEn: 'Furnished room',      emoji: '🛏️', furnished: true  },
+  { value: 'duplex',               label: 'Duplex',             labelEn: 'Duplex',              emoji: '🏗️', furnished: false },
 ] as const;
 
 /** Configuration étendue : emoji + label + color par type (utilisé pour pins, badges, etc.) */

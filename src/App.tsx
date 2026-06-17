@@ -43,6 +43,8 @@ const App = () => (
               <Route path="/search" element={<SearchPage />} />
               <Route path="/resultats" element={<ResultatsPage />} />
               <Route path="/property/:id" element={<PropertyPage />} />
+              {/* Deep link partage : /bien/:id → même fiche, URL canonique pour partages */}
+              <Route path="/bien/:id" element={<PropertyPage />} />
               <Route path="/mon-compte" element={<MonCompte />} />
               <Route
                 path="/admin/*"

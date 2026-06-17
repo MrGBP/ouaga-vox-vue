@@ -14,7 +14,7 @@ type Conversation = Awaited<ReturnType<typeof listAllAdminConversations>>[number
 const TEMPLATES = [
   'Bien publié ✅ Félicitations !',
   'Merci, quelques corrections nécessaires :',
-  'Manque(s) : photos / description / POI',
+  'Manque(s) : photos / description / lieux à proximité',
   'Nous vous recontactons sous 24h.',
 ];
 

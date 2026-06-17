@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { ChevronLeft, Heart, Share2 } from 'lucide-react';
 import { mockProperties, mockPois } from '@/lib/mockData';
 import { supabase } from '@/integrations/supabase/client';
@@ -198,8 +199,45 @@ const PropertyPage = () => {
     .filter(p => p.status !== 'rented' && p.available !== false)
     .slice(0, 6);
 
+  // ── SEO / Open Graph dynamiques par bien ──
+  const canonicalUrl = `https://sapsaphouse.com/bien/${property.id}`;
+  const ogImage = (property.images && property.images[0])
+    || 'https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/10261af2-3c8c-444e-b63b-bc7bf1db04b6/id-preview-1dd43985--2e44563b-3bfb-4360-8050-50bec092d760.lovable.app-1773369724341.png';
+  const priceText = property.price ? new Intl.NumberFormat('fr-FR').format(property.price) : '';
+  const ogTitle = `${property.title} · SapSapHouse`;
+  const ogDescription = [
+    property.quartier,
+    property.bedrooms ? `${property.bedrooms} chambre(s)` : null,
+    priceText ? `${priceText} FCFA` : null,
+  ].filter(Boolean).join(' · ').slice(0, 200);
+
   return (
     <div className="fixed inset-0 z-[200] bg-background flex flex-col">
+      <Helmet>
+        <title>{ogTitle}</title>
+        <meta name="description" content={ogDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={ogTitle} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={ogTitle} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImage} />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Accommodation',
+          name: property.title,
+          description: ogDescription,
+          image: ogImage,
+          url: canonicalUrl,
+          address: { '@type': 'PostalAddress', addressLocality: property.quartier, addressCountry: property.country || 'BF' },
+          numberOfRooms: property.bedrooms ?? undefined,
+          floorSize: property.surface_area ? { '@type': 'QuantitativeValue', value: property.surface_area, unitCode: 'MTK' } : undefined,
+        })}</script>
+      </Helmet>
       <header
         className="shrink-0 flex items-center justify-between px-3 border-b border-border bg-card/95 backdrop-blur-md"
         style={{ paddingTop: 'env(safe-area-inset-top)', height: 'calc(52px + env(safe-area-inset-top))' }}
