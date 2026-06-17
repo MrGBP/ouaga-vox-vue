@@ -190,11 +190,11 @@ export default function PropertyReviewPanel({ propertyId, onClose, onChanged }: 
               )}
             </section>
 
-            {/* POIs */}
+            {/* À proximité du bien */}
             <section>
-              <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1.5 flex items-center gap-1"><MapPin size={12}/> Points d'intérêt ({pois.length})</h4>
+              <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1.5 flex items-center gap-1"><MapPin size={12}/> À proximité du bien ({pois.length})</h4>
               {pois.length === 0 ? (
-                <p className="text-xs italic text-red-600">⚠ Aucun POI déclaré</p>
+                <p className="text-xs italic text-red-600">⚠ Aucun lieu déclaré à proximité</p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {pois.map(p => {
