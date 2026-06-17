@@ -8,6 +8,8 @@ interface AuthCtx {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
+  isReadOnlyAdmin: boolean;
+  isSuperAdmin: boolean;
   isOwner: boolean;
   loading: boolean;
   refreshRoles: () => Promise<void>;
