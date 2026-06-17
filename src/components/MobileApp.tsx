@@ -208,7 +208,15 @@ export default function MobileApp(props: MobileAppProps) {
   const { user, openAuthModal, signOut } = useAuth();
   useSwipeBack();
 
-  const [mobileTab, setMobileTab] = useState('home');
+  // Lazy init pour éviter un flash de l'accueil quand on arrive depuis
+  // "Voir sur la carte" (flags posés AVANT navigate par Property.tsx).
+  const [mobileTab, setMobileTab] = useState(() => {
+    try {
+      const forced = sessionStorage.getItem('sapsap_force_tab');
+      if (forced) return forced;
+    } catch { /* noop */ }
+    return 'home';
+  });
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [favViewMode, setFavViewMode] = useState<'list' | 'map'>('list');
@@ -251,7 +259,19 @@ export default function MobileApp(props: MobileAppProps) {
         // Show pin preview on map for that property after a short delay so map mounts
         setTimeout(() => {
           const p = props.properties.find(pr => pr.id === focusPid);
-          if (p) setPinPreview(p);
+          if (p) {
+            setPinPreview(p);
+            // Push a nav entry so Android back / swipe back closes the map
+            // overlay instead of leaving the app.
+            if (nav.current.screen !== 'carte-niveau3') {
+              nav.push({
+                screen: 'carte-niveau3',
+                propertyId: p.id,
+                propertyTitle: p.title,
+                propertyQuartier: p.quartier,
+              });
+            }
+          }
         }, 350);
       }
     } catch { /* noop */ }
