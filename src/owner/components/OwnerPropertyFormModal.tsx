@@ -22,6 +22,39 @@ import {
   POI_TYPES, poiLabel, addPoiToProperty, listPoisForProperty, removePoi, type PropertyPoi,
 } from '@/lib/propertyPoisService';
 import { useAuth } from '@/hooks/useAuth';
+import { useOverpassPOI } from '@/hooks/useOverpassPOI';
+
+// Mapping OSM type → préréglage POI (emoji + libellé FR/EN)
+const OSM_TYPE_TO_PRESET: Record<string, { type: string; emoji: string; label: string; labelEn: string }> = {
+  school:           { type: 'school',      emoji: '🏫', label: 'École',             labelEn: 'School' },
+  university:       { type: 'school',      emoji: '🎓', label: 'Université',        labelEn: 'University' },
+  college:          { type: 'school',      emoji: '🎓', label: 'Collège',           labelEn: 'College' },
+  marketplace:      { type: 'market',      emoji: '🛒', label: 'Marché',            labelEn: 'Market' },
+  place_of_worship: { type: 'mosque',      emoji: '🕌', label: 'Lieu de culte',     labelEn: 'Place of worship' },
+  pharmacy:         { type: 'pharmacy',    emoji: '💊', label: 'Pharmacie',         labelEn: 'Pharmacy' },
+  hospital:         { type: 'hospital',    emoji: '🏥', label: 'Hôpital',           labelEn: 'Hospital' },
+  clinic:           { type: 'hospital',    emoji: '🏥', label: 'Clinique',          labelEn: 'Clinic' },
+  doctors:          { type: 'hospital',    emoji: '🩺', label: 'Cabinet médical',   labelEn: 'Doctors' },
+  supermarket:      { type: 'supermarket', emoji: '🛍️', label: 'Supermarché',       labelEn: 'Supermarket' },
+  convenience:      { type: 'supermarket', emoji: '🏪', label: 'Épicerie',          labelEn: 'Convenience' },
+  mall:             { type: 'supermarket', emoji: '🏬', label: 'Centre commercial', labelEn: 'Mall' },
+  fuel:             { type: 'transport',   emoji: '⛽', label: 'Station-service',   labelEn: 'Gas station' },
+  bus_station:      { type: 'transport',   emoji: '🚌', label: 'Gare routière',     labelEn: 'Bus station' },
+  taxi:             { type: 'transport',   emoji: '🚖', label: 'Station taxi',      labelEn: 'Taxi stand' },
+  bank:             { type: 'bank',        emoji: '🏦', label: 'Banque',            labelEn: 'Bank' },
+  atm:              { type: 'bank',        emoji: '🏧', label: 'Distributeur',      labelEn: 'ATM' },
+  restaurant:       { type: 'restaurant',  emoji: '🍽️', label: 'Restaurant',        labelEn: 'Restaurant' },
+  cafe:             { type: 'restaurant',  emoji: '☕', label: 'Café',              labelEn: 'Cafe' },
+  fast_food:        { type: 'restaurant',  emoji: '🍔', label: 'Fast-food',         labelEn: 'Fast food' },
+  bar:              { type: 'restaurant',  emoji: '🍻', label: 'Bar',               labelEn: 'Bar' },
+  park:             { type: 'park',        emoji: '🌳', label: 'Parc',              labelEn: 'Park' },
+  playground:       { type: 'park',        emoji: '🛝', label: 'Aire de jeux',      labelEn: 'Playground' },
+  sports_centre:    { type: 'park',        emoji: '🏟️', label: 'Centre sportif',    labelEn: 'Sports centre' },
+  police:           { type: 'admin',       emoji: '🚓', label: 'Police',            labelEn: 'Police' },
+  fire_station:     { type: 'admin',       emoji: '🚒', label: 'Caserne pompiers',  labelEn: 'Fire station' },
+  hotel:            { type: 'admin',       emoji: '🏨', label: 'Hôtel',             labelEn: 'Hotel' },
+  attraction:       { type: 'park',        emoji: '🎡', label: 'Attraction',        labelEn: 'Attraction' },
+};
 
 type PendingMedia =
   | { kind: 'image' | 'video'; source: 'file'; file: File; previewUrl: string }
