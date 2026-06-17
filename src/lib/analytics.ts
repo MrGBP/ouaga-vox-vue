@@ -23,6 +23,9 @@ export type AnalyticsEvent =
   | 'auth_signin_success'
   | 'auth_signup_success'
   | 'auth_whatsapp_continue'
+  | 'auth_otp_sent'
+  | 'auth_otp_verified'
+  | 'auth_profile_created'
   | 'visit_requested'
   | 'contact_requested';
 

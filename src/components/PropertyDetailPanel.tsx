@@ -15,6 +15,7 @@ import { usePropertyMedia } from '@/hooks/usePropertyMedia';
 import { useNearbyPOI } from '@/hooks/useNearbyPOI';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useCountryConfig, useAllCountryConfigs, fetchCountrySupport } from '@/hooks/useCountryConfig';
 import { getTrustBadge } from '@/lib/trustSystem';
 import { track } from '@/lib/analytics';
 import ReservationFlow from './ReservationFlow';
@@ -87,6 +88,8 @@ interface Property {
   agent_email?: string;
   agent_photo?: string;
   furnished?: boolean;
+  is_official?: boolean;
+  country_code?: string;
 }
 
 interface POI {
@@ -265,14 +268,35 @@ const PropertyDetailPanel = ({
   };
   // WhatsApp = numéro saisi par le propriétaire (obligatoire). Téléphone d'appel = secondaire optionnel,
   // sinon on retombe sur le WhatsApp pour ne pas casser le bouton "Appeler".
-  const waRaw = (property.whatsapp_phone || property.agent_phone || '').replace(/\D/g, '');
-  const callRaw = (property.agent_phone || property.whatsapp_phone || '').replace(/\D/g, '');
-  const agentPhoneRaw = waRaw; // compat (utilisé plus bas)
-  const agentEmail = property.agent_email?.trim() ?? '';
+  const isOfficialListing = property.is_official === true;
+  const countryCfg = useCountryConfig();
+  const { data: allCountries } = useAllCountryConfigs();
+  const [officialSupport, setOfficialSupport] = useState<{ email: string | null; whatsapp: string | null } | null>(null);
+  useEffect(() => {
+    if (!isOfficialListing) { setOfficialSupport(null); return; }
+    const code = property.country_code || countryCfg.code || 'BF';
+    fetchCountrySupport(code).then(s => {
+      if (s) setOfficialSupport({ email: s.support_email, whatsapp: s.support_whatsapp });
+    }).catch(() => {});
+  }, [isOfficialListing, property.country_code, countryCfg.code]);
+
+  const officialWa = (officialSupport?.whatsapp || countryCfg.support_whatsapp || '').replace(/\D/g, '');
+  const officialEmail = officialSupport?.email || countryCfg.support_email || '';
+
+  const waRaw = isOfficialListing
+    ? officialWa
+    : (property.whatsapp_phone || property.agent_phone || '').replace(/\D/g, '');
+  const callRaw = isOfficialListing
+    ? officialWa
+    : (property.agent_phone || property.whatsapp_phone || '').replace(/\D/g, '');
+  const agentPhoneRaw = waRaw;
+  const agentEmail = isOfficialListing ? officialEmail : (property.agent_email?.trim() ?? '');
   const hasWhatsApp = waRaw.length > 0;
   const hasPhone = callRaw.length > 0;
   const hasEmail = agentEmail.length > 0;
   const hasAnyContact = hasWhatsApp || hasPhone || hasEmail;
+  const contactName = isOfficialListing ? 'SapSapHouse' : property.agent_name;
+
 
   const currentMedia = mediaItems[mediaIdx];
 
@@ -700,16 +724,23 @@ const PropertyDetailPanel = ({
           <Share2 className="h-3.5 w-3.5" /> Partager ce bien
         </Button>
 
-        {/* Agent : afficher uniquement les canaux renseignés */}
-        {property.agent_name && (
+        {/* Agent : affiche soit le propriétaire, soit SapSapHouse (bien officiel) */}
+        {(contactName || isOfficialListing) && (
           <div className="bg-muted/50 rounded-xl p-3">
+            {isOfficialListing && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                  <svg viewBox="0 0 12 12" className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-6"/></svg>
+                </div>
+                <span className="text-xs font-semibold text-primary">Bien SapSapHouse Officiel</span>
+              </div>
+            )}
             <div className="flex items-center gap-3">
-              {property.agent_photo && <img src={property.agent_photo} alt={property.agent_name} className="w-10 h-10 rounded-full object-cover" />}
+              {!isOfficialListing && property.agent_photo && <img src={property.agent_photo} alt={contactName || ''} className="w-10 h-10 rounded-full object-cover" />}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="text-sm font-semibold text-foreground">{property.agent_name}</p>
-                  {(() => {
-                    // Trust badge (mock stats for now — real signals will come from owner profile)
+                  <p className="text-sm font-semibold text-foreground">{contactName}</p>
+                  {!isOfficialListing && (() => {
                     const badge = getTrustBadge({ idVerified: true, propertiesCount: 1, completedReservations: 3 });
                     return (
                       <span
@@ -727,6 +758,7 @@ const PropertyDetailPanel = ({
                 </p>
               </div>
             </div>
+
             {hasAnyContact && (
               <div className="flex gap-2 mt-2.5">
                 {hasWhatsApp && (

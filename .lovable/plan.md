@@ -1,116 +1,91 @@
-# SapSapHouse — Passage en mode MVP Production
+# Plan — 5 modules prioritaires SapSapHouse
 
-Objectif : tout ce qui s'affiche doit être réel. Le code mort/mockData n'est pas supprimé — il est **masqué derrière un flag réactivable**.
+## Module 1 — Auth OTP style TikTok (WhatsApp + Email)
 
-## Principe central : Flag `MOCK_MODE` réactivable
+**Remplacer entièrement** `src/components/AuthModal.tsx` et `src/pages/Auth.tsx` par un flux OTP sans mot de passe.
 
-Création de `src/lib/mockMode.ts` :
+Écrans :
+1. Choix méthode : 2 gros boutons "Continuer avec WhatsApp" / "Continuer avec l'email"
+2. Saisie : sélecteur pays (BF +226 / ML +223 / GH +233, auto-sélection via `useGeoCity`), champ unique (téléphone E.164 ou email)
+3. OTP : 6 cases (composant `OTPInput`), focus auto, paste auto, validation auto au 6ème chiffre, countdown 60s + bouton renvoyer
+4. 1ère connexion : champ prénom uniquement → upsert dans `profiles.full_name`
 
-```ts
-// Toggle global. false = MVP production. true = remet toutes les données mock.
-export const MOCK_MODE = false;
-// Persisté aussi en localStorage ('sapsap_mock_mode') pour bascule rapide
-// depuis la console : localStorage.setItem('sapsap_mock_mode','1');
-```
+API Supabase :
+- WhatsApp : `supabase.auth.signInWithOtp({ phone, options: { channel: 'whatsapp' } })`
+- Email : `supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: undefined } })`
+- Vérif : `supabase.auth.verifyOtp({ phone|email, token, type: 'sms'|'email' })`
 
-Chaque endroit qui utilise `mockProperties`, `adminMockData`, `MobileCarousel`, `AIComparator`, `AIProfileSection`, `VoiceSearch` devient conditionnel : `if (isMockEnabled()) { ... }`. **Aucun fichier supprimé**, juste import paresseux / branchements masqués.
+Note : l'envoi WhatsApp OTP nécessite un provider SMS configuré côté Supabase (Twilio avec channel WhatsApp). Si non configuré, l'envoi retournera une erreur lisible à l'utilisateur — on ne peut pas l'activer depuis le code. À indiquer après la livraison.
 
----
+Supprimer : l'ancien formulaire email+mot de passe, la page `/auth`, `/forgot-password`, `/reset-password` (garder les routes mais rediriger vers la nouvelle modale, ou les supprimer si non utilisées ailleurs).
 
-## Lot 1 — Admin 100 % Supabase (mockData masqué)
+## Module 2 — Formulaire publication simplifié
 
-1. **RPC `get_dashboard_stats`** (migration) — KPIs en un appel (biens publiés/pending, réservations totales/pending/confirmées ce mois, users totaux/nouveaux 7j).
-2. **`AdminDashboard.tsx`** — remplace adminMockData par : `supabase.rpc('get_dashboard_stats')`, liste réelle des biens `admin_status='pending'` (jointure `profiles`), 20 dernières réservations.
-3. **Empty states propres** quand 0 résultat (✅ « Aucun bien en attente »).
-4. **Realtime** : channel `admin-live` sur INSERT `reservations` + `properties` → feed live.
-5. **`adminMockData.ts` conservé**, imports gatés par `isMockEnabled()`.
+Dans `src/admin/components/PropertyFormModal.tsx` et `src/owner/components/OwnerPropertyFormModal.tsx` :
+- Retirer la section "Visite 360° (URL)" et tout champ "Ajouter un lien et valider"
+- Dans `MediaUploader` : retirer les onglets/cases "image / vidéo / 360", garder un seul uploader universel qui détecte le `kind` automatiquement à partir du MIME (image/* → image, video/* → video, image avec ratio 2:1 → 360 — ou simplement tout marquer `image` par défaut et laisser le rendu décider). Garder le champ `kind` en DB pour compatibilité.
 
-## Lot 2 — Wizard publication en 3 étapes (`PublishPropertyWizard.tsx`)
+## Module 3 — SapSapHouse comme propriétaire officiel
 
-Remplace `OwnerPropertyFormModal` (gardé en fallback si MOCK_MODE).
+DB :
+- Ajouter colonne `is_official BOOLEAN DEFAULT false` sur `properties` (migration)
+- Le profil officiel ne peut pas avoir un id "sapsaphouse-official-id" littéral (les profils sont liés à `auth.users.id` UUID). À la place :
+  - Créer un compte auth dédié `official@sapsaphouse.com` manuellement (ou via flag `is_official` sur `profiles`)
+  - Ajouter colonne `is_official BOOLEAN DEFAULT false` sur `profiles`
+- Le contact "officiel" est lu depuis `country_configs.support_whatsapp` selon le pays du bien
 
-- **Étape 1** — Choix du type (grille emoji + hint « courte durée / nuit » vs « longue durée / mois »).
-- **Étape 2** — Champs **adaptatifs** via `getFieldsForType(type)` :
-  - Meublé → chambres, SDB, étage, équipements, prix/nuit
-  - Non meublé longue durée → chambres, SDB, étage, caution, prix/mois
-  - Bureau/local → surface, pièces, parking, PMR
-  - Communs : titre, quartier (autocomplete BDD), surface, **min 1 photo (au lieu de 3 pour ne pas bloquer)**.
-- **Étape 3** — Pin sur la carte OU mode « quartier_only » + 3 POI, mini-preview, soumission → `admin_status='pending'`.
+Front :
+- `PropertyDetailPanel` : si `property.is_official === true` → badge "✓ Bien SapSapHouse Officiel", nom = "SapSapHouse", téléphone = `countryConfig.support_whatsapp` du pays du bien
+- Sinon : nom + téléphone du propriétaire (logique actuelle)
 
-Upload photos direct Supabase Storage (`property-media`, 5 Mo max, jpg/png/webp), retour `publicUrl` avant insert.
+Formulaires admin/owner : ajouter checkbox "Publier comme bien SapSapHouse Officiel" (visible **uniquement aux admins**)
 
-## Lot 3 — UI adaptative dans `PropertyDetailPanel`
+## Module 4 — RLS réservations corrigé
 
-- Meublé → calendrier + bouton **Réserver**
-- Non meublé longue durée → bouton **Demander une visite** (jamais de calendrier)
-- Bureau/local → **Contacter** + **Planifier visite**
-- Helper `isTypeFurnished(type)` + `isCommercial(type)` centralisé dans `filterOptions.ts`.
+Migration :
+- Remplacer la policy INSERT existante par une qui exige `auth.uid() IS NOT NULL AND user_id = auth.uid()`
+- Garder la lecture pour user + owner + admin (déjà en place via `is_property_owner` / `has_role`)
+- Ajouter colonne `confirmation_number TEXT UNIQUE` sur `reservations` si absente
 
-## Lot 4 — `OwnerDashboard` réel
+Front (`ReservationFlow.tsx`) :
+- Vérifier `auth.getUser()` avant insert, sinon `requireAuth(...)` puis retry
+- Toujours envoyer `user_id: user.id` dans le payload
+- Générer `confirmation_number` style `SSH-XXXXXX` côté front
+- Toast d'erreur explicite si RLS bloque, navigation vers écran de confirmation au succès
 
-Page `/proprietaire` enrichie :
-- Liste de mes biens (Supabase, RLS owner_id), carte par bien avec KPI vues/favoris + badge statut.
-- Actions selon statut : Modifier / **Mettre en pause** (admin_status='paused') / Réactiver / Stats.
-- Réservations liées à mes biens (jointure).
-- Calendrier global multi-biens (couleur par bien).
+## Module 5 — Calendrier réservation
 
-Ajout d'un statut `'paused'` dans le check constraint `admin_status` (migration).
+Dans le composant calendrier de `ReservationFlow.tsx` :
+- `disabled={{ before: today }}` pour bloquer dates passées
+- Charger via `Promise.all` : reservations actives (pending/confirmed) + blocked_dates ≥ aujourd'hui
+- Calculer un `Set<string>` de jours indisponibles, les marquer `modifiers={{ unavailable }}` en rouge avec tooltip
+- À la sélection d'une plage : vérifier immédiatement chevauchement, afficher alerte inline
+- Bouton "Confirmer" `disabled` si : dates manquantes / chevauchement / coordonnées incomplètes
 
-## Lot 5 — Calendrier propriétaire (`blocked_dates`)
+## Détails techniques
 
-Migration : table `blocked_dates` (property_id, owner_id, date_from, date_to, reason, RLS owner-only, GRANT authenticated).
-- Sélection plage → blocage. `ReservationFlow` vérifie blocked_dates **+** reservations existantes avant validation.
+- **OTP UI** : utiliser le composant existant `src/components/ui/input-otp.tsx` (déjà basé sur `input-otp`)
+- **Sélecteur pays auth** : 3 entrées en dur (BF/ML/GH) avec drapeau + indicatif, défaut = `activeCity?.country`
+- **Profil officiel** : créé manuellement via SQL une fois (insertion d'une ligne dans `profiles` avec un UUID stable, et marquage `is_official=true`). Le `id` reste un vrai UUID — pas de string littéral.
+- **`is_official` sur properties** : exposé en lecture publique (déjà couvert par la policy SELECT existante sur `properties`)
+- **Migrations à créer** :
+  1. ALTER TABLE properties ADD COLUMN is_official BOOLEAN DEFAULT false
+  2. ALTER TABLE profiles ADD COLUMN is_official BOOLEAN DEFAULT false
+  3. ALTER TABLE reservations ADD COLUMN confirmation_number TEXT UNIQUE
+  4. DROP + CREATE POLICY pour reservations INSERT
+- **Configuration Supabase requise (action utilisateur)** : activer le provider Phone (Twilio + WhatsApp channel). Sans ça l'OTP WhatsApp ne partira pas. L'OTP email fonctionne sans config supplémentaire.
 
-## Lot 6 — Notifications temps réel
+## Ordre d'exécution
 
-Migration : table `notifications` (user_id, type, title, body, data jsonb, read, RLS own + GRANT authenticated, ALTER PUBLICATION supabase_realtime).
-- Insert serveur (triggers) sur INSERT reservation, UPDATE property.admin_status.
-- Cloche dans `Header.tsx` + `MobileNavbar.tsx` avec badge count temps réel.
+1. Migrations DB (modules 3, 4)
+2. Refonte AuthModal (module 1)
+3. Simplification formulaires + MediaUploader (module 2)
+4. PropertyDetailPanel + checkbox officiel (module 3)
+5. ReservationFlow + calendrier (modules 4, 5)
+6. Insertion du profil SapSapHouse officiel (data seed)
 
-## Lot 7 — Médias robustes
+## Points à confirmer avant build
 
-- `public/placeholder-property.svg` (icône 🏠 fond gris).
-- Wrapper `<PropertyImage>` avec onError → placeholder. Migration progressive : remplacer `<img>` dans PropertyCard, PropertyDetailPanel, MobileApp, OwnerDashboard.
-
-## Lot 8 — Fix superpositions modals / Leaflet
-
-Hook `useLockBackdrop(open)` : bloque scroll body + cache `.leaflet-control/.leaflet-top/.leaflet-bottom`. Appliqué dans `AuthModal`, `ReservationFlow`, `VirtualTourModal`. Z-index hiérarchie documentée dans `index.css`.
-
-## Lot 9 — Nettoyage **masqué** (pas supprimé)
-
-Composants `MobileBottomSheet`, `MobileCarousel`, `AIComparator`, `AIProfileSection`, `VoiceSearch`, hooks voice : **imports gardés** mais rendu conditionné par `isMockEnabled()`. Fusion des états mobiles dupliqués Index ↔ MobileApp : un seul propriétaire (MobileApp).
-
-## Lot 10 — Hiérarchie géographique
-
-Migration table `locations` (country_code, city, quartier, commune, arrondissement, lat/lng, active). Seed Ouaga (12 arrondissements) + Bamako (6 communes). Ghana `active=false`. Autocomplete quartier branchée sur cette table dans le wizard + FilterBar.
-
----
-
-## Migrations SQL groupées (un seul fichier)
-
-1. `get_dashboard_stats()` SECURITY DEFINER
-2. ALTER `properties.admin_status` check constraint pour inclure `'paused'`
-3. CREATE TABLE `blocked_dates` + GRANT + RLS + policies owner
-4. CREATE TABLE `notifications` + GRANT + RLS + policies own + realtime publication
-5. CREATE TABLE `locations` + GRANT (SELECT anon) + seed Ouaga/Bamako
-6. Triggers insert notifications (new_reservation → owner, status change → owner)
-
----
-
-## Ordre d'exécution proposé
-
-1. **Migration SQL unique** (Lots 1, 4, 5, 6, 10)
-2. **`mockMode.ts` + gating admin** (Lot 1 + Lot 9 partiel)
-3. **Wizard publication** (Lot 2) + helpers types (Lot 3)
-4. **PropertyDetailPanel adaptatif** (Lot 3)
-5. **OwnerDashboard + blocked_dates UI** (Lots 4, 5)
-6. **Notifications cloche** (Lot 6)
-7. **PropertyImage + placeholder** (Lot 7)
-8. **useLockBackdrop** (Lot 8)
-9. **Autocomplete locations** (Lot 10)
-
----
-
-## Question avant exécution
-
-Le plan est dense (10 lots, 1 grosse migration, ~15 fichiers touchés). **Tu veux que je lance tout en une seule passe**, ou **je découpe en 2-3 livraisons** (par ex. d'abord Lots 1+2+3+9 = admin réel + wizard + UI adaptative + mock toggle, puis le reste) pour que tu puisses tester entre chaque ?
+- **Numéro WhatsApp officiel SapSapHouse par pays** : déjà en DB (`country_configs.support_whatsapp`). Confirmé pour BF (+226 57 97 66 60), à vérifier pour ML et GH (actuellement hérite de BF).
+- **Twilio/WhatsApp provider Supabase** : à activer manuellement par l'utilisateur dans la console Cloud après livraison. Sinon seul l'OTP email fonctionnera.
+- **Compte officiel SapSapHouse** : je crée un UUID stable + ligne `profiles` marquée `is_official=true`, sans compte `auth.users` lié (le bien sera créé par un admin qui coche la case, pas connecté en tant que "SapSapHouse"). OK ?

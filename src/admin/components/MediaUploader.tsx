@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Upload, Link2, Trash2, Image as ImageIcon, Video, Globe, ArrowUp, ArrowDown } from 'lucide-react';
+import { Upload, Trash2, Image as ImageIcon, Video, Globe, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  uploadPropertyMedia, addPropertyMediaUrl, listPropertyMedia, deletePropertyMedia,
+  uploadPropertyMedia, listPropertyMedia, deletePropertyMedia,
   reorderPropertyMedia,
 } from '@/lib/propertiesService';
 
@@ -11,8 +11,6 @@ interface Media { id: string; kind: 'image'|'video'|'video_360'; url: string; st
 export default function MediaUploader({ propertyId }: { propertyId: string }) {
   const [items, setItems] = useState<Media[]>([]);
   const [busy, setBusy] = useState(false);
-  const [urlInput, setUrlInput] = useState('');
-  const [kind, setKind] = useState<'image'|'video'|'video_360'>('image');
   const [dragOver, setDragOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -38,6 +36,7 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
       while (queue.length) {
         const file = queue.shift();
         if (!file) break;
+        // Auto-détection : vidéo via MIME, sinon image (le rendu décide si c'est un 360°)
         const k: 'image'|'video' = file.type.startsWith('video/') ? 'video' : 'image';
         try {
           await uploadPropertyMedia(propertyId, file, k);
@@ -57,19 +56,6 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
     finally { setBusy(false); setProgress(null); }
   };
 
-  const addUrl = async () => {
-    const u = urlInput.trim();
-    if (!u) return;
-    setBusy(true);
-    try {
-      await addPropertyMediaUrl(propertyId, u, kind);
-      setUrlInput('');
-      await reload();
-      toast.success('Média ajouté');
-    } catch (e: any) { toast.error(e.message); }
-    finally { setBusy(false); }
-  };
-
   const remove = async (m: Media) => {
     if (!confirm('Supprimer ce média ?')) return;
     try { await deletePropertyMedia(m.id, m.storage_path); await reload(); toast.success('Supprimé'); }
@@ -81,7 +67,7 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
     if (newIdx < 0 || newIdx >= items.length) return;
     const reordered = [...items];
     [reordered[index], reordered[newIdx]] = [reordered[newIdx], reordered[index]];
-    setItems(reordered); // optimiste
+    setItems(reordered);
     try {
       await reorderPropertyMedia(reordered.map((m, i) => ({ id: m.id, position: i })));
     } catch (e: any) {
@@ -103,13 +89,13 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
         onDragLeave={() => setDragOver(false)}
         onDrop={e => { e.preventDefault(); setDragOver(false); if (!busy) handleFiles(e.dataTransfer.files); }}
         onClick={() => !busy && fileRef.current?.click()}
-        className={`cursor-pointer rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 py-6 px-3 text-center transition ${
+        className={`cursor-pointer rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 py-8 px-3 text-center transition ${
           dragOver ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'
         } ${busy ? 'opacity-60 pointer-events-none' : ''}`}
       >
-        <Upload size={22} className="text-primary" />
-        <span className="text-xs font-semibold">Upload photos & videos (bulk)</span>
-        <span className="text-[10px] text-muted-foreground">Drag & drop or click — select many files at once</span>
+        <Upload size={26} className="text-primary" />
+        <span className="text-xs font-semibold">Téléverser photos, vidéos ou images 360°</span>
+        <span className="text-[10px] text-muted-foreground">Glisser-déposer ou cliquer — sélection multiple acceptée</span>
         <input ref={fileRef} type="file" accept="image/*,video/*" multiple hidden onChange={e => { handleFiles(e.target.files); if (fileRef.current) fileRef.current.value = ''; }} />
       </div>
 
@@ -125,24 +111,6 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
         </div>
       )}
 
-      <div className="flex gap-2">
-        <select value={kind} onChange={e => setKind(e.target.value as any)} className="rounded-lg border border-border bg-background px-2 text-xs">
-          <option value="image">Image</option>
-          <option value="video">Vidéo</option>
-          <option value="video_360">Visite 360°</option>
-        </select>
-        <div className="relative flex-1">
-          <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://… (Matterport, Kuula, YouTube, image…)"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-9 text-xs" />
-        </div>
-        <button type="button" onClick={addUrl} disabled={busy} className="px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50">Ajouter</button>
-      </div>
-
-      <p className="text-[10px] text-muted-foreground">
-        Visite 360° : URL d'embed externe (Matterport, Kuula, etc.) — l'iframe sera affichée plein écran sur la fiche.
-      </p>
-
       {items.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {items.map((m, i) => (
@@ -156,7 +124,6 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
                 </div>
               )}
 
-              {/* Reorder buttons */}
               <div className="absolute top-1 left-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button type="button" onClick={() => move(i, -1)} disabled={i === 0}
                   className="w-5 h-5 rounded bg-black/60 text-white flex items-center justify-center disabled:opacity-30">
@@ -182,7 +149,7 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
           ))}
         </div>
       )}
-      {items.length === 0 && <p className="text-[11px] text-muted-foreground text-center py-4">Aucun média — ajoutez photos, vidéos ou visite 360°</p>}
+      {items.length === 0 && <p className="text-[11px] text-muted-foreground text-center py-4">Aucun média — ajoutez vos photos et vidéos</p>}
     </div>
   );
 }
