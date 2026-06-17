@@ -208,7 +208,15 @@ export default function MobileApp(props: MobileAppProps) {
   const { user, openAuthModal, signOut } = useAuth();
   useSwipeBack();
 
-  const [mobileTab, setMobileTab] = useState('home');
+  // Lazy init pour éviter un flash de l'accueil quand on arrive depuis
+  // "Voir sur la carte" (flags posés AVANT navigate par Property.tsx).
+  const [mobileTab, setMobileTab] = useState(() => {
+    try {
+      const forced = sessionStorage.getItem('sapsap_force_tab');
+      if (forced) return forced;
+    } catch { /* noop */ }
+    return 'home';
+  });
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [favViewMode, setFavViewMode] = useState<'list' | 'map'>('list');
