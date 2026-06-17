@@ -89,20 +89,30 @@ const SearchPage = () => {
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const twActive = query.length === 0;
+  const { activeCity } = useGeoCity();
+  const countrySearchCopy = SEARCH_COPY_BY_COUNTRY[activeCity?.country || 'BF'] || SEARCH_COPY_BY_COUNTRY.BF;
+  const typewriterPhrases = countrySearchCopy.typewriter;
+  const searchSuggestions = countrySearchCopy.suggestions;
 
   useEffect(() => {
     if (!twActive) return;
-    const phrase = TYPEWRITER_PHRASES[phraseIdx];
+    const phrase = typewriterPhrases[phraseIdx] || typewriterPhrases[0];
     let t: ReturnType<typeof setTimeout>;
     if (!isDeleting) {
       if (twText.length < phrase.length) t = setTimeout(() => setTwText(phrase.slice(0, twText.length + 1)), 45);
       else t = setTimeout(() => setIsDeleting(true), 1500);
     } else {
       if (twText.length > 0) t = setTimeout(() => setTwText(twText.slice(0, -1)), 25);
-      else { setIsDeleting(false); setPhraseIdx((phraseIdx + 1) % TYPEWRITER_PHRASES.length); }
+      else { setIsDeleting(false); setPhraseIdx((phraseIdx + 1) % typewriterPhrases.length); }
     }
     return () => clearTimeout(t);
-  }, [twText, isDeleting, phraseIdx, twActive]);
+  }, [twText, isDeleting, phraseIdx, twActive, typewriterPhrases]);
+
+  useEffect(() => {
+    setTwText('');
+    setPhraseIdx(0);
+    setIsDeleting(false);
+  }, [activeCity?.country]);
 
   // Load recents
   useEffect(() => {
@@ -114,7 +124,6 @@ const SearchPage = () => {
   }, []);
 
   const [allProps, setAllProps] = useState<Property[]>([]);
-  const { activeCity } = useGeoCity();
   useEffect(() => {
     let alive = true;
     fetchMergedProperties(activeCity?.country).then(p => { if (alive) setAllProps(p as any); }).catch(() => {});
