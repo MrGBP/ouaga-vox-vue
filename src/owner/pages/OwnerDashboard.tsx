@@ -10,7 +10,6 @@ import {
 } from '../lib/ownerService';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useGeoCity } from '@/hooks/useGeoCity';
 
 
 type PropPerf = OwnerPropertyRow & { reservationCount: number; pendingCount: number };
