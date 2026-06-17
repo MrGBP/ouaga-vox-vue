@@ -1,6 +1,8 @@
-// Service hybride : essaie Supabase, fallback sur les mocks pour ne rien casser.
+// Service hybride : Supabase d'abord. Le catalogue mock BF n'est injecté
+// que si MOCK_MODE est activé (isMockEnabled()).
 import { supabase } from '@/integrations/supabase/client';
 import { mockProperties, type Property } from '@/lib/mockData';
+import { isMockEnabled } from '@/lib/mockMode';
 
 const FEATURE_KEYS = [
   'has_ac','has_guardian','has_generator','has_garden','has_water','has_internet',
@@ -77,7 +79,7 @@ export async function fetchMergedProperties(countryCode?: string): Promise<Prope
     const { data } = await builder.order('published_at', { ascending: false, nullsFirst: false });
 
     const real = (data ?? []).map(rowToProperty);
-    if (cc === 'BF') {
+    if (cc === 'BF' && isMockEnabled()) {
       const mocks = mockProperties.filter(p => p.status !== 'rented' && (p as any).country === 'BF');
       const mockIds = new Set(mocks.map(p => p.id));
       const merged = real.filter(r => !mockIds.has(r.id));
@@ -85,7 +87,10 @@ export async function fetchMergedProperties(countryCode?: string): Promise<Prope
     }
     return real;
   } catch {
-    return cc === 'BF' ? mockProperties.filter(p => p.status !== 'rented' && (p as any).country === 'BF') : [];
+    if (cc === 'BF' && isMockEnabled()) {
+      return mockProperties.filter(p => p.status !== 'rented' && (p as any).country === 'BF');
+    }
+    return [];
   }
 }
 
