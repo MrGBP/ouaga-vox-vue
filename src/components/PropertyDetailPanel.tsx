@@ -87,6 +87,8 @@ interface Property {
   agent_email?: string;
   agent_photo?: string;
   furnished?: boolean;
+  is_official?: boolean;
+  country_code?: string;
 }
 
 interface POI {
