@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Upload, Trash2, Image as ImageIcon, Video, Globe, ArrowUp, ArrowDown } from 'lucide-react';
+import { Upload, Trash2, Image as ImageIcon, Video, Globe, ArrowUp, ArrowDown, Star, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  uploadPropertyMedia, listPropertyMedia, deletePropertyMedia,
+  reorderPropertyMedia, addPropertyMediaUrl,
+} from '@/lib/propertiesService';
 import { toast } from 'sonner';
 import {
   uploadPropertyMedia, listPropertyMedia, deletePropertyMedia,
