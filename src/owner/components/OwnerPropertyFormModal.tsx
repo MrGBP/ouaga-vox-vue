@@ -78,6 +78,25 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [activeCat, setActiveCat] = useState<FeatureCategoryId>(FEATURE_CATEGORIES[0].id);
   const [busy, setBusy] = useState(false);
 
+  // Wizard publication — 3 étapes
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const STEP_LABELS = ['Type & description', 'Détails du bien', 'Localisation & médias'];
+  const goNext = () => {
+    if (step === 1) {
+      if (!title.trim()) return toast.error(t('owner.form.err_titre'));
+      if (description.trim().length < 20) return toast.error(t('owner.form.err_desc'));
+    }
+    if (step === 2) {
+      if (!price || Number(price) <= 0) return toast.error(t('owner.form.err_prix'));
+      if (!quartier) return toast.error(t('owner.form.err_quartier'));
+      const waDigits = waLocal.replace(/\D/g, '');
+      if (waDigits.length < 6 || waDigits.length > 14) return toast.error(t('owner.form.err_whatsapp'));
+    }
+    setStep(s => (Math.min(3, s + 1) as 1 | 2 | 3));
+    setTimeout(() => document.querySelector('[data-wizard-scroll]')?.scrollTo({ top: 0, behavior: 'smooth' }), 0);
+  };
+  const goBack = () => setStep(s => (Math.max(1, s - 1) as 1 | 2 | 3));
+
   // Contacts — WhatsApp obligatoire (E.164), téléphone secondaire optionnel.
   // L'indicatif est dérivé du pays sélectionné pour éviter toute ambigüité.
   const PHONE_PREFIX: Record<string, string> = { BF: '+226', ML: '+223', GH: '+233', CI: '+225', SN: '+221', TG: '+228', BJ: '+229', NE: '+227' };
@@ -218,6 +237,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
     setCustomInput('');
     setActiveCat(FEATURE_CATEGORIES[0].id);
+    setStep(1);
     setTimeout(() => titleRef.current?.focus(), 100);
   }, [open, initial]);
 
@@ -459,7 +479,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 p-3" onClick={() => onClose(!!savedId)}>
-      <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div data-wizard-scroll className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="sticky top-0 bg-card flex items-center justify-between px-5 py-3 border-b z-10">
           <div>
             <h2 className="text-base font-bold text-foreground">{isEdit ? t('owner.form.modifier') : t('owner.form.nouveau')}</h2>
@@ -473,6 +493,20 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Stepper wizard 3 étapes */}
+          <div className="flex items-center gap-2 pb-1">
+            {[1, 2, 3].map(n => (
+              <div key={n} className="flex items-center gap-2 flex-1">
+                <div className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold border transition ${step >= n ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border'}`}>{n}</div>
+                <span className={`text-[10px] sm:text-[11px] font-semibold leading-tight ${step >= n ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {STEP_LABELS[n - 1]}
+                </span>
+                {n < 3 && <div className={`flex-1 h-0.5 ${step > n ? 'bg-primary' : 'bg-border'}`} />}
+              </div>
+            ))}
+          </div>
+
+          {step === 1 && (<div className="space-y-4">
           {/* Module 2 — Remplissage automatique par IA */}
           {showParser ? (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
@@ -513,7 +547,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             />
             <p className="text-[10px] text-muted-foreground mt-1">{t('owner.form.desc_count', { n: description.trim().length })}</p>
           </Field>
+          </div>)}
 
+          {step === 2 && (<div className="space-y-4">
           {(() => {
             const commercial = isCommercialType(type);
             const isFurn = furnished || isTypeFurnished(type);
@@ -705,8 +741,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               </div>
             </Field>
           </div>
+          </div>)}
 
-
+          {step === 3 && (<div className="space-y-4">
           {/* Localisation */}
           <Field label={t('owner.form.carte')}>
             <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={240} />
@@ -1011,15 +1048,29 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
               </>
             )}
           </div>
+          </div>)}
 
+          {/* Wizard navigation */}
           <div className="flex gap-2 pt-3 border-t">
-            <button type="button" onClick={() => onClose(!!savedId)} className="flex-1 h-10 rounded-lg border text-xs font-semibold hover:bg-muted">
-              {savedId ? t('owner.form.fermer') : t('owner.form.annuler')}
-            </button>
-            <button type="submit" disabled={busy} className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-60">
-              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {savedId ? t('owner.form.mettre_a_jour') : t('owner.form.enregistrer')}
-            </button>
+            {step > 1 ? (
+              <button type="button" onClick={goBack} className="flex-1 h-10 rounded-lg border text-xs font-semibold hover:bg-muted">
+                ← {t('owner.form.precedent', 'Précédent')}
+              </button>
+            ) : (
+              <button type="button" onClick={() => onClose(!!savedId)} className="flex-1 h-10 rounded-lg border text-xs font-semibold hover:bg-muted">
+                {savedId ? t('owner.form.fermer') : t('owner.form.annuler')}
+              </button>
+            )}
+            {step < 3 ? (
+              <button type="button" onClick={goNext} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">
+                {t('owner.form.suivant', 'Suivant')} →
+              </button>
+            ) : (
+              <button type="submit" disabled={busy} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-60">
+                {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {savedId ? t('owner.form.mettre_a_jour') : t('owner.form.enregistrer')}
+              </button>
+            )}
           </div>
         </form>
 
