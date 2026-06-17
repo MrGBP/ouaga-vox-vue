@@ -185,7 +185,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         };
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       } catch { /* quota or other */ }
-    }, 800);
+    }, 5000);
     return () => clearTimeout(tm);
   }, [open, isEdit, step, title, description, type, price, rentMode, bedrooms, bathrooms, surface, floor, rooms, capacity, features, customFeatures, poiChoices, quartier, address, lat, lng, selectedCountry, waLocal, phoneLocal, pendingMedia]);
 
