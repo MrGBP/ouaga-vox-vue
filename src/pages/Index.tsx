@@ -264,9 +264,10 @@ const Index = () => {
 
   const applyFilters = useCallback(
     (source: Property[], query: string, f: FilterState, favsOnly: boolean, favSet: Set<string>) =>
-      filterProperties(source as any, query, f, favsOnly, favSet) as Property[],
-    []
+      filterProperties(source as any, query, f, favsOnly, favSet, activeCity?.name) as Property[],
+    [activeCity?.name]
   );
+
 
   const computeFilteredCount = useCallback((draftFilters: FilterState) => {
     return applyFilters(properties, searchQuery, draftFilters, showFavoritesOnly, favorites).length;
