@@ -897,7 +897,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                               onChange={() => {
                                 setPoiChoices(prev => {
                                   if (prev.find(p => p.key === key)) return prev.filter(p => p.key !== key);
-                                  return [...prev, { key, type: s.type, emoji: s.emoji, label: s.label, name: s.name }];
+                                  return [...prev, { key, type: s.type, emoji: s.emoji, label: s.label, name: s.name, latitude: s.latitude, longitude: s.longitude }];
                                 });
                               }}
                             />
