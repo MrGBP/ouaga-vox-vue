@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { POI_CATALOG, getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
-import { getRentMode } from '@/lib/typeHelpers';
+import { getRentMode, getActionMode } from '@/lib/typeHelpers';
 import { resolveFeatures } from '@/lib/featureCatalog';
 import { usePropertyMedia } from '@/hooks/usePropertyMedia';
 import { useNearbyPOI } from '@/hooks/useNearbyPOI';
@@ -633,7 +633,8 @@ const PropertyDetailPanel = ({
         {/* Actions — inline (non-blocking, scrolls with content) */}
         {/* NOTE: Map icon button removed (Lot A) — the "Localisation" block above already opens the map context. */}
         {(() => {
-          const isCommercial = property.type === 'bureau' || property.type === 'local_commercial' || property.type === 'commerce';
+          const actionMode = getActionMode(property.type, property.furnished);
+          const isCommercial = actionMode === 'contact';
           const openVisit = () => {
             track('visit_requested', { property_id: property.id });
             requireAuth('demander une visite', () => setShowReservation(true));
