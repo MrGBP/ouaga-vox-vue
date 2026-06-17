@@ -29,7 +29,7 @@ function makeBounds(lat: number, lng: number, radiusKm: number): L.LatLngBoundsE
   return [[lat - dLat, lng - dLng], [lat + dLat, lng + dLng]];
 }
 
-export default function MapPicker({ lat, lng, onChange, height = 280, satellite = true, locked = true, lockRadiusKm = 0.8 }: Props) {
+export default function MapPicker({ lat, lng, onChange, height = 280, satellite = false, locked = false, lockRadiusKm = 0.8 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
