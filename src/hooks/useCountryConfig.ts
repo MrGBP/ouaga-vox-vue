@@ -24,7 +24,7 @@ const FALLBACK: CountryConfig = {
   currency: 'XOF',
   currency_symbol: 'FCFA',
   language: 'fr',
-  support_email: 'contact@sapsaphouse.com',
+  support_email: 'support@sapsaphouse.com',
   support_whatsapp: '+22657976660',
   commission_rate: 6,
   enabled: true,

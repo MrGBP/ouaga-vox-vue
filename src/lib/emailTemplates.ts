@@ -5,7 +5,7 @@
 import type { PublicReservationRow } from './reservationsPublicService';
 
 const SUPPORT = {
-  email: 'contact@sapsaphouse.com', // à mettre à jour
+  email: 'support@sapsaphouse.com', // à mettre à jour
   whatsapp: '+226 XX XX XX XX', // à mettre à jour
 };
 
