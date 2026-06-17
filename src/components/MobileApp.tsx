@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useNav } from '@/contexts/NavigationContext';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
+import { useAuth } from '@/hooks/useAuth';
 import { isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import { FilterState } from '@/components/FilterBar';
 import UniversalSheet, { UniversalSheetHandle } from '@/components/mobile/UniversalSheet';
@@ -22,7 +23,7 @@ import RecentlyViewed, { addToRecentlyViewed } from '@/components/RecentlyViewed
 import Footer from '@/components/Footer';
 import MobileOnboarding from '@/components/mobile/MobileOnboarding';
 import { getTypeLabel } from '@/lib/mockData';
-import { ChevronLeft, ChevronRight, X, Search, Heart, Sparkles, Maximize2, ChevronUp, SlidersHorizontal, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Search, Heart, Sparkles, Maximize2, ChevronUp, SlidersHorizontal, RotateCcw, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
@@ -204,6 +205,7 @@ export default function MobileApp(props: MobileAppProps) {
   const nav = useNav();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user, openAuthModal, signOut } = useAuth();
   useSwipeBack();
 
   const [mobileTab, setMobileTab] = useState('home');
@@ -608,7 +610,7 @@ export default function MobileApp(props: MobileAppProps) {
           <motion.button
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             onClick={() => { props.onFocusReturn?.(); if (nav.canGoBack) nav.pop(); }}
-            className="absolute z-[1000] inline-flex items-center gap-2 rounded-full bg-card/95 backdrop-blur-sm border border-border shadow-lg px-4 py-2 text-sm font-medium text-foreground active:scale-[0.97] transition-transform"
+            className="absolute z-[1000] inline-flex items-center gap-2 rounded-full bg-card/95 backdrop-blur-sm border border-border shadow-lg px-4 py-2 text-sm font-medium text-foreground active:scale-[0.98]"
             style={{ top: 'calc(52px + env(safe-area-inset-top) + 8px)', left: 12 }}
           >
             <ChevronLeft className="h-4 w-4" /> Retour
@@ -882,14 +884,55 @@ export default function MobileApp(props: MobileAppProps) {
             >
               <span className="text-sm font-bold text-foreground">👤 {t('nav.profil')}</span>
             </nav>
-            <div className="flex flex-col items-center justify-center h-full px-6">
-              <div className="text-5xl mb-4">👤</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{t('sections.connectez_vous')}</h3>
-              <p className="text-sm text-muted-foreground text-center mb-6">
-                {t('sections.connectez_vous_desc')}
-              </p>
-              <Button className="bg-primary text-primary-foreground w-full max-w-xs mb-3">{t('sections.se_connecter')}</Button>
-              <Button variant="outline" className="w-full max-w-xs">{t('sections.creer_compte')}</Button>
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-104px)] px-6">
+              {user ? (
+                <div className="w-full max-w-xs space-y-6">
+                  <div className="text-center">
+                    <div className="text-5xl mb-4">👤</div>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {user.user_metadata?.full_name || user.email}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Button className="w-full bg-primary text-primary-foreground">
+                      {t('sections.mon_compte')}
+                    </Button>
+                    <Button variant="outline" className="w-full">
+                      {t('sections.mes_favoris')}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-destructive hover:text-destructive gap-2"
+                      onClick={() => signOut()}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {t('sections.se_deconnecter')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full max-w-xs text-center">
+                  <div className="text-5xl mb-4">👤</div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{t('sections.connectez_vous')}</h3>
+                  <p className="text-sm text-muted-foreground text-center mb-6">
+                    {t('sections.connectez_vous_desc')}
+                  </p>
+                  <Button 
+                    className="w-full bg-primary text-primary-foreground mb-3"
+                    onClick={() => openAuthModal('se connecter')}
+                  >
+                    {t('sections.se_connecter')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => openAuthModal('créer un compte')}
+                  >
+                    {t('sections.creer_compte')}
+                  </Button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
