@@ -8,6 +8,8 @@ interface AuthCtx {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
+  isReadOnlyAdmin: boolean;
+  isSuperAdmin: boolean;
   isOwner: boolean;
   loading: boolean;
   refreshRoles: () => Promise<void>;
@@ -19,15 +21,19 @@ interface AuthCtx {
 }
 
 const Ctx = createContext<AuthCtx>({
-  user: null, session: null, isAdmin: false, isOwner: false, loading: true,
+  user: null, session: null, isAdmin: false, isReadOnlyAdmin: false, isSuperAdmin: false, isOwner: false, loading: true,
   refreshRoles: async () => {}, signOut: async () => {},
   requireAuth: () => {}, openAuthModal: () => {},
 });
+
+const SUPER_ADMIN_EMAIL = 'nikiemaandremarie@gmail.com';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isReadOnlyAdmin, setIsReadOnlyAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -41,8 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchRoles = async (uid: string) => {
     const { data } = await supabase.from('user_roles').select('role').eq('user_id', uid);
-    setIsAdmin(!!data?.some(r => r.role === 'admin'));
+    const fullAdmin = !!data?.some(r => r.role === 'admin');
+    const ro = !!data?.some(r => (r.role as string) === 'admin_readonly');
+    setIsAdmin(fullAdmin || ro); // both can access admin area
+    setIsReadOnlyAdmin(ro && !fullAdmin);
     setIsOwner(!!data?.some(r => r.role === 'owner'));
+    const email = userRef.current?.email?.toLowerCase();
+    setIsSuperAdmin(fullAdmin && email === SUPER_ADMIN_EMAIL);
   };
 
   useEffect(() => {
@@ -116,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ user, session, isAdmin, isOwner, loading, refreshRoles, signOut, requireAuth, openAuthModal }}>
+    <Ctx.Provider value={{ user, session, isAdmin, isReadOnlyAdmin, isSuperAdmin, isOwner, loading, refreshRoles, signOut, requireAuth, openAuthModal }}>
       {children}
       <AuthModal
         open={modalOpen}

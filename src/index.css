@@ -192,3 +192,25 @@
 }
 .quartier-zone-label::before { display: none; }
 
+
+/* Read-only admin: disable mutation controls inside the admin main area only.
+   Sidebar nav, topbar, search inputs and links stay clickable. */
+.admin-readonly main button:not([data-readonly-allowed]):not([type="button"][aria-label*="erm"]):not([data-nav]),
+.admin-readonly main [role="button"]:not([data-readonly-allowed]),
+.admin-readonly main input[type="checkbox"],
+.admin-readonly main input[type="radio"],
+.admin-readonly main input[type="file"],
+.admin-readonly main input[type="number"]:not([readonly]),
+.admin-readonly main input[type="date"]:not([readonly]),
+.admin-readonly main textarea:not([readonly]),
+.admin-readonly main select {
+  pointer-events: none !important;
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+}
+.admin-readonly main button[data-readonly-allowed],
+.admin-readonly main [role="button"][data-readonly-allowed] {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+}

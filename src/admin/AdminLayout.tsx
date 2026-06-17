@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Eye } from 'lucide-react';
 import AdminSidebar from '@/admin/AdminSidebar';
 import AdminTopbar from '@/admin/AdminTopbar';
 import AdminLogin from '@/admin/pages/AdminLogin';
@@ -16,20 +17,29 @@ import AdminMessages from '@/admin/pages/AdminMessages';
 import AdminAnalytics from '@/admin/pages/AdminAnalytics';
 import AdminSettings from '@/admin/pages/AdminSettings';
 import AdminCountries from '@/admin/pages/AdminCountries';
+import { useAuth } from '@/hooks/useAuth';
 
 function AdminProtected() {
-  console.log('AdminProtected rendered, auth:', localStorage.getItem('sapsap_admin_auth'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isAdmin, isReadOnlyAdmin, loading } = useAuth();
+  const localBypass = !!localStorage.getItem('sapsap_admin_auth');
 
-  if (!localStorage.getItem('sapsap_admin_auth')) {
+  if (loading) return null;
+  if (!isAdmin && !localBypass) {
     return <Navigate to="/admin/login" replace />;
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-muted">
+    <div className={`flex h-screen overflow-hidden bg-muted ${isReadOnlyAdmin ? 'admin-readonly' : ''}`}>
       <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
+        {isReadOnlyAdmin && (
+          <div className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-amber-900 bg-amber-100 border-b border-amber-300">
+            <Eye size={14} />
+            Mode lecture seule — vous observez la plateforme. Aucune modification n'est autorisée.
+          </div>
+        )}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <Routes>
             <Route index element={<AdminDashboard />} />
