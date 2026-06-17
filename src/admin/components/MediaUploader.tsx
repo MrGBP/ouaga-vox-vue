@@ -140,8 +140,78 @@ export default function MediaUploader({ propertyId }: { propertyId: string }) {
         </div>
       )}
 
+      <div className="grid grid-cols-12 gap-2 items-stretch">
+        <select value={urlKind} onChange={e => setUrlKind(e.target.value as any)} className="form-input col-span-3 text-[11px]">
+          <option value="image">🖼️ Image</option>
+          <option value="video">🎬 Vidéo</option>
+          <option value="video_360">🔭 360°</option>
+        </select>
+        <input
+          value={urlInput}
+          onChange={e => setUrlInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } }}
+          placeholder="https://… (lien image, vidéo ou visite 360°)"
+          className="form-input col-span-7"
+        />
+        <button type="button" onClick={addUrl}
+          className="col-span-2 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1">
+          <Link2 size={13} /> Ajouter
+        </button>
+      </div>
+
       {items.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {items.map((m, i) => (
+            <div key={m.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
+              {m.kind === 'image' ? (
+                <img src={m.url} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.src='/placeholder.svg')} />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-xs text-muted-foreground p-2 text-center">
+                  {m.kind === 'video_360' ? <Globe size={22} /> : <Video size={22} />}
+                  <span className="truncate mt-1 w-full text-[10px]">{m.kind === 'video_360' ? '360°' : 'Vidéo'}</span>
+                </div>
+              )}
+
+              <div className="absolute top-1 left-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button type="button" onClick={() => move(i, -1)} disabled={i === 0}
+                  className="w-5 h-5 rounded bg-black/60 text-white flex items-center justify-center disabled:opacity-30">
+                  <ArrowUp size={10} />
+                </button>
+                <button type="button" onClick={() => move(i, 1)} disabled={i === items.length - 1}
+                  className="w-5 h-5 rounded bg-black/60 text-white flex items-center justify-center disabled:opacity-30">
+                  <ArrowDown size={10} />
+                </button>
+              </div>
+
+              <button type="button" onClick={() => remove(m)}
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                <Trash2 size={11} />
+              </button>
+              <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded">
+                {kindBadge(m.kind)}
+              </span>
+              {i === 0 ? (
+                <span className="absolute top-1 right-8 text-[9px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold shadow flex items-center gap-0.5">
+                  <Star size={9} className="fill-current" /> Principale
+                </span>
+              ) : (
+                <>
+                  <span className="absolute bottom-1 right-1 text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
+                    #{i + 1}
+                  </span>
+                  {m.kind === 'image' && (
+                    <button type="button" onClick={() => setAsMain(i)}
+                      title="Définir comme image principale"
+                      className="absolute inset-x-1 top-1 mx-auto w-fit px-2 py-0.5 rounded bg-black/70 text-white text-[9px] font-semibold opacity-0 group-hover:opacity-100 hover:bg-yellow-400 hover:text-black transition flex items-center gap-1">
+                      <Star size={9} /> Définir principale
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
           {items.map((m, i) => (
             <div key={m.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
               {m.kind === 'image' ? (
