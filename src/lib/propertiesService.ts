@@ -79,7 +79,7 @@ export async function fetchMergedProperties(countryCode?: string): Promise<Prope
     const { data } = await builder.order('published_at', { ascending: false, nullsFirst: false });
 
     const real = (data ?? []).map(rowToProperty);
-    if (cc === 'BF') {
+    if (cc === 'BF' && isMockEnabled()) {
       const mocks = mockProperties.filter(p => p.status !== 'rented' && (p as any).country === 'BF');
       const mockIds = new Set(mocks.map(p => p.id));
       const merged = real.filter(r => !mockIds.has(r.id));
@@ -87,7 +87,10 @@ export async function fetchMergedProperties(countryCode?: string): Promise<Prope
     }
     return real;
   } catch {
-    return cc === 'BF' ? mockProperties.filter(p => p.status !== 'rented' && (p as any).country === 'BF') : [];
+    if (cc === 'BF' && isMockEnabled()) {
+      return mockProperties.filter(p => p.status !== 'rented' && (p as any).country === 'BF');
+    }
+    return [];
   }
 }
 
