@@ -540,7 +540,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (blockingErrors.length) { toast.error(blockingErrors[0]); return; }
-    if (!confirmTruthful) { toast.error(t('owner.form.must_confirm', 'Veuillez confirmer que les informations sont exactes')); return; }
+    if (!adminMode && !confirmTruthful) { toast.error(t('owner.form.must_confirm', 'Veuillez confirmer que les informations sont exactes')); return; }
 
     const waDigits = waLocal.replace(/\D/g, '');
     const phoneDigits = phoneLocal.replace(/\D/g, '');
