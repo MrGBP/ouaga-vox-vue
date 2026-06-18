@@ -63,6 +63,7 @@ const propertySchema = z.object({
 
 type FormState = {
   id?: string; title: string; description: string; type: string; price: number;
+  country_code: string; city: string;
   quartier: string; address: string; latitude: number; longitude: number;
   bedrooms: number; bathrooms: number; surface_area: number; furnished: boolean;
   year_built?: number; video_url?: string; virtual_tour_url?: string;
@@ -73,6 +74,7 @@ type FormState = {
 
 const emptyForm = (): FormState => ({
   title: '', description: '', type: PROPERTY_TYPES[0].value, price: 0,
+  country_code: 'BF', city: 'Ouagadougou',
   quartier: mockQuartiers[0].name, address: '',
   latitude: 12.3714, longitude: -1.5197,
   bedrooms: 1, bathrooms: 1, surface_area: 50, furnished: false,
