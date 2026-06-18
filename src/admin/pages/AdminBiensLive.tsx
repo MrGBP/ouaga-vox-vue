@@ -100,7 +100,10 @@ export default function AdminBiensLive() {
   const startEdit = (p: Property) => {
     setEditing({
       id: p.id, title: p.title, description: p.description || '',
-      type: p.type, price: p.price, quartier: p.quartier, address: p.address,
+      type: p.type, price: p.price,
+      country_code: ((p as any).country_code || (p as any).country || 'BF').toUpperCase(),
+      city: (p as any).city || 'Ouagadougou',
+      quartier: p.quartier, address: p.address,
       latitude: p.latitude, longitude: p.longitude,
       bedrooms: p.bedrooms ?? 1, bathrooms: p.bathrooms ?? 1, surface_area: p.surface_area ?? 50,
       furnished: !!p.furnished, year_built: p.year_built, video_url: p.video_url,
