@@ -1156,7 +1156,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             {step < 4 ? (
               <button type="button" onClick={goNext} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">{t('owner.form.suivant', 'Suivant')} →</button>
             ) : (
-              <button type="submit" disabled={busy || !confirmTruthful || blockingErrors.length > 0} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              <button type="submit" disabled={busy || (!adminMode && !confirmTruthful) || blockingErrors.length > 0} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <CheckCircle2 size={13} /> {isEdit ? t('owner.form.mettre_a_jour') : t('owner.form.enregistrer')}
               </button>
