@@ -260,6 +260,30 @@ function FormModal({
             <textarea value={state.description} onChange={e => set({ description: e.target.value })} rows={3} className="form-input resize-none" />
           </Field>
 
+          {/* Pays + Ville — SapSapHouse peut publier dans tous les pays activés */}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Pays *">
+              <select
+                value={state.country_code}
+                onChange={e => set({ country_code: e.target.value })}
+                className="form-input"
+              >
+                {(countries ?? [{ code: 'BF', name: 'Burkina Faso', flag_emoji: '🇧🇫' } as any]).map((c: any) => (
+                  <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Ville *">
+              <input
+                value={state.city}
+                onChange={e => set({ city: e.target.value })}
+                className="form-input"
+                placeholder="Ouagadougou, Accra, Bamako…"
+              />
+            </Field>
+          </div>
+
+
           <div className="grid grid-cols-2 gap-3">
             <Field label="Type *">
               <select value={state.type} onChange={e => set({ type: e.target.value, furnished: PROPERTY_TYPES.find(t => t.value === e.target.value)?.furnished ?? false })} className="form-input">
