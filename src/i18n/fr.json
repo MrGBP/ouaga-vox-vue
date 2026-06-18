@@ -146,7 +146,8 @@
       "vue": "Vue d'ensemble",
       "biens": "Mes biens",
       "reservations": "Réservations",
-      "messages": "Messages"
+      "messages": "Messages",
+      "analytics": "Analyses"
     },
     "form": {
       "nouveau": "Nouveau bien",
