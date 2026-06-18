@@ -94,7 +94,7 @@ const POI_PRESETS: { type: string; emoji: string; label: string; labelEn: string
 
 type PoiChoice = { key: string; type: string; emoji: string; label: string; name: string; latitude?: number; longitude?: number };
 
-export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose }: Props) {
+export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose, adminMode = false }: Props) {
   const { i18n } = useTranslation();
   const country = useCountryConfig();
   const { user } = useAuth();
