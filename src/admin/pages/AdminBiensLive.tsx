@@ -10,6 +10,7 @@ import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, type Property } fr
 import MapPicker from '@/admin/components/MapPicker';
 import MediaUploader from '@/admin/components/MediaUploader';
 import PropertyReviewPanel from '@/admin/components/PropertyReviewPanel';
+import { useAllCountryConfigs } from '@/hooks/useCountryConfig';
 
 // All toggleable feature checkboxes (cocher à souhait)
 const FEATURE_DEFS: { key: string; label: string; group: string }[] = [
@@ -62,6 +63,7 @@ const propertySchema = z.object({
 
 type FormState = {
   id?: string; title: string; description: string; type: string; price: number;
+  country_code: string; city: string;
   quartier: string; address: string; latitude: number; longitude: number;
   bedrooms: number; bathrooms: number; surface_area: number; furnished: boolean;
   year_built?: number; video_url?: string; virtual_tour_url?: string;
@@ -72,6 +74,7 @@ type FormState = {
 
 const emptyForm = (): FormState => ({
   title: '', description: '', type: PROPERTY_TYPES[0].value, price: 0,
+  country_code: 'BF', city: 'Ouagadougou',
   quartier: mockQuartiers[0].name, address: '',
   latitude: 12.3714, longitude: -1.5197,
   bedrooms: 1, bathrooms: 1, surface_area: 50, furnished: false,
@@ -97,7 +100,10 @@ export default function AdminBiensLive() {
   const startEdit = (p: Property) => {
     setEditing({
       id: p.id, title: p.title, description: p.description || '',
-      type: p.type, price: p.price, quartier: p.quartier, address: p.address,
+      type: p.type, price: p.price,
+      country_code: ((p as any).country_code || (p as any).country || 'BF').toUpperCase(),
+      city: (p as any).city || 'Ouagadougou',
+      quartier: p.quartier, address: p.address,
       latitude: p.latitude, longitude: p.longitude,
       bedrooms: p.bedrooms ?? 1, bathrooms: p.bathrooms ?? 1, surface_area: p.surface_area ?? 50,
       furnished: !!p.furnished, year_built: p.year_built, video_url: p.video_url,
@@ -236,6 +242,7 @@ function FormModal({
   const set = (patch: Partial<FormState>) => setState({ ...state, ...patch });
   const setFeature = (k: string, v: boolean) => set({ features: { ...state.features, [k]: v } });
   const groups = Array.from(new Set(FEATURE_DEFS.map(f => f.group)));
+  const { data: countries } = useAllCountryConfigs();
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -252,6 +259,30 @@ function FormModal({
           <Field label="Description">
             <textarea value={state.description} onChange={e => set({ description: e.target.value })} rows={3} className="form-input resize-none" />
           </Field>
+
+          {/* Pays + Ville — SapSapHouse peut publier dans tous les pays activés */}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Pays *">
+              <select
+                value={state.country_code}
+                onChange={e => set({ country_code: e.target.value })}
+                className="form-input"
+              >
+                {(countries ?? [{ code: 'BF', name: 'Burkina Faso', flag_emoji: '🇧🇫' } as any]).map((c: any) => (
+                  <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Ville *">
+              <input
+                value={state.city}
+                onChange={e => set({ city: e.target.value })}
+                className="form-input"
+                placeholder="Ouagadougou, Accra, Bamako…"
+              />
+            </Field>
+          </div>
+
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Type *">
