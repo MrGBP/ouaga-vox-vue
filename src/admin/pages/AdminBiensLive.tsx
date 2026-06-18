@@ -1,43 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Edit, Check, X, Database, Eye } from 'lucide-react';
+import { Plus, Trash2, Edit, Check, Database, Eye } from 'lucide-react';
 import { toast } from 'sonner';
-import { z } from 'zod';
 import {
-  fetchAllPropertiesAdmin, adminCreateProperty, adminUpdateProperty,
-  adminDeleteProperty, adminSetStatus,
+  fetchAllPropertiesAdmin, adminDeleteProperty, adminSetStatus,
 } from '@/lib/propertiesService';
-import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, type Property } from '@/lib/mockData';
-import MapPicker from '@/admin/components/MapPicker';
-import MediaUploader from '@/admin/components/MediaUploader';
+import type { Property } from '@/lib/mockData';
 import PropertyReviewPanel from '@/admin/components/PropertyReviewPanel';
-import { useAllCountryConfigs } from '@/hooks/useCountryConfig';
-
-// All toggleable feature checkboxes (cocher à souhait)
-const FEATURE_DEFS: { key: string; label: string; group: string }[] = [
-  { key: 'has_ac', label: 'Climatisation', group: 'Confort' },
-  { key: 'has_water', label: 'Eau courante', group: 'Confort' },
-  { key: 'has_water_tower', label: 'Château d\'eau', group: 'Confort' },
-  { key: 'has_internet', label: 'Internet/Fibre', group: 'Confort' },
-  { key: 'has_kitchen', label: 'Cuisine équipée', group: 'Confort' },
-  { key: 'has_fridge', label: 'Frigo', group: 'Confort' },
-  { key: 'has_stove', label: 'Cuisinière', group: 'Confort' },
-  { key: 'has_tv', label: 'TV', group: 'Confort' },
-  { key: 'has_generator', label: 'Groupe électrogène', group: 'Énergie' },
-  { key: 'has_guardian', label: 'Vigile / Gardien', group: 'Sécurité' },
-  { key: 'has_fence', label: 'Clôture', group: 'Sécurité' },
-  { key: 'has_auto_gate', label: 'Portail auto', group: 'Sécurité' },
-  { key: 'has_cameras', label: 'Caméras', group: 'Sécurité' },
-  { key: 'has_parking_int', label: 'Parking intérieur', group: 'Extérieur' },
-  { key: 'has_parking_ext', label: 'Parking extérieur', group: 'Extérieur' },
-  { key: 'has_garden', label: 'Jardin', group: 'Extérieur' },
-  { key: 'has_pool', label: 'Piscine', group: 'Extérieur' },
-  { key: 'has_terrace', label: 'Terrasse', group: 'Extérieur' },
-  { key: 'has_paved_road', label: 'Voie pavée', group: 'Accès' },
-  { key: 'has_pmr', label: 'Accessible PMR', group: 'Accès' },
-  { key: 'is_new_build', label: 'Construction neuve', group: 'État' },
-  { key: 'is_renovated', label: 'Rénové', group: 'État' },
-  { key: 'pets_allowed', label: 'Animaux acceptés', group: 'Règles' },
-];
+import OwnerPropertyFormModal from '@/owner/components/OwnerPropertyFormModal';
+import type { OwnerPropertyRow } from '@/owner/lib/ownerService';
+import { useAuth } from '@/hooks/useAuth';
 
 const STATUS_OPTIONS = [
   { value: 'pending', label: 'En attente' },
@@ -50,43 +21,21 @@ const STATUS_OPTIONS = [
   { value: 'inactive', label: 'Archivé' },
 ];
 
-const propertySchema = z.object({
-  title: z.string().trim().min(3, 'Titre trop court').max(120),
-  description: z.string().max(2000).optional(),
-  type: z.string().min(1),
-  price: z.number().positive('Prix doit être > 0'),
-  quartier: z.string().min(1),
-  address: z.string().min(2),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-});
-
-type FormState = {
-  id?: string; title: string; description: string; type: string; price: number;
-  country_code: string; city: string;
-  quartier: string; address: string; latitude: number; longitude: number;
-  bedrooms: number; bathrooms: number; surface_area: number; furnished: boolean;
-  year_built?: number; video_url?: string; virtual_tour_url?: string;
-  agent_name?: string; agent_phone?: string;
-  admin_status: string;
-  features: Record<string, boolean>;
-};
-
-const emptyForm = (): FormState => ({
-  title: '', description: '', type: PROPERTY_TYPES[0].value, price: 0,
-  country_code: 'BF', city: 'Ouagadougou',
-  quartier: mockQuartiers[0].name, address: '',
-  latitude: 12.3714, longitude: -1.5197,
-  bedrooms: 1, bathrooms: 1, surface_area: 50, furnished: false,
-  admin_status: 'pending', features: {},
-});
-
+/**
+ * Page admin "Biens (production)" — utilise désormais le formulaire complet du
+ * propriétaire (wizard 4 étapes, médias, POI, OSM, IA…) en mode `adminMode` :
+ *   • sélecteur du pays de publication (BF, GH, ML…)
+ *   • statut initial direct (publié / en révision / en attente)
+ *   • bypass de la case "informations exactes" (cocher reste possible)
+ *   • le bien est rattaché au compte SapSapHouse connecté (owner_id = admin)
+ */
 export default function AdminBiensLive() {
+  const { user } = useAuth();
   const [items, setItems] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<FormState | null>(null);
+  const [editing, setEditing] = useState<OwnerPropertyRow | null>(null);
+  const [creating, setCreating] = useState(false);
   const [reviewId, setReviewId] = useState<string | null>(null);
-  // Statut pending par ligne : utilisateur choisit, puis clique Appliquer
   const [pendingStatus, setPendingStatus] = useState<Record<string, string>>({});
 
   const reload = async () => {
@@ -98,43 +47,27 @@ export default function AdminBiensLive() {
   useEffect(() => { reload(); }, []);
 
   const startEdit = (p: Property) => {
+    // OwnerPropertyFormModal recharge la fiche complète via supabase à l'ouverture.
     setEditing({
-      id: p.id, title: p.title, description: p.description || '',
-      type: p.type, price: p.price,
-      country_code: ((p as any).country_code || (p as any).country || 'BF').toUpperCase(),
-      city: (p as any).city || 'Ouagadougou',
-      quartier: p.quartier, address: p.address,
-      latitude: p.latitude, longitude: p.longitude,
-      bedrooms: p.bedrooms ?? 1, bathrooms: p.bathrooms ?? 1, surface_area: p.surface_area ?? 50,
-      furnished: !!p.furnished, year_built: p.year_built, video_url: p.video_url,
-      virtual_tour_url: p.virtual_tour_url, agent_name: p.agent_name, agent_phone: p.agent_phone,
-      admin_status: (p as any).admin_status ?? 'pending',
-      features: Object.fromEntries(FEATURE_DEFS.map(f => [f.key, !!(p as any)[f.key]])),
+      id: p.id,
+      title: p.title,
+      type: p.type,
+      quartier: p.quartier,
+      address: p.address,
+      price: p.price,
+      images: p.images ?? [],
+      admin_status: ((p as any).admin_status ?? 'pending') as any,
+      status: (p as any).status ?? null,
+      view_count: (p as any).view_count ?? 0,
+      favorite_count: (p as any).favorite_count ?? 0,
+      created_at: (p as any).created_at ?? new Date().toISOString(),
+      published_at: (p as any).published_at ?? null,
+      reviewed_at: (p as any).reviewed_at ?? null,
+      owner_updated_at: (p as any).owner_updated_at ?? null,
+      last_correction_note: (p as any).last_correction_note ?? null,
+      last_correction_at: (p as any).last_correction_at ?? null,
+      correction_round: (p as any).correction_round ?? 0,
     });
-  };
-
-  const save = async () => {
-    if (!editing) return;
-    const parsed = propertySchema.safeParse(editing);
-    if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
-    try {
-      const payload: any = { ...editing };
-      delete payload.id;
-      if (editing.id) {
-        await adminUpdateProperty(editing.id, payload);
-        // Si le statut a changé via le formulaire, on l'applique
-        if (editing.admin_status) await adminSetStatus(editing.id, editing.admin_status as any).catch(() => {});
-        toast.success('Bien mis à jour');
-      } else {
-        const created = await adminCreateProperty(payload);
-        toast.success('Bien créé — tu peux maintenant ajouter les médias');
-        setEditing({ ...editing, id: created.id });
-        await reload();
-        return;
-      }
-      setEditing(null);
-      await reload();
-    } catch (e: any) { toast.error(e.message); }
   };
 
   const remove = async (p: Property) => {
@@ -158,10 +91,17 @@ export default function AdminBiensLive() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2"><Database size={20} /> Biens (production)</h1>
-          <p className="text-xs text-muted-foreground">Connecté à la base — création, médias, géolocalisation réels.</p>
+          <p className="text-xs text-muted-foreground">
+            Formulaire complet propriétaire + super-pouvoirs admin : publication directe dans n'importe quel pays.
+          </p>
         </div>
-        <button onClick={() => setEditing(emptyForm())}
-          className="px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1.5">
+        <button
+          onClick={() => {
+            if (!user?.id) { toast.error('Connecte-toi en tant qu\'admin pour publier un bien.'); return; }
+            setCreating(true);
+          }}
+          className="px-3 h-9 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1.5"
+        >
           <Plus size={14} /> Nouveau bien
         </button>
       </div>
@@ -172,6 +112,7 @@ export default function AdminBiensLive() {
             <thead className="bg-muted">
               <tr>
                 <th className="text-left p-2.5">Titre</th>
+                <th className="text-left p-2.5">Pays</th>
                 <th className="text-left p-2.5">Quartier</th>
                 <th className="text-right p-2.5">Prix</th>
                 <th className="text-left p-2.5 min-w-[260px]">Statut → Appliquer</th>
@@ -180,17 +121,19 @@ export default function AdminBiensLive() {
             </thead>
             <tbody>
               {items.length === 0 && (
-                <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Aucun bien en base. Crée le premier !</td></tr>
+                <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Aucun bien en base. Crée le premier !</td></tr>
               )}
               {items.map(p => {
                 const current = (p as any).admin_status ?? 'pending';
                 const selected = pendingStatus[p.id] ?? current;
                 const dirty = selected !== current;
+                const cc = ((p as any).country_code || (p as any).country || '—').toString().toUpperCase();
                 return (
                   <tr key={p.id} className="border-t border-border hover:bg-muted/40">
                     <td className="p-2.5 font-medium">{p.title}</td>
+                    <td className="p-2.5 text-muted-foreground">{cc}</td>
                     <td className="p-2.5 text-muted-foreground">{p.quartier}</td>
-                    <td className="p-2.5 text-right">{p.price.toLocaleString('fr-FR')} F</td>
+                    <td className="p-2.5 text-right">{p.price.toLocaleString('fr-FR')}</td>
                     <td className="p-2.5">
                       <div className="flex items-center gap-1.5">
                         <select value={selected}
@@ -224,8 +167,23 @@ export default function AdminBiensLive() {
         </div>
       )}
 
-      {editing && (
-        <FormModal state={editing} setState={setEditing} onSave={save} onClose={() => setEditing(null)} />
+      {/* Formulaire complet (mêmes capacités que le propriétaire + admin mode) */}
+      {creating && user?.id && (
+        <OwnerPropertyFormModal
+          open={true}
+          ownerId={user.id}
+          adminMode
+          onClose={(didChange) => { setCreating(false); if (didChange) reload(); }}
+        />
+      )}
+      {editing && user?.id && (
+        <OwnerPropertyFormModal
+          open={true}
+          ownerId={user.id}
+          initial={editing}
+          adminMode
+          onClose={(didChange) => { setEditing(null); if (didChange) reload(); }}
+        />
       )}
 
       {reviewId && (
@@ -233,147 +191,4 @@ export default function AdminBiensLive() {
       )}
     </div>
   );
-}
-
-// ─── Form modal ────────────────────────────────────────────────────────────
-function FormModal({
-  state, setState, onSave, onClose,
-}: { state: FormState; setState: (s: FormState) => void; onSave: () => void; onClose: () => void }) {
-  const set = (patch: Partial<FormState>) => setState({ ...state, ...patch });
-  const setFeature = (k: string, v: boolean) => set({ features: { ...state.features, [k]: v } });
-  const groups = Array.from(new Set(FEATURE_DEFS.map(f => f.group)));
-  const { data: countries } = useAllCountryConfigs();
-
-  return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="sticky top-0 bg-card flex items-center justify-between px-5 py-3 border-b z-10">
-          <h2 className="text-sm font-bold">{state.id ? 'Modifier le bien' : 'Nouveau bien'}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center"><X size={16} /></button>
-        </div>
-
-        <div className="p-5 space-y-4 text-xs">
-          <Field label="Titre *">
-            <input value={state.title} onChange={e => set({ title: e.target.value })} className="form-input" />
-          </Field>
-          <Field label="Description">
-            <textarea value={state.description} onChange={e => set({ description: e.target.value })} rows={3} className="form-input resize-none" />
-          </Field>
-
-          {/* Pays + Ville — SapSapHouse peut publier dans tous les pays activés */}
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Pays *">
-              <select
-                value={state.country_code}
-                onChange={e => set({ country_code: e.target.value })}
-                className="form-input"
-              >
-                {(countries ?? [{ code: 'BF', name: 'Burkina Faso', flag_emoji: '🇧🇫' } as any]).map((c: any) => (
-                  <option key={c.code} value={c.code}>{c.flag_emoji} {c.name}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Ville *">
-              <input
-                value={state.city}
-                onChange={e => set({ city: e.target.value })}
-                className="form-input"
-                placeholder="Ouagadougou, Accra, Bamako…"
-              />
-            </Field>
-          </div>
-
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Type *">
-              <select value={state.type} onChange={e => set({ type: e.target.value, furnished: PROPERTY_TYPES.find(t => t.value === e.target.value)?.furnished ?? false })} className="form-input">
-                {PROPERTY_TYPES.map(t => <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>)}
-              </select>
-            </Field>
-            <Field label="Prix (FCFA) *">
-              <input type="number" value={state.price || ''} onChange={e => set({ price: Number(e.target.value) })} className="form-input" />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Quartier *">
-              <select value={state.quartier} onChange={e => set({ quartier: e.target.value })} className="form-input">
-                {mockQuartiers.map(q => <option key={q.id} value={q.name}>{q.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Adresse *">
-              <input value={state.address} onChange={e => set({ address: e.target.value })} className="form-input" />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Chambres"><input type="number" min={0} value={state.bedrooms} onChange={e => set({ bedrooms: Number(e.target.value) })} className="form-input" /></Field>
-            <Field label="SDB"><input type="number" min={0} value={state.bathrooms} onChange={e => set({ bathrooms: Number(e.target.value) })} className="form-input" /></Field>
-            <Field label="Surface (m²)"><input type="number" min={0} value={state.surface_area} onChange={e => set({ surface_area: Number(e.target.value) })} className="form-input" /></Field>
-          </div>
-
-          {/* Localisation */}
-          <div className="space-y-2">
-            <label className="font-semibold">Localisation (clic sur la carte) *</label>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Latitude">
-                <input type="number" step="0.000001" value={state.latitude} onChange={e => set({ latitude: Number(e.target.value) })} className="form-input" />
-              </Field>
-              <Field label="Longitude">
-                <input type="number" step="0.000001" value={state.longitude} onChange={e => set({ longitude: Number(e.target.value) })} className="form-input" />
-              </Field>
-            </div>
-            <MapPicker lat={state.latitude} lng={state.longitude} onChange={(lat, lng) => set({ latitude: lat, longitude: lng })} />
-          </div>
-
-          {/* Caractéristiques */}
-          <div className="space-y-2">
-            <label className="font-semibold">Caractéristiques (cocher à souhait)</label>
-            {groups.map(g => (
-              <div key={g} className="space-y-1">
-                <p className="text-[10px] uppercase text-muted-foreground tracking-wider">{g}</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                  {FEATURE_DEFS.filter(f => f.group === g).map(f => (
-                    <label key={f.key} className="flex items-center gap-2 px-2 py-1.5 rounded border border-border cursor-pointer hover:bg-muted">
-                      <input type="checkbox" checked={!!state.features[f.key]} onChange={e => setFeature(f.key, e.target.checked)} />
-                      <span>{f.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Médias liés */}
-          <div className="space-y-2">
-            <label className="font-semibold">Médias (images, vidéos, 360°)</label>
-            {state.id ? (
-              <MediaUploader propertyId={state.id} />
-            ) : (
-              <p className="text-[11px] text-muted-foreground italic">Enregistre d'abord le bien pour activer l'upload de médias.</p>
-            )}
-          </div>
-
-          {/* Statut */}
-          <Field label="Statut">
-            <select value={state.admin_status} onChange={e => set({ admin_status: e.target.value })} className="form-input">
-              {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
-          </Field>
-        </div>
-
-        <div className="sticky bottom-0 bg-card border-t flex gap-2 p-3">
-          <button onClick={onClose} className="flex-1 h-10 rounded-lg border border-border text-xs font-semibold">Fermer</button>
-          <button onClick={onSave} className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1.5">
-            <Check size={14} /> {state.id ? 'Enregistrer' : 'Créer le bien'}
-          </button>
-        </div>
-      </div>
-      <style>{`.form-input{display:block;width:100%;border:1px solid hsl(var(--border));background:hsl(var(--background));border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.8125rem;outline:none}.form-input:focus{border-color:hsl(var(--primary))}`}</style>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><label className="block font-semibold mb-1">{label}</label>{children}</div>;
 }

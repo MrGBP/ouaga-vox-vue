@@ -14,7 +14,7 @@ import { Loader2 } from 'lucide-react';
 import type { OwnerPropertyRow } from '../lib/ownerService';
 import { isCommercialType, isOfficeType } from '@/lib/typeHelpers';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
-import { useCountryConfig } from '@/hooks/useCountryConfig';
+import { useCountryConfig, useAllCountryConfigs } from '@/hooks/useCountryConfig';
 import { CITIES, COUNTRY_TO_CITY } from '@/lib/geoConfig';
 import QuartierAutocomplete from '@/components/QuartierAutocomplete';
 import ConfirmDialog from '@/admin/components/ConfirmDialog';
@@ -65,6 +65,8 @@ interface Props {
   initial?: OwnerPropertyRow | null;
   ownerId: string;
   onClose: (didChange: boolean) => void;
+  /** Mode administrateur SapSapHouse : sélecteur pays + statut direct + bypass confirmation. */
+  adminMode?: boolean;
 }
 
 const DRAFT_KEY = 'sapsap_owner_draft_v2';
@@ -92,7 +94,7 @@ const POI_PRESETS: { type: string; emoji: string; label: string; labelEn: string
 
 type PoiChoice = { key: string; type: string; emoji: string; label: string; name: string; latitude?: number; longitude?: number };
 
-export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose }: Props) {
+export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose, adminMode = false }: Props) {
   const { i18n } = useTranslation();
   const country = useCountryConfig();
   const { user } = useAuth();
@@ -138,6 +140,10 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
 
   // Étape 4 — Aperçu
   const [confirmTruthful, setConfirmTruthful] = useState(false);
+
+  // ─── Admin SapSapHouse (uniquement quand adminMode) ───────────────────
+  const [adminStatus, setAdminStatus] = useState<'pending' | 'reviewing' | 'published'>('published');
+  const { data: allCountries } = useAllCountryConfigs();
 
   // POI cochables (key = type+label, ou osm_<id> pour les suggestions OSM)
   const [poiChoices, setPoiChoices] = useState<PoiChoice[]>([]);
@@ -534,7 +540,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (blockingErrors.length) { toast.error(blockingErrors[0]); return; }
-    if (!confirmTruthful) { toast.error(t('owner.form.must_confirm', 'Veuillez confirmer que les informations sont exactes')); return; }
+    if (!adminMode && !confirmTruthful) { toast.error(t('owner.form.must_confirm', 'Veuillez confirmer que les informations sont exactes')); return; }
 
     const waDigits = waLocal.replace(/\D/g, '');
     const phoneDigits = phoneLocal.replace(/\D/g, '');
@@ -579,9 +585,12 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         if (!updated || updated.length === 0) throw new Error("Mise à jour refusée : vous n'êtes pas propriétaire de ce bien.");
         propertyId = initial.id;
       } else {
+        const initialStatus = adminMode ? adminStatus : 'pending';
+        const insertPayload: any = { ...payload, admin_status: initialStatus, status: 'available', owner_updated_at: new Date().toISOString() };
+        if (adminMode && initialStatus === 'published') insertPayload.published_at = new Date().toISOString();
         const { data, error } = await supabase
           .from('properties')
-          .insert({ ...payload, admin_status: 'pending' as any, status: 'available', owner_updated_at: new Date().toISOString() })
+          .insert(insertPayload)
           .select('id').single();
         if (error) throw error;
         propertyId = data.id;
@@ -675,13 +684,54 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       <div data-wizard-scroll className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="sticky top-0 bg-card flex items-center justify-between px-5 py-3 border-b z-10">
           <div>
-            <h2 className="text-base font-bold text-foreground">{isEdit ? t('owner.form.modifier') : t('owner.form.nouveau')}</h2>
-            {!isEdit && <p className="text-[11px] text-muted-foreground mt-0.5">{t('owner.form.soumis')}</p>}
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+              {isEdit ? t('owner.form.modifier') : t('owner.form.nouveau')}
+              {adminMode && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                  Admin · SapSapHouse
+                </span>
+              )}
+            </h2>
+            {!isEdit && !adminMode && <p className="text-[11px] text-muted-foreground mt-0.5">{t('owner.form.soumis')}</p>}
+            {adminMode && <p className="text-[11px] text-muted-foreground mt-0.5">Publication directe possible dans n'importe quel pays.</p>}
           </div>
           <button onClick={requestClose} className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center">
             <X size={16} />
           </button>
         </div>
+
+        {/* Barre admin : sélecteur pays + statut initial */}
+        {adminMode && (
+          <div className="mx-5 mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-foreground mb-1">Pays de publication</label>
+              <select
+                value={selectedCountry}
+                onChange={e => setSelectedCountry(e.target.value)}
+                className="form-input"
+              >
+                {(allCountries ?? [{ code: 'BF', name: 'Burkina Faso', flag_emoji: '🇧🇫' } as any]).map((c: any) => (
+                  <option key={c.code} value={c.code}>{c.flag_emoji} {c.name} ({c.currency_symbol || c.currency || '—'})</option>
+                ))}
+              </select>
+            </div>
+            {!isEdit && (
+              <div>
+                <label className="block text-[11px] font-semibold text-foreground mb-1">Statut à la création</label>
+                <select
+                  value={adminStatus}
+                  onChange={e => setAdminStatus(e.target.value as any)}
+                  className="form-input"
+                >
+                  <option value="published">✅ Publié immédiatement</option>
+                  <option value="reviewing">🔍 En révision</option>
+                  <option value="pending">⏳ En attente</option>
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
 
         {/* Bannière reprise brouillon */}
         {hasResumableDraft && !isEdit && (
@@ -1106,7 +1156,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
             {step < 4 ? (
               <button type="button" onClick={goNext} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">{t('owner.form.suivant', 'Suivant')} →</button>
             ) : (
-              <button type="submit" disabled={busy || !confirmTruthful || blockingErrors.length > 0} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              <button type="submit" disabled={busy || (!adminMode && !confirmTruthful) || blockingErrors.length > 0} className="flex-[1.4] h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <CheckCircle2 size={13} /> {isEdit ? t('owner.form.mettre_a_jour') : t('owner.form.enregistrer')}
               </button>
