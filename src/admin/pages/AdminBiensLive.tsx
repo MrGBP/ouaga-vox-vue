@@ -10,6 +10,7 @@ import { RAW_MOCK_QUARTIERS as mockQuartiers, PROPERTY_TYPES, type Property } fr
 import MapPicker from '@/admin/components/MapPicker';
 import MediaUploader from '@/admin/components/MediaUploader';
 import PropertyReviewPanel from '@/admin/components/PropertyReviewPanel';
+import { useAllCountryConfigs } from '@/hooks/useCountryConfig';
 
 // All toggleable feature checkboxes (cocher à souhait)
 const FEATURE_DEFS: { key: string; label: string; group: string }[] = [
