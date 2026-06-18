@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, useNavigate, Link } from 'react-router-dom';
-import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, LogOut } from 'lucide-react';
+import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, LogOut, BarChart3 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import OwnerProperties from './pages/OwnerProperties';
 import OwnerReservations from './pages/OwnerReservations';
 import OwnerMessages from './pages/OwnerMessages';
+import OwnerAnalytics from './pages/OwnerAnalytics';
 
 
 export default function OwnerLayout() {
