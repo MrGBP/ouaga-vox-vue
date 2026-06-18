@@ -141,6 +141,10 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   // Étape 4 — Aperçu
   const [confirmTruthful, setConfirmTruthful] = useState(false);
 
+  // ─── Admin SapSapHouse (uniquement quand adminMode) ───────────────────
+  const [adminStatus, setAdminStatus] = useState<'pending' | 'reviewing' | 'published'>('published');
+  const { data: allCountries } = useAllCountryConfigs();
+
   // POI cochables (key = type+label, ou osm_<id> pour les suggestions OSM)
   const [poiChoices, setPoiChoices] = useState<PoiChoice[]>([]);
   const [existingPois, setExistingPois] = useState<PropertyPoi[]>([]);
