@@ -585,9 +585,12 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         if (!updated || updated.length === 0) throw new Error("Mise à jour refusée : vous n'êtes pas propriétaire de ce bien.");
         propertyId = initial.id;
       } else {
+        const initialStatus = adminMode ? adminStatus : 'pending';
+        const insertPayload: any = { ...payload, admin_status: initialStatus, status: 'available', owner_updated_at: new Date().toISOString() };
+        if (adminMode && initialStatus === 'published') insertPayload.published_at = new Date().toISOString();
         const { data, error } = await supabase
           .from('properties')
-          .insert({ ...payload, admin_status: 'pending' as any, status: 'available', owner_updated_at: new Date().toISOString() })
+          .insert(insertPayload)
           .select('id').single();
         if (error) throw error;
         propertyId = data.id;
