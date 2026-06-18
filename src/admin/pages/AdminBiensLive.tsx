@@ -242,6 +242,7 @@ function FormModal({
   const set = (patch: Partial<FormState>) => setState({ ...state, ...patch });
   const setFeature = (k: string, v: boolean) => set({ features: { ...state.features, [k]: v } });
   const groups = Array.from(new Set(FEATURE_DEFS.map(f => f.group)));
+  const { data: countries } = useAllCountryConfigs();
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
