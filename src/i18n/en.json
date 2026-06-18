@@ -146,7 +146,8 @@
       "vue": "Overview",
       "biens": "My listings",
       "reservations": "Bookings",
-      "messages": "Messages"
+      "messages": "Messages",
+      "analytics": "Analytics"
     },
     "form": {
       "nouveau": "New listing",
