@@ -24,6 +24,7 @@ export default function OwnerLayout() {
     { to: '/proprietaire/biens', label: t('owner.nav.biens'), icon: Home, badgeKey: null },
     { to: '/proprietaire/reservations', label: t('owner.nav.reservations'), icon: Calendar, badgeKey: 'pendingReservations' as const },
     { to: '/proprietaire/messages', label: t('owner.nav.messages'), icon: MessageSquare, badgeKey: 'unreadMessages' as const },
+    { to: '/proprietaire/analyses', label: t('owner.nav.analytics'), icon: BarChart3, badgeKey: null },
   ];
 
   useEffect(() => {
