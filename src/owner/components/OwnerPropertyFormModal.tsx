@@ -65,6 +65,8 @@ interface Props {
   initial?: OwnerPropertyRow | null;
   ownerId: string;
   onClose: (didChange: boolean) => void;
+  /** Mode administrateur SapSapHouse : sélecteur pays + statut direct + bypass confirmation. */
+  adminMode?: boolean;
 }
 
 const DRAFT_KEY = 'sapsap_owner_draft_v2';
