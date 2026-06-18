@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, useNavigate, Link } from 'react-router-dom';
-import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, LogOut } from 'lucide-react';
+import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, LogOut, BarChart3 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import OwnerProperties from './pages/OwnerProperties';
 import OwnerReservations from './pages/OwnerReservations';
 import OwnerMessages from './pages/OwnerMessages';
+import OwnerAnalytics from './pages/OwnerAnalytics';
 
 
 export default function OwnerLayout() {
@@ -23,6 +24,7 @@ export default function OwnerLayout() {
     { to: '/proprietaire/biens', label: t('owner.nav.biens'), icon: Home, badgeKey: null },
     { to: '/proprietaire/reservations', label: t('owner.nav.reservations'), icon: Calendar, badgeKey: 'pendingReservations' as const },
     { to: '/proprietaire/messages', label: t('owner.nav.messages'), icon: MessageSquare, badgeKey: 'unreadMessages' as const },
+    { to: '/proprietaire/analyses', label: t('owner.nav.analytics'), icon: BarChart3, badgeKey: null },
   ];
 
   useEffect(() => {
@@ -93,6 +95,7 @@ export default function OwnerLayout() {
           <Route path="biens" element={<OwnerProperties />} />
           <Route path="reservations" element={<OwnerReservations />} />
           <Route path="messages" element={<OwnerMessages />} />
+          <Route path="analyses" element={<OwnerAnalytics />} />
           <Route path="*" element={<Navigate to="/proprietaire" replace />} />
         </Routes>
       </main>
