@@ -95,6 +95,7 @@ export default function OwnerLayout() {
           <Route path="biens" element={<OwnerProperties />} />
           <Route path="reservations" element={<OwnerReservations />} />
           <Route path="messages" element={<OwnerMessages />} />
+          <Route path="analyses" element={<OwnerAnalytics />} />
           <Route path="*" element={<Navigate to="/proprietaire" replace />} />
         </Routes>
       </main>
