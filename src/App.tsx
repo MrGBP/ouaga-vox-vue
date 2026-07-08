@@ -36,6 +36,9 @@ const App = () => (
           <LocaleSync />
           <Toaster />
           <Sonner />
+          <OfflineBanner />
+          <PWAInstallBanner />
+          <PWAUpdatePrompt />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
