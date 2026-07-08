@@ -664,7 +664,7 @@ export default function MobileApp(props: MobileAppProps) {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
-            style={{ paddingTop: 52, paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
+            style={{ paddingTop: 'calc(52px + env(safe-area-inset-top))', paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
           >
             {/* Hero */}
             <section className="relative h-[45vh] overflow-hidden">
@@ -822,11 +822,11 @@ export default function MobileApp(props: MobileAppProps) {
             key="fav-list-tab"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
-            style={{ paddingTop: 52, paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
+            style={{ paddingTop: 'calc(52px + env(safe-area-inset-top))', paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
           >
             <nav
               className="fixed top-0 left-0 right-0 z-[80] flex items-center justify-between px-3 no-select"
-              style={{ height: 52, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
+              style={{ height: 'calc(52px + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)', background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
             >
               <span className="text-sm font-bold text-foreground">❤️ {t('sections.mes_favoris')}</span>
               <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
@@ -875,7 +875,7 @@ export default function MobileApp(props: MobileAppProps) {
           <motion.div key="fav-map-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <nav
               className="fixed top-0 left-0 right-0 z-[80] flex items-center justify-between px-3 no-select"
-              style={{ height: 52, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
+              style={{ height: 'calc(52px + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)', background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
             >
               <span className="text-sm font-bold text-foreground">❤️ {t('sections.favoris_carte')}</span>
               <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
@@ -896,11 +896,11 @@ export default function MobileApp(props: MobileAppProps) {
             key="profile-tab"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
-            style={{ paddingTop: 52, paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
+            style={{ paddingTop: 'calc(52px + env(safe-area-inset-top))', paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
           >
             <nav
               className="fixed top-0 left-0 right-0 z-[80] flex items-center px-3 no-select"
-              style={{ height: 52, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
+              style={{ height: 'calc(52px + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)', background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
             >
               <span className="text-sm font-bold text-foreground">👤 {t('nav.profil')}</span>
             </nav>

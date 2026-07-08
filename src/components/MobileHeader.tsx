@@ -25,8 +25,16 @@ const MobileHeader = () => {
   return (
     <>
       <header
-        className="flex lg:hidden fixed top-0 left-0 right-0 h-14 items-center justify-between px-4 z-[80] no-select"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+        className="flex lg:hidden fixed top-0 left-0 right-0 items-center justify-between px-4 z-[80] no-select"
+        style={{
+          background: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+          paddingRight: 'max(1rem, env(safe-area-inset-right))',
+          height: 'calc(3.5rem + env(safe-area-inset-top))',
+        }}
       >
         {/* Logo */}
         <div className="flex items-center gap-2">
