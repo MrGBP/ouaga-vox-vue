@@ -68,9 +68,12 @@ const MobileNavbar = ({
   return (
     <>
       <nav
-        className="flex lg:hidden fixed top-0 left-0 right-0 items-center justify-between px-3 z-[80] no-select"
+        className="flex lg:hidden fixed top-0 left-0 right-0 items-center justify-between z-[80] no-select"
         style={{
-          height: 52,
+          height: 'calc(52px + env(safe-area-inset-top))',
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
+          paddingRight: 'max(0.75rem, env(safe-area-inset-right))',
           background: isExploring ? 'rgba(255,255,255,0)' : 'rgba(255,255,255,0.97)',
           backdropFilter: isExploring ? 'none' : 'blur(8px)',
           WebkitBackdropFilter: isExploring ? 'none' : 'blur(8px)',
