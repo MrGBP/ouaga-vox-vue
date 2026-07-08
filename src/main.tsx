@@ -20,3 +20,7 @@ createRoot(document.getElementById("root")!).render(
   </HelmetProvider>
 );
 
+// Enregistrement du service worker (uniquement en production, hors preview Lovable)
+import("./pwa/registerSW").then(({ registerAppSW }) => registerAppSW());
+
+

@@ -17,6 +17,9 @@ import PropertyPage from "./pages/Property";
 import MonCompte from "./pages/MonCompte";
 import NotFound from "./pages/NotFound";
 import { useCountryLocale } from "@/hooks/useCountryLocale";
+import PWAInstallBanner from "@/components/PWAInstallBanner";
+import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
+import OfflineBanner from "@/components/OfflineBanner";
 
 const AdminLayout = lazy(() => import("@/admin/AdminLayout"));
 const OwnerLayout = lazy(() => import("@/owner/OwnerLayout"));
@@ -33,6 +36,9 @@ const App = () => (
           <LocaleSync />
           <Toaster />
           <Sonner />
+          <OfflineBanner />
+          <PWAInstallBanner />
+          <PWAUpdatePrompt />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
