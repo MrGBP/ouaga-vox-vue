@@ -16,6 +16,7 @@ import { mockProperties } from '@/lib/mockData';
 import ReservationChat from '@/components/ReservationChat';
 import { toast } from 'sonner';
 import { activateOwnerRole, finalizePendingOwnerRole } from '@/lib/authProfile';
+import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
 export default function MonCompte() {
   const { user, loading, signOut, isOwner, refreshRoles } = useAuth();
