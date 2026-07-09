@@ -157,6 +157,11 @@ export default function MonCompte() {
           </Card>
         )}
 
+        <div className="mb-6">
+          <PushNotificationsToggle />
+        </div>
+
+
         <Tabs defaultValue="reservations" className="w-full">
           <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="reservations" className="gap-1.5"><Calendar className="h-4 w-4" /><span className="hidden sm:inline">Demandes</span></TabsTrigger>
