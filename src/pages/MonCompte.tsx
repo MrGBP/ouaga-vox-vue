@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Search as SearchIcon, Calendar, User as UserIcon, MessageSquare, LogOut, Trash2, Bell, BellOff, Loader2, Home as HomeIcon, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Heart, Search as SearchIcon, Calendar, User as UserIcon, MessageSquare, LogOut, Trash2, Bell, BellOff, Loader2, Home as HomeIcon, ArrowRight, Plus, Sparkles, ShieldCheck } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
 export default function MonCompte() {
   const { user, loading, signOut, isOwner, refreshRoles } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [becomingOwner, setBecomingOwner] = useState(false);
   const { ids: favIds, toggle: toggleFav } = useFavorites();
   const [reservations, setReservations] = useState<ReservationRow[]>([]);
@@ -28,6 +29,7 @@ export default function MonCompte() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [chatOpenId, setChatOpenId] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const becomeOwnerTriggered = useRef(false);
 
   useEffect(() => {
     if (!user) return;
@@ -58,6 +60,20 @@ export default function MonCompte() {
       toast.error(e?.message ?? 'Erreur');
     } finally { setBecomingOwner(false); }
   };
+
+  // Auto-déclenchement depuis /publier → ?becomeOwner=1
+  useEffect(() => {
+    if (!user || isOwner || becomeOwnerTriggered.current) return;
+    if (searchParams.get('becomeOwner') === '1') {
+      becomeOwnerTriggered.current = true;
+      searchParams.delete('becomeOwner');
+      setSearchParams(searchParams, { replace: true });
+      becomeOwner().then(() => {
+        setTimeout(() => { window.location.href = '/proprietaire/biens?new=1'; }, 400);
+      });
+    }
+  }, [user, isOwner, searchParams, setSearchParams]);
+
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
@@ -118,10 +134,41 @@ export default function MonCompte() {
       </header>
 
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="container mx-auto px-4 py-6 max-w-4xl">
-        <div className="mb-6">
-          <p className="text-sm text-muted-foreground">Bonjour</p>
-          <h2 className="text-2xl font-bold text-foreground">{profile.full_name || user.email}</h2>
+        {/* HERO */}
+        <div className="relative overflow-hidden rounded-3xl mb-6 border border-border bg-gradient-to-br from-primary/10 via-card to-secondary/10 p-5 md:p-6">
+          <div aria-hidden className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
+          <div className="relative flex items-center gap-4">
+            <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-gradient-to-br from-primary to-secondary text-primary-foreground grid place-items-center text-xl md:text-2xl font-bold shadow-lg shadow-primary/25 flex-shrink-0">
+              {(profile.full_name || user.email || '?').trim().charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">Bienvenue</p>
+              <h2 className="text-xl md:text-2xl font-bold text-foreground truncate">{profile.full_name || user.email}</h2>
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Compte vérifié
+              </div>
+            </div>
+            <Link to="/publier" className="hidden sm:block">
+              <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Publier</Button>
+            </Link>
+          </div>
+
+          {/* Stats rapides */}
+          <div className="relative mt-5 grid grid-cols-3 gap-2 md:gap-3">
+            {[
+              { label: 'Demandes', value: reservations.filter(r => r.status !== 'cancelled' && r.status !== 'completed').length, icon: Calendar },
+              { label: 'Favoris', value: favIds.length, icon: Heart },
+              { label: 'Recherches', value: searches.length, icon: SearchIcon },
+            ].map(({ label, value, icon: Icon }) => (
+              <div key={label} className="rounded-xl bg-card/70 backdrop-blur border border-border/60 p-3 text-center">
+                <Icon className="h-4 w-4 text-primary mx-auto" />
+                <div className="mt-1 text-lg font-bold text-foreground leading-none">{value}</div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
+
 
         {/* Espace propriétaire */}
         {isOwner ? (
@@ -142,14 +189,14 @@ export default function MonCompte() {
             </Link>
           </Card>
         ) : (
-          <Card className="p-4 mb-6 flex items-center justify-between gap-3">
+          <Card className="p-4 mb-6 flex items-center justify-between gap-3 border-dashed">
             <div className="flex items-start gap-3 min-w-0">
               <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-muted flex-shrink-0">
-                <HomeIcon className="h-5 w-5 text-muted-foreground" />
+                <Sparkles className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0">
                 <h3 className="font-semibold text-sm text-foreground">Tu as un bien à publier ?</h3>
-                <p className="text-xs text-muted-foreground">Active ton espace propriétaire pour publier et suivre tes biens.</p>
+                <p className="text-xs text-muted-foreground">Publie gratuitement, sans commission — visibilité web + app mobile.</p>
               </div>
             </div>
             <Button size="sm" onClick={becomeOwner} disabled={becomingOwner} className="flex-shrink-0">
