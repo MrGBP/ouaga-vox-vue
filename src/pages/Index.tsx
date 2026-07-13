@@ -743,7 +743,15 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ② Carte interactive + Filters + Detail Panel */}
+      {/* ② Quartiers — exploration territoriale (Gestalt : grille homogène) */}
+      {quartiers.length > 0 && (
+        <QuartiersSection quartiers={quartiers as any} onQuartierClick={handleQuartierClick} />
+      )}
+
+      {/* ③ Engagements — 3 piliers de confiance (Hick's Law) */}
+      <EngagementsSection />
+
+      {/* ④ Carte interactive + Filters + Detail Panel */}
       <section id="map" className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground">{t('sections.carte_interactive')}</h2>
