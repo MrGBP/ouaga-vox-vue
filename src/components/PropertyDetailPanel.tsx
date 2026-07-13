@@ -401,6 +401,7 @@ const PropertyDetailPanel = ({
           </Badge>
         )}
       </div>
+      </>)}
 
       <div className="p-5 space-y-5">
         {/* Identity */}
