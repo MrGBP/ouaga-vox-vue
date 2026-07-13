@@ -18,6 +18,8 @@ interface MobileNavbarProps {
   onHome?: () => void;
   depth?: number;
   isExploring?: boolean;
+  favoritesCount?: number;
+  onFavoritesClick?: () => void;
 }
 
 const LevelDots = ({ depth }: { depth: number }) => {
