@@ -65,6 +65,7 @@ const PropertyPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const pois = mockPois as any[];
 
