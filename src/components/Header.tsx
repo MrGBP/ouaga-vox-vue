@@ -1,4 +1,4 @@
-import { Building2, Menu, X, User, Plus } from 'lucide-react';
+import { Menu, X, User, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import NotificationBell from '@/components/NotificationBell';
+import logoIcon from '@/assets/sapsap-logo.png';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -24,14 +25,42 @@ const Header = () => {
     <header className="sticky top-0 z-50 bg-card/85 backdrop-blur-xl border-b border-border/60">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo + slogan (conservé) */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-warm transition-transform duration-base ease-out-expo group-hover:scale-105">
-              <Building2 className="h-5 w-5 text-primary-foreground" />
+          {/* Logo — badge 3D avec halo dégradé + micro-anim (Fitts + brand recall) */}
+          <Link to="/" className="flex items-center gap-3 group" aria-label="SapSapHouse — Accueil">
+            <div className="relative">
+              {/* Halo dégradé animé */}
+              <div
+                aria-hidden
+                className="absolute -inset-1.5 rounded-2xl bg-gradient-to-br from-primary/40 via-secondary/30 to-primary/40 opacity-70 blur-md group-hover:opacity-100 transition-opacity duration-500"
+              />
+              {/* Reflet brillance */}
+              <div
+                aria-hidden
+                className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-20"
+              />
+              <motion.div
+                whileHover={{ rotate: [0, -3, 3, 0], scale: 1.05 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-white to-muted/40 flex items-center justify-center shadow-elevation-2 border border-border/40 overflow-hidden"
+              >
+                <img
+                  src={logoIcon}
+                  alt=""
+                  className="w-8 h-8 object-contain drop-shadow-[0_2px_3px_rgba(26,53,96,0.25)]"
+                  loading="eager"
+                  decoding="async"
+                />
+              </motion.div>
             </div>
             <div className="leading-none">
-              <h1 className="font-display text-xl font-bold text-foreground tracking-tight">SapSapHouse</h1>
-              <p className="text-[11px] text-muted-foreground font-medium tracking-wide mt-0.5">Mon bien Immo en un clic</p>
+              <h1 className="font-display text-xl font-bold tracking-tight">
+                <span className="text-primary">SapSap</span>
+                <span className="text-secondary">House</span>
+              </h1>
+              <p className="text-[11px] text-muted-foreground font-medium tracking-wide mt-1 flex items-center gap-1.5">
+                <span className="h-px w-3 bg-secondary" />
+                Mon bien Immo en un clic
+              </p>
             </div>
           </Link>
 
