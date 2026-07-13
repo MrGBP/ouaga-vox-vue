@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
+import { Building2, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin, LogIn, UserPlus, LogOut, User as UserIcon, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +18,8 @@ interface MobileNavbarProps {
   onHome?: () => void;
   depth?: number;
   isExploring?: boolean;
+  favoritesCount?: number;
+  onFavoritesClick?: () => void;
 }
 
 const LevelDots = ({ depth }: { depth: number }) => {
@@ -48,6 +50,8 @@ const MobileNavbar = ({
   onHome,
   depth,
   isExploring = false,
+  favoritesCount = 0,
+  onFavoritesClick,
 }: MobileNavbarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t } = useTranslation();
@@ -137,6 +141,19 @@ const MobileNavbar = ({
               title={t('nav.retour_accueil')}
             >
               <HomeIcon className="h-4 w-4 text-secondary-foreground" />
+            </button>
+          )}
+          {favoritesCount > 0 && onFavoritesClick && (
+            <button
+              onClick={onFavoritesClick}
+              className="relative min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+              aria-label={`Favoris (${favoritesCount})`}
+              title={`Favoris (${favoritesCount})`}
+            >
+              <Heart className="h-5 w-5 text-secondary fill-secondary" />
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold flex items-center justify-center">
+                {favoritesCount}
+              </span>
             </button>
           )}
           {!showBack && (

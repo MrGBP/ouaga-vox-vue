@@ -650,9 +650,15 @@ export default function MobileApp(props: MobileAppProps) {
           onHome={handleNavHome}
           depth={nav.depth}
           isExploring={isExploring && navLevel === 3}
+          favoritesCount={props.favorites.size}
+          onFavoritesClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
         />
       ) : mobileTab === 'home' ? (
-        <MobileNavbar level={1} />
+        <MobileNavbar
+          level={1}
+          favoritesCount={props.favorites.size}
+          onFavoritesClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
+        />
       ) : null}
 
       {/* ═══ FULLSCREEN TAB PAGES (covers map) ═══ */}
@@ -680,45 +686,29 @@ export default function MobileApp(props: MobileAppProps) {
               </div>
             </section>
 
-            {/* Search bar (top, like tablet/desktop) */}
+            {/* Search bar (top, like tablet/desktop) — with embedded Filtres chip */}
             <section className="px-4 pt-4">
-              <button
-                onClick={() => openSearchPage()}
-                className="w-full h-12 rounded-full bg-card border border-border shadow-sm flex items-center gap-3 px-4 text-left active:scale-[0.99] transition-transform"
-              >
-                <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm text-muted-foreground truncate">
-                  {props.searchQuery || t('hero.placeholder')}
-                </span>
-              </button>
-            </section>
-
-            {/* Filter bar */}
-            <section className="px-4 pt-3">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="w-full h-12 rounded-full bg-card border border-border shadow-sm flex items-center gap-2 pl-4 pr-1.5">
+                <button
+                  onClick={() => openSearchPage()}
+                  className="flex items-center gap-3 flex-1 min-w-0 h-full text-left"
+                  aria-label="Rechercher"
+                >
+                  <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground truncate">
+                    {props.searchQuery || t('hero.placeholder')}
+                  </span>
+                </button>
                 <button
                   onClick={() => setShowMobileFilters(true)}
                   aria-label="Filtres"
                   title="Filtres"
-                  className="inline-flex items-center justify-center bg-card border border-border rounded-full w-10 h-10 text-foreground active:scale-[0.98] transition-all shadow-sm"
+                  className="relative inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-primary/10 text-primary text-xs font-semibold active:scale-[0.98] transition-transform shrink-0"
                 >
-                  <SlidersHorizontal className="h-4 w-4 text-primary" />
-                </button>
-                <button
-                  onClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
-                  aria-label={t('nav.favoris')}
-                  title={t('nav.favoris')}
-                  className={`relative inline-flex items-center justify-center rounded-full w-10 h-10 transition-all border active:scale-[0.98] ${
-                    props.showFavoritesOnly
-                      ? 'bg-secondary text-secondary-foreground border-secondary'
-                      : 'bg-card text-muted-foreground border-border'
-                  }`}
-                >
-                  <Heart className={`h-4 w-4 ${props.showFavoritesOnly ? 'fill-current' : ''}`} />
-                  {props.favorites.size > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold flex items-center justify-center">
-                      {props.favorites.size}
-                    </span>
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span>Filtres</span>
+                  {(props.idxTags.length > 0 || props.filters.type !== 'all' || props.filters.quartier !== 'all' || props.filters.minBedrooms > 0 || props.filters.characteristics.length > 0) && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary" />
                   )}
                 </button>
               </div>
@@ -736,6 +726,7 @@ export default function MobileApp(props: MobileAppProps) {
                 </div>
               )}
             </section>
+
 
             {/* Featured carousel */}
             <section className="px-4 py-5">
