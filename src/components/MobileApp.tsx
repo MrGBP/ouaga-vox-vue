@@ -229,6 +229,7 @@ export default function MobileApp(props: MobileAppProps) {
   const [pageTransition, setPageTransition] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [pinPreview, setPinPreview] = useState<Property | null>(null);
+  const [showAISheet, setShowAISheet] = useState(false);
   const sheetRef = useRef<UniversalSheetHandle>(null);
 
   // Open filters drawer if Search page asked for it (sessionStorage flag)
