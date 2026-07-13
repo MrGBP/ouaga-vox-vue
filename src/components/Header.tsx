@@ -1,4 +1,4 @@
-import { Menu, X, User, Plus } from 'lucide-react';
+import { Menu, X, User, Plus, MousePointer2, Home as HomeIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import NotificationBell from '@/components/NotificationBell';
-import logoFull from '@/assets/sapsap-logo-full.png';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
