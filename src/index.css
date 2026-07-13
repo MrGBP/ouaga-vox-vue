@@ -257,3 +257,9 @@
   opacity: 1 !important;
   cursor: pointer !important;
 }
+
+/* AI prompt bar — bord gradient animé (Hero mobile) */
+@keyframes shimmer-bg {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
