@@ -280,17 +280,101 @@ const PropertyPage = () => {
       </header>
 
       <main className="flex-1 min-h-0 overflow-y-auto bg-background">
-        <PropertyDetailPanel
-          property={property as any}
-          onClose={handleBack}
-          pois={pois as any}
-          isFavorite={isFav}
-          onToggleFavorite={toggleFavorite}
-          similarProperties={similar as any}
-          onSelectProperty={(pid) => navigate(`/property/${pid}`)}
-          onExploreOnMap={(pid) => goToMapWithFocus(pid)}
-          isMobileOverride={false}
-        />
+        {isMobile ? (
+          <PropertyDetailPanel
+            property={property as any}
+            onClose={handleBack}
+            pois={pois as any}
+            isFavorite={isFav}
+            onToggleFavorite={toggleFavorite}
+            similarProperties={similar as any}
+            onSelectProperty={(pid) => navigate(`/property/${pid}`)}
+            onExploreOnMap={(pid) => goToMapWithFocus(pid)}
+            isMobileOverride={true}
+          />
+        ) : (
+          <div className="container mx-auto px-4 lg:px-8 py-6 max-w-7xl">
+            {/* Hero mosaic */}
+            <PropertyHeroMosaic
+              images={property.images || []}
+              title={property.title}
+              videoUrl={property.video_url}
+            />
+
+            {/* Titre + badges */}
+            <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
+                    {getTypeLabel(property.type)}
+                  </span>
+                  <span className="inline-flex items-center gap-1 bg-accent/10 text-accent text-xs font-semibold px-2.5 py-1 rounded-full">
+                    <ShieldCheck className="h-3 w-3" /> Vérifié
+                  </span>
+                  {property.comfort_rating && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-foreground">
+                      <Star className="h-3.5 w-3.5 fill-secondary text-secondary" />
+                      {Number(property.comfort_rating).toFixed(1)}/5
+                    </span>
+                  )}
+                </div>
+                <h1 className="font-display text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
+                  {property.title}
+                </h1>
+                <p className="mt-2 text-muted-foreground flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4" /> {property.quartier}
+                  {property.address && <span className="text-sm">· {property.address}</span>}
+                </p>
+              </div>
+            </div>
+
+            {/* Stats rapides */}
+            <div className="mt-5 flex flex-wrap gap-3">
+              {property.bedrooms != null && (
+                <div className="inline-flex items-center gap-2 bg-muted/50 border border-border rounded-xl px-4 py-2.5">
+                  <Bed className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">{property.bedrooms}</span>
+                  <span className="text-xs text-muted-foreground">chambre{property.bedrooms > 1 ? 's' : ''}</span>
+                </div>
+              )}
+              {property.bathrooms != null && (
+                <div className="inline-flex items-center gap-2 bg-muted/50 border border-border rounded-xl px-4 py-2.5">
+                  <Bath className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">{property.bathrooms}</span>
+                  <span className="text-xs text-muted-foreground">sdb</span>
+                </div>
+              )}
+              {property.surface_area != null && (
+                <div className="inline-flex items-center gap-2 bg-muted/50 border border-border rounded-xl px-4 py-2.5">
+                  <Maximize className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">{property.surface_area}</span>
+                  <span className="text-xs text-muted-foreground">m²</span>
+                </div>
+              )}
+            </div>
+
+            {/* 2-col layout : contenu + sticky sidebar */}
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
+              <div className="min-w-0">
+                <PropertyDetailPanel
+                  property={property as any}
+                  onClose={handleBack}
+                  pois={pois as any}
+                  isFavorite={isFav}
+                  onToggleFavorite={toggleFavorite}
+                  similarProperties={similar as any}
+                  onSelectProperty={(pid) => navigate(`/property/${pid}`)}
+                  onExploreOnMap={(pid) => goToMapWithFocus(pid)}
+                  isMobileOverride={false}
+                  hideHero
+                />
+              </div>
+              <div className="hidden lg:block">
+                <StickyReservationCard property={property} />
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
