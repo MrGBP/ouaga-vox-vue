@@ -1273,28 +1273,15 @@ export default function MobileApp(props: MobileAppProps) {
         </UniversalSheet>
       )}
 
-      {/* ═══ FAB "Publier un bien" (Fitts's Law — zone atteignable pouce) ═══ */}
-      <button
-        onClick={() => {
-          requireAuth('publier un bien', () => {
-            if (isOwner || isAdmin) navigate('/proprietaire');
-            else navigate('/mon-compte');
-          });
-        }}
-        aria-label="Publier un bien"
-        className="lg:hidden fixed right-4 z-[95] flex items-center gap-2 pl-4 pr-5 h-12 rounded-full bg-primary text-primary-foreground shadow-elevation-3 active:scale-95 transition-transform duration-fast"
-        style={{ bottom: 'calc(72px + env(safe-area-inset-bottom))' }}
-      >
-        <Plus className="h-5 w-5" strokeWidth={2.5} />
-        <span className="text-sm font-semibold">Publier</span>
-      </button>
-
       {/* ═══ BOTTOM NAVIGATION ═══ */}
       <MobileBottomNav
         activeTab={mobileTab}
         onTabChange={handleMobileTabChange}
         favoritesCount={props.favorites.size}
       />
+
+      {/* AI Describe sheet */}
+      <AIDescribeSheet open={showAISheet} onClose={() => setShowAISheet(false)} />
 
       {/* Virtual tour modal */}
       <VirtualTourModal property={selectedProperty} open={modalOpen} onOpenChange={setModalOpen} pois={props.pois} />
