@@ -151,6 +151,24 @@ const MobileHeader = () => {
                     </>
                   )}
                 </div>
+
+                {/* Install PWA */}
+                {!isInstalled && (isInstallable || isIOS) && (
+                  <div className="pt-3 mt-3 border-t border-border">
+                    <button
+                      onClick={handleInstall}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-primary hover:bg-primary/5 text-left"
+                    >
+                      <Download className="h-4 w-4" />
+                      Installer l'application
+                    </button>
+                    {showIOSHint && isIOS && (
+                      <p className="text-xs text-muted-foreground px-3 pt-2 leading-relaxed">
+                        Appuyez sur <Share className="inline h-3 w-3 mx-0.5" /> Partager en bas de Safari, puis choisissez « Sur l'écran d'accueil ».
+                      </p>
+                    )}
+                  </div>
+                )}
               </nav>
               <div className="p-4 border-t border-border">
                 <Button className="w-full bg-secondary text-secondary-foreground gap-2">
