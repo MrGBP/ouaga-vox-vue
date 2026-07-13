@@ -205,7 +205,7 @@ export default function MobileApp(props: MobileAppProps) {
   const nav = useNav();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, openAuthModal, signOut } = useAuth();
+  const { user, openAuthModal, signOut, requireAuth, isOwner, isAdmin } = useAuth();
   useSwipeBack();
 
   // Lazy init pour éviter un flash de l'accueil quand on arrive depuis
