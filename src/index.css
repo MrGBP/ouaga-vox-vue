@@ -215,6 +215,26 @@
 }
 .quartier-zone-label::before { display: none; }
 
+/* Airbnb-style quartier pill: lift on hover */
+.quartier-pill-wrap { background: transparent !important; border: none !important; }
+.quartier-pill-wrap .quartier-pill:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 8px 20px rgba(26, 53, 96, 0.28);
+  background: #FFF8F0;
+}
+
+/* Rich tooltip preview shown on hover */
+.leaflet-tooltip.quartier-rich-tooltip {
+  background: #FFFFFF;
+  color: #1a3560;
+  border: 1px solid rgba(26, 53, 96, 0.15);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  opacity: 1 !important;
+}
+.leaflet-tooltip.quartier-rich-tooltip::before { display: none; }
+
 
 /* Read-only admin: disable mutation controls inside the admin main area only.
    Sidebar nav, topbar, search inputs and links stay clickable. */
