@@ -682,77 +682,198 @@ export default function MobileApp(props: MobileAppProps) {
             className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
             style={{ paddingTop: 'calc(52px + env(safe-area-inset-top))', paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
           >
-            {/* Hero — refonte : image + overlay dégradé navy, badge live, titre animé, stats */}
-            <section className="relative h-[48vh] overflow-hidden">
-              <motion.img
-                initial={{ scale: 1.12 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 6, ease: 'easeOut' }}
-                src={heroImage}
-                alt="Ouagadougou"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              {/* Overlay dégradé sombre → bg */}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#0f2244]/85 via-[#1A3560]/55 to-background" />
-              {/* Halo orange discret */}
-              <div
-                className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-40"
-                style={{ background: 'radial-gradient(circle, rgba(232,118,26,0.55) 0%, rgba(232,118,26,0) 70%)' }}
-              />
+            {/* ═══ HERO ÉDITORIAL — solid navy, pas de photo hero classique ═══
+                Signature : split typographique + segmenté "à la nuit / au mois"
+                + prompt IA comme CTA principal + peek mosaïque de biens réels */}
+            {(() => {
+              const AI_PROMPTS = stayMode === 'court'
+                ? [
+                    'Studio meublé pour 3 nuits à Zogona…',
+                    'Villa avec piscine pour un week-end à Ouaga 2000…',
+                    'Appart climatisé, wifi, 5 nuits à Koulouba…',
+                  ]
+                : [
+                    'Appartement 2 chambres au mois à Pissy…',
+                    'Villa 4 chambres avec parking à Ouaga 2000…',
+                    'Studio non meublé longue durée à Zogona…',
+                  ];
+              const currentPlaceholder = AI_PROMPTS[aiPlaceholderIdx % AI_PROMPTS.length];
+              const peekProps = availableProperties(props.properties).slice(0, 4);
 
-              <div className="relative z-10 h-full flex flex-col justify-end items-start text-left px-5 pb-6">
-                {/* Badge live */}
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="inline-flex items-center gap-1.5 mb-3 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-[10px] font-semibold text-white uppercase tracking-wider"
+              return (
+                <section
+                  className="relative overflow-hidden"
+                  style={{ background: 'linear-gradient(180deg, #1A3560 0%, #14294a 65%, #0f2244 100%)' }}
                 >
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-[#E8761A] opacity-75 animate-ping" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#E8761A]" />
-                  </span>
-                  <MapPin className="h-2.5 w-2.5" /> Ouagadougou
-                </motion.div>
+                  {/* Grille subtile en arrière-plan (identité éditoriale) */}
+                  <div
+                    className="absolute inset-0 opacity-[0.06]"
+                    style={{
+                      backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+                      backgroundSize: '32px 32px',
+                    }}
+                  />
+                  {/* Halo orange discret coin haut-droit */}
+                  <div
+                    className="absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-30 pointer-events-none"
+                    style={{ background: 'radial-gradient(circle, rgba(232,118,26,0.6) 0%, rgba(232,118,26,0) 70%)' }}
+                  />
 
-                <motion.h1
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.5 }}
-                  className="text-[32px] leading-[1.05] font-black text-white tracking-tight font-display drop-shadow-md"
-                >
-                  Mon bien Immo <br />
-                  <span className="text-[#E8761A]">en un clic</span>
-                </motion.h1>
+                  <div className="relative z-10 px-5 pt-6 pb-5">
+                    {/* Kicker — remplace le badge "Live Ouagadougou" */}
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/60"
+                    >
+                      <span className="w-6 h-[1px] bg-[#E8761A]" />
+                      Ouagadougou · Location
+                    </motion.div>
 
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-[13px] text-white/85 mt-2 max-w-[85%]"
-                >
-                  Location, achat, courte durée — trouvez le bien qui vous correspond.
-                </motion.p>
+                    {/* Titre éditorial */}
+                    <motion.h1
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05, duration: 0.5 }}
+                      className="mt-3 font-display font-black text-white leading-[0.95] tracking-tight text-[36px]"
+                    >
+                      Louez.<br />
+                      <span className="italic font-serif font-normal text-white/85 text-[30px]">Vivez.</span>{' '}
+                      <span className="text-[#E8761A]">En un clic.</span>
+                    </motion.h1>
 
-                {/* Petites stats */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex items-center gap-3 mt-3 text-[11px] text-white/80"
-                >
-                  <span className="inline-flex items-center gap-1"><span className="text-white font-bold">{props.properties.length}+</span> biens</span>
-                  <span className="w-1 h-1 rounded-full bg-white/40" />
-                  <span className="inline-flex items-center gap-1"><span className="text-white font-bold">{props.quartiers.length}</span> quartiers</span>
-                  <span className="w-1 h-1 rounded-full bg-white/40" />
-                  <span>Maisons · Villas · Studios</span>
-                </motion.div>
-              </div>
-            </section>
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="text-[12.5px] text-white/70 mt-3 max-w-[90%] leading-relaxed"
+                    >
+                      La 1<sup>ère</sup> plateforme 100 % dédiée à la location au Burkina : à la nuit ou au mois, meublé ou non.
+                    </motion.p>
 
-            {/* Search bar (top, like tablet/desktop) — with embedded Filtres chip */}
-            <section className="px-4 pt-4 -mt-6 relative z-20">
-              <div className="w-full h-12 rounded-full bg-card border border-border shadow-elevation-2 flex items-center gap-2 pl-4 pr-1.5">
+                    {/* Segmenté durée — signature UX (clarifie le modèle location) */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="mt-4 inline-flex bg-white/10 backdrop-blur-md p-0.5 rounded-full border border-white/15"
+                    >
+                      {([
+                        { id: 'court', label: 'Courte durée', hint: '/ nuit' },
+                        { id: 'long', label: 'Longue durée', hint: '/ mois' },
+                      ] as const).map(m => (
+                        <button
+                          key={m.id}
+                          onClick={() => setStayMode(m.id)}
+                          className={`relative px-3.5 h-8 rounded-full text-[11px] font-semibold transition-all flex items-center gap-1 ${
+                            stayMode === m.id ? 'text-[#1A3560]' : 'text-white/70'
+                          }`}
+                        >
+                          {stayMode === m.id && (
+                            <motion.span
+                              layoutId="stay-pill"
+                              transition={{ type: 'spring', damping: 26, stiffness: 380 }}
+                              className="absolute inset-0 bg-white rounded-full shadow-md"
+                            />
+                          )}
+                          <span className="relative">{m.label}</span>
+                          <span className={`relative text-[9px] ${stayMode === m.id ? 'text-[#E8761A]' : 'text-white/40'}`}>
+                            {m.hint}
+                          </span>
+                        </button>
+                      ))}
+                    </motion.div>
+
+                    {/* PROMPT IA — CTA PRINCIPAL du hero (remplace le chip discret) */}
+                    <motion.button
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4, duration: 0.45 }}
+                      onClick={() => setShowAISheet(true)}
+                      aria-label="Décrire votre bien idéal avec l'assistant IA"
+                      className="group relative w-full mt-5 text-left active:scale-[0.99] transition-transform"
+                    >
+                      {/* Bord gradient animé */}
+                      <div
+                        className="absolute inset-0 rounded-2xl opacity-90"
+                        style={{
+                          background: 'linear-gradient(120deg, #E8761A 0%, #f4a366 40%, #ffffff 55%, #E8761A 100%)',
+                          backgroundSize: '200% 100%',
+                          animation: 'shimmer-bg 3.5s linear infinite',
+                          padding: 1,
+                        }}
+                      >
+                        <div className="w-full h-full rounded-2xl bg-[#1A3560]" />
+                      </div>
+                      <div className="relative flex items-center gap-3 px-3.5 py-3 rounded-2xl">
+                        <div className="relative shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-[#E8761A] to-[#c85e0d] flex items-center justify-center shadow-lg shadow-[#E8761A]/30">
+                          <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
+                          <span className="absolute -top-1 -right-1 text-[8px] font-black text-white bg-[#1A3560] px-1 rounded-full border border-[#E8761A]">IA</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-[#E8761A] leading-none mb-0.5">
+                            Assistant SapSap
+                          </div>
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={currentPlaceholder}
+                              initial={{ opacity: 0, y: 4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -4 }}
+                              transition={{ duration: 0.35 }}
+                              className="text-[13px] text-white/85 truncate"
+                            >
+                              {currentPlaceholder}
+                            </motion.div>
+                          </AnimatePresence>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-white/60 shrink-0 group-active:translate-x-0.5 transition-transform" />
+                      </div>
+                    </motion.button>
+
+                    {/* Peek mosaïque de biens réels — le côté visuel/différent
+                        (au lieu d'une grosse photo hero, un teaser de l'inventaire) */}
+                    {peekProps.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.55, duration: 0.5 }}
+                        className="mt-5 flex items-center gap-3"
+                      >
+                        <div className="flex -space-x-2">
+                          {peekProps.slice(0, 4).map((p, i) => (
+                            <button
+                              key={p.id}
+                              onClick={() => openPropertyPage(p.id)}
+                              className="w-9 h-9 rounded-full overflow-hidden border-2 border-[#14294a] hover:z-10 transition-transform active:scale-95"
+                              style={{ zIndex: 4 - i }}
+                              aria-label={p.title}
+                            >
+                              <img
+                                src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=200'}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        <div className="text-[11px] text-white/70 leading-tight">
+                          <span className="text-white font-bold">{props.properties.length}+</span> biens ·{' '}
+                          <span className="text-white font-bold">{props.quartiers.length}</span> quartiers<br />
+                          <span className="text-white/50 text-[10px]">Maisons · Villas · Studios · Bureaux</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </section>
+              );
+            })()}
+
+            {/* Search bar classique (secondaire — pour utilisateurs qui savent ce qu'ils veulent) */}
+            <section className="px-4 pt-4">
+              <div className="w-full h-12 rounded-full bg-card border border-border shadow-sm flex items-center gap-2 pl-4 pr-1.5">
                 <button
                   onClick={() => openSearchPage()}
                   className="flex items-center gap-3 flex-1 min-w-0 h-full text-left"
@@ -774,21 +895,6 @@ export default function MobileApp(props: MobileAppProps) {
                   {(props.idxTags.length > 0 || props.filters.type !== 'all' || props.filters.quartier !== 'all' || props.filters.minBedrooms > 0 || props.filters.characteristics.length > 0) && (
                     <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary" />
                   )}
-                </button>
-              </div>
-
-              {/* Bouton IA discret — "Décrire mon bien idéal" */}
-              <div className="flex justify-center mt-2.5">
-                <button
-                  onClick={() => setShowAISheet(true)}
-                  className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-transparent hover:bg-primary/5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors active:scale-[0.97]"
-                  aria-label="Décrire votre bien idéal avec l'IA"
-                >
-                  <span className="relative flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-[#1A3560] to-[#2a5090]">
-                    <Sparkles className="h-2.5 w-2.5 text-[#E8761A]" strokeWidth={2.5} />
-                  </span>
-                  Décrire mon bien idéal
-                  <span className="text-[9px] uppercase tracking-wider text-primary/60 font-bold">IA</span>
                 </button>
               </div>
 
