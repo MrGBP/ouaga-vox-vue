@@ -557,48 +557,51 @@ const Index = () => {
 
   if (isMobile) {
     return (
-      <MobileApp
-        properties={properties}
-        filteredProperties={filteredProperties}
-        pois={pois}
-        quartiers={quartiers}
-        favorites={favorites}
-        filters={filters}
-        searchQuery={searchQuery}
-        detailProperty={detailProperty}
-        activeQuartier={activeQuartier}
-        focusedPropertyId={focusedPropertyId}
-        mapResetTrigger={mapResetTrigger}
-        mapQuartierTrigger={mapQuartierTrigger}
-        showFavoritesOnly={showFavoritesOnly}
-        idxTags={idxTags}
-        searchFallbackHint={searchFallbackHint}
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
-        onSearchQueryChange={setSearchQuery}
-        onToggleFavorite={toggleFavorite}
-        onPropertyClick={handlePropertyClick}
-        onViewDetails={handleViewDetails}
-        onExploreOnMap={handleExploreOnMap}
-        onFocusOnMap={handleFocusOnMap}
-        onFocusReturn={handleFocusReturn}
-        hasFocusReturn={hasFocusReturn}
-        forceMapTabTrigger={forceMapTabTrigger}
-        onFullReset={handleFullReset}
-        onQuartierChange={(q) => {
-          setActiveQuartier(q);
-          if (!q) setMapResetTrigger(prev => prev + 1);
-        }}
-        onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
-        onDetailClose={() => setDetailProperty(null)}
-        onFocusClear={() => {
-          setFocusedPropertyId(null);
-          setDetailProperty(null);
-        }}
-        onMobileTabChange={handleMobileTabChange}
-        onRemoveIdxTag={removeIdxTag}
-        computeFilteredCount={computeFilteredCount}
-      />
+      <>
+        <MapFeatureTour />
+        <MobileApp
+          properties={properties}
+          filteredProperties={filteredProperties}
+          pois={pois}
+          quartiers={quartiers}
+          favorites={favorites}
+          filters={filters}
+          searchQuery={searchQuery}
+          detailProperty={detailProperty}
+          activeQuartier={activeQuartier}
+          focusedPropertyId={focusedPropertyId}
+          mapResetTrigger={mapResetTrigger}
+          mapQuartierTrigger={mapQuartierTrigger}
+          showFavoritesOnly={showFavoritesOnly}
+          idxTags={idxTags}
+          searchFallbackHint={searchFallbackHint}
+          onFilterChange={handleFilterChange}
+          onSearch={handleSearch}
+          onSearchQueryChange={setSearchQuery}
+          onToggleFavorite={toggleFavorite}
+          onPropertyClick={handlePropertyClick}
+          onViewDetails={handleViewDetails}
+          onExploreOnMap={handleExploreOnMap}
+          onFocusOnMap={handleFocusOnMap}
+          onFocusReturn={handleFocusReturn}
+          hasFocusReturn={hasFocusReturn}
+          forceMapTabTrigger={forceMapTabTrigger}
+          onFullReset={handleFullReset}
+          onQuartierChange={(q) => {
+            setActiveQuartier(q);
+            if (!q) setMapResetTrigger(prev => prev + 1);
+          }}
+          onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
+          onDetailClose={() => setDetailProperty(null)}
+          onFocusClear={() => {
+            setFocusedPropertyId(null);
+            setDetailProperty(null);
+          }}
+          onMobileTabChange={handleMobileTabChange}
+          onRemoveIdxTag={removeIdxTag}
+          computeFilteredCount={computeFilteredCount}
+        />
+      </>
     );
   }
 
