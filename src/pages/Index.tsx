@@ -142,6 +142,8 @@ const Index = () => {
   const [mapResetTrigger, setMapResetTrigger] = useState(0);
   const [idxTags, setIdxTags] = useState<{ characteristic: string; emoji: string; label: string }[]>([]);
   const [searchFallbackHint, setSearchFallbackHint] = useState<string | null>(null);
+  const [heroSearchFocused, setHeroSearchFocused] = useState(false);
+  const heroTypewriter = useHeroTypewriter(!heroSearchFocused && searchQuery.length === 0);
 
   // Memoize previous context when user clicks "Voir sur la carte" so the
   // back button can restore exactly the previous view (detail panel + scroll).
