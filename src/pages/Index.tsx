@@ -698,9 +698,25 @@ const Index = () => {
                       )}
                     </div>
                   </div>
+                  {/* Chip filtres — scroll vers la barre de filtres */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    aria-label="Trier et filtrer"
+                    className="relative h-11 w-11 md:h-12 md:w-12 flex items-center justify-center rounded-xl border border-border/60 bg-white hover:bg-muted/60 text-foreground shrink-0 transition-all active:scale-95"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    {(filters.characteristics?.length > 0 || filters.types?.length > 0 || showFavoritesOnly) && (
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#E8761A] text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
+                        •
+                      </span>
+                    )}
+                  </button>
                   <button
                     onClick={() => handleSearch(searchQuery)}
-                    className="h-12 px-6 md:px-7 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-all shadow-lg shadow-secondary/30 shrink-0"
+                    className="h-12 px-5 md:px-7 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-all shadow-lg shadow-secondary/30 shrink-0"
                   >
                     {t('hero.bouton_chercher')}
                   </button>
