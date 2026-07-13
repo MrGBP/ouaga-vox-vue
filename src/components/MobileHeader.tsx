@@ -49,16 +49,48 @@ const MobileHeader = () => {
           height: 'calc(3.5rem + env(safe-area-inset-top))',
         }}
       >
-        {/* Logo complet (contient déjà le slogan) */}
-        <div className="flex items-center">
-          <img
-            src={logoFull}
-            alt="SapSapHouse"
-            className="h-9 w-auto object-contain"
-            loading="eager"
-            decoding="async"
-          />
-        </div>
+        {/* Logo animé — maison navy + rayons orange + curseur (cohérent desktop) */}
+        <Link to="/" className="flex items-center gap-2 group" aria-label="SapSapHouse — Accueil">
+          <motion.div
+            initial="rest"
+            whileTap="hover"
+            whileHover="hover"
+            animate="rest"
+            className="relative w-9 h-9 bg-[#1A3560] rounded-lg flex items-center justify-center overflow-visible shadow-md"
+          >
+            <HomeIcon className="w-4 h-4 text-white relative z-10" strokeWidth={2.5} />
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
+              <motion.div
+                key={angle}
+                variants={{ rest: { opacity: 0, scale: 0 }, hover: { opacity: [0, 1, 0.8], scale: 1 } }}
+                transition={{ delay: i * 0.02, duration: 0.3 }}
+                style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  width: '2px', height: '5px', backgroundColor: '#E8761A', borderRadius: '1px',
+                  transformOrigin: 'center 13px',
+                  transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-11px)`,
+                  pointerEvents: 'none',
+                }}
+              />
+            ))}
+            <motion.div
+              variants={{ rest: { opacity: 0, x: 6, y: 6, scale: 0.5 }, hover: { opacity: 1, x: 2, y: 2, scale: 1 } }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-0 right-0 z-20"
+            >
+              <MousePointer2 className="w-2.5 h-2.5 text-white fill-white" strokeWidth={2} />
+            </motion.div>
+          </motion.div>
+          <div className="leading-none">
+            <div className="font-display font-black text-[15px] tracking-tight leading-none">
+              <span className="text-[#1A3560]">SapSap</span>
+              <span className="text-[#E8761A]">House</span>
+            </div>
+            <div className="text-[9px] text-muted-foreground italic font-medium leading-none mt-0.5">
+              mon bien Immo en un clic
+            </div>
+          </div>
+        </Link>
 
         {/* Right side : Notifications + Hamburger */}
         <div className="flex items-center gap-1">
