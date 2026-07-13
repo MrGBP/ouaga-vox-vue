@@ -310,6 +310,8 @@ const PropertyDetailPanel = ({
       )}
 
       {/* ── Media Slider — swipe only on mobile, arrows on desktop ── */}
+      {!hideHero && (<>
+
       <div
         className="relative h-56 bg-muted overflow-hidden touch-pan-y"
         onTouchStart={(e) => {
