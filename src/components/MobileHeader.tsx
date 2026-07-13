@@ -1,4 +1,5 @@
-import { Building2, Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
+import { Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
+import logoFull from '@/assets/sapsap-logo-full.png';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -36,12 +37,15 @@ const MobileHeader = () => {
           height: 'calc(3.5rem + env(safe-area-inset-top))',
         }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-            <Building2 className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-base font-bold text-foreground tracking-tight">SapSapHouse</span>
+        {/* Logo complet (contient déjà le slogan) */}
+        <div className="flex items-center">
+          <img
+            src={logoFull}
+            alt="SapSapHouse"
+            className="h-9 w-auto object-contain"
+            loading="eager"
+            decoding="async"
+          />
         </div>
 
         {/* Right side : Notifications + Hamburger */}
