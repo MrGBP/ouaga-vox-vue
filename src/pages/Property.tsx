@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, Heart, Share2 } from 'lucide-react';
-import { mockProperties, mockPois } from '@/lib/mockData';
+import { ChevronLeft, Heart, Share2, MapPin, Bed, Bath, Maximize, ShieldCheck, Star } from 'lucide-react';
+import { mockProperties, mockPois, getTypeLabel } from '@/lib/mockData';
 import { supabase } from '@/integrations/supabase/client';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
+import PropertyHeroMosaic from '@/components/PropertyHeroMosaic';
+import StickyReservationCard from '@/components/StickyReservationCard';
 import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const FAVORITES_KEY = 'sapsap_favorites';
 
