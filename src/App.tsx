@@ -32,13 +32,7 @@ const queryClient = new QueryClient();
 const LocaleSync = () => { useCountryLocale(); return null; };
 
 const App = () => {
-  const [showSplash, setShowSplash] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const isPWA = window.matchMedia?.('(display-mode: standalone)')?.matches ?? false;
-    const isFirstLaunch = !localStorage.getItem('sapsap_launched');
-    if (isFirstLaunch) localStorage.setItem('sapsap_launched', '1');
-    return isPWA || isFirstLaunch;
-  });
+  const [showSplash, setShowSplash] = useState(() => typeof window !== 'undefined');
 
   return (
   <QueryClientProvider client={queryClient}>
