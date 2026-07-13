@@ -230,7 +230,15 @@ export default function MobileApp(props: MobileAppProps) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [pinPreview, setPinPreview] = useState<Property | null>(null);
   const [showAISheet, setShowAISheet] = useState(false);
+  const [stayMode, setStayMode] = useState<'court' | 'long'>('long');
+  const [aiPlaceholderIdx, setAiPlaceholderIdx] = useState(0);
   const sheetRef = useRef<UniversalSheetHandle>(null);
+
+  // AI placeholder cycling (change every 3.5s per stayMode)
+  useEffect(() => {
+    const id = setInterval(() => setAiPlaceholderIdx(i => i + 1), 3500);
+    return () => clearInterval(id);
+  }, []);
 
   // Open filters drawer if Search page asked for it (sessionStorage flag)
   // Force a specific tab if requested (e.g. /property → "Voir sur la carte")
