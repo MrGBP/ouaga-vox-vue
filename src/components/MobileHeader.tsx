@@ -1,6 +1,6 @@
-import { Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon, Download, Share } from 'lucide-react';
-import logoFull from '@/assets/sapsap-logo-full.png';
+import { Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon, Download, Share, MousePointer2, Home as HomeIcon } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
