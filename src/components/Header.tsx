@@ -16,9 +16,8 @@ const Header = () => {
   const { t } = useTranslation();
 
   const handlePublish = () => {
-    requireAuth('publier un bien', () => {
-      window.location.href = (isOwner || isAdmin) ? '/proprietaire' : '/mon-compte';
-    });
+    // Onboarding landing (guided) — the CTA there routes to the actual form.
+    window.location.href = '/publier';
   };
 
   return (
