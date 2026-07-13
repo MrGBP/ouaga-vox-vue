@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import NotificationBell from '@/components/NotificationBell';
-import logoIcon from '@/assets/sapsap-logo.png';
+import logoFull from '@/assets/sapsap-logo-full.png';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
