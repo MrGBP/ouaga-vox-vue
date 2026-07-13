@@ -23,7 +23,7 @@ import RecentlyViewed, { addToRecentlyViewed } from '@/components/RecentlyViewed
 import Footer from '@/components/Footer';
 import MobileOnboarding from '@/components/mobile/MobileOnboarding';
 import { getTypeLabel } from '@/lib/mockData';
-import { ChevronLeft, ChevronRight, X, Search, Heart, Sparkles, Maximize2, ChevronUp, SlidersHorizontal, RotateCcw, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Search, Heart, Sparkles, Maximize2, ChevronUp, SlidersHorizontal, RotateCcw, LogOut, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
