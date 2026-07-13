@@ -122,18 +122,47 @@ const getTypeStyle = (type: string) =>
   TYPE_COLORS[type.toLowerCase()] || { bg: '#475569', border: '#94A3B8', text: '#FFFFFF', emoji: getTypeEmoji(type) };
 
 // ─── Pin HTML helpers ────────────────────────────────────────────────────────
+// Quartier pill — Airbnb-style: quartier name prominently visible, small count badge
 const quartierClusterHTML = (name: string, count: number) => `
-  <div style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
-    <div style="
-      width:56px;height:56px;display:flex;align-items:center;justify-content:center;
-      background:#FFFFFF;border:2.5px solid #1a3560;border-radius:50%;
-      box-shadow:0 2px 12px rgba(26,53,96,0.18);transition:transform 0.15s;
-    ">
-      <span style="font-size:18px;font-weight:800;color:#1a3560;line-height:1;">${count}</span>
-    </div>
-    <span style="font-size:10px;font-weight:600;color:#1a3560;line-height:1.2;text-align:center;max-width:85px;word-wrap:break-word;">${name}</span>
+  <div class="quartier-pill" style="
+    display:inline-flex;align-items:center;gap:6px;
+    background:#FFFFFF;border:1.5px solid #1a3560;border-radius:999px;
+    padding:6px 12px 6px 10px;font-family:system-ui,sans-serif;white-space:nowrap;
+    box-shadow:0 3px 12px rgba(26,53,96,0.22);cursor:pointer;
+    transition:transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  ">
+    <span style="font-size:13px;line-height:1;">🏘️</span>
+    <span style="font-size:12px;font-weight:700;color:#1a3560;letter-spacing:-0.2px;">${name}</span>
+    <span style="
+      display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 6px;
+      background:#E8761A;color:#FFFFFF;font-size:10px;font-weight:800;border-radius:999px;line-height:1;
+    ">${count}</span>
   </div>
 `;
+
+// Rich tooltip preview showing top 3 properties of a quartier
+const quartierPreviewHTML = (name: string, previews: { emoji: string; label: string; price: number; currency: string; suffix: string }[], total: number) => {
+  const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
+  const rows = previews.map(p => `
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+      <span style="font-size:15px;">${p.emoji}</span>
+      <span style="font-size:11px;color:#334155;flex:1;">${p.label}</span>
+      <span style="font-size:11px;font-weight:700;color:#1a3560;">${fmt(p.price)} ${p.currency}${p.suffix}</span>
+    </div>
+  `).join('');
+  const more = total > previews.length ? `<div style="font-size:10px;color:#64748b;text-align:center;margin-top:4px;padding-top:6px;border-top:1px solid #e2e8f0;">+ ${total - previews.length} autre${total - previews.length > 1 ? 's' : ''} bien${total - previews.length > 1 ? 's' : ''} · Cliquez pour explorer</div>` : `<div style="font-size:10px;color:#64748b;text-align:center;margin-top:4px;padding-top:6px;border-top:1px solid #e2e8f0;">Cliquez pour explorer</div>`;
+  return `
+    <div style="font-family:system-ui,sans-serif;min-width:220px;max-width:260px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span style="font-size:14px;">📍</span>
+        <strong style="color:#1a3560;font-size:12px;">${name}</strong>
+        <span style="margin-left:auto;font-size:10px;color:#64748b;">${total} bien${total > 1 ? 's' : ''}</span>
+      </div>
+      ${rows}
+      ${more}
+    </div>
+  `;
+};
 
 const propertyPinHTML = (p: Property, focused: boolean, isFav?: boolean) => {
   const ts = getTypeStyle(p.type);
