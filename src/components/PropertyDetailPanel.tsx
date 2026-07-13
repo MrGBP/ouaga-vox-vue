@@ -133,7 +133,7 @@ type MediaItem = { type: 'photo'; url: string } | { type: 'video'; url: string }
 
 const PropertyDetailPanel = ({
   property, onClose, pois, isFavorite = false, onToggleFavorite, onViewTour,
-  similarProperties = [], onSelectProperty, onHighlightPoi, onExploreOnMap, isMobileOverride,
+  similarProperties = [], onSelectProperty, onHighlightPoi, onExploreOnMap, isMobileOverride, hideHero = false,
 }: PropertyDetailPanelProps) => {
   const [mediaIdx, setMediaIdx] = useState(0);
   const [descExpanded, setDescExpanded] = useState(false);
