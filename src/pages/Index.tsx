@@ -25,7 +25,7 @@ import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import { Loader2, MapPin, Home, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import heroImage from '@/assets/ouaga-hero.jpg';
+import heroImage from '@/assets/hero-quartier-africain.jpg';
 
 interface Property {
   id: string;
@@ -622,50 +622,126 @@ const Index = () => {
       )}
 
 
-      {/* ① Hero + IDX */}
-      <section className="relative h-[65vh] min-h-[520px] overflow-hidden">
-        <img src={heroImage} alt="Ouagadougou" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-3xl space-y-4">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-card leading-tight">
-              Mon bien Immo<br />en un clic
-            </h1>
-            <p className="text-sm text-card/70" style={{ fontSize: '14px' }}>
-              + 100 biens · Maisons · Villas · Studios · Bureaux · Locaux · Plusieurs quartiers et régions du Burkina
-            </p>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25 }} className="mt-8 w-full" style={{ maxWidth: '605px' }}>
-            <div className="relative w-full" style={{ maxWidth: 605 }}>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-                placeholder={t('hero.placeholder_long')}
-                className="w-full h-14 rounded-full bg-card/95 pl-6 pr-36 text-foreground text-base outline-none shadow-lg focus:ring-2 focus:ring-primary/30"
-                style={{ fontSize: 16 }}
-              />
-              <button
-                onClick={() => handleSearch(searchQuery)}
-                className="absolute right-2 top-2 h-10 px-6 bg-secondary text-secondary-foreground rounded-full text-sm font-semibold active:scale-[0.97] transition-transform"
-              >
-                {t('hero.bouton_chercher')}
-              </button>
-            </div>
-            {idxTags.length > 0 && (
-              <div className="flex gap-2 flex-wrap justify-center mt-3">
-                {idxTags.map(tag => (
-                  <span key={tag.characteristic} className="inline-flex items-center gap-1 bg-card/90 text-foreground rounded-full px-3 py-1 text-xs font-medium shadow-sm">
-                    {tag.emoji} {tag.label}
-                    <button onClick={() => removeIdxTag(tag.characteristic)} className="ml-0.5 hover:text-destructive transition-colors">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
+      {/* ① Hero immersif — quartier africain golden hour */}
+      <section className="relative w-full overflow-hidden" style={{ minHeight: 'min(85vh, 780px)' }}>
+        {/* Photo pleine largeur */}
+        <img
+          src={heroImage}
+          alt="Quartier résidentiel moderne en Afrique de l'Ouest au coucher du soleil"
+          width={1920}
+          height={1280}
+          fetchPriority="high"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Overlays: assombrissement bas pour lisibilité + vignettage doux */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/10 to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/25 via-transparent to-transparent" />
+
+        {/* Contenu Hero */}
+        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end pb-16 md:pb-24" style={{ minHeight: 'min(85vh, 780px)' }}>
+          <div className="max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7 }}
+            >
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/25 px-3 py-1 text-[11px] font-medium text-white/95 mb-5">
+                <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
+                Nouvelle expérience · Burkina Faso · Côte d'Ivoire
+              </span>
+              <h1 className="font-display text-white leading-[1.02] tracking-tight font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
+                Mon bien Immo
+                <br />
+                <span className="text-white/85 font-medium">en un clic.</span>
+              </h1>
+              <p className="mt-5 text-base md:text-lg text-white/85 max-w-2xl font-normal">
+                La plateforme immobilière moderne d'Afrique de l'Ouest. Villas, appartements, studios meublés — vérifiés, cartographiés, accessibles en toute confiance.
+              </p>
+            </motion.div>
+
+            {/* Barre de recherche glassmorphique */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="mt-8"
+            >
+              <div className="relative w-full max-w-2xl">
+                <div className="absolute inset-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl" />
+                <div className="relative flex items-center gap-2 p-2">
+                  <div className="flex-1 flex items-center gap-3 px-4">
+                    <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
+                      placeholder={t('hero.placeholder_long')}
+                      className="w-full h-12 bg-transparent text-foreground text-base outline-none placeholder:text-muted-foreground/70"
+                      style={{ fontSize: 16 }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => handleSearch(searchQuery)}
+                    className="h-12 px-6 md:px-7 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-xl text-sm font-semibold active:scale-[0.97] transition-all shadow-lg shadow-secondary/30 shrink-0"
+                  >
+                    {t('hero.bouton_chercher')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Chips rapides */}
+              <div className="flex gap-2 flex-wrap mt-4">
+                {['Villa', 'Appartement', 'Studio meublé', 'Colocation', 'Bureau'].map(label => (
+                  <button
+                    key={label}
+                    onClick={() => handleSearch(label)}
+                    className="inline-flex items-center rounded-full bg-white/15 backdrop-blur-md border border-white/25 hover:bg-white/25 px-3.5 py-1.5 text-xs font-medium text-white transition-colors"
+                  >
+                    {label}
+                  </button>
                 ))}
               </div>
-            )}
-          </motion.div>
+
+              {/* Tags IDX persistants */}
+              {idxTags.length > 0 && (
+                <div className="flex gap-2 flex-wrap mt-3">
+                  {idxTags.map(tag => (
+                    <span key={tag.characteristic} className="inline-flex items-center gap-1 bg-white/95 text-foreground rounded-full px-3 py-1 text-xs font-medium shadow-sm">
+                      {tag.emoji} {tag.label}
+                      <button onClick={() => removeIdxTag(tag.characteristic)} className="ml-0.5 hover:text-destructive transition-colors">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+
+            {/* Trust bar */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.5 }}
+              className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-white/85"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-secondary">✓</span> +100 biens vérifiés
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-secondary">✓</span> Carte interactive temps réel
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-secondary">✓</span> Sans intermédiaire caché
+              </span>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 hidden md:flex flex-col items-center gap-1.5 text-white/70">
+          <span className="text-[10px] uppercase tracking-widest">Explorer</span>
+          <div className="h-8 w-[1px] bg-gradient-to-b from-white/70 to-transparent" />
         </div>
       </section>
 
