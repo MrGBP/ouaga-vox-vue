@@ -688,7 +688,7 @@ const Index = () => {
 
               {/* Chips rapides */}
               <div className="flex gap-2 flex-wrap mt-4">
-                {['Villa', 'Appartement', 'Studio meublé', 'Colocation', 'Bureau'].map(label => (
+                {['Villa', 'Appartement', 'Studio meublé', 'Magasin', 'Bureau'].map(label => (
                   <button
                     key={label}
                     onClick={() => handleSearch(label)}
