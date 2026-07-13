@@ -222,7 +222,7 @@ const InteractiveMap = ({
   const [activeRadius, setActiveRadius] = useState<number | null>(null);
   const [zoom, setZoom] = useState(12);
   const [selectedQuartier, setSelectedQuartier] = useState<string | null>(null);
-  const [layerMode, setLayerMode] = useState<MapLayerMode>('standard');
+  const [layerMode, setLayerMode] = useState<MapLayerMode>('satellite');
 
   // Géo : recentrer la carte quand la ville active change
   const { activeCity } = useGeoCity();
