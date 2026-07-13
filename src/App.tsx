@@ -15,6 +15,7 @@ import SearchPage from "./pages/Search";
 import ResultatsPage from "./pages/Resultats";
 import PropertyPage from "./pages/Property";
 import MonCompte from "./pages/MonCompte";
+import Publier from "./pages/Publier";
 import NotFound from "./pages/NotFound";
 import { useCountryLocale } from "@/hooks/useCountryLocale";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
@@ -52,6 +53,7 @@ const App = () => (
               {/* Deep link partage : /bien/:id → même fiche, URL canonique pour partages */}
               <Route path="/bien/:id" element={<PropertyPage />} />
               <Route path="/mon-compte" element={<MonCompte />} />
+              <Route path="/publier" element={<Publier />} />
               <Route
                 path="/admin/*"
                 element={
