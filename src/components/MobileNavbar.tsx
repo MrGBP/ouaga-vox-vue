@@ -50,6 +50,8 @@ const MobileNavbar = ({
   onHome,
   depth,
   isExploring = false,
+  favoritesCount = 0,
+  onFavoritesClick,
 }: MobileNavbarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t } = useTranslation();
