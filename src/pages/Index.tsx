@@ -708,7 +708,7 @@ const Index = () => {
                     className="relative h-11 w-11 md:h-12 md:w-12 flex items-center justify-center rounded-xl border border-border/60 bg-white hover:bg-muted/60 text-foreground shrink-0 transition-all active:scale-95"
                   >
                     <SlidersHorizontal className="h-4 w-4" />
-                    {(filters.characteristics?.length > 0 || filters.types?.length > 0 || showFavoritesOnly) && (
+                    {(filters.characteristics?.length > 0 || filters.type || showFavoritesOnly) && (
                       <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#E8761A] text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
                         •
                       </span>
