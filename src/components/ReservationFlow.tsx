@@ -391,6 +391,8 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
         senderName: 'SapSapHouse',
       }).catch(() => { /* swallow */ });
       track('reservation_submitted', { property_id: property.id, nights, total: totalPrice });
+      // Confettis navy + orange — moment émotionnel fort
+      import('@/lib/celebrate').then(m => m.celebrateReservation()).catch(() => {});
       setSubmitted(row);
     } catch (err: any) {
       console.error('Reservation error', err);

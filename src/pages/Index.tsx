@@ -25,6 +25,8 @@ import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import QuartiersSection from '@/components/QuartiersSection';
 import { EngagementsSection, CommentCaMarcheSection } from '@/components/StorySections';
+import FeaturesShowcase from '@/components/FeaturesShowcase';
+import MapFeatureTour from '@/components/tours/MapFeatureTour';
 import { Loader2, MapPin, Home, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/hero-quartier-africain.jpg';
@@ -555,48 +557,51 @@ const Index = () => {
 
   if (isMobile) {
     return (
-      <MobileApp
-        properties={properties}
-        filteredProperties={filteredProperties}
-        pois={pois}
-        quartiers={quartiers}
-        favorites={favorites}
-        filters={filters}
-        searchQuery={searchQuery}
-        detailProperty={detailProperty}
-        activeQuartier={activeQuartier}
-        focusedPropertyId={focusedPropertyId}
-        mapResetTrigger={mapResetTrigger}
-        mapQuartierTrigger={mapQuartierTrigger}
-        showFavoritesOnly={showFavoritesOnly}
-        idxTags={idxTags}
-        searchFallbackHint={searchFallbackHint}
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
-        onSearchQueryChange={setSearchQuery}
-        onToggleFavorite={toggleFavorite}
-        onPropertyClick={handlePropertyClick}
-        onViewDetails={handleViewDetails}
-        onExploreOnMap={handleExploreOnMap}
-        onFocusOnMap={handleFocusOnMap}
-        onFocusReturn={handleFocusReturn}
-        hasFocusReturn={hasFocusReturn}
-        forceMapTabTrigger={forceMapTabTrigger}
-        onFullReset={handleFullReset}
-        onQuartierChange={(q) => {
-          setActiveQuartier(q);
-          if (!q) setMapResetTrigger(prev => prev + 1);
-        }}
-        onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
-        onDetailClose={() => setDetailProperty(null)}
-        onFocusClear={() => {
-          setFocusedPropertyId(null);
-          setDetailProperty(null);
-        }}
-        onMobileTabChange={handleMobileTabChange}
-        onRemoveIdxTag={removeIdxTag}
-        computeFilteredCount={computeFilteredCount}
-      />
+      <>
+        <MapFeatureTour />
+        <MobileApp
+          properties={properties}
+          filteredProperties={filteredProperties}
+          pois={pois}
+          quartiers={quartiers}
+          favorites={favorites}
+          filters={filters}
+          searchQuery={searchQuery}
+          detailProperty={detailProperty}
+          activeQuartier={activeQuartier}
+          focusedPropertyId={focusedPropertyId}
+          mapResetTrigger={mapResetTrigger}
+          mapQuartierTrigger={mapQuartierTrigger}
+          showFavoritesOnly={showFavoritesOnly}
+          idxTags={idxTags}
+          searchFallbackHint={searchFallbackHint}
+          onFilterChange={handleFilterChange}
+          onSearch={handleSearch}
+          onSearchQueryChange={setSearchQuery}
+          onToggleFavorite={toggleFavorite}
+          onPropertyClick={handlePropertyClick}
+          onViewDetails={handleViewDetails}
+          onExploreOnMap={handleExploreOnMap}
+          onFocusOnMap={handleFocusOnMap}
+          onFocusReturn={handleFocusReturn}
+          hasFocusReturn={hasFocusReturn}
+          forceMapTabTrigger={forceMapTabTrigger}
+          onFullReset={handleFullReset}
+          onQuartierChange={(q) => {
+            setActiveQuartier(q);
+            if (!q) setMapResetTrigger(prev => prev + 1);
+          }}
+          onExternalQuartierHandled={() => setMapQuartierTrigger(null)}
+          onDetailClose={() => setDetailProperty(null)}
+          onFocusClear={() => {
+            setFocusedPropertyId(null);
+            setDetailProperty(null);
+          }}
+          onMobileTabChange={handleMobileTabChange}
+          onRemoveIdxTag={removeIdxTag}
+          computeFilteredCount={computeFilteredCount}
+        />
+      </>
     );
   }
 
@@ -938,6 +943,7 @@ const Index = () => {
         )}
       </section>
 
+      <FeaturesShowcase />
       <CommentCaMarcheSection />
       <TestimonialsSection />
       <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
