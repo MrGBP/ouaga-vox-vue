@@ -59,13 +59,13 @@ export function useHeroTypewriter(active: boolean) {
     let timeout: ReturnType<typeof setTimeout>;
     if (!deleting) {
       if (text.length < phrase.length) {
-        timeout = setTimeout(() => setText(phrase.slice(0, text.length + 1)), 45);
+        timeout = setTimeout(() => setText(phrase.slice(0, text.length + 1)), 30);
       } else {
-        timeout = setTimeout(() => setDeleting(true), 1800);
+        timeout = setTimeout(() => setDeleting(true), 1200);
       }
     } else {
       if (text.length > 0) {
-        timeout = setTimeout(() => setText(text.slice(0, -1)), 25);
+        timeout = setTimeout(() => setText(text.slice(0, -1)), 15);
       } else {
         setDeleting(false);
         setIdx((idx + 1) % phrases.length);
