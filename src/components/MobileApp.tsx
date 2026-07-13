@@ -23,7 +23,7 @@ import RecentlyViewed, { addToRecentlyViewed } from '@/components/RecentlyViewed
 import Footer from '@/components/Footer';
 import MobileOnboarding from '@/components/mobile/MobileOnboarding';
 import { getTypeLabel } from '@/lib/mockData';
-import { ChevronLeft, ChevronRight, X, Search, Heart, Sparkles, Maximize2, ChevronUp, SlidersHorizontal, RotateCcw, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Search, Heart, Sparkles, Maximize2, ChevronUp, SlidersHorizontal, RotateCcw, LogOut, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 
@@ -205,7 +205,7 @@ export default function MobileApp(props: MobileAppProps) {
   const nav = useNav();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, openAuthModal, signOut } = useAuth();
+  const { user, openAuthModal, signOut, requireAuth, isOwner, isAdmin } = useAuth();
   useSwipeBack();
 
   // Lazy init pour éviter un flash de l'accueil quand on arrive depuis
@@ -1209,6 +1209,22 @@ export default function MobileApp(props: MobileAppProps) {
           </div>
         </UniversalSheet>
       )}
+
+      {/* ═══ FAB "Publier un bien" (Fitts's Law — zone atteignable pouce) ═══ */}
+      <button
+        onClick={() => {
+          requireAuth('publier un bien', () => {
+            if (isOwner || isAdmin) navigate('/proprietaire');
+            else navigate('/mon-compte');
+          });
+        }}
+        aria-label="Publier un bien"
+        className="lg:hidden fixed right-4 z-[95] flex items-center gap-2 pl-4 pr-5 h-12 rounded-full bg-primary text-primary-foreground shadow-elevation-3 active:scale-95 transition-transform duration-fast"
+        style={{ bottom: 'calc(72px + env(safe-area-inset-bottom))' }}
+      >
+        <Plus className="h-5 w-5" strokeWidth={2.5} />
+        <span className="text-sm font-semibold">Publier</span>
+      </button>
 
       {/* ═══ BOTTOM NAVIGATION ═══ */}
       <MobileBottomNav

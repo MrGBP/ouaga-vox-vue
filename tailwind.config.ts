@@ -60,14 +60,25 @@ export default {
         'warm': 'var(--shadow-warm)',
         'soft': 'var(--shadow-soft)',
         'card': 'var(--shadow-card)',
+        'elevation-1': 'var(--elevation-1)',
+        'elevation-2': 'var(--elevation-2)',
+        'elevation-3': 'var(--elevation-3)',
       },
       transitionTimingFunction: {
         'smooth': 'var(--transition-smooth)',
+        'out-expo': 'var(--ease-out)',
+        'standard': 'var(--ease-standard)',
+      },
+      transitionDuration: {
+        'fast': '150ms',
+        'base': '250ms',
+        'slow': '400ms',
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "var(--radius-xl)",
       },
       keyframes: {
         "accordion-down": {
