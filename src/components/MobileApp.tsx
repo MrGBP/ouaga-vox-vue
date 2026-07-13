@@ -674,23 +674,77 @@ export default function MobileApp(props: MobileAppProps) {
             className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
             style={{ paddingTop: 'calc(52px + env(safe-area-inset-top))', paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
           >
-            {/* Hero */}
-            <section className="relative h-[45vh] overflow-hidden">
-              <img src={heroImage} alt="Ouagadougou" className="absolute inset-0 w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
-              <div className="relative z-10 h-full flex flex-col justify-center items-center text-center px-6">
-                <h2 className="text-3xl font-bold text-card leading-tight">
-                  Mon bien Immo<br />en un clic
-                </h2>
-                <p className="text-xs text-card/70 mt-2">
-                  + 100 biens · Maisons · Villas · Studios · Bureaux
-                </p>
+            {/* Hero — refonte : image + overlay dégradé navy, badge live, titre animé, stats */}
+            <section className="relative h-[48vh] overflow-hidden">
+              <motion.img
+                initial={{ scale: 1.12 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 6, ease: 'easeOut' }}
+                src={heroImage}
+                alt="Ouagadougou"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              {/* Overlay dégradé sombre → bg */}
+              <div className="absolute inset-0 bg-gradient-to-b from-[#0f2244]/85 via-[#1A3560]/55 to-background" />
+              {/* Halo orange discret */}
+              <div
+                className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-40"
+                style={{ background: 'radial-gradient(circle, rgba(232,118,26,0.55) 0%, rgba(232,118,26,0) 70%)' }}
+              />
+
+              <div className="relative z-10 h-full flex flex-col justify-end items-start text-left px-5 pb-6">
+                {/* Badge live */}
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="inline-flex items-center gap-1.5 mb-3 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-[10px] font-semibold text-white uppercase tracking-wider"
+                >
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-[#E8761A] opacity-75 animate-ping" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#E8761A]" />
+                  </span>
+                  <MapPin className="h-2.5 w-2.5" /> Ouagadougou
+                </motion.div>
+
+                <motion.h1
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.5 }}
+                  className="text-[32px] leading-[1.05] font-black text-white tracking-tight font-display drop-shadow-md"
+                >
+                  Mon bien Immo <br />
+                  <span className="text-[#E8761A]">en un clic</span>
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-[13px] text-white/85 mt-2 max-w-[85%]"
+                >
+                  Location, achat, courte durée — trouvez le bien qui vous correspond.
+                </motion.p>
+
+                {/* Petites stats */}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="flex items-center gap-3 mt-3 text-[11px] text-white/80"
+                >
+                  <span className="inline-flex items-center gap-1"><span className="text-white font-bold">{props.properties.length}+</span> biens</span>
+                  <span className="w-1 h-1 rounded-full bg-white/40" />
+                  <span className="inline-flex items-center gap-1"><span className="text-white font-bold">{props.quartiers.length}</span> quartiers</span>
+                  <span className="w-1 h-1 rounded-full bg-white/40" />
+                  <span>Maisons · Villas · Studios</span>
+                </motion.div>
               </div>
             </section>
 
             {/* Search bar (top, like tablet/desktop) — with embedded Filtres chip */}
-            <section className="px-4 pt-4">
-              <div className="w-full h-12 rounded-full bg-card border border-border shadow-sm flex items-center gap-2 pl-4 pr-1.5">
+            <section className="px-4 pt-4 -mt-6 relative z-20">
+              <div className="w-full h-12 rounded-full bg-card border border-border shadow-elevation-2 flex items-center gap-2 pl-4 pr-1.5">
                 <button
                   onClick={() => openSearchPage()}
                   className="flex items-center gap-3 flex-1 min-w-0 h-full text-left"
@@ -714,6 +768,22 @@ export default function MobileApp(props: MobileAppProps) {
                   )}
                 </button>
               </div>
+
+              {/* Bouton IA discret — "Décrire mon bien idéal" */}
+              <div className="flex justify-center mt-2.5">
+                <button
+                  onClick={() => setShowAISheet(true)}
+                  className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-transparent hover:bg-primary/5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors active:scale-[0.97]"
+                  aria-label="Décrire votre bien idéal avec l'IA"
+                >
+                  <span className="relative flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-[#1A3560] to-[#2a5090]">
+                    <Sparkles className="h-2.5 w-2.5 text-[#E8761A]" strokeWidth={2.5} />
+                  </span>
+                  Décrire mon bien idéal
+                  <span className="text-[9px] uppercase tracking-wider text-primary/60 font-bold">IA</span>
+                </button>
+              </div>
+
               {/* IDX Tags */}
               {props.idxTags.length > 0 && (
                 <div className="flex gap-1.5 flex-wrap mt-2">
