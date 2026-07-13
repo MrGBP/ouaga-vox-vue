@@ -3,7 +3,7 @@ import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { X, Share } from "lucide-react";
 
 const BANNER_DISMISSED_KEY = "sapsap_pwa_dismissed";
-const DELAY_MS = 30_000;
+const DELAY_MS = 4_000;
 
 export default function PWAInstallBanner() {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();

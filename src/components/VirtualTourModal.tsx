@@ -104,8 +104,9 @@ const VirtualTourModal = ({ property, open, onOpenChange, pois = [] }: VirtualTo
         scrollWheelZoom: false,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OSM',
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles © Esri',
+        maxZoom: 19,
       }).addTo(map);
 
       const icon = L.divIcon({
