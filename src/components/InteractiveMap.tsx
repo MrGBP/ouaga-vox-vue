@@ -393,9 +393,21 @@ const InteractiveMap = ({
     quartiersToShow.forEach(q => {
       const qProps = byQ.get(q.name) || [];
       if (qProps.length === 0) return;
-      const icon = L.divIcon({ html: quartierClusterHTML(q.name, qProps.length), className: '', iconSize: [80, 80], iconAnchor: [40, 40] });
+      const icon = L.divIcon({ html: quartierClusterHTML(q.name, qProps.length), className: 'quartier-pill-wrap', iconSize: [0, 0], iconAnchor: [0, 0] });
       const m = L.marker([q.latitude, q.longitude], { icon, zIndexOffset: 100 });
-      m.bindTooltip(`<div style="font-family:system-ui;"><strong style="color:#1a3560">${q.name}</strong></div>`, { direction: 'top', offset: [0, -44] });
+      const previews = qProps.slice(0, 3).map(p => {
+        const isFurnished = isTypeFurnished(p.type) || p.furnished;
+        const price = isFurnished ? pricePerNight(p.price) : p.price;
+        const suffix = isFurnished ? '/n' : '/m';
+        const ts = getTypeStyle(p.type);
+        return { emoji: ts.emoji, label: getTypeLabel(p.type), price, currency: (p as any).currency || 'FCFA', suffix };
+      });
+      m.bindTooltip(quartierPreviewHTML(q.name, previews, qProps.length), {
+        direction: 'top',
+        offset: [0, -8],
+        opacity: 1,
+        className: 'quartier-rich-tooltip',
+      });
       m.on('click', (e) => { L.DomEvent.stopPropagation(e); setSelectedQuartier(q.name); });
       quartierLayer.current!.addLayer(m);
     });
