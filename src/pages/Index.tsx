@@ -645,10 +645,6 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
             >
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/25 px-3 py-1 text-[11px] font-medium text-white/95 mb-5">
-                <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
-                Nouvelle expérience · Burkina Faso · Côte d'Ivoire
-              </span>
               <h1 className="font-display text-white leading-[1.02] tracking-tight font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
                 Mon bien Immo
                 <br />
