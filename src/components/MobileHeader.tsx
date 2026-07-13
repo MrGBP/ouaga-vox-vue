@@ -11,9 +11,20 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 const MobileHeader = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showIOSHint, setShowIOSHint] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isOwner, isAdmin, openAuthModal, requireAuth, signOut } = useAuth();
+  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
+
+  const handleInstall = async () => {
+    if (isIOS) {
+      setShowIOSHint(true);
+      return;
+    }
+    const r = await install();
+    if (r === 'accepted') setDrawerOpen(false);
+  };
 
   const goPublish = () => {
     setDrawerOpen(false);
