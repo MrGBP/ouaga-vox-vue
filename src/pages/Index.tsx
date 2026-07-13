@@ -26,6 +26,7 @@ import RecentlyViewed from '@/components/RecentlyViewed';
 import QuartiersSection from '@/components/QuartiersSection';
 import { EngagementsSection, CommentCaMarcheSection } from '@/components/StorySections';
 import FeaturesShowcase from '@/components/FeaturesShowcase';
+import HeroSearchSuggestions, { useHeroTypewriter } from '@/components/HeroSearchSuggestions';
 import MapFeatureTour from '@/components/tours/MapFeatureTour';
 import { Loader2, MapPin, Home, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
