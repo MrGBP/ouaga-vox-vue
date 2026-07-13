@@ -1,4 +1,5 @@
-import { Building2, Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
+import { Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
+import logoFull from '@/assets/sapsap-logo-full.png';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
