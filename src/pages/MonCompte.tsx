@@ -61,6 +61,20 @@ export default function MonCompte() {
     } finally { setBecomingOwner(false); }
   };
 
+  // Auto-déclenchement depuis /publier → ?becomeOwner=1
+  useEffect(() => {
+    if (!user || isOwner || becomeOwnerTriggered.current) return;
+    if (searchParams.get('becomeOwner') === '1') {
+      becomeOwnerTriggered.current = true;
+      searchParams.delete('becomeOwner');
+      setSearchParams(searchParams, { replace: true });
+      becomeOwner().then(() => {
+        setTimeout(() => { window.location.href = '/proprietaire/biens?new=1'; }, 400);
+      });
+    }
+  }, [user, isOwner, searchParams, setSearchParams]);
+
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
