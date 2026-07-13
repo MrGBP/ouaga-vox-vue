@@ -675,17 +675,28 @@ const Index = () => {
               <div className="relative w-full max-w-2xl">
                 <div className="absolute inset-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl" />
                 <div className="relative flex items-center gap-2 p-2">
-                  <div className="flex-1 flex items-center gap-3 px-4">
+                  <div className="flex-1 flex items-center gap-3 px-4 relative">
                     <Search className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-                      placeholder={t('hero.placeholder_long')}
-                      className="w-full h-12 bg-transparent text-foreground text-base outline-none placeholder:text-muted-foreground/70"
-                      style={{ fontSize: 16 }}
-                    />
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFocus={() => setHeroSearchFocused(true)}
+                        onBlur={() => setTimeout(() => setHeroSearchFocused(false), 150)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { setHeroSearchFocused(false); handleSearch(searchQuery); } }}
+                        placeholder=""
+                        aria-label="Rechercher un bien"
+                        className="w-full h-12 bg-transparent text-foreground text-base outline-none"
+                        style={{ fontSize: 16 }}
+                      />
+                      {searchQuery.length === 0 && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-base text-muted-foreground/70 pointer-events-none truncate max-w-full">
+                          {heroTypewriter || t('hero.placeholder_long')}
+                          {!heroSearchFocused && <span className="animate-pulse text-primary ml-0.5">|</span>}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => handleSearch(searchQuery)}
@@ -694,6 +705,13 @@ const Index = () => {
                     {t('hero.bouton_chercher')}
                   </button>
                 </div>
+                <HeroSearchSuggestions
+                  properties={properties}
+                  query={searchQuery}
+                  visible={heroSearchFocused}
+                  onPick={(q) => { setSearchQuery(q); setHeroSearchFocused(false); handleSearch(q); }}
+                  onSelectProperty={(id) => { setHeroSearchFocused(false); handlePropertyClick(id); }}
+                />
               </div>
 
               {/* Chips rapides */}
