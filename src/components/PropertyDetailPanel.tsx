@@ -112,6 +112,7 @@ interface PropertyDetailPanelProps {
   onHighlightPoi?: (poiId: string) => void;
   onExploreOnMap?: (id: string) => void;
   isMobileOverride?: boolean;
+  hideHero?: boolean;
 }
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
