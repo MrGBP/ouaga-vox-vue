@@ -143,6 +143,19 @@ const MobileNavbar = ({
               <HomeIcon className="h-4 w-4 text-secondary-foreground" />
             </button>
           )}
+          {favoritesCount > 0 && onFavoritesClick && (
+            <button
+              onClick={onFavoritesClick}
+              className="relative min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+              aria-label={`Favoris (${favoritesCount})`}
+              title={`Favoris (${favoritesCount})`}
+            >
+              <Heart className="h-5 w-5 text-secondary fill-secondary" />
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold flex items-center justify-center">
+                {favoritesCount}
+              </span>
+            </button>
+          )}
           {!showBack && (
             <button
               onClick={() => setDrawerOpen(true)}
