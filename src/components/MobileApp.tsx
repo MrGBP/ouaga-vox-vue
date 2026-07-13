@@ -650,9 +650,15 @@ export default function MobileApp(props: MobileAppProps) {
           onHome={handleNavHome}
           depth={nav.depth}
           isExploring={isExploring && navLevel === 3}
+          favoritesCount={props.favorites.size}
+          onFavoritesClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
         />
       ) : mobileTab === 'home' ? (
-        <MobileNavbar level={1} />
+        <MobileNavbar
+          level={1}
+          favoritesCount={props.favorites.size}
+          onFavoritesClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
+        />
       ) : null}
 
       {/* ═══ FULLSCREEN TAB PAGES (covers map) ═══ */}
