@@ -938,6 +938,7 @@ const Index = () => {
         )}
       </section>
 
+      <CommentCaMarcheSection />
       <TestimonialsSection />
       <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
 
