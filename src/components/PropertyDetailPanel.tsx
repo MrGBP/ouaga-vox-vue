@@ -112,6 +112,7 @@ interface PropertyDetailPanelProps {
   onHighlightPoi?: (poiId: string) => void;
   onExploreOnMap?: (id: string) => void;
   isMobileOverride?: boolean;
+  hideHero?: boolean;
 }
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
@@ -132,7 +133,7 @@ type MediaItem = { type: 'photo'; url: string } | { type: 'video'; url: string }
 
 const PropertyDetailPanel = ({
   property, onClose, pois, isFavorite = false, onToggleFavorite, onViewTour,
-  similarProperties = [], onSelectProperty, onHighlightPoi, onExploreOnMap, isMobileOverride,
+  similarProperties = [], onSelectProperty, onHighlightPoi, onExploreOnMap, isMobileOverride, hideHero = false,
 }: PropertyDetailPanelProps) => {
   const [mediaIdx, setMediaIdx] = useState(0);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -309,6 +310,8 @@ const PropertyDetailPanel = ({
       )}
 
       {/* ── Media Slider — swipe only on mobile, arrows on desktop ── */}
+      {!hideHero && (<>
+
       <div
         className="relative h-56 bg-muted overflow-hidden touch-pan-y"
         onTouchStart={(e) => {
@@ -398,6 +401,7 @@ const PropertyDetailPanel = ({
           </Badge>
         )}
       </div>
+      </>)}
 
       <div className="p-5 space-y-5">
         {/* Identity */}
