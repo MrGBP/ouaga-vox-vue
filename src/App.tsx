@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { AuthProvider } from "@/hooks/useAuth";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
+import { AnimatePresence } from "framer-motion";
+import SplashScreen from "@/components/SplashScreen";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -29,11 +31,23 @@ const queryClient = new QueryClient();
 
 const LocaleSync = () => { useCountryLocale(); return null; };
 
-const App = () => (
+const App = () => {
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const isPWA = window.matchMedia?.('(display-mode: standalone)')?.matches ?? false;
+    const isFirstLaunch = !localStorage.getItem('sapsap_launched');
+    if (isFirstLaunch) localStorage.setItem('sapsap_launched', '1');
+    return isPWA || isFirstLaunch;
+  });
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
         <NavigationProvider>
+          <AnimatePresence>
+            {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+          </AnimatePresence>
           <LocaleSync />
           <Toaster />
           <Sonner />
@@ -85,6 +99,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
