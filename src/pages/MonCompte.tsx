@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Search as SearchIcon, Calendar, User as UserIcon, MessageSquare, LogOut, Trash2, Bell, BellOff, Loader2, Home as HomeIcon, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Heart, Search as SearchIcon, Calendar, User as UserIcon, MessageSquare, LogOut, Trash2, Bell, BellOff, Loader2, Home as HomeIcon, ArrowRight, Plus, Sparkles, ShieldCheck } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
 export default function MonCompte() {
   const { user, loading, signOut, isOwner, refreshRoles } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [becomingOwner, setBecomingOwner] = useState(false);
   const { ids: favIds, toggle: toggleFav } = useFavorites();
   const [reservations, setReservations] = useState<ReservationRow[]>([]);
@@ -28,6 +29,7 @@ export default function MonCompte() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [chatOpenId, setChatOpenId] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const becomeOwnerTriggered = useRef(false);
 
   useEffect(() => {
     if (!user) return;
