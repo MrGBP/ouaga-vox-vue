@@ -1,4 +1,4 @@
-import { Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
+import { Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon, Download, Share } from 'lucide-react';
 import logoFull from '@/assets/sapsap-logo-full.png';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import NotificationBell from '@/components/NotificationBell';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 const MobileHeader = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
