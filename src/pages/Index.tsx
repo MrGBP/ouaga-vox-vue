@@ -614,6 +614,9 @@ const Index = () => {
   // ═══════════════════════════════════════════════════════════════
   // DESKTOP LAYOUT (>= 768px) — unchanged
   // ═══════════════════════════════════════════════════════════════
+  // Home desktop/tablette = maquette validée ; sections suivantes en pause
+  if (HOME_MOCKUP_ONLY) return <HomeMockup />;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
