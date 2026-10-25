@@ -31,7 +31,7 @@ const HomeMockup = () => {
   const go = (v: string) => navigate(`/resultats?q=${encodeURIComponent(v)}`);
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="bg-background overflow-hidden">
       <div className="relative mx-auto w-full max-w-[1600px]" style={{ aspectRatio: '1280 / 720' }}>
         {/* Décors */}
         <div className="absolute rounded-xl bg-secondary/80" style={box(1040, 125, 40, 65)} />

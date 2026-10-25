@@ -22,8 +22,6 @@ interface CountryPhone {
 }
 const COUNTRIES: CountryPhone[] = [
   { code: 'BF', flag: '🇧🇫', dial: '+226', label: 'Burkina Faso' },
-  { code: 'ML', flag: '🇲🇱', dial: '+223', label: 'Mali' },
-  { code: 'GH', flag: '🇬🇭', dial: '+233', label: 'Ghana' },
 ];
 
 interface AuthModalProps {
