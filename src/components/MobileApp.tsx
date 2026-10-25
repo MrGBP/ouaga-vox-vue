@@ -30,6 +30,7 @@ import AIDescribeSheet from '@/components/AIDescribeSheet';
 import { Headphones } from 'lucide-react';
 import MobileDiscoveryCard from '@/components/listing/MobileDiscoveryCard';
 import MobileHomeIntro from '@/components/home/MobileHomeIntro';
+import MapFeatureTour from '@/components/tours/MapFeatureTour';
 import { type Property as CatalogProperty } from '@/lib/mockData';
 interface Property {
   id: string;
@@ -606,6 +607,7 @@ export default function MobileApp(props: MobileAppProps) {
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-background">
       {/* ═══ ONBOARDING ═══ */}
+      {mobileTab === 'map' && navLevel === 1 && <MapFeatureTour />}
       {mobileTab === 'map' && navLevel === 1 && <MobileOnboarding onDone={() => {}} />}
       {/* ═══ CARTE FIXE PLEIN ÉCRAN ═══ */}
       <div
