@@ -7,7 +7,7 @@
  * Pour réactiver depuis la console : localStorage.setItem('sapsap_mock_mode','1');
  * Pour désactiver : localStorage.removeItem('sapsap_mock_mode');
  */
-export const MOCK_MODE_BUILD: boolean = false;
+export const MOCK_MODE_BUILD: boolean = true;
 const LS_KEY = 'sapsap_mock_mode';
 
 export function isMockEnabled(): boolean {
