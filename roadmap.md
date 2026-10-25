@@ -1,4 +1,7 @@
 # Homepage update
+- [x] Simplify mobile homepage: discreet SapSap AI, remove catalog carousel and trust badges, improve featured copy and icon-only pagination.
+- [x] Connect mobile compact list and satellite price map, selection preview, discreet filters and consistent navigation.
+- [x] Remove visible inventory counts from filters and discovery pages; verify mobile flows and desktop preservation.
 - [x] Recreate the new furnished-home reference on desktop and tablet, retaining lower sections without a map.
 - [x] Restore animated search suggestions and Burkina destination choices.
 - [x] Prioritize detected Burkina city and verify search and layout.

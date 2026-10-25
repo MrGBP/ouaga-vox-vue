@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Map as MapIcon, List as ListIcon, SlidersHorizontal, X } from 'lucide-react';
-import { type Property, mockPois, mockQuartiers, isTypeFurnished } from '@/lib/mockData';
+import { ArrowLeft, Map as MapIcon, List as ListIcon, SlidersHorizontal, Sparkles, X } from 'lucide-react';
+import { type Property, PROPERTY_TYPES, getTypeLabel, isTypeFurnished } from '@/lib/mockData';
 import ListingMap from '@/components/listing/ListingMap';
 import ListingCard from '@/components/listing/ListingCard';
 import { fetchMergedProperties } from '@/lib/propertiesService';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useIsMobile } from '@/hooks/use-mobile';
-import PropertyCard from '@/components/PropertyCard';
-import InteractiveMap from '@/components/InteractiveMap';
+import MobileDiscoveryCard from '@/components/listing/MobileDiscoveryCard';
+import { Button } from '@/components/ui/button';
+import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
+import AIDescribeSheet from '@/components/AIDescribeSheet';
+import { useFavorites } from '@/hooks/useFavorites';
 import FilterBar, { type FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import Header from '@/components/Header';
@@ -35,7 +38,10 @@ const ResultatsPage = () => {
   };
   const [filters, setFilters] = useState<FilterState>(loadFilters);
   useEffect(() => {
-    const sync = () => setFilters(loadFilters());
+    const sync = () => setFilters(current => {
+      const saved = loadFilters();
+      return JSON.stringify(current) === JSON.stringify(saved) ? current : saved;
+    });
     window.addEventListener('storage', sync);
     window.addEventListener('focus', sync);
     return () => {
@@ -44,12 +50,8 @@ const ResultatsPage = () => {
     };
   }, []);
 
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem(FAV_KEY);
-      return new Set(raw ? JSON.parse(raw) : []);
-    } catch { return new Set(); }
-  });
+  const { ids: favoriteIds, toggle: toggleFavorite } = useFavorites();
+  const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
 
   const [allProps, setAllProps] = useState<Property[]>([]);
   const { activeCity } = useGeoCity();
@@ -87,15 +89,6 @@ const ResultatsPage = () => {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
-  const toggleFavorite = useCallback((id: string) => {
-    setFavorites(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      try { localStorage.setItem(FAV_KEY, JSON.stringify([...next])); } catch { /* noop */ }
-      return next;
-    });
-  }, []);
-
   const handleViewDetails = useCallback((p: { id: string }) => {
     navigate(`/property/${encodeURIComponent(p.id)}`);
   }, [navigate]);
@@ -106,13 +99,26 @@ const ResultatsPage = () => {
   }, [isMobile]);
 
   // Mobile view toggle
-  const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
+  const [mobileView, setMobileView] = useState<'list' | 'map'>(() => searchParams.get('view') === 'map' ? 'map' : 'list');
+
+  const [filtersOpen, setFiltersOpen] = useState(() => {
+    const open = sessionStorage.getItem('sapsap_results_filters') === '1';
+    sessionStorage.removeItem('sapsap_results_filters');
+    return open;
+  });
+  const [aiOpen, setAiOpen] = useState(false);
+  useEffect(() => {
+    if (focusedId && !results.some(property => property.id === focusedId)) setFocusedId(null);
+  }, [results, focusedId]);
+  const selected = results.find(p => p.id === focusedId);
+  const openProperty = useCallback((id: string) => navigate(`/property/${encodeURIComponent(id)}`), [navigate]);
+  const noHover = useCallback((_id: string | null) => {}, []);
 
   const handleBottomNav = (tab: string) => {
     switch (tab) {
       case 'home':
       case 'map': navigate('/'); break;
-      case 'search': navigate('/search'); break;
+      case 'search': setMobileView('list'); break;
       case 'favorites': navigate('/?favorites=1'); break;
       case 'profile': navigate('/mon-compte'); break;
     }
@@ -122,10 +128,10 @@ const ResultatsPage = () => {
 
   // Chips filtres actifs (Recognition over recall)
   const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
-  if (filters.type !== 'all') activeChips.push({ key: 'type', label: filters.type, onRemove: () => setFilters(f => ({ ...f, type: 'all' })) });
-  if (filters.quartier !== 'all') activeChips.push({ key: 'q', label: filters.quartier, onRemove: () => setFilters(f => ({ ...f, quartier: 'all' })) });
-  if (filters.minBedrooms > 0) activeChips.push({ key: 'br', label: `${filters.minBedrooms}+ ch.`, onRemove: () => setFilters(f => ({ ...f, minBedrooms: 0 })) });
-  if (filters.hasVirtualTour) activeChips.push({ key: 'vt', label: 'Visite 360°', onRemove: () => setFilters(f => ({ ...f, hasVirtualTour: false })) });
+  if (filters.type !== 'all') activeChips.push({ key: 'type', label: getTypeLabel(filters.type), onRemove: () => persistFilters({ ...filters, type: 'all' }) });
+  if (filters.quartier !== 'all') activeChips.push({ key: 'q', label: filters.quartier, onRemove: () => persistFilters({ ...filters, quartier: 'all' }) });
+  if (filters.minBedrooms > 0) activeChips.push({ key: 'br', label: `${filters.minBedrooms}+ ch.`, onRemove: () => persistFilters({ ...filters, minBedrooms: 0 }) });
+  if (filters.hasVirtualTour) activeChips.push({ key: 'vt', label: 'Visite 360°', onRemove: () => persistFilters({ ...filters, hasVirtualTour: false }) });
 
   const persistFilters = (f: FilterState) => {
     try { localStorage.setItem(FILTERS_KEY, JSON.stringify(f)); } catch { /* noop */ }
@@ -139,21 +145,16 @@ const ResultatsPage = () => {
           className="sticky top-0 z-30 bg-card/95 backdrop-blur-md border-b border-border"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-          <div className="px-3 h-14 flex items-center gap-2">
-            <button
-              onClick={() => navigate(-1)}
-              aria-label="Retour"
-              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full hover:bg-muted"
-            >
-              <ArrowLeft className="h-5 w-5 text-foreground" />
-            </button>
-            <div className="flex-1 min-w-0">
-              {appliedQuery && <p className="text-sm font-semibold text-foreground truncate">« {appliedQuery} »</p>}
-              <p className="text-xs text-muted-foreground">
-                <span className="font-bold text-foreground">{results.length}</span> résultat{results.length > 1 ? 's' : ''}
-              </p>
-            </div>
+          <div className="px-3 h-14 flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} aria-label="Retour à l’accueil" className="shrink-0 rounded-full"><ArrowLeft className="h-5 w-5" /></Button>
+            <Button variant="ghost" onClick={() => navigate('/search')} className="min-w-0 flex-1 justify-start text-left px-2"><span className="truncate">{appliedQuery || 'Explorer les logements'}</span></Button>
+            <Button variant="ghost" size="icon" aria-label="SapSap AI" title="SapSap AI" onClick={() => { setFiltersOpen(false); setAiOpen(true); }} className="shrink-0 text-muted-foreground"><Sparkles className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" aria-label="Filtres" title="Filtres" onClick={() => { setAiOpen(false); setFiltersOpen(true); }} className="shrink-0"><SlidersHorizontal className="h-4 w-4" /></Button>
           </div>
+          <div className="flex gap-4 px-4 overflow-x-auto scrollable border-t border-border/50" role="tablist" aria-label="Type de logement">
+            {[{ value: 'all', label: 'Tous', emoji: '' }, ...PROPERTY_TYPES].map(type => <Button key={type.value} variant="ghost" role="tab" aria-selected={filters.type === type.value} className={`shrink-0 rounded-none px-0 h-11 text-xs border-b-2 ${filters.type === type.value ? 'border-secondary text-primary' : 'border-transparent text-muted-foreground'}`} onClick={() => persistFilters({ ...filters, type: type.value })}>{type.emoji} {type.label}</Button>)}
+          </div>
+          {activeChips.length > 0 && <div className="flex gap-2 px-4 pb-2 overflow-x-auto scrollable">{activeChips.map(chip => <Button key={chip.key} variant="outline" size="sm" onClick={chip.onRemove} className="shrink-0 h-7 text-xs">{chip.label}<X className="h-3 w-3 ml-1" /></Button>)}</div>}
         </header>
       ) : (
         <Header />
@@ -171,9 +172,6 @@ const ResultatsPage = () => {
                 {appliedQuery && (
                   <p className="font-display text-lg font-bold text-foreground">Résultats pour « {appliedQuery} »</p>
                 )}
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-bold text-foreground">{results.length}</span> bien{results.length > 1 ? 's' : ''} disponible{results.length > 1 ? 's' : ''}
-                </p>
               </div>
             </div>
 
@@ -218,60 +216,23 @@ const ResultatsPage = () => {
       >
         {isMobile ? (
           <>
-            <AnimatePresence mode="wait">
-              {mobileView === 'list' ? (
-                <motion.div
-                  key="list"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="px-3 py-3"
-                >
-                  {results.length === 0 ? (
-                    <div className="text-center py-20">
-                      <p className="text-5xl mb-4">🔍</p>
-                      <p className="text-base font-semibold text-foreground">Aucun bien</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                      {results.map((p) => (
-                        <PropertyCard
-                          key={p.id}
-                          property={p as any}
-                          isFavorite={favorites.has(p.id)}
-                          onToggleFavorite={toggleFavorite}
-                          onViewDetails={handleViewDetails}
-                          onFocusOnMap={handleFocusOnMap}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="map"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="fixed inset-0 top-14 bottom-16 z-10"
-                >
-                  <InteractiveMap
-                    properties={results as any}
-                    pois={mockPois as any}
-                    quartiers={mockQuartiers as any}
-                    onPropertyClick={handleMapClick}
-                    focusedPropertyId={focusedId}
-                    onFocusClear={() => setFocusedId(null)}
-                    favoriteIds={favorites}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Toggle flottant Liste ⇄ Carte (Fitts's Law : gros bouton central) */}
-            <button
-              onClick={() => setMobileView(v => v === 'list' ? 'map' : 'list')}
-              className="fixed left-1/2 -translate-x-1/2 z-40 bg-foreground text-background rounded-full h-12 px-5 shadow-elevation-3 flex items-center gap-2 font-semibold text-sm active:scale-95 transition-transform"
-              style={{ bottom: 'calc(80px + env(safe-area-inset-bottom))' }}
-            >
+            <div className="fixed left-0 right-0 z-10" style={{ top: `calc(${activeChips.length ? 144 : 104}px + env(safe-area-inset-top))`, bottom: 'calc(56px + env(safe-area-inset-bottom))', visibility: mobileView === 'map' ? 'visible' : 'hidden', pointerEvents: mobileView === 'map' ? 'auto' : 'none' }}>
+              <ListingMap properties={results} activeId={focusedId} favorites={favorites} onHover={noHover} onOpen={openProperty} onToggleFavorite={toggleFavorite} mobile visible={mobileView === 'map'} onSelect={setFocusedId} />
+            </div>
+            <div className={`px-4 pt-1 pb-20 ${mobileView === 'map' ? 'hidden' : ''}`}>
+              {results.length === 0 ? <div className="py-20 text-center"><p className="font-semibold">Aucun logement ne correspond</p><Button variant="ghost" onClick={() => setFiltersOpen(true)} className="mt-2 text-muted-foreground">Ajuster mes critères</Button></div> : results.map(p => <MobileDiscoveryCard key={p.id} property={p} favorite={favorites.has(p.id)} onOpen={openProperty} onToggleFavorite={toggleFavorite} />)}
+            </div>
+            <AnimatePresence>{mobileView === 'map' && selected && <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }} className="fixed left-3 right-3 z-40 bg-card rounded-lg px-3 shadow-elevation-3 border border-border" style={{ bottom: 'calc(120px + env(safe-area-inset-bottom))' }}>
+              <Button variant="ghost" size="icon" aria-label="Fermer l’aperçu" onClick={() => setFocusedId(null)} className="absolute -top-10 right-0 h-8 w-8 rounded-full bg-card shadow-elevation-1"><X className="h-4 w-4" /></Button>
+              <MobileDiscoveryCard property={selected} favorite={favorites.has(selected.id)} onOpen={openProperty} onToggleFavorite={toggleFavorite} />
+            </motion.div>}</AnimatePresence>
+            <Button onClick={() => setMobileView(v => v === 'list' ? 'map' : 'list')} className="fixed left-1/2 -translate-x-1/2 z-40 rounded-full h-11 px-5 shadow-elevation-3 gap-2" style={{ bottom: 'calc(68px + env(safe-area-inset-bottom))' }}>
               {mobileView === 'list' ? <><MapIcon className="h-4 w-4" /> Carte</> : <><ListIcon className="h-4 w-4" /> Liste</>}
-            </button>
+            </Button>
+            <MobileDraggableDrawer open={filtersOpen} onClose={() => setFiltersOpen(false)} maxHeightVh={90} initialHeightVh={75} snapPoints={[0, 75, 90]} overlayZIndex={210} drawerZIndex={211}>
+              <FilterBar forceOpen externalFilters={filters} quartiers={filterOpts.quartiers} totalCount={allProps.length} filteredCount={results.length} priceBounds={{ min: filterOpts.priceMin, max: filterOpts.priceMax }} availableTypeValues={filterOpts.typeValues} onFilterChange={f => { persistFilters(f); setFiltersOpen(false); }} onReset={() => { persistFilters(DEFAULT_FILTERS); setFiltersOpen(false); }} />
+            </MobileDraggableDrawer>
+            <AIDescribeSheet open={aiOpen} onClose={() => setAiOpen(false)} />
           </>
         ) : (
           <div className="container mx-auto px-4 py-4 grid grid-cols-1 md:grid-cols-2 gap-5">

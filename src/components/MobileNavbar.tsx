@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import logo from '@/assets/sapsap-logo.png';
 
 export type NavLevel = 1 | 2 | 3;
 
@@ -89,10 +90,7 @@ const MobileNavbar = ({
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {!showBack ? (
             <>
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                <Building2 className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="text-sm font-bold text-foreground truncate">SapSapHouse</span>
+              <Button variant="ghost" className="h-auto p-0 gap-2 hover:bg-transparent" aria-label="SapSapHouse — accueil" onClick={() => navigate('/')}><img src={logo} alt="" className="w-9 h-9 object-contain" /><span className="text-left"><strong className="block text-sm text-primary">SapSap<span className="text-secondary">House</span></strong><small className="block text-[9px] text-muted-foreground">Mon bien Immo en un clic</small></span></Button>
             </>
           ) : (
             <>
@@ -110,7 +108,7 @@ const MobileNavbar = ({
                   className="text-sm font-semibold truncate"
                   style={isExploring ? { color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' } : undefined}
                 >
-                  {quartierName} · <span className={isExploring ? '' : 'text-muted-foreground font-normal'}>{quartierCount} {(quartierCount || 0) > 1 ? t('nav.biens_count_other') : t('nav.biens_count_one')}</span>
+                  {quartierName}
                 </span>
               ) : (
                 /* Level 3 (fiche bien): pas de titre dupliqué — déjà visible sur la fiche */
@@ -159,6 +157,7 @@ const MobileNavbar = ({
           {!showBack && (
             <button
               onClick={() => setDrawerOpen(true)}
+              aria-label="Menu"
               className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
             >
               <Menu className="h-5 w-5 text-foreground" />
@@ -193,8 +192,8 @@ const MobileNavbar = ({
               </div>
               <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                 {[
-                  { label: t('nav.biens'), icon: HomeIcon, onClick: () => { setDrawerOpen(false); navigate('/'); } },
-                  { label: t('nav.carte'), icon: MapPin, onClick: () => { setDrawerOpen(false); navigate('/?exploreMap=1'); } },
+                  { label: t('nav.biens'), icon: HomeIcon, onClick: () => { setDrawerOpen(false); navigate('/resultats'); } },
+                  { label: t('nav.carte'), icon: MapPin, onClick: () => { setDrawerOpen(false); navigate('/resultats?view=map'); } },
                   { label: t('nav.publier_bien'), icon: FileText, onClick: goPublish },
                 ].map(item => (
                   <button

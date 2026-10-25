@@ -92,7 +92,7 @@ export default function HomeMockup({ properties = [], onOpenFilters }: { propert
             <label htmlFor="home-destination">Où souhaitez-vous séjourner ?</label>
             <input id="home-destination" value={query} onChange={e => setQuery(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder={placeholder || 'Ex. Ouaga 2000, Bobo-Dioulasso, Manga…'} autoComplete="off" />
           </div>
-          <Button variant="ghost" size="icon" type="button" aria-label="Décrire mon besoin à l'assistant IA" title="Assistant IA" onClick={() => setAiOpen(true)} className="reference-filter"><Sparkles /></Button>
+          <Button variant="ghost" size="icon" type="button" aria-label="SapSap AI" title="SapSap AI" onClick={() => setAiOpen(true)} className="reference-filter"><Sparkles /></Button>
           <Button variant="ghost" size="icon" type="button" aria-label="Filtres" title="Filtres" onClick={onOpenFilters} className="reference-filter"><SlidersHorizontal /></Button>
           <Button variant="secondary" type="submit" size="icon" aria-label="Rechercher" className="reference-search-submit"><Search /></Button>
            <HeroSearchSuggestions furnishedOnly properties={properties} query={query} visible={focused && query.trim().length > 0} onPick={go} onSelectProperty={id => navigate(`/property/${id}`)} />

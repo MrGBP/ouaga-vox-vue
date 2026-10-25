@@ -308,7 +308,7 @@ const SearchPage = () => {
             className="px-3 pt-3 pb-6"
           >
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-              {fuzzy.length} résultat{fuzzy.length > 1 ? 's' : ''}
+              Votre sélection
             </p>
             <div className="space-y-1.5">
               {fuzzy.map(p => {

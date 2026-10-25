@@ -84,6 +84,14 @@ const SYNONYMS: SynRule[] = [
   { syns: ['animaux', 'chien', 'chat', 'pets'], match: p => !!p.pets_allowed, label: 'Animaux acceptés' },
 ];
 
+// A recognized word must not also activate an unrelated fuzzy synonym
+// (for example “meuble” used to activate “nonmeuble” as well).
+const matchesSynonym = (token: string, synonym: string): boolean => {
+  if (SYNONYMS.some(rule => rule.syns.includes(token))) return token === synonym;
+  if (token.length < 4) return false;
+  return levenshtein(token, synonym) <= (token.length >= 8 ? 2 : 1);
+};
+
 /** Rendu humain de ce que l'IA-locale a compris. */
 export interface ParsedQuery {
   rawQuery: string;
@@ -121,10 +129,10 @@ export function parseQuery(query: string, allQuartiers: string[]): ParsedQuery {
   // Synonymes (criteria)
   const usedTokens = new Set<string>();
   for (const rule of SYNONYMS) {
-    const hit = tokens.some(t => rule.syns.some(s => fuzzyEq(t, s)));
+    const hit = tokens.some(t => rule.syns.some(s => matchesSynonym(t, s)));
     if (hit) {
       result.criteria.push(rule.label);
-      tokens.forEach(t => { if (rule.syns.some(s => fuzzyEq(t, s))) usedTokens.add(t); });
+      tokens.forEach(t => { if (rule.syns.some(s => matchesSynonym(t, s))) usedTokens.add(t); });
     }
   }
 
@@ -176,7 +184,7 @@ export function smartFilter(properties: Property[], query: string, allQuartiers:
       if (/^\d+$/.test(t)) return false;
       if (['de', 'a', 'au', 'la', 'le', 'les', 'des', 'du', 'et', 'ou', 'avec', 'sans', 'pour', 'm', 'm2', 'fcfa', 'ch', 'chambre', 'chambres', 'moins', 'max'].includes(t)) return false;
       // Déjà capturé par un synonyme ?
-      if (SYNONYMS.some(r => r.syns.some(s => fuzzyEq(t, s)))) return false;
+      if (SYNONYMS.some(r => r.syns.some(s => matchesSynonym(t, s)))) return false;
       // Déjà capturé par un quartier ?
       if (parsed.quartiers.some(q => normalize(q).includes(t))) return false;
       return true;

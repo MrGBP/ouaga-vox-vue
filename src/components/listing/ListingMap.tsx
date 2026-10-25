@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { getTypeEmoji, getTypeLabel, pricePerNight, type Property } from '@/lib/mockData';
 import { getRentMode } from '@/lib/typeHelpers';
 import { Plus, Minus, Layers } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const TILE_SAT = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const TILE_LABELS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
@@ -19,11 +20,11 @@ export const displayPrice = (p: Property) => {
   return { value: mode === 'nuit' ? pricePerNight(p.price) : p.price, mode };
 };
 
-const pinHtml = (p: Property, active: boolean, fav: boolean) => {
-  const { value } = displayPrice(p);
+const pinHtml = (p: Property, active: boolean, fav: boolean, mobile: boolean) => {
+  const { value, mode } = displayPrice(p);
   return `<div class="ssh-pin${active ? ' is-active' : ''}">
-    <span class="ssh-pin-ico">${getTypeEmoji(p.type)}</span>
-    <span class="ssh-pin-price">${fmtShort(value)}</span>${fav ? '<span class="ssh-pin-fav">♥</span>' : ''}
+    ${mobile ? '' : `<span class="ssh-pin-ico">${getTypeEmoji(p.type)}</span>`}
+    <span class="ssh-pin-price">${mobile ? new Intl.NumberFormat('fr-FR').format(value) : fmtShort(value)}${mobile ? ` F / ${mode}` : ''}</span>${fav ? '<span class="ssh-pin-fav">♥</span>' : ''}
   </div>`;
 };
 
@@ -34,9 +35,12 @@ interface Props {
   onHover: (id: string | null) => void;
   onOpen: (id: string) => void;
   onToggleFavorite: (id: string) => void;
+  mobile?: boolean;
+  visible?: boolean;
+  onSelect?: (id: string | null) => void;
 }
 
-const ListingMap = ({ properties, activeId, favorites, onHover, onOpen, onToggleFavorite }: Props) => {
+const ListingMap = ({ properties, activeId, favorites, onHover, onOpen, onToggleFavorite, mobile = false, visible = true, onSelect }: Props) => {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const base = useRef<L.TileLayer | null>(null);
@@ -56,6 +60,20 @@ const ListingMap = ({ properties, activeId, favorites, onHover, onOpen, onToggle
   }, []);
 
   useEffect(() => {
+    const m = map.current;
+    if (!m || !mobile) return;
+    const clear = () => onSelect?.(null);
+    m.on('click', clear);
+    return () => { m.off('click', clear); };
+  }, [mobile, onSelect]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const timer = window.setTimeout(() => map.current?.invalidateSize(), 150);
+    return () => window.clearTimeout(timer);
+  }, [visible]);
+
+  useEffect(() => {
     if (!map.current || !base.current) return;
     base.current.setUrl(sat ? TILE_SAT : TILE_PLAN);
     if (sat && !labels.current) labels.current = L.tileLayer(TILE_LABELS, { maxZoom: 19, opacity: 0.85 }).addTo(map.current);
@@ -71,11 +89,11 @@ const ListingMap = ({ properties, activeId, favorites, onHover, onOpen, onToggle
     properties.forEach(p => {
       const c = coordsOf(p); if (!c) return;
       pts.push(c);
-      const mk = L.marker(c, { icon: L.divIcon({ className: 'ssh-pin-wrap', html: pinHtml(p, p.id === activeId, favorites.has(p.id)), iconSize: [0, 0] }), riseOnHover: true })
+      const mk = L.marker(c, { bubblingMouseEvents: false, icon: L.divIcon({ className: 'ssh-pin-wrap', html: pinHtml(p, p.id === activeId, favorites.has(p.id), mobile), iconSize: [0, 0] }), riseOnHover: true })
         .addTo(m)
-        .on('mouseover', () => onHover(p.id))
-        .on('mouseout', () => onHover(null))
-        .on('click', () => onOpen(p.id));
+        .on('mouseover', () => { if (!mobile) onHover(p.id); })
+        .on('mouseout', () => { if (!mobile) onHover(null); })
+        .on('click', () => { if (mobile) onSelect?.(p.id); else onOpen(p.id); });
       markers.current.set(p.id, mk);
     });
     const key = properties.map(p => p.id).join(',');
@@ -84,16 +102,16 @@ const ListingMap = ({ properties, activeId, favorites, onHover, onOpen, onToggle
       m.fitBounds(L.latLngBounds(pts), { padding: [50, 50], maxZoom: 15 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [properties, favorites]);
+  }, [properties, favorites, mobile, onSelect, onOpen, onHover]);
 
   // Active highlight
   useEffect(() => {
     markers.current.forEach((mk, id) => {
       const p = properties.find(x => x.id === id); if (!p) return;
-      mk.setIcon(L.divIcon({ className: 'ssh-pin-wrap', html: pinHtml(p, id === activeId, favorites.has(id)), iconSize: [0, 0] }));
+      mk.setIcon(L.divIcon({ className: 'ssh-pin-wrap', html: pinHtml(p, id === activeId, favorites.has(id), mobile), iconSize: [0, 0] }));
       mk.setZIndexOffset(id === activeId ? 1000 : 0);
     });
-  }, [activeId, properties, favorites]);
+  }, [activeId, properties, favorites, mobile]);
 
   const active = properties.find(p => p.id === activeId);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -115,12 +133,12 @@ const ListingMap = ({ properties, activeId, favorites, onHover, onOpen, onToggle
     <div className="relative w-full h-full">
       <div ref={el} className="absolute inset-0" />
       <div className="absolute top-3 right-3 z-[500] flex flex-col gap-1.5">
-        <button onClick={() => z(1)} aria-label="Zoomer" className="h-9 w-9 rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center shadow-md"><Plus className="h-4 w-4" /></button>
-        <button onClick={() => z(-1)} aria-label="Dézoomer" className="h-9 w-9 rounded-lg bg-card text-foreground flex items-center justify-center shadow-md"><Minus className="h-4 w-4" /></button>
-        <button onClick={() => setSat(s => !s)} aria-label="Changer de vue" title={sat ? 'Vue plan' : 'Vue satellite'} className="h-9 w-9 rounded-lg bg-card text-foreground flex items-center justify-center shadow-md mt-1"><Layers className="h-4 w-4" /></button>
+        <Button size="icon" variant="secondary" onClick={() => z(1)} aria-label="Zoomer" className="h-9 w-9 shadow-md"><Plus className="h-4 w-4" /></Button>
+        <Button size="icon" variant="outline" onClick={() => z(-1)} aria-label="Dézoomer" className="h-9 w-9 bg-card shadow-md"><Minus className="h-4 w-4" /></Button>
+        <Button size="icon" variant="outline" onClick={() => setSat(s => !s)} aria-label="Changer de vue" title={sat ? 'Vue plan' : 'Vue satellite'} className="h-9 w-9 bg-card shadow-md mt-1"><Layers className="h-4 w-4" /></Button>
       </div>
 
-      {active && pos && (
+      {!mobile && active && pos && (
         <div
           className="absolute z-[600] w-56 -translate-x-1/2 bg-card rounded-2xl shadow-elevation-3 overflow-hidden pointer-events-auto"
           style={{ left: pos.x, top: pos.y - 22, transform: 'translate(-50%, -100%)' }}

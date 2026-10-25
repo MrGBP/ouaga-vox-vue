@@ -27,7 +27,9 @@ import { ChevronLeft, ChevronRight, X, Search, Heart, Sparkles, Maximize2, Chevr
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 import AIDescribeSheet from '@/components/AIDescribeSheet';
-import { ShieldCheck, BadgeCheck, Headphones } from 'lucide-react';
+import { Headphones } from 'lucide-react';
+import MobileDiscoveryCard from '@/components/listing/MobileDiscoveryCard';
+import { type Property as CatalogProperty } from '@/lib/mockData';
 import salonImg from '@/assets/home/salon.jpg';
 import wayalghinImg from '@/assets/home/wayalghin.jpg';
 import kouloubaImg from '@/assets/home/koulouba.jpg';
@@ -227,6 +229,7 @@ export default function MobileApp(props: MobileAppProps) {
   // Lazy init pour éviter un flash de l'accueil quand on arrive depuis
   // "Voir sur la carte" (flags posés AVANT navigate par Property.tsx).
   const [mobileTab, setMobileTab] = useState(() => {
+    if (new URLSearchParams(window.location.search).get('favorites') === '1') return 'favorites';
     try {
       const forced = sessionStorage.getItem('sapsap_force_tab');
       if (forced) return forced;
@@ -375,11 +378,15 @@ export default function MobileApp(props: MobileAppProps) {
   );
 
   const favoriteProperties = useMemo(() =>
-    props.properties.filter(p => props.favorites.has(p.id)),
+    availableProperties(props.properties).filter(p => props.favorites.has(p.id)),
     [props.properties, props.favorites]
   );
 
-  const displayProperties = availableProperties(props.filteredProperties);
+  const displayProperties = availableProperties(props.filteredProperties).filter(p => isTypeFurnished(p.type) || p.furnished);
+  const homePageSize = 6;
+  const homePageCount = Math.max(1, Math.ceil(displayProperties.length / homePageSize));
+  const homeProperties = displayProperties.slice((currentPage - 1) * homePageSize, currentPage * homePageSize);
+  useEffect(() => { setCurrentPage(1); }, [props.filteredProperties]);
   const totalPages = Math.ceil(displayProperties.length / ITEMS_PER_PAGE);
   const paginatedProperties = displayProperties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
@@ -483,25 +490,11 @@ export default function MobileApp(props: MobileAppProps) {
   // user gets a fresh view of that section.
   const handleMobileTabChange = (tab: string) => {
     if (tab === 'search') {
-      openSearchPage();
+      navigate(`/resultats?q=${encodeURIComponent(props.searchQuery || '')}`);
       return;
     }
     if (tab === 'map') {
-      // Click on Carte in the navbar → ALWAYS reset to global Ouagadougou view
-      // (niveau 1) with all pins. Keeps filters/search intact, just recenters
-      // the map and closes any open property / active quartier. The normal
-      // quartier-tap → niveau 2 logic still works after that.
-      setMobileTab('map');
-      setShowMobileSearch(false);
-      props.onMobileTabChange('map');
-      // Close any open property + leave the active quartier so we go back to N1.
-      if (props.detailProperty) props.onDetailClose();
-      props.onFocusClear();
-      props.onQuartierChange(null); // also bumps mapResetTrigger → recenters Ouaga
-      // Reset the nav stack to a clean carte-niveau1 entry.
-      if (nav.current.screen !== 'carte-niveau1') {
-        nav.push({ screen: 'carte-niveau1' });
-      }
+      navigate(`/resultats?view=map&q=${encodeURIComponent(props.searchQuery || '')}`);
       return;
     }
     // home / favorites / profile → fresh section
@@ -532,7 +525,7 @@ export default function MobileApp(props: MobileAppProps) {
             className="flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1.5 text-xs font-medium active:scale-[0.97] transition-transform"
           >
             <ChevronLeft className="h-3 w-3" />
-            Ouagadougou › {props.activeQuartier} · {count} bien{count > 1 ? 's' : ''}
+            Ouagadougou › {props.activeQuartier}
           </button>
           <div className="flex items-center gap-1.5">
             <button onClick={() => openSearchPage()} className="min-h-[44px] min-w-[44px] flex items-center justify-center">
@@ -704,9 +697,9 @@ export default function MobileApp(props: MobileAppProps) {
               <div className="relative z-10 px-5 pt-6 pb-5">
                 <motion.h1
                   initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}
-                  className="font-display font-extrabold text-primary leading-[1.08] tracking-tight text-[28px]"
+                  className="font-display font-extrabold text-primary leading-[1.08] tracking-normal text-[28px]"
                 >
-                  Réservez des logements meublés partout au <span className="text-secondary">Burkina.</span>
+                  Réservez des<br /><span className="text-secondary">logements meublés</span><br />partout au Burkina.
                 </motion.h1>
                 <p className="text-[13px] text-muted-foreground mt-2 leading-relaxed">
                   Maisons, studios, appartements meublés pour vos courts comme longs séjours.
@@ -718,7 +711,8 @@ export default function MobileApp(props: MobileAppProps) {
                     <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="text-sm text-muted-foreground truncate">{props.searchQuery || 'Quartier, studio, villa meublée…'}</span>
                   </button>
-                  <button onClick={() => setShowMobileFilters(true)} aria-label="Filtres"
+                  <Button variant="ghost" size="icon" onClick={() => setShowAISheet(true)} aria-label="SapSap AI" title="SapSap AI" className="h-9 w-9 shrink-0 rounded-full text-muted-foreground"><Sparkles className="h-4 w-4" /></Button>
+                  <button onClick={() => { sessionStorage.setItem('sapsap_results_filters', '1'); navigate('/resultats'); }} aria-label="Filtres"
                     className="relative inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary text-primary-foreground shrink-0 active:scale-95">
                     <SlidersHorizontal className="h-4 w-4" />
                     {(props.idxTags.length > 0 || props.filters.type !== 'all' || props.filters.quartier !== 'all' || props.filters.minBedrooms > 0 || props.filters.characteristics.length > 0) && (
@@ -726,19 +720,6 @@ export default function MobileApp(props: MobileAppProps) {
                     )}
                   </button>
                 </div>
-
-                {/* Assistant IA */}
-                <button onClick={() => setShowAISheet(true)}
-                  className="mt-3 w-full flex items-center gap-3 rounded-2xl bg-primary px-3.5 py-3 text-left active:scale-[0.99]">
-                  <span className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                    <Sparkles className="h-4 w-4 text-secondary-foreground" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-secondary">Assistant SapSap</span>
-                    <span className="block text-[13px] text-primary-foreground/85 truncate">Décrivez votre séjour, on trouve pour vous</span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-primary-foreground/60" />
-                </button>
 
                 {props.idxTags.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap mt-2">
@@ -754,12 +735,12 @@ export default function MobileApp(props: MobileAppProps) {
             </section>
 
             {/* Explorez nos demeures — vignettes quartiers */}
-            <section className="pt-4">
+            <section id="quartiers" className="pt-4">
               <h2 className="px-4 text-lg font-bold text-foreground mb-3">Explorez nos demeures</h2>
               <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollable">
                 {MOBILE_QUARTIERS.map(q => (
                   <button key={q.name}
-                    onClick={() => { props.onSearchQueryChange(q.name); props.onSearch(q.name); }}
+                    onClick={() => navigate(`/resultats?q=${encodeURIComponent(q.name)}`)}
                     className="relative shrink-0 w-32 h-40 snap-start rounded-2xl overflow-hidden shadow-card active:scale-[0.97] transition-transform">
                     <img src={q.img} alt={q.name} className="w-full h-full object-cover" loading="lazy" />
                     <span className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
@@ -769,58 +750,11 @@ export default function MobileApp(props: MobileAppProps) {
               </div>
             </section>
 
-            {/* Réassurance */}
-            <section className="px-4 pt-4">
-              <div className="grid grid-cols-3 gap-2 rounded-2xl bg-card border border-border p-3">
-                {[
-                  { icon: ShieldCheck, label: 'Biens vérifiés' },
-                  { icon: BadgeCheck, label: 'Hôtes de confiance' },
-                  { icon: Headphones, label: 'Accompagnement rapide' },
-                ].map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex flex-col items-center text-center gap-1.5">
-                    <span className="w-9 h-9 rounded-full bg-secondary/15 flex items-center justify-center">
-                      <Icon className="h-4 w-4 text-secondary" />
-                    </span>
-                    <span className="text-[11px] font-medium text-foreground leading-tight">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-
-            {/* Featured carousel */}
-            <section className="px-4 py-5">
-              <h2 className="text-lg font-bold text-foreground mb-3">{t('sections.biens_mis_en_avant')}</h2>
-              <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollable">
-                {availableProperties(props.properties).slice(0, 8).map(p => {
-                  const dp = formatDisplayPrice(p);
-                  return (
-                    <button key={p.id} onClick={() => openPropertyPage(p.id)}
-                      className="shrink-0 w-56 snap-start bg-card border border-border rounded-xl overflow-hidden shadow-card text-left active:scale-[0.97] transition-transform"
-                    >
-                      <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'} alt={p.title} className="w-full h-32 object-cover" loading="lazy" />
-                      <div className="p-2.5">
-                        <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>
-                        <p className="text-xs text-muted-foreground">{p.quartier}</p>
-                        {dp.nightPrice ? (
-                          <p className="text-sm font-bold text-primary mt-1">{dp.nightPrice} FCFA <span className="text-xs font-normal text-muted-foreground">/nuit</span></p>
-                        ) : (
-                          <p className="text-sm font-bold text-primary mt-1">{dp.price} FCFA <span className="text-xs font-normal text-muted-foreground">/mois</span></p>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
             {/* Properties grid */}
-            <section className="px-4 pb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-foreground">{t('sections.tous_les_biens')}</h2>
-                <span className="text-xs text-muted-foreground">
-                  <span className="text-foreground font-bold">{displayProperties.length}</span> {displayProperties.length > 1 ? t('sections.resultats') : t('sections.resultat')}
-                </span>
+            <section id="properties" className="px-4 pb-6">
+              <div className="flex items-center justify-between gap-3 mb-3 mt-5">
+                <div><h2 className="text-xl font-bold text-primary">Votre prochaine adresse</h2><p className="text-xs text-muted-foreground mt-1">Des demeures meublées, le temps d’un séjour.</p></div>
+                <Button variant="ghost" size="icon" aria-label="Explorer les logements" onClick={() => navigate('/resultats')}><ChevronRight className="h-5 w-5" /></Button>
               </div>
               {props.searchFallbackHint && (
                 <p className="text-xs italic text-muted-foreground mb-3">
@@ -829,25 +763,13 @@ export default function MobileApp(props: MobileAppProps) {
               )}
               {displayProperties.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 gap-4">
-                    {displayProperties.slice(0, visibleCount).map(p => (
-                      <PropertyCard key={p.id} property={p as any} onViewDetails={(pp: any) => openPropertyPage(pp.id)} isFavorite={props.favorites.has(p.id)} onToggleFavorite={props.onToggleFavorite} onFocusOnMap={props.onFocusOnMap} />
-                    ))}
+                  <div className="bg-card">
+                    {homeProperties.map(p => <MobileDiscoveryCard key={p.id} property={p as CatalogProperty} favorite={props.favorites.has(p.id)} onOpen={openPropertyPage} onToggleFavorite={props.onToggleFavorite} />)}
                   </div>
-                  {visibleCount < displayProperties.length && (
-                    <div className="flex justify-center mt-6">
-                      <Button
-                        variant="outline"
-                        onClick={() => setVisibleCount(c => Math.min(c + LOAD_MORE_INCREMENT, displayProperties.length))}
-                        className="rounded-full px-6 h-11 text-sm font-semibold gap-2"
-                      >
-                        {t('sections.voir_plus')}
-                        <span className="text-muted-foreground text-xs">
-                          ({Math.min(LOAD_MORE_INCREMENT, displayProperties.length - visibleCount)} {t('sections.de_plus')})
-                        </span>
-                      </Button>
-                    </div>
-                  )}
+                  {homePageCount > 1 && <nav aria-label="Autres logements" className="flex justify-center gap-4 mt-5">
+                    <Button variant="outline" size="icon" aria-label="Logements précédents" title="Précédent" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}><ChevronLeft className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon" aria-label="Logements suivants" title="Suivant" disabled={currentPage >= homePageCount} onClick={() => setCurrentPage(p => Math.min(homePageCount, p + 1))}><ChevronRight className="h-4 w-4" /></Button>
+                  </nav>}
                 </>
               ) : (
                 <div className="text-center py-12 bg-card border border-border rounded-xl">
@@ -863,6 +785,7 @@ export default function MobileApp(props: MobileAppProps) {
             <RecentlyViewed onViewProperty={handleRecentlyViewedClick} />
 
 
+            <div className="border-t border-border px-4 py-4 text-center"><Button variant="ghost" asChild className="text-xs text-muted-foreground"><a href="mailto:support@sapsaphouse.com"><Headphones className="h-3.5 w-3.5 mr-2" />Besoin d’un accompagnement ?</a></Button></div>
             <Footer />
           </motion.div>
         )}
@@ -1138,6 +1061,7 @@ export default function MobileApp(props: MobileAppProps) {
       {/* Floating AI button */}
       {mobileTab === 'map' && navLevel === 1 && (
         <button
+          aria-label="SapSap AI" title="SapSap AI" onClick={() => setShowAISheet(true)}
           className="fixed z-30 right-3 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-warm no-select"
           style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
         >
