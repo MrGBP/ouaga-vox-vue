@@ -51,7 +51,7 @@ export default function AIDescribeSheet({ open, onClose }: Props) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 z-[301] bg-card rounded-t-3xl shadow-2xl border-t border-border"
+            className="fixed bottom-0 left-0 right-0 md:max-w-2xl md:mx-auto md:bottom-8 md:rounded-3xl z-[301] bg-card rounded-t-3xl shadow-2xl border-t border-border"
             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
             {/* Handle */}
