@@ -616,7 +616,8 @@ const Index = () => {
   // ═══════════════════════════════════════════════════════════════
   // DESKTOP LAYOUT (>= 768px) — unchanged
   // ═══════════════════════════════════════════════════════════════
-
+  return (
+    <div className="min-h-screen bg-background">
       <HomeMockup />
 
       {/* Accès Reels — explorer tout le catalogue */}
