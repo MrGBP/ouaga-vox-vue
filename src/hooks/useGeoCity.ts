@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { CITIES, COUNTRY_TO_CITY, DEFAULT_CITY } from '@/lib/geoConfig';
+import { CITIES as ALL_CITIES, DEFAULT_CITY } from '@/lib/geoConfig';
+
+// Burkina Faso uniquement pour le moment (autres pays en pause)
+const CITIES = { [DEFAULT_CITY]: ALL_CITIES[DEFAULT_CITY] } as typeof ALL_CITIES;
+const COUNTRY_TO_CITY: Record<string, string> = { BF: DEFAULT_CITY };
 
 const GEO_STORAGE_KEY = 'sapsap_selected_city';
 const GEO_AUTO_DETECTED_KEY = 'sapsap_auto_detected';
