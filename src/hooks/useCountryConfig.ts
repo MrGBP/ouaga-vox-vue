@@ -39,7 +39,8 @@ export function useAllCountryConfigs() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('list_country_configs_public');
       if (error) throw error;
-      return ((data as any[]) || []).map((c: any) => ({
+      // Burkina Faso uniquement pour le moment
+      return ((data as any[]) || []).filter((c: any) => c.code === 'BF').map((c: any) => ({
         ...c,
         support_email: null,
         support_whatsapp: null,
