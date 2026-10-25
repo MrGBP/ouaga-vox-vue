@@ -283,9 +283,11 @@
 /* Furnished homepage: user-supplied reference composition. */
 :root {
   --home-ink: 231 63% 13%;
+  --home-terracotta: 18 76% 47%;
+  --home-soft-surface: 210 12% 89%;
   --home-photo-scrim: linear-gradient(to top, hsl(var(--home-ink) / .9), transparent 65%);
-  --home-photo-fade: linear-gradient(90deg, hsl(var(--card)) 0%, hsl(var(--card) / .98) 19%, hsl(var(--card) / .86) 29%, hsl(var(--card) / .35) 42%, transparent 58%);
-  --home-photo-top: linear-gradient(to bottom, hsl(var(--card) / .55), transparent 24%);
+  --home-photo-fade: linear-gradient(90deg, hsl(var(--home-soft-surface) / .94) 0%, hsl(var(--home-soft-surface) / .9) 19%, hsl(var(--home-soft-surface) / .8) 29%, hsl(var(--home-soft-surface) / .35) 46%, transparent 67%);
+  --home-photo-top: linear-gradient(to bottom, hsl(var(--home-soft-surface) / .75), transparent 30%);
 }
 .reference-home { background: hsl(var(--card)); color: hsl(var(--home-ink)); }
 .reference-hero { position: relative; height: 470px; isolation: isolate; }
@@ -334,14 +336,17 @@
 .reference-filter { border-left: 1px solid hsl(var(--border)); border-radius: 0; height: 32px; width: 38px; color: hsl(var(--primary)); }
 .reference-search-submit { width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0; }
 .reference-search-submit svg { width: 24px; height: 24px; }
-.reference-destinations { max-width: 1440px; margin: auto; padding: 24px 5% 35px; }
+.reference-destinations { --secondary: var(--home-terracotta); max-width: 1440px; margin: auto; padding: 24px 5% 35px; }
 .reference-destination-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .reference-destination-heading h2 { display: flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 800; letter-spacing: 0; }
 .reference-destination-heading h2 > svg, .reference-destination-heading h2 > span { color: hsl(var(--secondary)); }
 .reference-destination-heading p { font: 15px Georgia, serif; color: hsl(var(--muted-foreground)); margin: 4px 0 0 32px; }
 .reference-city-switch { display: flex; gap: 6px; margin: 14px 0 17px 32px; }
 .reference-city-switch button { font-size: 11px; height: 30px; }
-.reference-destination-row { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; }
+.reference-destination-row { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; margin-top: 26px; }
+.reference-destination-heading > button { color: hsl(var(--home-terracotta)); }
+.reference-destination-heading svg, .reference-destination-arrow { transition: transform var(--duration-base) var(--ease-out); }
+.reference-destination-heading > button:hover svg, .reference-destination:hover .reference-destination-arrow { transform: translateX(3px); }
 .reference-destination { position: relative; display: block; padding: 0; height: 185px; overflow: hidden; border-radius: 20px; transform: rotate(-2deg); }
 .reference-destination:hover { transform: translateY(-5px) rotate(0); }
 .destination-1 { border-radius: 60px 60px 35px 35px; transform: rotate(3deg); }
