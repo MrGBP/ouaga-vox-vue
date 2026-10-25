@@ -1,3 +1,4 @@
+import PropertyTypeIcon from '@/components/PropertyTypeIcon';
 import { useState, useMemo, useEffect } from 'react';
 import { SlidersHorizontal, X, Heart, RotateCcw, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -270,7 +271,7 @@ const FilterBar = ({
                       : 'bg-muted/30 border-transparent text-muted-foreground/60 hover:bg-muted/60'
                 }`}
               >
-                <span>{t.emoji}</span>
+                <PropertyTypeIcon type={t.value} size={16} />
                 <span className="text-xs">{t.label}</span>
                 {isActive && <Check className="h-3.5 w-3.5 ml-auto" />}
               </button>

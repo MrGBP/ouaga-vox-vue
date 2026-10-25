@@ -7,6 +7,8 @@ import { getTypeLabel, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import { resolveFeatures } from '@/lib/featureCatalog';
 import { useCountryConfig } from '@/hooks/useCountryConfig';
 import PropertyImage from '@/components/PropertyImage';
+import { cardHighlights } from '@/lib/cardHighlights';
+import PropertyTypeIcon from '@/components/PropertyTypeIcon';
 
 interface Property {
   id: string;
@@ -64,7 +66,7 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
       onClick={() => onViewDetails(property)}
     >
       {/* Image */}
-      <div className="relative h-52 overflow-hidden">
+      <div className="relative h-60 overflow-hidden">
         <PropertyImage src={imgSrc} alt={property.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
 
         {/* Badges top-left */}
@@ -126,9 +128,14 @@ const PropertyCard = ({ property, onViewDetails, isFavorite = false, onToggleFav
 
         {/* Vignette épurée : les caractéristiques détaillées vivent dans la fiche du bien */}
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
+          <PropertyTypeIcon type={property.type} size={16} />
           <span className="truncate">{property.quartier}</span>
         </div>
+        {cardHighlights(property).length > 0 && (
+          <ul className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+            {cardHighlights(property).map(h => <li key={h.key} className="after:content-['·'] after:ml-2 last:after:content-none">{h.label}</li>)}
+          </ul>
+        )}
       </div>
 
       {/* CTA */}

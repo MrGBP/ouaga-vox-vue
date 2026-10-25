@@ -31,17 +31,19 @@ const MobileBottomNav = ({ activeTab, onTabChange, favoritesCount = 0 }: MobileB
           <Button variant="ghost"
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className="relative h-[52px] rounded-none flex flex-col items-center justify-center gap-0 flex-1 transition-transform active:scale-95"
+            className="skeu-tab relative h-[52px] rounded-none flex flex-col items-center justify-center gap-0 flex-1 hover:bg-transparent hover:translate-y-0"
             aria-label={tab.label}
             aria-current={isActive ? 'page' : undefined}
           >
-            <Icon
-              className={`h-[22px] w-[22px] transition-colors ${isActive ? 'text-secondary' : 'text-muted-foreground'}`}
-              strokeWidth={isActive ? 2.4 : 1.75}
-            />
+            <span className="skeu-tab-icon">
+              <Icon
+                className={`h-[22px] w-[22px] transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+                strokeWidth={isActive ? 2.4 : 1.75}
+              />
+            </span>
             <span
               className={`text-[10px] mt-0.5 font-medium transition-colors ${
-                isActive ? 'text-secondary' : 'text-muted-foreground/80'
+                isActive ? 'text-primary font-semibold' : 'text-muted-foreground/80'
               }`}
             >
               {tab.label}

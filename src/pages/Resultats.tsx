@@ -1,3 +1,4 @@
+import PropertyTypeIcon from '@/components/PropertyTypeIcon';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -152,7 +153,7 @@ const ResultatsPage = () => {
             <Button variant="ghost" size="icon" aria-label="Filtres" title="Filtres" onClick={() => { setAiOpen(false); setFiltersOpen(true); }} className="shrink-0"><SlidersHorizontal className="h-4 w-4" /></Button>
           </div>
           <div className="flex gap-4 px-4 overflow-x-auto scrollable border-t border-border/50" role="tablist" aria-label="Type de logement">
-            {[{ value: 'all', label: 'Tous', emoji: '' }, ...PROPERTY_TYPES].map(type => <Button key={type.value} variant="ghost" role="tab" aria-selected={filters.type === type.value} className={`shrink-0 rounded-none px-0 h-11 text-xs border-b-2 ${filters.type === type.value ? 'border-secondary text-primary' : 'border-transparent text-muted-foreground'}`} onClick={() => persistFilters({ ...filters, type: type.value })}>{type.emoji} {type.label}</Button>)}
+            {[{ value: 'all', label: 'Tous', emoji: '' }, ...PROPERTY_TYPES].map(type => <Button key={type.value} variant="ghost" role="tab" aria-selected={filters.type === type.value} className={`shrink-0 rounded-none px-0 h-11 text-xs border-b-2 ${filters.type === type.value ? 'border-secondary text-primary' : 'border-transparent text-muted-foreground'}`} onClick={() => persistFilters({ ...filters, type: type.value })}>{type.value !== 'all' && <PropertyTypeIcon type={type.value} size={16} className="mr-1" />}{type.label}</Button>)}
           </div>
           {activeChips.length > 0 && <div className="flex gap-2 px-4 pb-2 overflow-x-auto scrollable">{activeChips.map(chip => <Button key={chip.key} variant="outline" size="sm" onClick={chip.onRemove} className="shrink-0 h-7 text-xs">{chip.label}<X className="h-3 w-3 ml-1" /></Button>)}</div>}
         </header>
