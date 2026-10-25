@@ -48,14 +48,16 @@ const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigit
 
 export function useHeroTypewriter(active: boolean) {
   const { activeCity } = useGeoCity();
-  const phrases = TYPEWRITER_BY_COUNTRY[activeCity?.country || 'BF'] || TYPEWRITER_BY_COUNTRY.BF;
+  const phrases = useMemo(() => activeCity.id === 'ouagadougou'
+    ? TYPEWRITER_BY_COUNTRY.BF
+    : [`Maison meublée à ${activeCity.name}…`, `Studio climatisé à ${activeCity.name}…`, `Appartement meublé à ${activeCity.name}…`], [activeCity.id, activeCity.name]);
   const [text, setText] = useState('');
   const [idx, setIdx] = useState(0);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!active) return;
-    const phrase = phrases[idx];
+    const phrase = phrases[idx % phrases.length];
     let timeout: ReturnType<typeof setTimeout>;
     if (!deleting) {
       if (text.length < phrase.length) {

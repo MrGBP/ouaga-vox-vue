@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { MapPin, Search, ChevronDown, ChevronRight, ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useGeoCity } from '@/hooks/useGeoCity';
+import HeroSearchSuggestions, { useHeroTypewriter } from '@/components/HeroSearchSuggestions';
 import logo from '@/assets/sapsap-logo.png';
-import salon from '@/assets/home/salon.jpg';
+import livingRoom from '@/assets/home/reference-living-room.jpg';
 import chambre from '@/assets/home/chambre.jpg';
 import zoneDuBois from '@/assets/home/zone-du-bois.jpg';
 import koulouba from '@/assets/home/koulouba.jpg';
@@ -11,128 +13,111 @@ import paspanga from '@/assets/home/paspanga.jpg';
 import zogona from '@/assets/home/zogona.jpg';
 import wayalghin from '@/assets/home/wayalghin.jpg';
 
-/** Positions en % d'un canevas 1280×720 (fidèle à la maquette) */
-const box = (x: number, y: number, w: number, h: number) => ({
-  left: `${(x / 1280) * 100}%`, top: `${(y / 720) * 100}%`, width: `${(w / 1280) * 100}%`, height: `${(h / 720) * 100}%`,
-});
-
-const TILES = [
-  { name: 'Zone du Bois', img: zoneDuBois, b: box(30, 472, 250, 198), rot: -2 },
-  { name: 'Koulouba', img: koulouba, b: box(284, 464, 248, 228), rot: 1.5 },
-  { name: 'Paspanga', img: paspanga, b: box(536, 488, 302, 206), rot: -1 },
-  { name: 'Zogona', img: zogona, b: box(828, 444, 228, 220), rot: 1.5 },
-  { name: 'Wayalghin', img: wayalghin, b: box(1018, 370, 250, 240), rot: -3 },
+const DESTINATIONS = [
+  { name: 'Ouaga 2000', img: wayalghin },
+  { name: 'Koulouba', img: koulouba },
+  { name: 'Paspanga', img: paspanga },
+  { name: 'Zogona', img: zogona },
+  { name: 'Zone du Bois', img: zoneDuBois },
 ];
-const QUARTIERS = ['Ouaga 2000', 'Zone du Bois', 'Koulouba', 'Paspanga', 'Zogona', 'Wayalghin', 'Tampouy', 'Gounghin', 'Dassasgho', 'Patte d\'Oie'];
+const PREVIEW_SLIDES = [
+  { name: 'Ouaga 2000', image: livingRoom },
+  { name: 'Zone du Bois', image: zoneDuBois },
+  { name: 'Koulouba', image: chambre },
+  { name: 'Zogona', image: zogona },
+];
+type HomeProperty = { id: string; title: string; type: string; price: number; quartier: string; city?: string; furnished?: boolean; currency?: string; images?: string[] };
 
-const HomeMockup = () => {
+export default function HomeMockup({ properties = [], onOpenFilters }: { properties?: HomeProperty[]; onOpenFilters?: () => void }) {
   const navigate = useNavigate();
-  const [q, setQ] = useState('');
-  const go = (v: string) => navigate(`/resultats?q=${encodeURIComponent(v)}`);
+  const { activeCity, availableCities, setActiveCity } = useGeoCity();
+  const [query, setQuery] = useState('');
+  const [focused, setFocused] = useState(false);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [destinationIndex, setDestinationIndex] = useState(0);
+  const placeholder = useHeroTypewriter(!focused && !query);
+  const slides = useMemo(() => {
+    if (activeCity.id === 'ouagadougou') return PREVIEW_SLIDES;
+    return properties.filter(p => p.city === activeCity.name && (p.furnished || p.type.includes('meubl')) && p.images?.[0]).slice(0, 4)
+      .map(p => ({ name: p.quartier, image: p.images?.[0] || livingRoom }));
+  }, [activeCity.id, activeCity.name, properties]);
+  useEffect(() => {
+    if (slides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const timer = setInterval(() => setSlideIndex(i => (i + 1) % slides.length), 5000);
+    return () => clearInterval(timer);
+  }, [slides]);
+  const current = slides[slideIndex % Math.max(1, slides.length)];
+  const go = (value: string) => navigate(`/resultats?q=${encodeURIComponent(value.trim())}`);
+  const destinations = [...DESTINATIONS.slice(destinationIndex), ...DESTINATIONS.slice(0, destinationIndex)];
 
   return (
-    <div className="bg-background overflow-hidden">
-      <div className="relative mx-auto w-full max-w-[1600px]" style={{ aspectRatio: '1280 / 720' }}>
-        {/* Décors */}
-        <div className="absolute rounded-xl bg-secondary/80" style={box(1040, 125, 40, 65)} />
-        <div className="absolute rounded-xl bg-secondary/70" style={box(975, 405, 50, 40)} />
-        <div className="absolute rounded-xl bg-secondary/70" style={box(8, 545, 22, 45)} />
-        <div className="absolute rounded-xl bg-secondary/50" style={box(500, 680, 66, 28)} />
-        <div className="absolute rounded-xl bg-primary/20" style={box(838, 660, 78, 38)} />
-
-        {/* Grande photo salon — fondue à gauche pour laisser respirer le texte */}
-        <motion.div initial={{ opacity: 0, scale: 1.03 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }}
-          className="absolute overflow-hidden rounded-r-[28px]" style={box(330, 72, 692, 430)}>
-          <img src={salon} alt="Salon meublé au Burkina Faso" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" style={{ backdropFilter: 'blur(0px)' }} />
-          <div className="absolute inset-y-0 left-0 w-[45%] backdrop-blur-[3px] [mask-image:linear-gradient(to_right,black,transparent)]" />
-        </motion.div>
-        {/* Chambre */}
-        <motion.img initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.2 }}
-          src={chambre} alt="Chambre meublée" className="absolute object-cover rounded-[22px] shadow-elevation-2" style={{ ...box(1078, 94, 190, 280), transform: 'rotate(-2deg)' }} />
-
-        {/* Header */}
-        <header className="absolute inset-x-0 top-0 flex items-center justify-between z-20" style={{ padding: '1.4% 4.7%' }}>
-          <button onClick={() => navigate('/')} className="flex items-center gap-2" aria-label="SapSapHouse — accueil">
-            <img src={logo} alt="" className="h-12 w-auto object-contain mix-blend-multiply" />
-            <span className="text-left leading-none">
-              <span className="block font-display font-bold text-[26px] text-primary">SapSap<span className="text-secondary">House</span></span>
-              <span className="block text-[11px] tracking-wide text-muted-foreground mt-1">Mon bien Immo en un clic</span>
-            </span>
-          </button>
-          <nav className="flex items-center gap-8 text-sm font-medium text-foreground">
-            <button onClick={() => navigate('/publier')} className="hover:text-secondary">Devenir hôte</button>
-            <button onClick={() => navigate('/resultats')} className="hover:text-secondary">Nos logements</button>
-            <button onClick={() => { window.location.href = 'mailto:support@sapsaphouse.com'; }} className="hover:text-secondary">Aide</button>
-            <button onClick={() => navigate('/auth')} className="h-11 px-5 rounded-xl border-2 border-primary/70 text-primary font-semibold hover:bg-primary/5">Se connecter</button>
-            <button onClick={() => navigate('/auth?mode=signup')} className="h-11 px-6 rounded-xl bg-secondary text-secondary-foreground font-semibold inline-flex items-center gap-2 hover:bg-secondary/90">
-              S'inscrire <ArrowRight className="h-4 w-4" />
-            </button>
+    <div className="reference-home">
+      <section className="reference-hero">
+        <img src={livingRoom} alt="Salon meublé — inspiration SapSapHouse" className="reference-backdrop" />
+        <div className="reference-fade" />
+        <header className="reference-header">
+          <Button variant="ghost" className="reference-brand" onClick={() => navigate('/')} aria-label="SapSapHouse — accueil">
+            <img src={logo} alt="" />
+            <span><strong>SapSap<span>House</span></strong><small>Mon bien Immo en un clic</small></span>
+          </Button>
+          <nav aria-label="Navigation principale">
+            <Button variant="ghost" onClick={() => navigate('/publier')}>Devenir hôte</Button>
+            <Button variant="ghost" onClick={() => go('')}>Nos logements</Button>
+            <Button variant="ghost" asChild><a href="mailto:support@sapsaphouse.com">Aide</a></Button>
+            <Button variant="outline" onClick={() => navigate('/auth')}>Se connecter</Button>
+            <Button variant="secondary" onClick={() => navigate('/auth?mode=signup')}>S’inscrire <ArrowRight /></Button>
           </nav>
         </header>
-
-        {/* Texte */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}
-          className="absolute z-10" style={{ left: '5.3%', top: '17.5%', width: '42%' }}>
-          <p className="flex items-center gap-3 text-[clamp(10px,0.9vw,13px)] font-semibold tracking-[0.12em] uppercase text-primary/70">
-            <span className="h-0.5 w-7 bg-secondary" /> Séjours courts • Maisons meublées
-          </p>
-          <h1 className="mt-[4%] font-display font-extrabold leading-[1.08] tracking-tight text-primary text-[clamp(28px,3.6vw,54px)]">
-            Réservez des<br />
-            <span className="text-secondary">logements meublés</span><br />
-            partout au Burkina.
-          </h1>
-          <p className="mt-[3%] text-[clamp(13px,1.35vw,19px)] text-primary/80 leading-snug">
-            Maisons, studios, appartements meublés<br />pour vos courts comme longs séjours.
-          </p>
-        </motion.div>
-
-        {/* Carte flottante Ouaga 2000 */}
-        <button onClick={() => go('Ouaga 2000')} className="absolute z-10 bg-card rounded-2xl shadow-elevation-3 text-left flex items-center justify-between px-[1.4%]" style={box(918, 278, 220, 95)}>
-          <span>
-            <span className="flex items-center gap-2 font-semibold text-primary text-[clamp(11px,1.1vw,15px)]"><MapPin className="h-4 w-4 text-secondary" /> Ouaga 2000</span>
-            <span className="block text-[clamp(9px,0.85vw,12px)] text-muted-foreground mt-1 ml-6">Maison meublée</span>
-            <span className="flex items-center gap-0.5 mt-1 ml-6">
-              {[0, 1, 2, 3, 4].map(i => <Star key={i} className="h-3 w-3 fill-secondary text-secondary" />)}
-              <span className="text-[11px] text-muted-foreground ml-1">(4.8)</span>
-            </span>
-          </span>
-          <span className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center self-end mb-3"><ChevronRight className="h-5 w-5" /></span>
-        </button>
-
-        {/* Barre de recherche */}
-        <form onSubmit={(e) => { e.preventDefault(); go(q); }}
-          className="absolute z-20 bg-card rounded-full shadow-elevation-3 flex items-center gap-3 pl-[2.3%] pr-[0.8%]" style={box(66, 378, 640, 76)}>
-          <MapPin className="h-7 w-7 text-secondary shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-[clamp(11px,1.05vw,15px)] font-semibold text-primary">Où souhaitez-vous séjourner ?</p>
-            <input list="mock-quartiers" value={q} onChange={(e) => setQ(e.target.value)}
-              placeholder="Ex. Ouaga 2000, Zone du Bois, Koulouba..." aria-label="Quartier"
-              className="w-full bg-transparent outline-none text-[clamp(10px,0.9vw,13px)] text-foreground placeholder:text-muted-foreground" />
-            <datalist id="mock-quartiers">{QUARTIERS.map(n => <option key={n} value={n} />)}</datalist>
+        <div className="reference-copy">
+          <h1>Réservez des<br /><span>logements meublés</span><br />partout au Burkina.</h1>
+          <p>Maisons, studios, appartements meublés<br />pour vos courts comme longs séjours.</p>
+          <span className="reference-copy-rule" />
+        </div>
+        {current && <div className="reference-carousel" aria-label="Inspirations de logements meublés">
+          {[2, 3, 1].map((offset, index) => {
+            const item = slides[(slideIndex + offset) % slides.length];
+            return <img key={index} src={item.image} alt="Inspiration de logement meublé" className={`reference-fan fan-${index}`} />;
+          })}
+          <Button variant="ghost" onClick={() => go(current.name)} className="reference-main-slide">
+            <img src={current.image} alt={`Inspiration meublée — ${current.name}`} />
+            <span className="reference-slide-label"><MapPin /><span><strong>{current.name}</strong><small>Logements meublés</small></span><span className="reference-round-arrow"><ArrowRight /></span></span>
+          </Button>
+          <div className="reference-slide-controls">
+            <div className="reference-dots">{slides.map((item, index) => <Button key={`${item.name}-${index}`} variant="ghost" aria-label={`Inspiration ${index + 1}`} aria-pressed={slideIndex % slides.length === index} onClick={() => setSlideIndex(index)} className={slideIndex % slides.length === index ? 'is-selected' : ''} />)}</div>
+            <Button variant="ghost" size="icon" aria-label="Inspiration suivante" onClick={() => setSlideIndex(i => (i + 1) % slides.length)}><ChevronRight /></Button>
           </div>
-          <ChevronDown className="h-5 w-5 text-primary/70 mr-4" />
-          <button type="submit" aria-label="Rechercher" className="h-[80%] aspect-square rounded-full bg-secondary text-secondary-foreground flex items-center justify-center hover:bg-secondary/90 active:scale-95 transition">
-            <Search className="h-6 w-6" />
-          </button>
+        </div>}
+        <form className="reference-search" onSubmit={e => { e.preventDefault(); go(query); }}>
+          <MapPin className="reference-search-pin" />
+          <div className="reference-search-field">
+            <label htmlFor="home-destination">Où souhaitez-vous séjourner ?</label>
+            <input id="home-destination" value={query} onChange={e => setQuery(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder={placeholder || 'Ex. Ouaga 2000, Bobo-Dioulasso, Manga…'} autoComplete="off" />
+          </div>
+          <Button variant="ghost" size="icon" type="button" aria-label="Filtres" title="Filtres" onClick={onOpenFilters} className="reference-filter"><SlidersHorizontal /></Button>
+          <Button variant="secondary" type="submit" size="icon" aria-label="Rechercher" className="reference-search-submit"><Search /></Button>
+          <HeroSearchSuggestions properties={properties} query={query} visible={focused && query.trim().length > 0} onPick={go} onSelectProperty={id => navigate(`/property/${id}`)} />
         </form>
-
-        {/* Carreaux quartiers */}
-        {TILES.map((t, i) => (
-          <motion.button key={t.name} onClick={() => go(t.name)}
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 + i * 0.08 }}
-            whileHover={{ y: -6 }}
-            className="absolute z-10 rounded-[20px] overflow-hidden bg-card p-[0.35%] shadow-elevation-2"
-            style={{ ...t.b, rotate: t.rot } as any}>
-            <img src={t.img} alt={t.name} className="w-full h-full object-cover rounded-[16px]" />
-            <span className="absolute left-[7%] bottom-[9%] bg-card rounded-xl shadow-elevation-2 px-3 py-2 flex items-center gap-2 text-[clamp(10px,1vw,14px)] font-semibold text-primary">
-              <MapPin className="h-4 w-4 text-secondary" /> {t.name} <ChevronRight className="h-4 w-4 text-primary/60" />
-            </span>
-          </motion.button>
-        ))}
-      </div>
+      </section>
+      <section className="reference-destinations" aria-label="Destinations au Burkina Faso">
+        <div className="reference-destination-heading">
+          <div><h2><ArrowRight /> Explorez <span>nos destinations</span></h2><p>Des quartiers vivants, des logements uniques, de nouvelles idées de séjour.</p></div>
+          <Button variant="ghost" onClick={() => go('')}>Voir plus <span className="reference-round-arrow"><ArrowRight /></span></Button>
+        </div>
+        <div className="reference-city-switch" aria-label="Ville de séjour">
+          {availableCities.map(city => <Button key={city.id} size="sm" variant={activeCity.id === city.id ? 'secondary' : 'ghost'} aria-pressed={activeCity.id === city.id} onClick={() => { setActiveCity(city.id); setSlideIndex(0); }}><MapPin />{city.name}</Button>)}
+        </div>
+        {activeCity.id === 'ouagadougou' ? <div className="reference-destination-row">
+          <Button variant="outline" size="icon" className="reference-destination-prev" aria-label="Destinations précédentes" onClick={() => setDestinationIndex(i => (i + 4) % 5)}><ChevronLeft /></Button>
+          {destinations.map((destination, index) => <Button variant="ghost" key={destination.name} className={`reference-destination destination-${index}`} onClick={() => go(destination.name)}>
+            <img src={destination.img} alt={`Inspiration — ${destination.name}`} />
+            <span className="reference-destination-caption"><small>{String(DESTINATIONS.indexOf(destination) + 1).padStart(2, '0')}</small><strong>{destination.name}</strong><span>Ouagadougou</span></span><span className="reference-destination-arrow"><ArrowRight /></span>
+          </Button>)}
+          <Button variant="outline" size="icon" className="reference-destination-next" aria-label="Destinations suivantes" onClick={() => setDestinationIndex(i => (i + 1) % 5)}><ChevronRight /></Button>
+        </div> : <div className="reference-other-city">
+          <h3>{activeCity.name}</h3>
+          <Button variant="outline" onClick={() => go(activeCity.name)}>Voir les logements <ArrowRight /></Button>
+        </div>}
+      </section>
     </div>
   );
-};
-
-export default HomeMockup;
+}

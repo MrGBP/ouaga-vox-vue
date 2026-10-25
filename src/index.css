@@ -279,3 +279,122 @@
 .ssh-pin-ico { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 999px; background: hsl(var(--secondary) / 0.15); font-size: 11px; }
 .ssh-pin-fav { color: hsl(var(--secondary)); font-size: 11px; }
 .ssh-pin.is-active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); transform: translate(-50%, -100%) scale(1.15); }
+
+/* Furnished homepage: user-supplied reference composition. */
+:root {
+  --home-ink: 231 63% 13%;
+  --home-photo-scrim: linear-gradient(to top, hsl(var(--home-ink) / .9), transparent 65%);
+  --home-photo-fade: linear-gradient(90deg, hsl(var(--card)) 0%, hsl(var(--card) / .98) 19%, hsl(var(--card) / .86) 29%, hsl(var(--card) / .35) 42%, transparent 58%);
+  --home-photo-top: linear-gradient(to bottom, hsl(var(--card) / .55), transparent 24%);
+}
+.reference-home { background: hsl(var(--card)); color: hsl(var(--home-ink)); }
+.reference-hero { position: relative; height: 470px; isolation: isolate; }
+.reference-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 54%; z-index: -2; }
+.reference-fade { position: absolute; inset: 0; background: var(--home-photo-fade), var(--home-photo-top); z-index: -1; }
+.reference-hero::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 26px; background: hsl(var(--card)); clip-path: polygon(0 70%, 20% 100%, 50% 100%, 75% 90%, 100% 0, 100% 100%, 0 100%); }
+.reference-header { position: relative; max-width: 1440px; margin: auto; display: flex; justify-content: space-between; align-items: center; padding: 17px 6%; gap: 16px; }
+.reference-brand { padding: 0; height: auto; gap: 7px; background: transparent; }
+.reference-brand img { width: 43px; height: 43px; object-fit: contain; mix-blend-mode: multiply; }
+.reference-brand span { text-align: left; }
+.reference-brand strong { font-size: 24px; color: hsl(var(--primary)); line-height: 1.1; }
+.reference-brand strong span { color: hsl(var(--secondary)); }
+.reference-brand small { display: block; font-size: 10px; color: hsl(var(--muted-foreground)); }
+.reference-header nav { display: flex; gap: 7px; align-items: center; }
+.reference-header nav > button, .reference-header nav > a { font-size: 12px; }
+.reference-header nav > .border { background: hsl(var(--card) / .3); border-color: hsl(var(--primary) / .65); color: hsl(var(--primary)); }
+.reference-copy { position: absolute; left: max(7%, calc((100% - 1260px) / 2)); top: 128px; z-index: 2; }
+.reference-copy h1 { font-size: 46px; font-weight: 800; line-height: 1.06; letter-spacing: 0; }
+.reference-copy h1 span { color: hsl(var(--secondary)); }
+.reference-copy p { margin-top: 13px; font: italic 19px/1.35 Georgia, serif; }
+.reference-copy-rule { display: block; width: 44px; height: 3px; margin-top: 12px; background: hsl(var(--secondary)); }
+.reference-carousel { position: absolute; top: 106px; right: 6%; width: 34%; max-width: 470px; height: 275px; }
+.reference-main-slide { position: absolute; top: 0; left: 25%; width: 54%; height: 244px; border: 3px solid hsl(var(--card)); padding: 0; overflow: hidden; border-radius: 22px; transform: rotate(-3deg); box-shadow: var(--elevation-3); }
+.reference-main-slide > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.reference-fan { position: absolute; width: 44%; height: 196px; top: 34px; object-fit: cover; border: 3px solid hsl(var(--card)); border-radius: 22px; }
+.fan-0 { left: 2%; transform: rotate(-9deg); }
+.fan-1 { right: 0; transform: rotate(11deg); }
+.fan-2 { left: 53%; top: 23px; transform: rotate(4deg); }
+.reference-slide-label { position: absolute; bottom: 12px; left: 8px; right: 8px; display: flex; gap: 5px; align-items: center; padding: 9px 7px; background: hsl(var(--card)); border-radius: 8px; text-align: left; color: hsl(var(--home-ink)); }
+.reference-slide-label > svg { color: hsl(var(--secondary)); }
+.reference-slide-label > span:nth-child(2) { flex: 1; min-width: 0; }
+.reference-slide-label strong { display: block; font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+.reference-slide-label small { display: block; font-size: 9px; color: hsl(var(--muted-foreground)); }
+.reference-round-arrow { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); flex-shrink: 0; }
+.reference-slide-controls { position: absolute; bottom: -4px; left: 40%; right: 8%; display: flex; align-items: center; justify-content: space-between; }
+.reference-slide-controls > button { background: hsl(var(--card) / .8); border-radius: 50%; width: 30px; height: 30px; }
+.reference-dots { display: flex; gap: 8px; }
+.reference-dots button { width: 8px; height: 8px; border-radius: 50%; padding: 0; background: hsl(var(--card) / .7); }
+.reference-dots .is-selected { background: hsl(var(--secondary)); outline: 2px solid hsl(var(--card) / .7); }
+.reference-search { position: absolute; left: 29%; bottom: 36px; width: 43%; min-width: 450px; display: flex; align-items: center; gap: 14px; padding: 9px 10px 9px 25px; background: hsl(var(--card)); border-radius: 50px; box-shadow: var(--elevation-3); z-index: 10; }
+.reference-search-pin { width: 26px; height: 26px; color: hsl(var(--secondary)); flex-shrink: 0; }
+.reference-search-field { flex: 1; min-width: 0; }
+.reference-search-field label { display: block; text-align: center; font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+.reference-search-field input { background: transparent; width: 100%; outline: none; font-size: 11px; color: hsl(var(--foreground)); text-align: center; }
+.reference-search-field input::placeholder { color: hsl(var(--muted-foreground)); }
+.reference-filter { border-left: 1px solid hsl(var(--border)); border-radius: 0; height: 32px; width: 38px; color: hsl(var(--primary)); }
+.reference-search-submit { width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0; }
+.reference-search-submit svg { width: 24px; height: 24px; }
+.reference-destinations { max-width: 1440px; margin: auto; padding: 24px 5% 35px; }
+.reference-destination-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.reference-destination-heading h2 { display: flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 800; letter-spacing: 0; }
+.reference-destination-heading h2 > svg, .reference-destination-heading h2 > span { color: hsl(var(--secondary)); }
+.reference-destination-heading p { font: 15px Georgia, serif; color: hsl(var(--muted-foreground)); margin: 4px 0 0 32px; }
+.reference-city-switch { display: flex; gap: 6px; margin: 14px 0 17px 32px; }
+.reference-city-switch button { font-size: 11px; height: 30px; }
+.reference-destination-row { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; }
+.reference-destination { position: relative; display: block; padding: 0; height: 185px; overflow: hidden; border-radius: 20px; transform: rotate(-2deg); }
+.reference-destination:hover { transform: translateY(-5px) rotate(0); }
+.destination-1 { border-radius: 60px 60px 35px 35px; transform: rotate(3deg); }
+.destination-2 { border-radius: 45% 45% 40% 40%; transform: rotate(-3deg); }
+.destination-3 { transform: rotate(-2deg); }
+.destination-4 { transform: rotate(2deg); }
+.reference-destination > img { width: 100%; height: 100%; object-fit: cover; }
+.reference-destination::after { position: absolute; content: ''; inset: 0; background: var(--home-photo-scrim); }
+.reference-destination-caption { position: absolute; left: 14px; bottom: 13px; z-index: 1; text-align: left; color: hsl(var(--primary-foreground)); }
+.reference-destination-caption small { display: block; background: hsl(var(--card)); color: hsl(var(--secondary)); width: 20px; text-align: center; border-radius: 50%; font-size: 10px; margin-bottom: 3px; }
+.reference-destination-caption strong { display: block; font-size: 13px; }
+.reference-destination-caption > span { display: block; font-size: 10px; opacity: .85; }
+.reference-destination-arrow { position: absolute; right: 10px; bottom: 16px; z-index: 1; color: hsl(var(--primary-foreground)); width: 25px; height: 25px; border: 1px solid hsl(var(--primary-foreground) / .65); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.reference-destination-prev, .reference-destination-next { position: absolute; z-index: 3; top: 40%; border-radius: 50%; box-shadow: var(--elevation-2); }
+.reference-destination-prev { left: -23px; }
+.reference-destination-next { right: -23px; }
+.reference-other-city { min-height: 160px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid hsl(var(--border)); }
+.reference-other-city h3 { font-size: 28px; }
+@media (max-width: 1100px) {
+  .reference-header { padding: 16px 5%; }
+  .reference-header nav { gap: 0; }
+  .reference-header nav > button, .reference-header nav > a { padding-left: 10px; padding-right: 10px; font-size: 11px; }
+  .reference-brand strong { font-size: 21px; }
+  .reference-copy { left: 6%; top: 135px; }
+  .reference-copy h1 { font-size: 35px; }
+  .reference-copy p { font-size: 17px; }
+  .reference-carousel { right: 4%; width: 36%; }
+  .reference-slide-label { gap: 3px; padding: 8px 4px; }
+  .reference-slide-label strong { font-size: 10px; }
+  .reference-slide-label small { font-size: 8px; }
+  .reference-slide-label .reference-round-arrow { width: 23px; height: 23px; }
+  .reference-destination-heading h2 { font-size: 22px; }
+  .reference-search { left: 27%; }
+}
+@media (max-width: 850px) {
+  .reference-brand strong { font-size: 18px; }
+  .reference-brand img { width: 34px; height: 34px; }
+  .reference-header nav > button, .reference-header nav > a { padding: 7px; font-size: 10px; }
+  .reference-copy h1 { font-size: 29px; }
+  .reference-copy p { font-size: 15px; }
+  .reference-carousel { top: 120px; width: 34%; }
+  .reference-main-slide { height: 215px; width: 64%; left: 18%; }
+  .reference-fan { height: 170px; }
+  .reference-slide-controls { bottom: 23px; }
+  .reference-slide-label small { display: none; }
+  .reference-search { left: 20%; min-width: 430px; }
+  .reference-destination-heading h2 { font-size: 20px; }
+  .reference-destination-heading p { font-size: 12px; }
+  .reference-destination { height: 150px; }
+  .reference-destination-caption { left: 10px; }
+  .reference-destination-caption strong { font-size: 11px; }
+  .reference-destination-arrow { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reference-home *, .reference-home *::after { transition: none !important; animation: none !important; }
+}

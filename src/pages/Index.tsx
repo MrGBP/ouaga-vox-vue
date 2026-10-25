@@ -34,6 +34,7 @@ import heroImage from '@/assets/hero-quartier-africain.jpg';
 import IntentSwitch, { readIntent, type HomeIntent } from '@/components/home/IntentSwitch';
 import FurnishedBentoHero from '@/components/home/FurnishedBentoHero';
 import HomeMockup from '@/components/home/HomeMockup';
+import { prioritizeCity } from '@/lib/cityDiscovery';
 const HOME_MOCKUP_ONLY = true;
 
 interface Property {
@@ -255,7 +256,7 @@ const Index = () => {
         }
       } catch (e) { console.warn('Supabase properties merge failed:', e); }
 
-      const merged = [...realProps, ...cityProps];
+      const merged = prioritizeCity([...realProps, ...cityProps], activeCity.name);
       setProperties(merged);
       setFilteredProperties(merged);
       setPois(finalPois);
@@ -620,7 +621,7 @@ const Index = () => {
   // ═══════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-background">
-      <HomeMockup />
+      <HomeMockup properties={availableProperties(properties)} onOpenFilters={() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' })} />
 
       {/* Accès Reels — explorer tout le catalogue */}
       <section className="container mx-auto px-4 pb-4">
