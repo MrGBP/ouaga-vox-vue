@@ -642,7 +642,7 @@ const Index = () => {
 
       {intent === 'meuble' ? (
         <FurnishedBentoHero
-          properties={properties}
+          properties={properties as any}
           cityName={activeCity.name}
           onSearch={(q) => navigate(`/resultats?q=${encodeURIComponent(q)}&mode=meuble`)}
           onPropertyClick={handlePropertyClick}
