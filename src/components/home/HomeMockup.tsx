@@ -53,7 +53,7 @@ const HomeMockup = () => {
           <nav className="flex items-center gap-8 text-sm font-medium text-foreground">
             <button onClick={() => navigate('/publier')} className="hover:text-secondary">Devenir hôte</button>
             <button onClick={() => navigate('/resultats')} className="hover:text-secondary">Nos logements</button>
-            <button onClick={() => navigate('/legal/aide')} className="hover:text-secondary">Aide</button>
+            <button onClick={() => { window.location.href = 'mailto:support@sapsaphouse.com'; }} className="hover:text-secondary">Aide</button>
             <button onClick={() => navigate('/auth')} className="h-11 px-5 rounded-xl border-2 border-primary/70 text-primary font-semibold hover:bg-primary/5">Se connecter</button>
             <button onClick={() => navigate('/auth?mode=signup')} className="h-11 px-6 rounded-xl bg-secondary text-secondary-foreground font-semibold inline-flex items-center gap-2 hover:bg-secondary/90">
               S'inscrire <ArrowRight className="h-4 w-4" />
