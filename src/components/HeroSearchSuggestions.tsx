@@ -119,7 +119,7 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.18 }}
-          className="absolute left-0 right-0 top-full mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-border/50 overflow-hidden max-h-[420px] overflow-y-auto"
+            className="absolute left-0 right-0 top-full mt-2 z-50 bg-popover rounded-lg shadow-2xl border border-border/50 overflow-hidden max-h-[420px] overflow-y-auto"
         >
           {q.length === 0 ? (
             <div className="p-3">
@@ -131,7 +131,7 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
                   <Button variant="ghost"
                     key={p}
                     onMouseDown={(e) => { e.preventDefault(); onPick(p); }}
-                    className="px-3 py-1.5 rounded-full bg-muted hover:bg-primary hover:text-white text-xs font-medium text-foreground transition-colors"
+                    className="px-3 py-1.5 rounded-full bg-muted hover:bg-primary hover:text-primary-foreground text-xs font-medium text-foreground transition-colors"
                   >
                     {p}
                   </Button>
@@ -147,7 +147,7 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
                     <Button variant="ghost"
                       key={qname}
                       onMouseDown={(e) => { e.preventDefault(); onPick(qname); }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-left transition-colors"
+                      className="w-full h-auto justify-start flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-left transition-colors"
                     >
                       <MapPin className="h-4 w-4 text-secondary shrink-0" />
                       <span className="text-sm font-medium text-foreground">{qname}</span>
@@ -170,7 +170,7 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
                           if (onSelectProperty) onSelectProperty(p.id);
                           else onPick(p.title);
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left transition-colors"
+                        className="w-full h-auto justify-start flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left transition-colors"
                       >
                         <span className="text-lg shrink-0">{getTypeEmoji(p.type)}</span>
                         <div className="min-w-0 flex-1">
