@@ -18,6 +18,7 @@ import ResultatsPage from "./pages/Resultats";
 import PropertyPage from "./pages/Property";
 import MonCompte from "./pages/MonCompte";
 import Publier from "./pages/Publier";
+import ReelsPage from "./pages/Reels";
 import NotFound from "./pages/NotFound";
 import { useCountryLocale } from "@/hooks/useCountryLocale";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
@@ -62,6 +63,7 @@ const App = () => {
               <Route path="/bien/:id" element={<PropertyPage />} />
               <Route path="/mon-compte" element={<MonCompte />} />
               <Route path="/publier" element={<Publier />} />
+              <Route path="/reels" element={<ReelsPage />} />
               <Route
                 path="/admin/*"
                 element={
