@@ -158,7 +158,15 @@ const FurnishedBentoHero = ({ properties, cityName, onSearch, onPropertyClick }:
           {Array.from({ length: 5 }).map((_, i) => {
             const tile = quartierTiles[i];
             const pos = ['col-start-4 row-start-1', 'col-start-4 row-start-2', 'col-start-4 row-start-3', 'col-start-1 col-span-2 row-start-4', 'col-start-3 col-span-2 row-start-4'][i];
-            if (!tile) return <div key={i} className={`${pos} rounded-2xl bg-muted`} />;
+            if (!tile) {
+              const pool = featured.flatMap(p => (p.images || []).filter(Boolean));
+              const imgs = pool.length ? [...pool.slice(i % pool.length), ...pool.slice(0, i % pool.length)] : [];
+              return (
+                <div key={i} className={`${pos} relative rounded-2xl overflow-hidden bg-muted`}>
+                  {imgs.length > 0 && <RotatingImage images={imgs} interval={5000 + i * 700} alt="Logement meublé" />}
+                </div>
+              );
+            }
             const [name, imgs] = tile;
             return (
               <button
