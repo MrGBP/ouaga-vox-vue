@@ -2,6 +2,7 @@ import type { Property } from '@/lib/mockData';
 import { getTypeLabel, CHAR_CHECKS, RAW_MOCK_QUARTIERS as mockQuartiers } from '@/lib/mockData';
 import type { FilterState } from '@/components/FilterBar';
 import { smartFilter } from '@/lib/smartMatch';
+import { prioritizeCity } from '@/lib/cityDiscovery';
 
 const OR_GROUPS = [
   ['bed_1', 'bed_2', 'bed_3', 'bed_4plus'],
@@ -26,15 +27,6 @@ export function filterProperties(
 ): Property[] {
   let result = source.filter(p => p.status !== 'rented' && p.available !== false);
   if (favsOnly) result = result.filter(p => favSet.has(p.id));
-
-  // City scope — when an active city is provided, restrict to properties
-  // whose city matches (case-insensitive). Legacy items without a city
-  // are kept to avoid hiding data.
-  if (cityName && cityName.trim()) {
-    const target = cityName.trim().toLowerCase();
-    result = result.filter(p => !p.city || p.city.trim().toLowerCase() === target);
-  }
-
 
   if (query.trim()) {
     const dynamic = Array.from(new Set(source.map(p => p.quartier).filter(Boolean)));
@@ -82,5 +74,5 @@ export function filterProperties(
     result = result.filter(p => (p.surface_area || 0) >= f.minSurface);
   }
 
-  return result;
+  return cityName ? prioritizeCity(result, cityName) : result;
 }

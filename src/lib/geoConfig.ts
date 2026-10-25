@@ -16,6 +16,16 @@ export interface CityConfig {
 }
 
 export const CITIES: Record<string, CityConfig> = {
+  'bobo-dioulasso': {
+    id: 'bobo-dioulasso', name: 'Bobo-Dioulasso', country: 'BF', countryName: 'Burkina Faso',
+    flag: '🇧🇫', currency: 'FCFA', language: 'fr', center: [11.1771, -4.2979], zoom: 13,
+    bounds: [[11.02, -4.48], [11.34, -4.12]], phone_prefix: '+226', price_unit: 'FCFA',
+  },
+  manga: {
+    id: 'manga', name: 'Manga', country: 'BF', countryName: 'Burkina Faso',
+    flag: '🇧🇫', currency: 'FCFA', language: 'fr', center: [11.6636, -1.0731], zoom: 13,
+    bounds: [[11.56, -1.18], [11.77, -0.97]], phone_prefix: '+226', price_unit: 'FCFA',
+  },
   ouagadougou: {
     id: 'ouagadougou',
     name: 'Ouagadougou',

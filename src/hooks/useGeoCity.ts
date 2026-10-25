@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { CITIES as ALL_CITIES, DEFAULT_CITY } from '@/lib/geoConfig';
+import { burkinaCityId } from '@/lib/cityDiscovery';
 
 // Burkina Faso uniquement pour le moment (autres pays en pause)
-const CITIES = { [DEFAULT_CITY]: ALL_CITIES[DEFAULT_CITY] } as typeof ALL_CITIES;
+const CITIES = Object.fromEntries(Object.entries(ALL_CITIES).filter(([, city]) => city.country === 'BF'));
 const COUNTRY_TO_CITY: Record<string, string> = { BF: DEFAULT_CITY };
 
 const GEO_STORAGE_KEY = 'sapsap_selected_city';
@@ -24,7 +25,7 @@ const initialId = (() => {
 const store: State = {
   activeCityId: initialId,
   isDetecting: true,
-  hasManualOverride: !!(typeof window !== 'undefined' && localStorage.getItem(GEO_STORAGE_KEY)),
+  hasManualOverride: !!(typeof window !== 'undefined' && CITIES[localStorage.getItem(GEO_STORAGE_KEY) || '']),
   wasAutoSwitched: false,
 };
 
@@ -48,9 +49,9 @@ const startDetection = () => {
     .then((r) => r.json())
     .then((data) => {
       const cc = data?.country_code;
-      const cityId = cc && COUNTRY_TO_CITY[cc];
+      const cityId = cc === 'BF' ? (burkinaCityId(data?.city || '') || COUNTRY_TO_CITY.BF) : undefined;
       if (cityId && CITIES[cityId]) {
-        const auto = cityId !== DEFAULT_CITY && !sessionStorage.getItem(GEO_AUTO_DETECTED_KEY);
+        const auto = cityId !== store.activeCityId && !sessionStorage.getItem(GEO_AUTO_DETECTED_KEY);
         if (auto) sessionStorage.setItem(GEO_AUTO_DETECTED_KEY, '1');
         setState({ activeCityId: cityId, wasAutoSwitched: auto, isDetecting: false });
       } else {

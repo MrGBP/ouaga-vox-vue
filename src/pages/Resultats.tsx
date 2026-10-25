@@ -15,6 +15,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import Header from '@/components/Header';
 import { filterProperties } from '@/lib/filterProperties';
 import { computeFilterOptions } from '@/lib/filterOptions';
+import { prioritizeCity } from '@/lib/cityDiscovery';
 
 const FAV_KEY = 'sapsap_favorites';
 const FILTERS_KEY = 'sapsap_filters_v1';
@@ -71,8 +72,8 @@ const ResultatsPage = () => {
     const furnishedOnly = results.filter(p => (isTypeFurnished(p.type) || !!p.furnished) && p.status !== 'rented');
     if (hasUserFilter) return furnishedOnly;
     const score = (p: Property) => ((p.comfort_rating || 0) + (p.security_rating || 0) + (p.accessibility_rating || 0));
-    return [...furnishedOnly].sort((a, b) => score(b) - score(a));
-  }, [results, hasUserFilter]);
+    return prioritizeCity([...furnishedOnly].sort((a, b) => score(b) - score(a)), activeCity.name);
+  }, [results, hasUserFilter, activeCity.name]);
 
   // Sync bidirectionnel carte ⇄ liste (Nielsen : visibility of system status)
   const [focusedId, setFocusedId] = useState<string | null>(null);
