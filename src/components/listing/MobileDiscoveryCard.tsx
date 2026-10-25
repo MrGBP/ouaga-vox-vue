@@ -1,3 +1,5 @@
+import { cardHighlights } from '@/lib/cardHighlights';
+import PropertyTypeIcon from '@/components/PropertyTypeIcon';
 import { Heart, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getTypeLabel, type Property } from '@/lib/mockData';
@@ -14,15 +16,20 @@ export default function MobileDiscoveryCard({ property, favorite, onOpen, onTogg
   const { value, mode } = displayPrice(property);
   return (
     <article className="relative flex gap-3 border-b border-border py-4 bg-card">
-      <Button variant="ghost" className="h-28 w-28 shrink-0 overflow-hidden rounded-lg p-0" onClick={() => onOpen(property.id)} aria-label={`Voir ${property.title}`}>
+      <Button variant="ghost" className="h-32 w-36 shrink-0 overflow-hidden rounded-lg p-0" onClick={() => onOpen(property.id)} aria-label={`Voir ${property.title}`}>
         <img src={property.images?.[0] || '/placeholder-property.svg'} alt={property.title} loading="lazy" className="h-full w-full object-cover" />
       </Button>
       <div className="min-w-0 flex-1 flex flex-col justify-center pr-8">
-        <p className="text-[11px] text-muted-foreground truncate">{getTypeLabel(property.type)} · {property.quartier}</p>
+        <p className="flex items-center gap-1 text-[11px] text-muted-foreground truncate"><PropertyTypeIcon type={property.type} size={14} />{getTypeLabel(property.type)} · {property.quartier}</p>
         <Button variant="ghost" onClick={() => onOpen(property.id)} className="h-auto p-0 justify-start whitespace-normal text-left text-sm font-semibold text-foreground hover:bg-transparent">
           <span className="line-clamp-2">{property.title}</span>
         </Button>
-        <p className="mt-2 text-sm font-bold text-primary">{new Intl.NumberFormat('fr-FR').format(value)} {property.currency || 'FCFA'}<span className="text-[11px] font-normal text-muted-foreground"> /{mode}</span></p>
+        {cardHighlights(property).length > 0 && (
+          <ul className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+            {cardHighlights(property).map(h => <li key={h.key} className="after:content-['·'] after:ml-2 last:after:content-none">{h.label}</li>)}
+          </ul>
+        )}
+        <p className="mt-1.5 text-sm font-bold text-primary">{new Intl.NumberFormat('fr-FR').format(value)} {property.currency || 'FCFA'}<span className="text-[11px] font-normal text-muted-foreground"> /{mode}</span></p>
         <Button variant="ghost" onClick={() => onOpen(property.id)} className="h-7 w-fit px-0 text-xs text-muted-foreground">Voir le bien <ArrowUpRight className="ml-1 h-3 w-3" /></Button>
       </div>
       <Button variant="ghost" size="icon" className="absolute right-0 top-3 h-9 w-9 rounded-full" onClick={() => onToggleFavorite(property.id)} aria-label={favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} aria-pressed={favorite}>
