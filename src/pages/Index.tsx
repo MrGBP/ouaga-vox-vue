@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,7 +14,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileApp from '@/components/MobileApp';
 
-import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
+import { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import { filterProperties } from '@/lib/filterProperties';
 import { computeFilterOptions } from '@/lib/filterOptions';
 import PropertyCard from '@/components/PropertyCard';
@@ -401,7 +401,7 @@ const Index = () => {
     if (isMobile) {
       nav.push({ screen: 'carte-niveau3', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
     } else {
-      document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [isMobile, nav]);
 
@@ -436,7 +436,7 @@ const Index = () => {
     } else {
       // Desktop : garder la fiche ouverte à côté de la carte
       setDetailProperty(prop);
-      setTimeout(() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      setTimeout(() => document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
   }, [properties, detailProperty, isMobile, nav]);
 
@@ -468,7 +468,7 @@ const Index = () => {
       setFocusedPropertyId(id);
       setDetailProperty(prop);
       setActiveQuartier(prop.quartier);
-      document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -484,7 +484,7 @@ const Index = () => {
     setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
     setMapQuartierTrigger(q.name);
     
-    if (!isMobile) document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
+    if (!isMobile) document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const toggleFavorite = (id: string) => {
@@ -620,7 +620,7 @@ const Index = () => {
   // ═══════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-background">
-      <HomeMockup properties={availableProperties(properties)} onOpenFilters={() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' })} />
+      <HomeMockup properties={availableProperties(properties)} onOpenFilters={() => navigate('/resultats')} />
 
       {/* Accès Reels — explorer tout le catalogue */}
       <section className="container mx-auto px-4 pb-4">
@@ -640,40 +640,13 @@ const Index = () => {
       {/* ③ Engagements — 3 piliers de confiance (Hick's Law) */}
       <EngagementsSection />
 
-      {/* ④ Carte interactive + Filters + Detail Panel */}
-      <section id="map" className="container mx-auto px-4 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Filtrer les biens</h2>
-        </div>
-
-        <FilterBar
-          onFilterChange={handleFilterChange}
-          onReset={handleFullReset}
-          quartiers={filterOpts.quartiers}
-          totalCount={availableProperties(properties).length}
-          filteredCount={displayProperties.length}
-          favoritesCount={favorites.size}
-          showFavoritesOnly={showFavoritesOnly}
-          onToggleFavoritesView={toggleFavoritesView}
-          computeFilteredCount={computeFilteredCount}
-          externalFilters={filters}
-          priceBounds={{ min: filterOpts.priceMin, max: filterOpts.priceMax }}
-          availableTypeValues={filterOpts.typeValues}
-          onAfterApply={(f) => {
-            try { localStorage.setItem('sapsap_filters_v1', JSON.stringify(f)); } catch { /* noop */ }
-            navigate(`/resultats?q=${encodeURIComponent(searchQuery || '')}`);
-          }}
-        />
-
-      </section>
-
       {/* ③ Slogan + Featured Carousel */}
       <section className="container mx-auto px-4 py-10">
         <div className="text-center mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
             Trouvez votre <span className="text-primary">chez vous</span> partout au Burkina Faso
           </h2>
-          <p className="text-sm text-muted-foreground mt-2">Location meublée · Bureau · Commerce · Découvrez nos biens mis en avant</p>
+          <p className="text-sm text-muted-foreground mt-2">Chaque demeure est meublée et prête à vivre — pour une nuit comme pour plusieurs mois.</p>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollable">
           {availableProperties(properties).slice(0, 8).map((p) => {
@@ -746,18 +719,17 @@ const Index = () => {
                     const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
                       .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2);
                     return pages.map((page, idx) => (
-                      <>
+                      <Fragment key={page}>
                         {idx > 0 && pages[idx - 1] !== page - 1 && (
-                          <span key={`e${page}`} className="px-1 text-muted-foreground">…</span>
+                          <span className="px-1 text-muted-foreground">…</span>
                         )}
                         <button
-                          key={page}
                           onClick={() => { setPageTransition(true); setTimeout(() => { setCurrentPage(page); setTimeout(() => setPageTransition(false), 50); }, 100); }}
                           className={`h-10 w-10 rounded-xl text-sm font-medium transition-colors ${currentPage === page ? 'bg-primary text-primary-foreground' : 'border border-border hover:bg-muted'}`}
                         >
                           {page}
                         </button>
-                      </>
+                      </Fragment>
                     ));
                   })()}
                   <button

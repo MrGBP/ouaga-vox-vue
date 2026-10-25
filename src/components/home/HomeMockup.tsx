@@ -94,9 +94,9 @@ export default function HomeMockup({ properties = [], onOpenFilters }: { propert
            <HeroSearchSuggestions furnishedOnly properties={properties} query={query} visible={focused && query.trim().length > 0} onPick={go} onSelectProperty={id => navigate(`/property/${id}`)} />
         </form>
       </section>
-      <section className="reference-destinations" aria-label="Destinations au Burkina Faso">
+      <section className="reference-destinations" aria-label="Demeures au Burkina Faso">
         <div className="reference-destination-heading">
-          <div><h2><ArrowRight /> Explorez <span>nos destinations</span></h2><p>Des quartiers vivants, des logements uniques, de nouvelles idées de séjour.</p></div>
+          <div><h2><ArrowRight /> Explorez <span>nos demeures</span></h2><p>Des quartiers vivants, des logements uniques, de nouvelles idées de séjour.</p></div>
           <Button variant="ghost" onClick={() => go('')}>Voir plus <span className="reference-round-arrow"><ArrowRight /></span></Button>
         </div>
         <div className="reference-destination-row">
