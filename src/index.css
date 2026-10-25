@@ -279,7 +279,10 @@
   border: 1.5px solid hsl(var(--secondary));
   transition: transform .15s ease, background .15s ease;
 }
-.ssh-pin-ico { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 999px; background: hsl(var(--secondary) / 0.15); font-size: 11px; }
+.ssh-pin-ico { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 999px; background: hsl(var(--muted)); }
+.ssh-cluster { position: absolute; transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 2px; padding: 4px 8px; border-radius: 999px; background: hsl(var(--card)); border: 1.5px solid hsl(var(--primary)); box-shadow: var(--skeu-raised); font: 700 11px/1 Inter, system-ui, sans-serif; color: hsl(var(--primary)); }
+.ssh-cluster b { margin-left: 3px; }
+.ssh-pin.is-active .ssh-pin-ico { background: hsl(var(--card)); }
 .ssh-pin-fav { color: hsl(var(--secondary)); font-size: 11px; }
 .ssh-pin.is-active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); transform: translate(-50%, -100%) scale(1.15); }
 
@@ -407,3 +410,17 @@
 @media (prefers-reduced-motion: reduce) {
   .reference-home *, .reference-home *::after { transition: none !important; animation: none !important; }
 }
+
+/* Skeuomorphisme léger + micro-animations SapSapHouse */
+:root {
+  --skeu-raised: 0 1px 0 hsl(0 0% 100% / .7) inset, 0 2px 4px hsl(var(--primary) / .12), 0 6px 14px -6px hsl(var(--primary) / .25);
+  --skeu-pressed: inset 0 2px 5px hsl(var(--primary) / .22), inset 0 -1px 0 hsl(0 0% 100% / .5);
+}
+.skeu-tab { transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .15s ease, background .15s ease; }
+.skeu-tab:active { transform: scale(.92); }
+.skeu-tab-icon { display: inline-flex; padding: 5px 14px; border-radius: 999px; transition: box-shadow .18s ease, background .18s ease, transform .18s cubic-bezier(.3,1.6,.5,1); }
+.skeu-tab[aria-current="page"] .skeu-tab-icon { background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--muted))); box-shadow: var(--skeu-pressed); transform: translateY(-1px); }
+.btn-alive { transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .15s ease, background-color .15s ease, color .15s ease; }
+.btn-alive:hover { transform: translateY(-1px); }
+.btn-alive:active { transform: translateY(0) scale(.96); }
+@media (prefers-reduced-motion: reduce) { .btn-alive, .skeu-tab, .skeu-tab-icon { transition: none; transform: none !important; } }

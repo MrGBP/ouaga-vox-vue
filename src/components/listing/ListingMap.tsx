@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import { typeIconSvg } from '@/components/PropertyTypeIcon';
+import { shortPrice } from '@/lib/cardHighlights';
 import { getTypeEmoji, getTypeLabel, pricePerNight, type Property } from '@/lib/mockData';
 import { getRentMode } from '@/lib/typeHelpers';
 import { Plus, Minus, Layers } from 'lucide-react';
@@ -8,7 +12,8 @@ import { Button } from '@/components/ui/button';
 
 const TILE_SAT = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const TILE_LABELS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
-const TILE_PLAN = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const TILE_PLAN = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const ATTR_OSM = '&copy; OpenStreetMap';
 
 const fmtShort = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace('.0', '')}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n);
 export const coordsOf = (p: Property): [number, number] | null => {
@@ -20,12 +25,22 @@ export const displayPrice = (p: Property) => {
   return { value: mode === 'nuit' ? pricePerNight(p.price) : p.price, mode };
 };
 
-const pinHtml = (p: Property, active: boolean, fav: boolean, mobile: boolean) => {
-  const { value, mode } = displayPrice(p);
+const pinHtml = (p: Property, active: boolean, fav: boolean, _mobile: boolean) => {
+  const { value } = displayPrice(p);
   return `<div class="ssh-pin${active ? ' is-active' : ''}">
-    ${mobile ? '' : `<span class="ssh-pin-ico">${getTypeEmoji(p.type)}</span>`}
-    <span class="ssh-pin-price">${mobile ? new Intl.NumberFormat('fr-FR').format(value) : fmtShort(value)}${mobile ? ` F / ${mode}` : ''}</span>${fav ? '<span class="ssh-pin-fav">♥</span>' : ''}
+    <span class="ssh-pin-ico">${typeIconSvg(p.type, 16)}</span>
+    <span class="ssh-pin-price">${shortPrice(value)}</span>${fav ? '<span class="ssh-pin-fav">♥</span>' : ''}
   </div>`;
+};
+
+const clusterIcon = (cluster: any) => {
+  const children: L.Marker[] = cluster.getAllChildMarkers();
+  const types = Array.from(new Set(children.map((m: any) => m.options.sshType as string))).slice(0, 3);
+  return L.divIcon({
+    className: 'ssh-pin-wrap',
+    html: `<div class="ssh-cluster">${types.map(t => typeIconSvg(t, 14)).join('')}<b>${children.length}</b></div>`,
+    iconSize: [0, 0],
+  });
 };
 
 interface Props {
@@ -46,6 +61,7 @@ const ListingMap = ({ properties, activeId, favorites, onHover, onOpen, onToggle
   const base = useRef<L.TileLayer | null>(null);
   const labels = useRef<L.TileLayer | null>(null);
   const markers = useRef<Map<string, L.Marker>>(new Map());
+  const group = useRef<any>(null);
   const [sat, setSat] = useState(true);
   const lastKey = useRef('');
 
@@ -53,7 +69,9 @@ const ListingMap = ({ properties, activeId, favorites, onHover, onOpen, onToggle
     if (!el.current || map.current) return;
     const m = L.map(el.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: true, zoomSnap: 0.5, wheelPxPerZoomLevel: 120 })
       .setView([12.3714, -1.5197], 12);
-    base.current = L.tileLayer(TILE_SAT, { maxZoom: 19 }).addTo(m);
+    base.current = L.tileLayer(TILE_SAT, { maxZoom: 19, attribution: 'Esri · ' + ATTR_OSM }).addTo(m);
+    L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(m);
+    group.current = (L as any).markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 48, spiderfyOnMaxZoom: true, iconCreateFunction: clusterIcon }).addTo(m);
     labels.current = L.tileLayer(TILE_LABELS, { maxZoom: 19, opacity: 0.85 }).addTo(m);
     map.current = m;
     return () => { m.remove(); map.current = null; markers.current.clear(); };
@@ -83,17 +101,17 @@ const ListingMap = ({ properties, activeId, favorites, onHover, onOpen, onToggle
   // Markers
   useEffect(() => {
     const m = map.current; if (!m) return;
-    markers.current.forEach(mk => mk.remove());
+    group.current?.clearLayers();
     markers.current.clear();
     const pts: [number, number][] = [];
     properties.forEach(p => {
       const c = coordsOf(p); if (!c) return;
       pts.push(c);
-      const mk = L.marker(c, { bubblingMouseEvents: false, icon: L.divIcon({ className: 'ssh-pin-wrap', html: pinHtml(p, p.id === activeId, favorites.has(p.id), mobile), iconSize: [0, 0] }), riseOnHover: true })
-        .addTo(m)
+      const mk = L.marker(c, { bubblingMouseEvents: false, icon: L.divIcon({ className: 'ssh-pin-wrap', html: pinHtml(p, p.id === activeId, favorites.has(p.id), mobile), iconSize: [0, 0] }), riseOnHover: true, sshType: p.type } as any)
         .on('mouseover', () => { if (!mobile) onHover(p.id); })
         .on('mouseout', () => { if (!mobile) onHover(null); })
         .on('click', () => { if (mobile) onSelect?.(p.id); else onOpen(p.id); });
+      group.current?.addLayer(mk);
       markers.current.set(p.id, mk);
     });
     const key = properties.map(p => p.id).join(',');
