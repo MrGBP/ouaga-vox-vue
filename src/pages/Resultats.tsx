@@ -38,7 +38,10 @@ const ResultatsPage = () => {
   };
   const [filters, setFilters] = useState<FilterState>(loadFilters);
   useEffect(() => {
-    const sync = () => setFilters(loadFilters());
+    const sync = () => setFilters(current => {
+      const saved = loadFilters();
+      return JSON.stringify(current) === JSON.stringify(saved) ? current : saved;
+    });
     window.addEventListener('storage', sync);
     window.addEventListener('focus', sync);
     return () => {
@@ -104,7 +107,9 @@ const ResultatsPage = () => {
     return open;
   });
   const [aiOpen, setAiOpen] = useState(false);
-  useEffect(() => { setFocusedId(null); }, [results]);
+  useEffect(() => {
+    if (focusedId && !results.some(property => property.id === focusedId)) setFocusedId(null);
+  }, [results, focusedId]);
   const selected = results.find(p => p.id === focusedId);
   const openProperty = useCallback((id: string) => navigate(`/property/${encodeURIComponent(id)}`), [navigate]);
   const noHover = useCallback((_id: string | null) => {}, []);

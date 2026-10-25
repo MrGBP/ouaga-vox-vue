@@ -496,22 +496,6 @@ export default function MobileApp(props: MobileAppProps) {
     if (tab === 'map') {
       navigate(`/resultats?view=map&q=${encodeURIComponent(props.searchQuery || '')}`);
       return;
-      // Click on Carte in the navbar → ALWAYS reset to global Ouagadougou view
-      // (niveau 1) with all pins. Keeps filters/search intact, just recenters
-      // the map and closes any open property / active quartier. The normal
-      // quartier-tap → niveau 2 logic still works after that.
-      setMobileTab('map');
-      setShowMobileSearch(false);
-      props.onMobileTabChange('map');
-      // Close any open property + leave the active quartier so we go back to N1.
-      if (props.detailProperty) props.onDetailClose();
-      props.onFocusClear();
-      props.onQuartierChange(null); // also bumps mapResetTrigger → recenters Ouaga
-      // Reset the nav stack to a clean carte-niveau1 entry.
-      if (nav.current.screen !== 'carte-niveau1') {
-        nav.push({ screen: 'carte-niveau1' });
-      }
-      return;
     }
     // home / favorites / profile → fresh section
     props.onDetailClose();
