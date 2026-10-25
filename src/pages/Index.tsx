@@ -568,7 +568,6 @@ const Index = () => {
   if (isMobile) {
     return (
       <>
-        <MapFeatureTour />
         <MobileApp
           properties={properties}
           filteredProperties={filteredProperties}
