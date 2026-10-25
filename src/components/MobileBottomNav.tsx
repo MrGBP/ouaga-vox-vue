@@ -1,5 +1,5 @@
-import { Compass, Map, Heart, User } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Home, Search, Heart, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -8,11 +8,10 @@ interface MobileBottomNavProps {
 }
 
 const MobileBottomNav = ({ activeTab, onTabChange, favoritesCount = 0 }: MobileBottomNavProps) => {
-  const { t } = useTranslation();
   // 4 onglets (Hick's Law) — search fusionné dans Explorer/home
   const tabs = [
-    { id: 'home', label: 'Explorer', icon: Compass },
-    { id: 'map', label: 'Carte', icon: Map },
+    { id: 'home', label: 'Accueil', icon: Home },
+    { id: 'search', label: 'Explorer', icon: Search },
     { id: 'favorites', label: 'Favoris', icon: Heart },
     { id: 'profile', label: 'Compte', icon: User },
   ];
@@ -26,23 +25,23 @@ const MobileBottomNav = ({ activeTab, onTabChange, favoritesCount = 0 }: MobileB
       }}
     >
       {tabs.map(tab => {
-        const isActive = activeTab === tab.id;
+        const isActive = activeTab === tab.id || (activeTab === 'map' && tab.id === 'search');
         const Icon = tab.icon;
         return (
-          <button
+          <Button variant="ghost"
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className="relative flex flex-col items-center justify-center flex-1 min-h-[52px] transition-transform active:scale-95"
+            className="relative h-[52px] rounded-none flex flex-col items-center justify-center gap-0 flex-1 transition-transform active:scale-95"
             aria-label={tab.label}
             aria-current={isActive ? 'page' : undefined}
           >
             <Icon
-              className={`h-[22px] w-[22px] transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`h-[22px] w-[22px] transition-colors ${isActive ? 'text-secondary' : 'text-muted-foreground'}`}
               strokeWidth={isActive ? 2.4 : 1.75}
             />
             <span
               className={`text-[10px] mt-0.5 font-medium transition-colors ${
-                isActive ? 'text-primary' : 'text-muted-foreground/80'
+                isActive ? 'text-secondary' : 'text-muted-foreground/80'
               }`}
             >
               {tab.label}
@@ -52,7 +51,7 @@ const MobileBottomNav = ({ activeTab, onTabChange, favoritesCount = 0 }: MobileB
                 {favoritesCount}
               </span>
             )}
-          </button>
+          </Button>
         );
       })}
     </nav>

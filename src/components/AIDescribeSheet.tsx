@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sparkles, X, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   open: boolean;
@@ -62,21 +63,21 @@ export default function AIDescribeSheet({ open, onClose }: Props) {
             <div className="px-5 pb-5">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-[#1A3560] to-[#2a5090] flex items-center justify-center shadow-md">
-                    <Sparkles className="w-4 h-4 text-[#E8761A]" strokeWidth={2.5} />
+                  <div className="relative w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-primary" strokeWidth={2.5} />
                   </div>
                   <div className="leading-tight">
-                    <div className="text-sm font-bold text-foreground">Assistant SapSap</div>
+                    <div className="text-sm font-bold text-foreground">SapSap AI</div>
                     <div className="text-[11px] text-muted-foreground">Décrivez votre bien idéal</div>
                   </div>
                 </div>
-                <button
+                <Button variant="ghost" size="icon"
                   onClick={onClose}
                   aria-label="Fermer"
                   className="min-h-[36px] min-w-[36px] flex items-center justify-center text-muted-foreground"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
 
               <div className="relative rounded-2xl border-2 border-border focus-within:border-primary/50 transition-colors bg-background">
@@ -94,27 +95,27 @@ export default function AIDescribeSheet({ open, onClose }: Props) {
                   rows={3}
                   className="w-full resize-none bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none rounded-2xl"
                 />
-                <button
+                <Button size="icon"
                   onClick={() => submit()}
                   disabled={!value.trim()}
                   className="absolute bottom-2 right-2 h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
                   aria-label="Rechercher"
                 >
                   <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-                </button>
+                </Button>
               </div>
 
               <div className="mt-3">
                 <div className="text-[11px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">Idées</div>
                 <div className="flex gap-1.5 flex-wrap">
                   {SUGGESTIONS.map((s) => (
-                    <button
+                    <Button variant="outline"
                       key={s}
                       onClick={() => submit(s)}
-                      className="text-[11px] px-2.5 py-1.5 rounded-full bg-muted hover:bg-muted/70 text-foreground/80 border border-border active:scale-95 transition-transform text-left"
+                      className="text-[11px] h-auto whitespace-normal px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/70 text-foreground/80 border border-border active:scale-95 transition-transform text-left"
                     >
                       {s}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
