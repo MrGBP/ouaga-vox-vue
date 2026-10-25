@@ -709,28 +709,6 @@ const Index = () => {
                 <Button variant="outline" size="icon" aria-label="Logements suivants" title="Suivant" disabled={currentPage === totalPages} onClick={() => handlePageChange(1)}><ChevronRight className="h-4 w-4" /></Button>
               </nav>
             )}
-                        <button
-                          onClick={() => { setPageTransition(true); setTimeout(() => { setCurrentPage(page); setTimeout(() => setPageTransition(false), 50); }, 100); }}
-                          className={`h-10 w-10 rounded-xl text-sm font-medium transition-colors ${currentPage === page ? 'bg-primary text-primary-foreground' : 'border border-border hover:bg-muted'}`}
-                        >
-                          {page}
-                        </button>
-                      </Fragment>
-                    ));
-                  })()}
-                  <button
-                    onClick={() => { setPageTransition(true); setTimeout(() => { setCurrentPage(p => Math.min(totalPages, p + 1)); setTimeout(() => setPageTransition(false), 50); }, 100); }}
-                    disabled={currentPage === totalPages}
-                    className="h-10 px-4 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-muted transition-colors"
-                  >
-                    Suivant →
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {(currentPage - 1) * ITEMS_PER_PAGE + 1} – {Math.min(currentPage * ITEMS_PER_PAGE, displayProperties.length)} sur {displayProperties.length} biens
-                </p>
-              </div>
-            )}
           </>
         ) : (
           <div className="text-center py-20 bg-card border border-border rounded-xl">
