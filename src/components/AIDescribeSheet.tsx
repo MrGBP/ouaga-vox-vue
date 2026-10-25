@@ -9,10 +9,10 @@ interface Props {
 }
 
 const SUGGESTIONS = [
-  'Villa 3 chambres avec piscine à Ouaga 2000',
-  'Studio meublé pas cher à Zogona',
-  'Appartement climatisé avec parking à Pissy',
-  'Bureau moderne à Koulouba',
+  'Villa meublée 3 chambres avec piscine à Ouaga 2000',
+  'Studio meublé climatisé pas cher à Zogona',
+  'Appartement meublé avec wifi et parking à Koulouba',
+  'Maison meublée avec groupe électrogène moins de 50 000 la nuit',
 ];
 
 export default function AIDescribeSheet({ open, onClose }: Props) {
@@ -31,7 +31,8 @@ export default function AIDescribeSheet({ open, onClose }: Props) {
     const query = (q ?? value).trim();
     if (!query) return;
     onClose();
-    navigate(`/search?q=${encodeURIComponent(query)}`);
+    // Résultats directs : le texte libre est décodé (type, quartier, budget, équipements).
+    navigate(`/resultats?q=${encodeURIComponent(query)}`);
   };
 
   return (

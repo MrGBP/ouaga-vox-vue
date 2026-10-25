@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
+import AIDescribeSheet from '@/components/AIDescribeSheet';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import HeroSearchSuggestions, { useHeroTypewriter } from '@/components/HeroSearchSuggestions';
@@ -31,6 +32,7 @@ export default function HomeMockup({ properties = [], onOpenFilters }: { propert
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const [destinationIndex, setDestinationIndex] = useState(0);
   const placeholder = useHeroTypewriter(!focused && !query);
@@ -46,6 +48,7 @@ export default function HomeMockup({ properties = [], onOpenFilters }: { propert
 
   return (
     <div className="reference-home">
+      <AIDescribeSheet open={aiOpen} onClose={() => setAiOpen(false)} />
       <section className="reference-hero">
         <AnimatePresence initial={false}>
           <motion.img key={current.image} src={current.image} alt={`Inspiration meublée — ${current.name}`} className="reference-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} />
@@ -89,6 +92,7 @@ export default function HomeMockup({ properties = [], onOpenFilters }: { propert
             <label htmlFor="home-destination">Où souhaitez-vous séjourner ?</label>
             <input id="home-destination" value={query} onChange={e => setQuery(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder={placeholder || 'Ex. Ouaga 2000, Bobo-Dioulasso, Manga…'} autoComplete="off" />
           </div>
+          <Button variant="ghost" size="icon" type="button" aria-label="Décrire mon besoin à l'assistant IA" title="Assistant IA" onClick={() => setAiOpen(true)} className="reference-filter"><Sparkles /></Button>
           <Button variant="ghost" size="icon" type="button" aria-label="Filtres" title="Filtres" onClick={onOpenFilters} className="reference-filter"><SlidersHorizontal /></Button>
           <Button variant="secondary" type="submit" size="icon" aria-label="Rechercher" className="reference-search-submit"><Search /></Button>
            <HeroSearchSuggestions furnishedOnly properties={properties} query={query} visible={focused && query.trim().length > 0} onPick={go} onSelectProperty={id => navigate(`/property/${id}`)} />
