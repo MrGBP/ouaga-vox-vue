@@ -49,7 +49,13 @@ const HomeMockup = () => {
 
         {/* Header */}
         <header className="absolute inset-x-0 top-0 flex items-center justify-between z-20" style={{ padding: '1.4% 4.7%' }}>
-          <img src={logo} alt="SapSapHouse — Mon bien Immo en un clic" className="h-14 w-auto object-contain mix-blend-multiply" />
+          <button onClick={() => navigate('/')} className="flex items-center gap-2" aria-label="SapSapHouse — accueil">
+            <img src={logo} alt="" className="h-12 w-auto object-contain mix-blend-multiply" />
+            <span className="text-left leading-none">
+              <span className="block font-display font-bold text-[26px] text-primary">SapSap<span className="text-secondary">House</span></span>
+              <span className="block text-[11px] tracking-wide text-muted-foreground mt-1">Mon bien Immo en un clic</span>
+            </span>
+          </button>
           <nav className="flex items-center gap-8 text-sm font-medium text-foreground">
             <button onClick={() => navigate('/publier')} className="hover:text-secondary">Devenir hôte</button>
             <button onClick={() => navigate('/resultats')} className="hover:text-secondary">Nos logements</button>
@@ -67,7 +73,7 @@ const HomeMockup = () => {
           <p className="flex items-center gap-3 text-[clamp(10px,0.9vw,13px)] font-semibold tracking-[0.12em] uppercase text-primary/70">
             <span className="h-0.5 w-7 bg-secondary" /> Séjours courts • Maisons meublées
           </p>
-          <h1 className="mt-[4%] font-display font-extrabold leading-[1.08] tracking-tight text-primary text-[clamp(30px,3.9vw,58px)]">
+          <h1 className="mt-[4%] font-display font-extrabold leading-[1.08] tracking-tight text-primary text-[clamp(28px,3.6vw,54px)]">
             Réservez des<br />
             <span className="text-secondary">logements meublés</span><br />
             à Ouagadougou.
