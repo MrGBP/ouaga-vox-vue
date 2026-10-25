@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, TrendingUp } from 'lucide-react';
 import { getTypeLabel, getTypeEmoji, isTypeFurnished, pricePerNight } from '@/lib/mockData';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { furnishedSuggestionProperties } from '@/lib/furnishedSuggestions';
+import { Button } from '@/components/ui/button';
 
 interface Property {
   id: string;
@@ -20,15 +22,16 @@ interface Props {
   onPick: (query: string) => void;
   onSelectProperty?: (id: string) => void;
   visible: boolean;
+  furnishedOnly?: boolean;
 }
 
 const TYPEWRITER_BY_COUNTRY: Record<string, string[]> = {
   BF: [
     'Villa meublée 4 chambres à Tampouy…',
-    'Studio climatisé proche école à Koulouba…',
-    'Appartement 2ch avec parking à Ouaga 2000…',
-    "Local commercial moins de 150 000 FCFA à Pissy…",
-    "Villa avec piscine et clôture à Ouaga 2000…",
+    'Studio meublé climatisé à Koulouba…',
+    'Appartement meublé 2ch à Ouaga 2000…',
+    'Chambre meublée à Zogona…',
+    'Villa meublée avec piscine à Ouaga 2000…',
   ],
   ML: [
     'Villa meublée 4 chambres à Hamdallaye…',
@@ -42,7 +45,7 @@ const TYPEWRITER_BY_COUNTRY: Record<string, string[]> = {
   ],
 };
 
-const POPULAR = ['Villa Ouaga 2000', 'Studio meublé', 'Appartement 2 chambres', 'Bureau', 'Villa piscine'];
+const POPULAR = ['Villa meublée Ouaga 2000', 'Studio meublé', 'Appartement meublé', 'Chambre meublée'];
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 
@@ -50,7 +53,7 @@ export function useHeroTypewriter(active: boolean) {
   const { activeCity } = useGeoCity();
   const phrases = useMemo(() => activeCity.id === 'ouagadougou'
     ? TYPEWRITER_BY_COUNTRY.BF
-    : [`Maison meublée à ${activeCity.name}…`, `Studio climatisé à ${activeCity.name}…`, `Appartement meublé à ${activeCity.name}…`], [activeCity.id, activeCity.name]);
+    : [`Maison meublée à ${activeCity.name}…`, `Studio meublé climatisé à ${activeCity.name}…`, `Appartement meublé à ${activeCity.name}…`], [activeCity.id, activeCity.name]);
   const [text, setText] = useState('');
   const [idx, setIdx] = useState(0);
   const [deleting, setDeleting] = useState(false);
@@ -79,12 +82,13 @@ export function useHeroTypewriter(active: boolean) {
   return text;
 }
 
-const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, visible }: Props) => {
+const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, visible, furnishedOnly = false }: Props) => {
+  const suggestionProperties = useMemo(() => furnishedOnly ? furnishedSuggestionProperties(properties) : properties, [properties, furnishedOnly]);
   const q = query.trim().toLowerCase();
 
   const results = useMemo(() => {
     if (q.length === 0) return [];
-    return properties
+    return suggestionProperties
       .filter(p => {
         return (
           p.title.toLowerCase().includes(q) ||
@@ -95,17 +99,17 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
         );
       })
       .slice(0, 6);
-  }, [properties, q]);
+  }, [suggestionProperties, q]);
 
   // Quartiers matching
   const quartiers = useMemo(() => {
     if (q.length === 0) return [];
     const set = new Set<string>();
-    properties.forEach(p => {
+    suggestionProperties.forEach(p => {
       if (p.quartier.toLowerCase().includes(q)) set.add(p.quartier);
     });
     return Array.from(set).slice(0, 4);
-  }, [properties, q]);
+  }, [suggestionProperties, q]);
 
   return (
     <AnimatePresence>
@@ -115,7 +119,7 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.18 }}
-          className="absolute left-0 right-0 top-full mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-border/50 overflow-hidden max-h-[420px] overflow-y-auto"
+            className="absolute left-0 right-0 top-full mt-2 z-50 bg-popover rounded-lg shadow-2xl border border-border/50 overflow-hidden max-h-[420px] overflow-y-auto"
         >
           {q.length === 0 ? (
             <div className="p-3">
@@ -124,13 +128,13 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
               </p>
               <div className="flex flex-wrap gap-1.5 p-1.5">
                 {POPULAR.map(p => (
-                  <button
+                  <Button variant="ghost"
                     key={p}
                     onMouseDown={(e) => { e.preventDefault(); onPick(p); }}
-                    className="px-3 py-1.5 rounded-full bg-muted hover:bg-primary hover:text-white text-xs font-medium text-foreground transition-colors"
+                    className="px-3 py-1.5 rounded-full bg-muted hover:bg-primary hover:text-primary-foreground text-xs font-medium text-foreground transition-colors"
                   >
                     {p}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -140,14 +144,14 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
                 <div className="p-2 border-b border-border/50">
                   <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Quartiers</p>
                   {quartiers.map(qname => (
-                    <button
+                    <Button variant="ghost"
                       key={qname}
                       onMouseDown={(e) => { e.preventDefault(); onPick(qname); }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-left transition-colors"
+                      className="w-full h-auto justify-start flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-left transition-colors"
                     >
                       <MapPin className="h-4 w-4 text-secondary shrink-0" />
                       <span className="text-sm font-medium text-foreground">{qname}</span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -159,14 +163,14 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
                     const price = isFurnished ? pricePerNight(p.price) : p.price;
                     const suffix = isFurnished ? '/nuit' : '/mois';
                     return (
-                      <button
+                      <Button variant="ghost"
                         key={p.id}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           if (onSelectProperty) onSelectProperty(p.id);
                           else onPick(p.title);
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left transition-colors"
+                        className="w-full h-auto justify-start flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-left transition-colors"
                       >
                         <span className="text-lg shrink-0">{getTypeEmoji(p.type)}</span>
                         <div className="min-w-0 flex-1">
@@ -178,7 +182,7 @@ const HeroSearchSuggestions = ({ properties, query, onPick, onSelectProperty, vi
                         <span className="text-xs font-semibold text-primary shrink-0">
                           {fmt(price)} {p.currency || 'FCFA'}{suffix}
                         </span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>

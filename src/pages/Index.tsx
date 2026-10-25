@@ -23,7 +23,6 @@ import VirtualTourModal from '@/components/VirtualTourModal';
 import PropertyDetailPanel from '@/components/PropertyDetailPanel';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import RecentlyViewed from '@/components/RecentlyViewed';
-import QuartiersSection from '@/components/QuartiersSection';
 import { EngagementsSection, CommentCaMarcheSection } from '@/components/StorySections';
 import FeaturesShowcase from '@/components/FeaturesShowcase';
 import HeroSearchSuggestions, { useHeroTypewriter } from '@/components/HeroSearchSuggestions';
@@ -637,11 +636,6 @@ const Index = () => {
           <span className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center group-hover:translate-x-1 transition">▶</span>
         </button>
       </section>
-
-      {/* ② Quartiers — exploration territoriale (Gestalt : grille homogène) */}
-      {quartiers.length > 0 && (
-        <QuartiersSection quartiers={quartiers as any} onQuartierClick={handleQuartierClick} />
-      )}
 
       {/* ③ Engagements — 3 piliers de confiance (Hick's Law) */}
       <EngagementsSection />
