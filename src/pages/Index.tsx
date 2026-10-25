@@ -33,6 +33,8 @@ import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/hero-quartier-africain.jpg';
 import IntentSwitch, { readIntent, type HomeIntent } from '@/components/home/IntentSwitch';
 import FurnishedBentoHero from '@/components/home/FurnishedBentoHero';
+import HomeMockup from '@/components/home/HomeMockup';
+const HOME_MOCKUP_ONLY = true;
 
 interface Property {
   id: string;
@@ -614,6 +616,9 @@ const Index = () => {
   // ═══════════════════════════════════════════════════════════════
   // DESKTOP LAYOUT (>= 768px) — unchanged
   // ═══════════════════════════════════════════════════════════════
+  // Home desktop/tablette = maquette validée ; sections suivantes en pause
+  if (HOME_MOCKUP_ONLY) return <HomeMockup />;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
