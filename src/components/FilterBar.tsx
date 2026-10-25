@@ -9,6 +9,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { PROPERTY_TYPES, CHAR_CHECKS } from '@/lib/mockData';
 import type { Property } from '@/lib/mockData';
 import MobileDraggableDrawer from '@/components/MobileDraggableDrawer';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export interface FilterState {
   type: string;
@@ -247,8 +249,10 @@ const FilterBar = ({
   const filterContent = (
     <div className="p-5 space-y-6">
       {/* 7 TYPES OFFICIELS */}
-      <div>
-        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Type de bien</h4>
+      <Accordion type="single" collapsible defaultValue="type">
+      <AccordionItem value="type">
+        <AccordionTrigger className="text-sm">Type de logement</AccordionTrigger>
+        <AccordionContent>
         <div className="grid grid-cols-2 gap-2">
           {visibleTypes.map(t => {
             const hasMatches = typeHasMatches(t.value);
@@ -273,11 +277,15 @@ const FilterBar = ({
             );
           })}
         </div>
-      </div>
+        </AccordionContent>
+      </AccordionItem>
 
+      <AccordionItem value="quartier"><AccordionTrigger className="text-sm">Quartier</AccordionTrigger><AccordionContent>
+        <Select value={draft.quartier} onValueChange={quartier => setDraft(d => ({ ...d, quartier }))}><SelectTrigger><SelectValue placeholder="Tous les quartiers" /></SelectTrigger><SelectContent><SelectItem value="all">Tous les quartiers</SelectItem>{quartiers.map(q => <SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent></Select>
+      </AccordionContent></AccordionItem>
       {/* PRIX */}
-      <div>
-        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Prix (FCFA/mois)</h4>
+      <AccordionItem value="budget"><AccordionTrigger className="text-sm">Budget mensuel</AccordionTrigger><AccordionContent>
+        <h4 className="text-xs text-muted-foreground mb-1">Prix (FCFA/mois)</h4>
         <p className="text-sm font-semibold text-foreground mb-3">
           {fmt(draft.minPrice)} — {fmt(draft.maxPrice)}
         </p>
@@ -291,12 +299,11 @@ const FilterBar = ({
           max={PRICE_MAX}
           step={Math.max(1000, Math.round((PRICE_MAX - PRICE_MIN) / 200 / 1000) * 1000)}
         />
-      </div>
+      </AccordionContent></AccordionItem>
 
       {/* CARACTÉRISTIQUES — GROUPED CHECKBOXES */}
       {CHAR_GROUPS.map(group => (
-        <div key={group.title}>
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">{group.title}</h4>
+        <AccordionItem key={group.title} value={group.title}><AccordionTrigger className="text-sm">{group.title}</AccordionTrigger><AccordionContent>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
             {group.items.map(item => (
               <label key={item.key} className="flex items-center gap-2 cursor-pointer group">
@@ -321,12 +328,11 @@ const FilterBar = ({
               />
             </div>
           )}
-        </div>
+        </AccordionContent></AccordionItem>
       ))}
 
       {/* OPTIONS */}
-      <div>
-        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Options</h4>
+      <AccordionItem value="options"><AccordionTrigger className="text-sm">Visite virtuelle</AccordionTrigger><AccordionContent>
         <button
           onClick={() => setDraft(d => ({ ...d, hasVirtualTour: !d.hasVirtualTour }))}
           className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all active:scale-[0.98] ${
@@ -339,7 +345,8 @@ const FilterBar = ({
           <span>Visite 360° disponible</span>
           {draft.hasVirtualTour && <Check className="h-3.5 w-3.5 ml-auto" />}
         </button>
-      </div>
+      </AccordionContent></AccordionItem>
+      </Accordion>
 
       {/* Spacer pour ne pas que le contenu soit caché derrière la barre d'actions sticky */}
       {forceOpen && <div aria-hidden className="h-20" />}
@@ -362,7 +369,7 @@ const FilterBar = ({
           className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
         >
           <Check className="h-3.5 w-3.5" />
-          Appliquer ({draftCount} bien{draftCount !== 1 ? 's' : ''})
+          Appliquer
         </Button>
       </div>
     </div>
@@ -415,9 +422,7 @@ const FilterBar = ({
           </button>
         )}
 
-        <span className="text-xs text-muted-foreground ml-auto">
-          <span className="font-bold text-foreground">{filteredCount}</span> bien{filteredCount > 1 ? 's' : ''}
-        </span>
+
       </div>
 
       {/* Drawer/Dropdown */}

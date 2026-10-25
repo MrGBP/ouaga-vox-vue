@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -342,9 +342,9 @@ const Index = () => {
     } catch {}
     if (filtered.length > 0) {
       if (usedFallback) {
-        toast({ title: '💡 Aucun résultat exact', description: `Voici ${filtered.length} bien(s) proche(s) de votre recherche.` });
+        toast({ title: '💡 Aucun résultat exact', description: 'Voici des logements proches de votre recherche.' });
       } else {
-        toast({ title: '🔍 Résultats', description: `${filtered.length} bien(s) trouvé(s)` });
+        toast({ title: '🔍 Résultats', description: 'Votre sélection est prête.' });
       }
     } else {
       toast({ title: 'Aucun résultat', description: 'Élargissez votre recherche.', variant: 'destructive' });
@@ -370,7 +370,7 @@ const Index = () => {
     const results = applyFilters(properties, searchQuery, newFilters, showFavoritesOnly, favorites);
     setFilteredProperties(results);
     if (results.length > 0) {
-      toast({ title: `✅ ${results.length} bien${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''} à votre recherche` });
+      toast({ title: 'Votre sélection a été mise à jour' });
     } else {
       toast({ title: 'Aucun résultat', description: 'Essayez de décocher une ou deux options.', variant: 'destructive' });
     }
@@ -391,7 +391,7 @@ const Index = () => {
     setMapResetTrigger(prev => prev + 1);
     const all = applyFilters(properties, '', DEFAULT_FILTERS, false, favorites);
     setFilteredProperties(all);
-    toast({ title: `🔄 Filtres réinitialisés — ${all.length} biens affichés` });
+    toast({ title: 'Filtres réinitialisés' });
   };
 
   const handleViewDetails = useCallback((property: Property) => {
@@ -678,9 +678,7 @@ const Index = () => {
           <h2 className="text-2xl font-bold text-foreground">
             {showFavoritesOnly ? '❤️ Mes favoris' : searchQuery ? `Résultats pour "${searchQuery}"` : 'Tous les biens'}
           </h2>
-          <span className="text-sm text-muted-foreground font-medium">
-            <span className="text-foreground font-bold">{displayProperties.length}</span> résultat{displayProperties.length > 1 ? 's' : ''}
-          </span>
+
         </div>
 
         {searchFallbackHint && (
@@ -706,23 +704,11 @@ const Index = () => {
             </motion.div>
 
             {totalPages > 1 && (
-              <div className="mt-10 flex flex-col items-center gap-3">
-                <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                  <button
-                    onClick={() => { setPageTransition(true); setTimeout(() => { setCurrentPage(p => Math.max(1, p - 1)); setTimeout(() => setPageTransition(false), 50); }, 100); }}
-                    disabled={currentPage === 1}
-                    className="h-10 px-4 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-muted transition-colors"
-                  >
-                    ← Précédent
-                  </button>
-                  {(() => {
-                    const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2);
-                    return pages.map((page, idx) => (
-                      <Fragment key={page}>
-                        {idx > 0 && pages[idx - 1] !== page - 1 && (
-                          <span className="px-1 text-muted-foreground">…</span>
-                        )}
+              <nav className="mt-10 flex justify-center gap-4" aria-label="Autres logements">
+                <Button variant="outline" size="icon" aria-label="Logements précédents" title="Précédent" disabled={currentPage === 1} onClick={() => handlePageChange(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+                <Button variant="outline" size="icon" aria-label="Logements suivants" title="Suivant" disabled={currentPage === totalPages} onClick={() => handlePageChange(1)}><ChevronRight className="h-4 w-4" /></Button>
+              </nav>
+            )}
                         <button
                           onClick={() => { setPageTransition(true); setTimeout(() => { setCurrentPage(page); setTimeout(() => setPageTransition(false), 50); }, 100); }}
                           className={`h-10 w-10 rounded-xl text-sm font-medium transition-colors ${currentPage === page ? 'bg-primary text-primary-foreground' : 'border border-border hover:bg-muted'}`}

@@ -74,7 +74,7 @@ const Footer = () => {
             </a>
           </div>
           <p className="text-xs text-muted-foreground mt-4">
-            {t('footer.propulse_par')} <span className="font-semibold text-primary">SapSap AI Engine</span>
+            {t('footer.propulse_par')} <span className="font-semibold text-primary">SapSap AI</span>
           </p>
         </div>
       </div>
