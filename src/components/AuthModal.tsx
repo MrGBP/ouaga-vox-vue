@@ -175,8 +175,8 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
   // Reset on open/close
   useEffect(() => {
     if (open) {
-      setStep('choose');
-      setMethod('whatsapp');
+      setStep('enter');
+      setMethod('email');
       setCountry(defaultCountry);
       setPhoneLocal(''); setEmail(''); setCode(''); setName('');
       setBusy(false); setResendIn(0);
@@ -283,14 +283,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
   // ---- Screens ----
   const ChooseScreen = (
     <div className="space-y-3">
-      <button
-        onClick={() => { setMethod('whatsapp'); setStep('enter'); }}
-        className="w-full h-14 rounded-2xl text-[15px] font-semibold text-white flex items-center justify-center gap-2.5 transition active:scale-[0.98] shadow-sm"
-        style={{ background: '#25D366' }}
-      >
-        <MessageCircle className="h-5 w-5" />
-        {T.with_whatsapp}
-      </button>
+      {/* WhatsApp OTP masqué : le fournisseur SMS/WhatsApp n'est pas encore activé côté serveur */}
       <button
         onClick={() => { setMethod('email'); setStep('enter'); }}
         className="w-full h-14 rounded-2xl text-[15px] font-semibold text-white flex items-center justify-center gap-2.5 transition active:scale-[0.98] shadow-sm"
