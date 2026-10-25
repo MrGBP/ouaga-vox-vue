@@ -229,6 +229,7 @@ export default function MobileApp(props: MobileAppProps) {
   // Lazy init pour éviter un flash de l'accueil quand on arrive depuis
   // "Voir sur la carte" (flags posés AVANT navigate par Property.tsx).
   const [mobileTab, setMobileTab] = useState(() => {
+    if (new URLSearchParams(window.location.search).get('favorites') === '1') return 'favorites';
     try {
       const forced = sessionStorage.getItem('sapsap_force_tab');
       if (forced) return forced;
@@ -377,7 +378,7 @@ export default function MobileApp(props: MobileAppProps) {
   );
 
   const favoriteProperties = useMemo(() =>
-    props.properties.filter(p => props.favorites.has(p.id)),
+    availableProperties(props.properties).filter(p => props.favorites.has(p.id)),
     [props.properties, props.favorites]
   );
 
