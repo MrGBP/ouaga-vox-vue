@@ -395,15 +395,16 @@ const Index = () => {
   };
 
   const handleViewDetails = useCallback((property: Property) => {
+    if (!isMobile) {
+      addToRecentlyViewed(property);
+      navigate(`/property/${encodeURIComponent(property.id)}`);
+      return;
+    }
     setDetailProperty(property);
     setFocusedPropertyId(property.id);
     addToRecentlyViewed(property);
-    if (isMobile) {
-      nav.push({ screen: 'carte-niveau3', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
-    } else {
-      document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [isMobile, nav]);
+    nav.push({ screen: 'carte-niveau3', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
+  }, [isMobile, nav, navigate]);
 
   const handlePropertyClick = useCallback((id: string) => {
     const prop = properties.find(p => p.id === id);
