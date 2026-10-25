@@ -14,7 +14,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MobileApp from '@/components/MobileApp';
 
-import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
+import { FilterState, DEFAULT_FILTERS } from '@/components/FilterBar';
 import { filterProperties } from '@/lib/filterProperties';
 import { computeFilterOptions } from '@/lib/filterOptions';
 import PropertyCard from '@/components/PropertyCard';
@@ -401,7 +401,7 @@ const Index = () => {
     if (isMobile) {
       nav.push({ screen: 'carte-niveau3', propertyTitle: property.title, propertyQuartier: property.quartier, propertyId: property.id });
     } else {
-      document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [isMobile, nav]);
 
@@ -436,7 +436,7 @@ const Index = () => {
     } else {
       // Desktop : garder la fiche ouverte à côté de la carte
       setDetailProperty(prop);
-      setTimeout(() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      setTimeout(() => document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
   }, [properties, detailProperty, isMobile, nav]);
 
@@ -468,7 +468,7 @@ const Index = () => {
       setFocusedPropertyId(id);
       setDetailProperty(prop);
       setActiveQuartier(prop.quartier);
-      document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -484,7 +484,7 @@ const Index = () => {
     setFilteredProperties(applyFilters(properties, '', newFilters, showFavoritesOnly, favorites));
     setMapQuartierTrigger(q.name);
     
-    if (!isMobile) document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
+    if (!isMobile) document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const toggleFavorite = (id: string) => {
@@ -620,7 +620,7 @@ const Index = () => {
   // ═══════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-background">
-      <HomeMockup properties={availableProperties(properties)} onOpenFilters={() => document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' })} />
+      <HomeMockup properties={availableProperties(properties)} onOpenFilters={() => navigate('/resultats')} />
 
       {/* Accès Reels — explorer tout le catalogue */}
       <section className="container mx-auto px-4 pb-4">
