@@ -1,4 +1,5 @@
 # Homepage update
+- [ ] Refine mobile homepage to match the supplied image while retaining discreet AI, no catalog carousel or reassurance badges, and unchanged desktop/detail pages.
 - [x] Simplify mobile homepage: discreet SapSap AI, remove catalog carousel and trust badges, improve featured copy and icon-only pagination.
 - [x] Connect mobile compact list and satellite price map, selection preview, discreet filters and consistent navigation.
 - [x] Remove visible inventory counts from filters and discovery pages; verify mobile flows and desktop preservation.
