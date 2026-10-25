@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -719,18 +719,17 @@ const Index = () => {
                     const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
                       .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2);
                     return pages.map((page, idx) => (
-                      <>
+                      <Fragment key={page}>
                         {idx > 0 && pages[idx - 1] !== page - 1 && (
-                          <span key={`e${page}`} className="px-1 text-muted-foreground">…</span>
+                          <span className="px-1 text-muted-foreground">…</span>
                         )}
                         <button
-                          key={page}
                           onClick={() => { setPageTransition(true); setTimeout(() => { setCurrentPage(page); setTimeout(() => setPageTransition(false), 50); }, 100); }}
                           className={`h-10 w-10 rounded-xl text-sm font-medium transition-colors ${currentPage === page ? 'bg-primary text-primary-foreground' : 'border border-border hover:bg-muted'}`}
                         >
                           {page}
                         </button>
-                      </>
+                      </Fragment>
                     ));
                   })()}
                   <button
