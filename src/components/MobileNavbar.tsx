@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Building2, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin, LogIn, UserPlus, LogOut, User as UserIcon, Heart } from 'lucide-react';
+import { Building2, Bell, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin, LogIn, UserPlus, LogOut, User as UserIcon, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import logo from '@/assets/sapsap-logo.png';
+import NotificationBell from '@/components/NotificationBell';
 
 export type NavLevel = 1 | 2 | 3;
 
 interface MobileNavbarProps {
+  homePresentation?: boolean;
   level: NavLevel;
   quartierName?: string;
   quartierCount?: number;
@@ -42,6 +44,7 @@ const LevelDots = ({ depth }: { depth: number }) => {
 };
 
 const MobileNavbar = ({
+  homePresentation = false,
   level,
   quartierName,
   quartierCount,
@@ -73,9 +76,9 @@ const MobileNavbar = ({
   return (
     <>
       <nav
-        className="flex lg:hidden fixed top-0 left-0 right-0 items-center justify-between z-[80] no-select"
+        className={`flex lg:hidden fixed top-0 left-0 right-0 items-center justify-between z-[80] no-select ${homePresentation ? 'mobile-home-navbar' : ''}`}
         style={{
-          height: 'calc(52px + env(safe-area-inset-top))',
+          height: `calc(${homePresentation ? 64 : 52}px + env(safe-area-inset-top))`,
           paddingTop: 'env(safe-area-inset-top)',
           paddingLeft: 'max(0.75rem, env(safe-area-inset-left))',
           paddingRight: 'max(0.75rem, env(safe-area-inset-right))',
@@ -90,7 +93,7 @@ const MobileNavbar = ({
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {!showBack ? (
             <>
-              <Button variant="ghost" className="h-auto p-0 gap-2 hover:bg-transparent" aria-label="SapSapHouse — accueil" onClick={() => navigate('/')}><img src={logo} alt="" className="w-9 h-9 object-contain" /><span className="text-left"><strong className="block text-sm text-primary">SapSap<span className="text-secondary">House</span></strong><small className="block text-[9px] text-muted-foreground">Mon bien Immo en un clic</small></span></Button>
+              <Button variant="ghost" className="h-auto p-0 gap-2 hover:bg-transparent" aria-label="SapSapHouse — accueil" onClick={() => navigate('/')}><img src={logo} alt="" className={homePresentation ? 'w-10 h-10 object-contain' : 'w-9 h-9 object-contain'} /><span className="text-left"><strong className={`block text-primary ${homePresentation ? 'text-base' : 'text-sm'}`}>SapSap<span className="text-secondary">House</span></strong><small className="block text-[9px] text-muted-foreground">Mon bien Immo en un clic</small></span></Button>
             </>
           ) : (
             <>
@@ -132,6 +135,7 @@ const MobileNavbar = ({
 
         {/* Right */}
         <div className="flex items-center gap-1 shrink-0">
+          {homePresentation && (user ? <NotificationBell className="!h-11 !w-11 bg-card shadow-soft" /> : <Button variant="ghost" size="icon" aria-label="Notifications" title="Notifications" className="h-11 w-11 rounded-full bg-card shadow-soft" onClick={() => openAuthModal('consulter vos notifications')}><Bell className="h-5 w-5 text-primary" /></Button>)}
           {showHome && onHome && (
             <button
               onClick={onHome}
@@ -141,7 +145,7 @@ const MobileNavbar = ({
               <HomeIcon className="h-4 w-4 text-secondary-foreground" />
             </button>
           )}
-          {favoritesCount > 0 && onFavoritesClick && (
+          {!homePresentation && favoritesCount > 0 && onFavoritesClick && (
             <button
               onClick={onFavoritesClick}
               className="relative min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
@@ -155,13 +159,13 @@ const MobileNavbar = ({
             </button>
           )}
           {!showBack && (
-            <button
+            <Button variant="ghost" size="icon"
               onClick={() => setDrawerOpen(true)}
               aria-label="Menu"
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+              className={`min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-muted transition-colors ${homePresentation ? 'rounded-full bg-card shadow-soft' : 'rounded-lg'}`}
             >
               <Menu className="h-5 w-5 text-foreground" />
-            </button>
+            </Button>
           )}
         </div>
       </nav>

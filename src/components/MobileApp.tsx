@@ -31,21 +31,6 @@ import { Headphones } from 'lucide-react';
 import MobileDiscoveryCard from '@/components/listing/MobileDiscoveryCard';
 import MobileHomeIntro from '@/components/home/MobileHomeIntro';
 import { type Property as CatalogProperty } from '@/lib/mockData';
-import salonImg from '@/assets/home/salon.jpg';
-import wayalghinImg from '@/assets/home/wayalghin.jpg';
-import kouloubaImg from '@/assets/home/koulouba.jpg';
-import paspangaImg from '@/assets/home/paspanga.jpg';
-import zogonaImg from '@/assets/home/zogona.jpg';
-import zoneBoisImg from '@/assets/home/zone-du-bois.jpg';
-
-const MOBILE_QUARTIERS = [
-  { name: 'Wayalghin', img: wayalghinImg },
-  { name: 'Koulouba', img: kouloubaImg },
-  { name: 'Paspanga', img: paspangaImg },
-  { name: 'Zogona', img: zogonaImg },
-  { name: 'Zone du Bois', img: zoneBoisImg },
-];
-
 interface Property {
   id: string;
   title: string;
@@ -692,65 +677,12 @@ export default function MobileApp(props: MobileAppProps) {
             className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
             style={{ paddingTop: 'calc(64px + env(safe-area-inset-top))', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}
           >
-            {/* ═══ HERO MOBILE — maquette : photo meublée + titre + recherche ═══ */}
-            <section className="relative overflow-hidden">
-              <img src={salonImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/75 to-background" />
-              <div className="relative z-10 px-5 pt-6 pb-5">
-                <motion.h1
-                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}
-                  className="font-display font-extrabold text-primary leading-[1.08] tracking-normal text-[28px]"
-                >
-                  Réservez des<br /><span className="text-secondary">logements meublés</span><br />partout au Burkina.
-                </motion.h1>
-                <p className="text-[13px] text-muted-foreground mt-2 leading-relaxed">
-                  Maisons, studios, appartements meublés pour vos courts comme longs séjours.
-                </p>
-
-                {/* Recherche capsule + filtres */}
-                <div className="mt-4 w-full h-12 rounded-full bg-card border border-border shadow-md flex items-center gap-2 pl-4 pr-1.5">
-                  <button onClick={() => openSearchPage()} className="flex items-center gap-3 flex-1 min-w-0 h-full text-left" aria-label="Rechercher">
-                    <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm text-muted-foreground truncate">{props.searchQuery || 'Quartier, studio, villa meublée…'}</span>
-                  </button>
-                  <Button variant="ghost" size="icon" onClick={() => setShowAISheet(true)} aria-label="SapSap AI" title="SapSap AI" className="h-9 w-9 shrink-0 rounded-full text-muted-foreground"><Sparkles className="h-4 w-4" /></Button>
-                  <button onClick={() => { sessionStorage.setItem('sapsap_results_filters', '1'); navigate('/resultats'); }} aria-label="Filtres"
-                    className="relative inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary text-primary-foreground shrink-0 active:scale-95">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    {(props.idxTags.length > 0 || props.filters.type !== 'all' || props.filters.quartier !== 'all' || props.filters.minBedrooms > 0 || props.filters.characteristics.length > 0) && (
-                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-secondary border-2 border-card" />
-                    )}
-                  </button>
-                </div>
-
-                {props.idxTags.length > 0 && (
-                  <div className="flex gap-1.5 flex-wrap mt-2">
-                    {props.idxTags.map(tag => (
-                      <span key={tag.characteristic} className="inline-flex items-center gap-1 bg-card text-foreground rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm border border-border">
-                        {tag.emoji} {tag.label}
-                        <button onClick={() => props.onRemoveIdxTag(tag.characteristic)}><X className="h-2.5 w-2.5" /></button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Explorez nos demeures — vignettes quartiers */}
-            <section id="quartiers" className="pt-4">
-              <h2 className="px-4 text-lg font-bold text-foreground mb-3">Explorez nos demeures</h2>
-              <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollable">
-                {MOBILE_QUARTIERS.map(q => (
-                  <button key={q.name}
-                    onClick={() => navigate(`/resultats?q=${encodeURIComponent(q.name)}`)}
-                    className="relative shrink-0 w-32 h-40 snap-start rounded-2xl overflow-hidden shadow-card active:scale-[0.97] transition-transform">
-                    <img src={q.img} alt={q.name} className="w-full h-full object-cover" loading="lazy" />
-                    <span className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
-                    <span className="absolute bottom-2 left-2.5 text-sm font-bold text-background">{q.name}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
+            <MobileHomeIntro
+              properties={displayProperties}
+              initialQuery={props.searchQuery}
+              filtersActive={props.idxTags.length > 0 || props.filters.type !== 'all' || props.filters.quartier !== 'all' || props.filters.minBedrooms > 0 || props.filters.characteristics.length > 0}
+              onOpenAI={() => setShowAISheet(true)}
+            />
 
             {/* Properties grid */}
             <section id="properties" className="px-4 pb-6">
