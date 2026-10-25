@@ -640,40 +640,13 @@ const Index = () => {
       {/* ③ Engagements — 3 piliers de confiance (Hick's Law) */}
       <EngagementsSection />
 
-      {/* ④ Carte interactive + Filters + Detail Panel */}
-      <section id="map" className="container mx-auto px-4 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Filtrer les biens</h2>
-        </div>
-
-        <FilterBar
-          onFilterChange={handleFilterChange}
-          onReset={handleFullReset}
-          quartiers={filterOpts.quartiers}
-          totalCount={availableProperties(properties).length}
-          filteredCount={displayProperties.length}
-          favoritesCount={favorites.size}
-          showFavoritesOnly={showFavoritesOnly}
-          onToggleFavoritesView={toggleFavoritesView}
-          computeFilteredCount={computeFilteredCount}
-          externalFilters={filters}
-          priceBounds={{ min: filterOpts.priceMin, max: filterOpts.priceMax }}
-          availableTypeValues={filterOpts.typeValues}
-          onAfterApply={(f) => {
-            try { localStorage.setItem('sapsap_filters_v1', JSON.stringify(f)); } catch { /* noop */ }
-            navigate(`/resultats?q=${encodeURIComponent(searchQuery || '')}`);
-          }}
-        />
-
-      </section>
-
       {/* ③ Slogan + Featured Carousel */}
       <section className="container mx-auto px-4 py-10">
         <div className="text-center mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
             Trouvez votre <span className="text-primary">chez vous</span> partout au Burkina Faso
           </h2>
-          <p className="text-sm text-muted-foreground mt-2">Location meublée · Bureau · Commerce · Découvrez nos biens mis en avant</p>
+          <p className="text-sm text-muted-foreground mt-2">Chaque demeure est meublée et prête à vivre — pour une nuit comme pour plusieurs mois.</p>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollable">
           {availableProperties(properties).slice(0, 8).map((p) => {
