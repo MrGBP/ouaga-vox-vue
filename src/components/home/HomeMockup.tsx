@@ -90,7 +90,7 @@ export default function HomeMockup({ properties = [], onOpenFilters }: { propert
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.9, ease: 'easeOut' }}
-              fetchPriority="high"
+              loading="eager"
             />
           </AnimatePresence>
         </div>
