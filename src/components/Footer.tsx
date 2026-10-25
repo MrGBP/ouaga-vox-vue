@@ -33,7 +33,7 @@ const Footer = () => {
           <h4 className="text-sm font-semibold text-foreground mb-4">{t('footer.navigation')}</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><a href="#properties" className="hover:text-foreground transition-colors">{t('footer.biens_dispos')}</a></li>
-            <li><a href="#map" className="hover:text-foreground transition-colors">{t('footer.carte_interactive')}</a></li>
+            <li><Link to="/resultats" className="hover:text-foreground transition-colors">{t('footer.carte_interactive')}</Link></li>
             <li><a href="#quartiers" className="hover:text-foreground transition-colors">{t('footer.quartiers')}</a></li>
             <li><a href="#testimonials" className="hover:text-foreground transition-colors">{t('footer.temoignages')}</a></li>
           </ul>
