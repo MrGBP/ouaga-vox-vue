@@ -40,9 +40,13 @@ const HomeMockup = () => {
         <div className="absolute rounded-xl bg-secondary/50" style={box(500, 680, 66, 28)} />
         <div className="absolute rounded-xl bg-primary/20" style={box(838, 660, 78, 38)} />
 
-        {/* Grande photo salon */}
-        <motion.img initial={{ opacity: 0, scale: 1.03 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }}
-          src={salon} alt="Salon meublé à Ouagadougou" className="absolute object-cover rounded-[28px]" style={box(470, 72, 552, 430)} />
+        {/* Grande photo salon — fondue à gauche pour laisser respirer le texte */}
+        <motion.div initial={{ opacity: 0, scale: 1.03 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }}
+          className="absolute overflow-hidden rounded-r-[28px]" style={box(330, 72, 692, 430)}>
+          <img src={salon} alt="Salon meublé au Burkina Faso" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" style={{ backdropFilter: 'blur(0px)' }} />
+          <div className="absolute inset-y-0 left-0 w-[45%] backdrop-blur-[3px] [mask-image:linear-gradient(to_right,black,transparent)]" />
+        </motion.div>
         {/* Chambre */}
         <motion.img initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.2 }}
           src={chambre} alt="Chambre meublée" className="absolute object-cover rounded-[22px] shadow-elevation-2" style={{ ...box(1078, 94, 190, 280), transform: 'rotate(-2deg)' }} />
@@ -76,10 +80,10 @@ const HomeMockup = () => {
           <h1 className="mt-[4%] font-display font-extrabold leading-[1.08] tracking-tight text-primary text-[clamp(28px,3.6vw,54px)]">
             Réservez des<br />
             <span className="text-secondary">logements meublés</span><br />
-            à Ouagadougou.
+            partout au Burkina.
           </h1>
           <p className="mt-[3%] text-[clamp(13px,1.35vw,19px)] text-primary/80 leading-snug">
-            Des maisons et appartements meublés<br />pour vos séjours courts, au bon endroit.
+            Maisons, studios, appartements meublés<br />pour vos courts comme longs séjours.
           </p>
         </motion.div>
 
