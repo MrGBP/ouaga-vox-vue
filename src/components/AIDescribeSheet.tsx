@@ -9,10 +9,10 @@ interface Props {
 }
 
 const SUGGESTIONS = [
-  'Villa 3 chambres avec piscine à Ouaga 2000',
-  'Studio meublé pas cher à Zogona',
-  'Appartement climatisé avec parking à Pissy',
-  'Bureau moderne à Koulouba',
+  'Villa meublée 3 chambres avec piscine à Ouaga 2000',
+  'Studio meublé climatisé pas cher à Zogona',
+  'Appartement meublé avec wifi et parking à Koulouba',
+  'Maison meublée avec groupe électrogène moins de 50 000 la nuit',
 ];
 
 export default function AIDescribeSheet({ open, onClose }: Props) {
@@ -31,7 +31,8 @@ export default function AIDescribeSheet({ open, onClose }: Props) {
     const query = (q ?? value).trim();
     if (!query) return;
     onClose();
-    navigate(`/search?q=${encodeURIComponent(query)}`);
+    // Résultats directs : le texte libre est décodé (type, quartier, budget, équipements).
+    navigate(`/resultats?q=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -50,7 +51,7 @@ export default function AIDescribeSheet({ open, onClose }: Props) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 z-[301] bg-card rounded-t-3xl shadow-2xl border-t border-border"
+            className="fixed bottom-0 left-0 right-0 md:max-w-2xl md:mx-auto md:bottom-8 md:rounded-3xl z-[301] bg-card rounded-t-3xl shadow-2xl border-t border-border"
             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
             {/* Handle */}

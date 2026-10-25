@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
-const LS_KEY = 'sapsap_favorites_v1';
+// Clé partagée avec l'accueil, les résultats, la fiche et les Reels.
+const LS_KEY = 'sapsap_favorites';
 
 export interface FavoriteRow {
   id: string;
@@ -10,10 +11,18 @@ export interface FavoriteRow {
 }
 
 const readLocal = (): string[] => {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+  try {
+    const legacy: string[] = JSON.parse(localStorage.getItem('sapsap_favorites_v1') || '[]');
+    const cur: string[] = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+    return [...new Set([...cur, ...legacy])];
+  } catch { return []; }
 };
 const writeLocal = (ids: string[]) => {
-  try { localStorage.setItem(LS_KEY, JSON.stringify([...new Set(ids)])); } catch {}
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify([...new Set(ids)]));
+    localStorage.removeItem('sapsap_favorites_v1');
+    window.dispatchEvent(new Event('storage'));
+  } catch {}
 };
 
 export async function listFavoriteIds(): Promise<string[]> {
