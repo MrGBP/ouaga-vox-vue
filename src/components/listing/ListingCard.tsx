@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { Heart, BedDouble, Ruler } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { getTypeLabel, type Property } from '@/lib/mockData';
 import { displayPrice } from './ListingMap';
 
@@ -37,10 +37,6 @@ const ListingCard = forwardRef<HTMLDivElement, Props>(({ property: p, active, fa
           </button>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">{p.quartier}</p>
-        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-          {!!p.bedrooms && <span className="inline-flex items-center gap-1"><BedDouble className="h-3.5 w-3.5" /> {p.bedrooms} ch.</span>}
-          {!!p.surface_area && <span className="inline-flex items-center gap-1"><Ruler className="h-3.5 w-3.5" /> {p.surface_area} m²</span>}
-        </div>
         <div className="mt-auto flex items-end justify-between pt-3">
           <span className="text-[11px] text-muted-foreground">{getTypeLabel(p.type)}</span>
           <span className="text-base font-bold text-secondary">
