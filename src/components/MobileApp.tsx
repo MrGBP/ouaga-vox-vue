@@ -27,6 +27,21 @@ import { ChevronLeft, ChevronRight, X, Search, Heart, Sparkles, Maximize2, Chevr
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 import AIDescribeSheet from '@/components/AIDescribeSheet';
+import { ShieldCheck, BadgeCheck, Headphones } from 'lucide-react';
+import salonImg from '@/assets/home/salon.jpg';
+import wayalghinImg from '@/assets/home/wayalghin.jpg';
+import kouloubaImg from '@/assets/home/koulouba.jpg';
+import paspangaImg from '@/assets/home/paspanga.jpg';
+import zogonaImg from '@/assets/home/zogona.jpg';
+import zoneBoisImg from '@/assets/home/zone-du-bois.jpg';
+
+const MOBILE_QUARTIERS = [
+  { name: 'Wayalghin', img: wayalghinImg },
+  { name: 'Koulouba', img: kouloubaImg },
+  { name: 'Paspanga', img: paspangaImg },
+  { name: 'Zogona', img: zogonaImg },
+  { name: 'Zone du Bois', img: zoneBoisImg },
+];
 
 interface Property {
   id: string;
@@ -682,235 +697,94 @@ export default function MobileApp(props: MobileAppProps) {
             className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
             style={{ paddingTop: 'calc(52px + env(safe-area-inset-top))', paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
           >
-            {/* ═══ HERO ÉDITORIAL — solid navy, pas de photo hero classique ═══
-                Signature : split typographique + segmenté "à la nuit / au mois"
-                + prompt IA comme CTA principal + peek mosaïque de biens réels */}
-            {(() => {
-              const AI_PROMPTS = stayMode === 'court'
-                ? [
-                    'Studio meublé pour 3 nuits à Zogona…',
-                    'Villa avec piscine pour un week-end à Ouaga 2000…',
-                    'Appart climatisé, wifi, 5 nuits à Koulouba…',
-                  ]
-                : [
-                    'Appartement 2 chambres au mois à Pissy…',
-                    'Villa 4 chambres avec parking à Ouaga 2000…',
-                    'Studio non meublé longue durée à Zogona…',
-                  ];
-              const currentPlaceholder = AI_PROMPTS[aiPlaceholderIdx % AI_PROMPTS.length];
-              const peekProps = availableProperties(props.properties).slice(0, 4);
-
-              return (
-                <section
-                  className="relative overflow-hidden"
-                  style={{ background: 'linear-gradient(180deg, #1A3560 0%, #14294a 65%, #0f2244 100%)' }}
+            {/* ═══ HERO MOBILE — maquette : photo meublée + titre + recherche ═══ */}
+            <section className="relative overflow-hidden">
+              <img src={salonImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/75 to-background" />
+              <div className="relative z-10 px-5 pt-6 pb-5">
+                <motion.h1
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}
+                  className="font-display font-extrabold text-primary leading-[1.08] tracking-tight text-[28px]"
                 >
-                  {/* Grille subtile en arrière-plan (identité éditoriale) */}
-                  <div
-                    className="absolute inset-0 opacity-[0.06]"
-                    style={{
-                      backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
-                      backgroundSize: '32px 32px',
-                    }}
-                  />
-                  {/* Halo orange discret coin haut-droit */}
-                  <div
-                    className="absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-30 pointer-events-none"
-                    style={{ background: 'radial-gradient(circle, rgba(232,118,26,0.6) 0%, rgba(232,118,26,0) 70%)' }}
-                  />
+                  Réservez des logements meublés partout au <span className="text-secondary">Burkina.</span>
+                </motion.h1>
+                <p className="text-[13px] text-muted-foreground mt-2 leading-relaxed">
+                  Maisons, studios, appartements meublés pour vos courts comme longs séjours.
+                </p>
 
-                  <div className="relative z-10 px-5 pt-6 pb-5">
-                    {/* Kicker — remplace le badge "Live Ouagadougou" */}
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4 }}
-                      className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/60"
-                    >
-                      <span className="w-6 h-[1px] bg-[#E8761A]" />
-                      Ouagadougou · Location
-                    </motion.div>
-
-                    {/* Titre éditorial */}
-                    <motion.h1
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.05, duration: 0.5 }}
-                      className="mt-3 font-display font-black text-white leading-[0.95] tracking-tight text-[36px]"
-                    >
-                      Louez.<br />
-                      <span className="italic font-serif font-normal text-white/85 text-[30px]">Vivez.</span>{' '}
-                      <span className="text-[#E8761A]">En un clic.</span>
-                    </motion.h1>
-
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      className="text-[12.5px] text-white/70 mt-3 max-w-[90%] leading-relaxed"
-                    >
-                      La 1<sup>ère</sup> plateforme 100 % dédiée à la location au Burkina : à la nuit ou au mois, meublé ou non.
-                    </motion.p>
-
-                    {/* Segmenté durée — signature UX (clarifie le modèle location) */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="mt-4 inline-flex bg-white/10 backdrop-blur-md p-0.5 rounded-full border border-white/15"
-                    >
-                      {([
-                        { id: 'court', label: 'Courte durée', hint: '/ nuit' },
-                        { id: 'long', label: 'Longue durée', hint: '/ mois' },
-                      ] as const).map(m => (
-                        <button
-                          key={m.id}
-                          onClick={() => setStayMode(m.id)}
-                          className={`relative px-3.5 h-8 rounded-full text-[11px] font-semibold transition-all flex items-center gap-1 ${
-                            stayMode === m.id ? 'text-[#1A3560]' : 'text-white/70'
-                          }`}
-                        >
-                          {stayMode === m.id && (
-                            <motion.span
-                              layoutId="stay-pill"
-                              transition={{ type: 'spring', damping: 26, stiffness: 380 }}
-                              className="absolute inset-0 bg-white rounded-full shadow-md"
-                            />
-                          )}
-                          <span className="relative">{m.label}</span>
-                          <span className={`relative text-[9px] ${stayMode === m.id ? 'text-[#E8761A]' : 'text-white/40'}`}>
-                            {m.hint}
-                          </span>
-                        </button>
-                      ))}
-                    </motion.div>
-
-                    {/* PROMPT IA — CTA PRINCIPAL du hero (remplace le chip discret) */}
-                    <motion.button
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4, duration: 0.45 }}
-                      onClick={() => setShowAISheet(true)}
-                      aria-label="Décrire votre bien idéal avec l'assistant IA"
-                      className="group relative w-full mt-5 text-left active:scale-[0.99] transition-transform"
-                    >
-                      {/* Bord gradient animé */}
-                      <div
-                        className="absolute inset-0 rounded-2xl opacity-90"
-                        style={{
-                          background: 'linear-gradient(120deg, #E8761A 0%, #f4a366 40%, #ffffff 55%, #E8761A 100%)',
-                          backgroundSize: '200% 100%',
-                          animation: 'shimmer-bg 3.5s linear infinite',
-                          padding: 1,
-                        }}
-                      >
-                        <div className="w-full h-full rounded-2xl bg-[#1A3560]" />
-                      </div>
-                      <div className="relative flex items-center gap-3 px-3.5 py-3 rounded-2xl">
-                        <div className="relative shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-[#E8761A] to-[#c85e0d] flex items-center justify-center shadow-lg shadow-[#E8761A]/30">
-                          <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
-                          <span className="absolute -top-1 -right-1 text-[8px] font-black text-white bg-[#1A3560] px-1 rounded-full border border-[#E8761A]">IA</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-[#E8761A] leading-none mb-0.5">
-                            Assistant SapSap
-                          </div>
-                          <AnimatePresence mode="wait">
-                            <motion.div
-                              key={currentPlaceholder}
-                              initial={{ opacity: 0, y: 4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -4 }}
-                              transition={{ duration: 0.35 }}
-                              className="text-[13px] text-white/85 truncate"
-                            >
-                              {currentPlaceholder}
-                            </motion.div>
-                          </AnimatePresence>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-white/60 shrink-0 group-active:translate-x-0.5 transition-transform" />
-                      </div>
-                    </motion.button>
-
-                    {/* Peek mosaïque de biens réels — le côté visuel/différent
-                        (au lieu d'une grosse photo hero, un teaser de l'inventaire) */}
-                    {peekProps.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.55, duration: 0.5 }}
-                        className="mt-5 flex items-center gap-3"
-                      >
-                        <div className="flex -space-x-2">
-                          {peekProps.slice(0, 4).map((p, i) => (
-                            <button
-                              key={p.id}
-                              onClick={() => openPropertyPage(p.id)}
-                              className="w-9 h-9 rounded-full overflow-hidden border-2 border-[#14294a] hover:z-10 transition-transform active:scale-95"
-                              style={{ zIndex: 4 - i }}
-                              aria-label={p.title}
-                            >
-                              <img
-                                src={p.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=200'}
-                                alt=""
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            </button>
-                          ))}
-                        </div>
-                        <div className="text-[11px] text-white/70 leading-tight">
-                          <span className="text-white font-bold">{props.properties.length}+</span> biens ·{' '}
-                          <span className="text-white font-bold">{props.quartiers.length}</span> quartiers<br />
-                          <span className="text-white/50 text-[10px]">Maisons · Villas · Studios · Bureaux</span>
-                        </div>
-                      </motion.div>
+                {/* Recherche capsule + filtres */}
+                <div className="mt-4 w-full h-12 rounded-full bg-card border border-border shadow-md flex items-center gap-2 pl-4 pr-1.5">
+                  <button onClick={() => openSearchPage()} className="flex items-center gap-3 flex-1 min-w-0 h-full text-left" aria-label="Rechercher">
+                    <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm text-muted-foreground truncate">{props.searchQuery || 'Quartier, studio, villa meublée…'}</span>
+                  </button>
+                  <button onClick={() => setShowMobileFilters(true)} aria-label="Filtres"
+                    className="relative inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary text-primary-foreground shrink-0 active:scale-95">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    {(props.idxTags.length > 0 || props.filters.type !== 'all' || props.filters.quartier !== 'all' || props.filters.minBedrooms > 0 || props.filters.characteristics.length > 0) && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-secondary border-2 border-card" />
                     )}
-                  </div>
-                </section>
-              );
-            })()}
-
-            {/* Search bar classique (secondaire — pour utilisateurs qui savent ce qu'ils veulent) */}
-            <section className="px-4 pt-4">
-              <div className="w-full h-12 rounded-full bg-card border border-border shadow-sm flex items-center gap-2 pl-4 pr-1.5">
-                <button
-                  onClick={() => openSearchPage()}
-                  className="flex items-center gap-3 flex-1 min-w-0 h-full text-left"
-                  aria-label="Rechercher"
-                >
-                  <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-muted-foreground truncate">
-                    {props.searchQuery || t('hero.placeholder')}
-                  </span>
-                </button>
-                <button
-                  onClick={() => setShowMobileFilters(true)}
-                  aria-label="Filtres"
-                  title="Filtres"
-                  className="relative inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-primary/10 text-primary text-xs font-semibold active:scale-[0.98] transition-transform shrink-0"
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  <span>Filtres</span>
-                  {(props.idxTags.length > 0 || props.filters.type !== 'all' || props.filters.quartier !== 'all' || props.filters.minBedrooms > 0 || props.filters.characteristics.length > 0) && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary" />
-                  )}
-                </button>
-              </div>
-
-              {/* IDX Tags */}
-              {props.idxTags.length > 0 && (
-                <div className="flex gap-1.5 flex-wrap mt-2">
-                  {props.idxTags.map(tag => (
-                    <span key={tag.characteristic} className="inline-flex items-center gap-1 bg-card text-foreground rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm border border-border">
-                      {tag.emoji} {tag.label}
-                      <button onClick={() => props.onRemoveIdxTag(tag.characteristic)} className="ml-0.5 hover:text-destructive">
-                        <X className="h-2.5 w-2.5" />
-                      </button>
-                    </span>
-                  ))}
+                  </button>
                 </div>
-              )}
+
+                {/* Assistant IA */}
+                <button onClick={() => setShowAISheet(true)}
+                  className="mt-3 w-full flex items-center gap-3 rounded-2xl bg-primary px-3.5 py-3 text-left active:scale-[0.99]">
+                  <span className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                    <Sparkles className="h-4 w-4 text-secondary-foreground" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-secondary">Assistant SapSap</span>
+                    <span className="block text-[13px] text-primary-foreground/85 truncate">Décrivez votre séjour, on trouve pour vous</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-primary-foreground/60" />
+                </button>
+
+                {props.idxTags.length > 0 && (
+                  <div className="flex gap-1.5 flex-wrap mt-2">
+                    {props.idxTags.map(tag => (
+                      <span key={tag.characteristic} className="inline-flex items-center gap-1 bg-card text-foreground rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm border border-border">
+                        {tag.emoji} {tag.label}
+                        <button onClick={() => props.onRemoveIdxTag(tag.characteristic)}><X className="h-2.5 w-2.5" /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Explorez nos demeures — vignettes quartiers */}
+            <section className="pt-4">
+              <h2 className="px-4 text-lg font-bold text-foreground mb-3">Explorez nos demeures</h2>
+              <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollable">
+                {MOBILE_QUARTIERS.map(q => (
+                  <button key={q.name}
+                    onClick={() => { props.onSearchQueryChange(q.name); props.onSearch(q.name); }}
+                    className="relative shrink-0 w-32 h-40 snap-start rounded-2xl overflow-hidden shadow-card active:scale-[0.97] transition-transform">
+                    <img src={q.img} alt={q.name} className="w-full h-full object-cover" loading="lazy" />
+                    <span className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
+                    <span className="absolute bottom-2 left-2.5 text-sm font-bold text-background">{q.name}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Réassurance */}
+            <section className="px-4 pt-4">
+              <div className="grid grid-cols-3 gap-2 rounded-2xl bg-card border border-border p-3">
+                {[
+                  { icon: ShieldCheck, label: 'Biens vérifiés' },
+                  { icon: BadgeCheck, label: 'Hôtes de confiance' },
+                  { icon: Headphones, label: 'Accompagnement rapide' },
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex flex-col items-center text-center gap-1.5">
+                    <span className="w-9 h-9 rounded-full bg-secondary/15 flex items-center justify-center">
+                      <Icon className="h-4 w-4 text-secondary" />
+                    </span>
+                    <span className="text-[11px] font-medium text-foreground leading-tight">{label}</span>
+                  </div>
+                ))}
+              </div>
             </section>
 
 

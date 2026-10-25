@@ -47,12 +47,12 @@ export default function Auth() {
         if (error) throw error;
         if (signUpData.session) {
           await finalizeSignupProfile({ fullName: parsed.data.full_name, phone: parsed.data.phone, asOwner });
-        } else if (asOwner) {
-          localStorage.setItem('sapsap_pending_owner_role', '1');
+          toast.success(asOwner ? 'Compte propriétaire créé, bienvenue !' : 'Compte créé, bienvenue !');
+        } else {
+          if (asOwner) localStorage.setItem('sapsap_pending_owner_role', '1');
+          toast.success(`Un lien de confirmation a été envoyé à ${parsed.data.email}. Cliquez dessus pour activer votre compte.`, { duration: 10000 });
+          setMode('login');
         }
-        toast.success(asOwner
-          ? 'Compte propriétaire créé. Vérifie ta boîte mail si la confirmation est activée.'
-          : 'Compte créé. Vérifie ta boîte mail si la confirmation est activée.');
       } else {
         const parsed = loginSchema.safeParse(form);
         if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
