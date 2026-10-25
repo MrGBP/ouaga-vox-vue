@@ -29,6 +29,7 @@ import heroImage from '@/assets/ouaga-hero.jpg';
 import AIDescribeSheet from '@/components/AIDescribeSheet';
 import { Headphones } from 'lucide-react';
 import MobileDiscoveryCard from '@/components/listing/MobileDiscoveryCard';
+import MobileHomeIntro from '@/components/home/MobileHomeIntro';
 import { type Property as CatalogProperty } from '@/lib/mockData';
 import salonImg from '@/assets/home/salon.jpg';
 import wayalghinImg from '@/assets/home/wayalghin.jpg';
@@ -674,6 +675,7 @@ export default function MobileApp(props: MobileAppProps) {
       ) : mobileTab === 'home' ? (
         <MobileNavbar
           level={1}
+          homePresentation
           favoritesCount={props.favorites.size}
           onFavoritesClick={() => { setMobileTab('favorites'); handleMobileTabChange('favorites'); }}
         />
@@ -688,7 +690,7 @@ export default function MobileApp(props: MobileAppProps) {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
-            style={{ paddingTop: 'calc(52px + env(safe-area-inset-top))', paddingBottom: 'calc(52px + env(safe-area-inset-bottom))' }}
+            style={{ paddingTop: 'calc(64px + env(safe-area-inset-top))', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}
           >
             {/* ═══ HERO MOBILE — maquette : photo meublée + titre + recherche ═══ */}
             <section className="relative overflow-hidden">

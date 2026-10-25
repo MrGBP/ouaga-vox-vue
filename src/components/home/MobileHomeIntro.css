@@ -1,0 +1,47 @@
+.mobile-home-intro {
+  --mobile-home-wash: linear-gradient(to bottom, hsl(var(--card) / .97) 0%, hsl(var(--card) / .9) 32%, hsl(var(--card) / .42) 65%, transparent 85%);
+  --mobile-home-photo-shadow: linear-gradient(to top, hsl(var(--foreground) / .8), transparent 75%);
+  --mobile-home-search-shadow: 0 8px 28px hsl(var(--foreground) / .12);
+  color: hsl(var(--primary));
+  background: hsl(var(--background));
+}
+.mobile-home-hero { position: relative; isolation: isolate; padding: 24px 16px 0; min-height: 424px; }
+.mobile-home-backdrop { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 60% center; }
+.mobile-home-wash { position: absolute; inset: 0; z-index: -1; background: var(--mobile-home-wash); }
+.mobile-home-copy { text-align: center; max-width: 430px; margin: auto; }
+.mobile-home-copy h1 { font-size: 27px; line-height: 1.17; font-weight: 800; letter-spacing: 0; margin: 0; }
+.mobile-home-copy h1 span { color: hsl(var(--secondary)); }
+.mobile-home-copy p { font-family: Georgia, serif; font-style: italic; font-size: 15px; line-height: 1.5; margin: 12px auto 0; max-width: 320px; color: hsl(var(--primary) / .85); }
+.mobile-home-rule { display: block; width: 25px; height: 2px; background: hsl(var(--secondary)); margin: 14px auto 18px; }
+.mobile-home-search { display: flex; align-items: center; gap: 3px; padding: 6px; border-radius: 999px; background: hsl(var(--card)); box-shadow: var(--mobile-home-search-shadow); position: relative; max-width: 480px; margin: auto; }
+.mobile-home-search-pin { width: 19px; height: 19px; color: hsl(var(--secondary)); flex-shrink: 0; margin: 0 4px; }
+.mobile-home-search-field { flex: 1; min-width: 0; }
+.mobile-home-search-field label { display: block; font-size: 10px; font-weight: 700; color: hsl(var(--primary)); }
+.mobile-home-search-field input { display: block; width: 100%; background: transparent; border: 0; outline: none; font-size: 16px; line-height: 23px; color: hsl(var(--foreground)); }
+.mobile-home-search-field input::placeholder { font-size: 10px; color: hsl(var(--muted-foreground)); }
+.mobile-home-search .mobile-home-tool { width: 30px; height: 40px; padding: 0; border-radius: 999px; flex-shrink: 0; color: hsl(var(--muted-foreground)); }
+.mobile-home-search .mobile-home-submit { width: 42px; height: 42px; padding: 0; border-radius: 999px; flex-shrink: 0; }
+.mobile-home-photo-space { height: 147px; }
+.mobile-home-wave { position: absolute; bottom: -1px; left: -5%; width: 110%; height: 29px; background: hsl(var(--background)); border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.mobile-home-destinations { padding: 18px 0 20px; }
+.mobile-home-destination-heading { display: flex; align-items: center; gap: 10px; padding: 0 18px; }
+.mobile-home-destination-heading > div { min-width: 0; flex: 1; }
+.mobile-home-destination-heading h2 { font-size: 22px; line-height: 1.25; font-weight: 750; letter-spacing: 0; }
+.mobile-home-destination-heading h2 span { color: hsl(var(--secondary)); }
+.mobile-home-destination-heading p { font-size: 12px; line-height: 1.55; color: hsl(var(--muted-foreground)); margin-top: 7px; }
+.mobile-home-destination-heading .mobile-home-destination-more { border-radius: 999px; background: hsl(var(--secondary) / .1); color: hsl(var(--secondary)); flex-shrink: 0; }
+.mobile-home-destination-track { display: flex; gap: 10px; overflow-x: auto; padding: 15px 18px 0; scroll-snap-type: x mandatory; }
+.mobile-home-destination-track .mobile-home-destination { display: block; position: relative; flex-shrink: 0; width: 160px; height: 132px; padding: 0; border-radius: 8px; overflow: hidden; scroll-snap-align: start; }
+.mobile-home-destination img { width: 100%; height: 100%; object-fit: cover; }
+.mobile-home-destination::after { content: ''; position: absolute; inset: 0; background: var(--mobile-home-photo-shadow); }
+.mobile-home-destination-label { position: absolute; bottom: 10px; left: 10px; right: 10px; display: flex; align-items: center; gap: 5px; z-index: 1; color: hsl(var(--primary-foreground)); font-size: 12px; font-weight: 600; }
+.mobile-home-destination-label > svg:first-child { color: hsl(var(--secondary)); }
+.mobile-home-destination-label > svg:last-child { margin-left: auto; }
+@media (max-width: 359px) {
+  .mobile-home-copy h1 { font-size: 24px; }
+  .mobile-home-hero { padding-left: 12px; padding-right: 12px; }
+  .mobile-home-search-pin { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-home-intro * { scroll-behavior: auto; transition: none; }
+}
