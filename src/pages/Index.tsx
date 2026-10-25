@@ -31,6 +31,8 @@ import MapFeatureTour from '@/components/tours/MapFeatureTour';
 import { Loader2, MapPin, Home, ChevronLeft, ChevronRight, X, RotateCcw, SlidersHorizontal, Heart, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/hero-quartier-africain.jpg';
+import IntentSwitch, { readIntent, type HomeIntent } from '@/components/home/IntentSwitch';
+import FurnishedBentoHero from '@/components/home/FurnishedBentoHero';
 
 interface Property {
   id: string;
@@ -115,6 +117,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [properties, setProperties] = useState<Property[]>([]);
+  const [intent, setIntent] = useState<HomeIntent>(readIntent);
   const [pois, setPois] = useState<POI[]>([]);
   const [quartiers, setQuartiers] = useState<Quartier[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
@@ -632,7 +635,20 @@ const Index = () => {
       )}
 
 
-      {/* ① Hero immersif — quartier africain golden hour */}
+      {/* Aiguillage intention */}
+      <div className="container mx-auto px-4 pt-6 flex justify-center">
+        <IntentSwitch value={intent} onChange={setIntent} />
+      </div>
+
+      {intent === 'meuble' ? (
+        <FurnishedBentoHero
+          properties={properties as any}
+          cityName={activeCity.name}
+          onSearch={(q) => navigate(`/resultats?q=${encodeURIComponent(q)}&mode=meuble`)}
+          onPropertyClick={handlePropertyClick}
+        />
+      ) : (
+      /* ① Hero immersif — quartier africain golden hour */
       <section className="relative w-full overflow-hidden" style={{ minHeight: 'min(85vh, 780px)' }}>
         {/* Photo pleine largeur */}
         <img
@@ -783,6 +799,22 @@ const Index = () => {
           <span className="text-[10px] uppercase tracking-widest">Explorer</span>
           <div className="h-8 w-[1px] bg-gradient-to-b from-white/70 to-transparent" />
         </div>
+      </section>
+      )}
+
+      {/* Accès Reels — explorer tout le catalogue */}
+      <section className="container mx-auto px-4 pb-4">
+        <button
+          onClick={() => navigate('/reels')}
+          className="w-full flex items-center justify-between gap-4 rounded-3xl bg-primary text-primary-foreground px-6 py-5 hover:bg-primary/95 transition group"
+        >
+          <span className="text-left">
+            <span className="block text-xs font-bold uppercase tracking-[0.18em] text-secondary">Explorer</span>
+            <span className="block font-display text-xl font-bold mt-1">Parcourez tout le catalogue en mode Reels</span>
+            <span className="block text-sm opacity-80">Maisons, appartements, meublés, magasins… en plein écran.</span>
+          </span>
+          <span className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center group-hover:translate-x-1 transition">▶</span>
+        </button>
       </section>
 
       {/* ② Quartiers — exploration territoriale (Gestalt : grille homogène) */}

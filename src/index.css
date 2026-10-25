@@ -263,3 +263,19 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Listing map pins (type icon + price) */
+.ssh-pin-wrap { background: transparent; border: 0; }
+.ssh-pin {
+  position: absolute; transform: translate(-50%, -100%);
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  padding: 3px 8px 3px 4px; border-radius: 999px;
+  background: hsl(var(--card)); color: hsl(var(--foreground));
+  font: 600 11px/1 Inter, system-ui, sans-serif;
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.25);
+  border: 1.5px solid hsl(var(--secondary));
+  transition: transform .15s ease, background .15s ease;
+}
+.ssh-pin-ico { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 999px; background: hsl(var(--secondary) / 0.15); font-size: 11px; }
+.ssh-pin-fav { color: hsl(var(--secondary)); font-size: 11px; }
+.ssh-pin.is-active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); transform: translate(-50%, -100%) scale(1.15); }

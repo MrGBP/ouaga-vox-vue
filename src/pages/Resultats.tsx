@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Map as MapIcon, List as ListIcon, SlidersHorizontal, X } from 'lucide-react';
-import { mockProperties, type Property, mockPois, mockQuartiers } from '@/lib/mockData';
+import { type Property, mockPois, mockQuartiers, isTypeFurnished } from '@/lib/mockData';
+import ListingMap from '@/components/listing/ListingMap';
+import ListingCard from '@/components/listing/ListingCard';
 import { fetchMergedProperties } from '@/lib/propertiesService';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -62,6 +64,15 @@ const ResultatsPage = () => {
   );
 
   const filterOpts = useMemo(() => computeFilterOptions(allProps as any), [allProps]);
+
+  // Desktop/tablette : focus meublés + biens phares si aucun filtre
+  const hasUserFilter = !!appliedQuery || JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS);
+  const desktopResults = useMemo(() => {
+    const furnishedOnly = results.filter(p => (isTypeFurnished(p.type) || !!p.furnished) && p.status !== 'rented');
+    if (hasUserFilter) return furnishedOnly;
+    const score = (p: Property) => ((p.comfort_rating || 0) + (p.security_rating || 0) + (p.accessibility_rating || 0));
+    return [...furnishedOnly].sort((a, b) => score(b) - score(a));
+  }, [results, hasUserFilter]);
 
   // Sync bidirectionnel carte ⇄ liste (Nielsen : visibility of system status)
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -262,49 +273,44 @@ const ResultatsPage = () => {
             </button>
           </>
         ) : (
-          <div className="container mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-[1fr_520px] xl:grid-cols-[1fr_620px] gap-6">
-            {/* Colonne cartes */}
-            <div className="min-w-0">
-              {results.length === 0 ? (
+          <div className="container mx-auto px-4 py-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Colonne biens */}
+            <div className="min-w-0 space-y-3">
+              {!hasUserFilter && desktopResults.length > 0 && (
+                <p className="text-xs font-semibold uppercase tracking-wider text-secondary">Biens phares de la zone</p>
+              )}
+              {desktopResults.length === 0 ? (
                 <div className="text-center py-20 bg-card border border-border rounded-xl">
-                  <p className="text-5xl mb-4">🔍</p>
                   <p className="text-base font-semibold text-foreground">Aucun bien ne correspond</p>
                   <p className="text-sm text-muted-foreground mt-1">Essayez d'élargir vos critères.</p>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {results.map((p) => (
-                    <div
-                      key={p.id}
-                      ref={(el) => { cardRefs.current[p.id] = el; }}
-                      onMouseEnter={() => setHoveredId(p.id)}
-                      onMouseLeave={() => setHoveredId(null)}
-                      className={`transition-all duration-base ${focusedId === p.id ? 'ring-2 ring-primary ring-offset-2 rounded-2xl' : ''}`}
-                    >
-                      <PropertyCard
-                        property={p as any}
-                        isFavorite={favorites.has(p.id)}
-                        onToggleFavorite={toggleFavorite}
-                        onViewDetails={handleViewDetails}
-                        onFocusOnMap={handleFocusOnMap}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              ) : desktopResults.map((p) => (
+                <ListingCard
+                  key={p.id}
+                  ref={(el) => { cardRefs.current[p.id] = el; }}
+                  property={p}
+                  active={(hoveredId || focusedId) === p.id}
+                  favorite={favorites.has(p.id)}
+                  onHover={setHoveredId}
+                  onOpen={(id) => handleViewDetails({ id })}
+                  onToggleFavorite={toggleFavorite}
+                />
+              ))}
             </div>
 
-            {/* Colonne carte — sticky pleine hauteur (Airbnb) */}
-            <aside className="hidden lg:block">
-              <div className="sticky top-40 h-[calc(100vh-11rem)] rounded-2xl overflow-hidden border border-border shadow-elevation-1">
-                <InteractiveMap
-                  properties={results as any}
-                  pois={mockPois as any}
-                  quartiers={mockQuartiers as any}
-                  onPropertyClick={handleMapClick}
-                  focusedPropertyId={focusedId || hoveredId}
-                  onFocusClear={() => setFocusedId(null)}
-                  favoriteIds={favorites}
+            {/* Carte synchronisée */}
+            <aside>
+              <div className="sticky top-40 h-[calc(100vh-11rem)] rounded-3xl overflow-hidden border border-border shadow-elevation-1">
+                <ListingMap
+                  properties={desktopResults}
+                  activeId={hoveredId || focusedId}
+                  favorites={favorites}
+                  onHover={(id) => {
+                    setHoveredId(id);
+                    if (id) cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  }}
+                  onOpen={(id) => handleViewDetails({ id })}
+                  onToggleFavorite={toggleFavorite}
                 />
               </div>
             </aside>
