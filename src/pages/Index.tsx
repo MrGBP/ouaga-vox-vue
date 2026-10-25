@@ -223,7 +223,9 @@ const Index = () => {
         ? allProps.filter((p: any) => p.country === 'BF')
         : [];
       const finalPois = cc === 'BF' ? (mockPois as unknown as POI[]) : [];
-      const finalQuartiers = cc === 'BF' ? (mockQuartiers as unknown as Quartier[]) : [];
+      // Quartiers du Burkina uniquement (zone géographique de Ouagadougou/BF)
+      const isBF = (q: any) => q.latitude > 9 && q.latitude < 15.5 && q.longitude > -5.6 && q.longitude < 2.5;
+      const finalQuartiers = cc === 'BF' ? (mockQuartiers as unknown as Quartier[]).filter(isBF) : [];
 
       // Merge real published properties from Supabase scoped to the active country
       let realProps: Property[] = [];
