@@ -25,18 +25,19 @@ export function useFavorites() {
     return () => { cancelled = true; };
   }, [user, refresh]);
 
+  // Synchronise les favoris invités modifiés depuis d'autres pages / onglets.
+  useEffect(() => {
+    if (user) return;
+    const onSync = () => { listFavoriteIds().then(setIds).catch(() => {}); };
+    window.addEventListener('storage', onSync);
+    return () => window.removeEventListener('storage', onSync);
+  }, [user]);
+
   const isFavorite = useCallback((id: string) => ids.includes(id), [ids]);
 
   const toggle = useCallback(async (id: string) => {
-    // Require auth before adding a favorite (free navigation, gated action).
-    if (!user) {
-      requireAuth('ajouter ce bien à vos favoris', () => {
-        // After login, perform the add.
-        setIds(prev => prev.includes(id) ? prev : [...prev, id]);
-        addFavorite(id).catch(() => setIds(prev => prev.filter(x => x !== id)));
-      });
-      return;
-    }
+    // Favori en 1 clic, même sans compte (stocké localement, fusionné à la connexion).
+    void requireAuth;
     const was = ids.includes(id);
     track(was ? 'favorite_removed' : 'favorite_added', { property_id: id });
     // optimistic
