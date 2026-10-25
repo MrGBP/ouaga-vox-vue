@@ -24,7 +24,7 @@ const pinHtml = (p: Property, active: boolean, fav: boolean, mobile: boolean) =>
   const { value, mode } = displayPrice(p);
   return `<div class="ssh-pin${active ? ' is-active' : ''}">
     ${mobile ? '' : `<span class="ssh-pin-ico">${getTypeEmoji(p.type)}</span>`}
-    <span class="ssh-pin-price">${fmtShort(value)}${mobile ? ` F / ${mode}` : ''}</span>${fav ? '<span class="ssh-pin-fav">♥</span>' : ''}
+    <span class="ssh-pin-price">${mobile ? new Intl.NumberFormat('fr-FR').format(value) : fmtShort(value)}${mobile ? ` F / ${mode}` : ''}</span>${fav ? '<span class="ssh-pin-fav">♥</span>' : ''}
   </div>`;
 };
 

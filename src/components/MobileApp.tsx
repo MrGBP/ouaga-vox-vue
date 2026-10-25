@@ -735,7 +735,7 @@ export default function MobileApp(props: MobileAppProps) {
             </section>
 
             {/* Explorez nos demeures — vignettes quartiers */}
-            <section className="pt-4">
+            <section id="quartiers" className="pt-4">
               <h2 className="px-4 text-lg font-bold text-foreground mb-3">Explorez nos demeures</h2>
               <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollable">
                 {MOBILE_QUARTIERS.map(q => (
@@ -751,7 +751,7 @@ export default function MobileApp(props: MobileAppProps) {
             </section>
 
             {/* Properties grid */}
-            <section className="px-4 pb-6">
+            <section id="properties" className="px-4 pb-6">
               <div className="flex items-center justify-between gap-3 mb-3 mt-5">
                 <div><h2 className="text-xl font-bold text-primary">Votre prochaine adresse</h2><p className="text-xs text-muted-foreground mt-1">Des demeures meublées, le temps d’un séjour.</p></div>
                 <Button variant="ghost" size="icon" aria-label="Explorer les logements" onClick={() => navigate('/resultats')}><ChevronRight className="h-5 w-5" /></Button>
