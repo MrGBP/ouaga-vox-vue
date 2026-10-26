@@ -123,6 +123,19 @@ export default function Auth() {
             </label>
           )}
 
+          {mode === 'login' && (
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={stayLoggedIn} onChange={e => setStayLoggedIn(e.target.checked)}
+                  className="h-4 w-4 accent-[#1a3560]" />
+                <span className="text-xs text-foreground">Rester connecté</span>
+              </label>
+              <Link to="/forgot-password" className="text-xs hover:underline" style={{ color: '#1a3560' }}>
+                Mot de passe oublié ?
+              </Link>
+            </div>
+          )}
+
           <button disabled={busy} type="submit" className="w-full h-11 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
             style={{ background: '#1a3560' }}>
             {busy ? '…' : mode === 'login' ? 'Se connecter' : 'Créer le compte'}
