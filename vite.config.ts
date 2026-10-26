@@ -57,11 +57,12 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/admin/, /^\/~oauth/],
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api/, /^\/~oauth/, /^\/auth\/v1/],
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.hostname.includes("supabase.co"),
+            urlPattern: ({ url }) => url.hostname.includes("supabase.co") && !url.pathname.startsWith("/auth/") && !url.pathname.startsWith("/realtime/"),
             handler: "NetworkFirst",
             options: {
               cacheName: "supabase-api-cache",
