@@ -1,4 +1,4 @@
-import { Menu, X, Home, MapPin, Phone, FileText, LogIn, UserPlus, LogOut, User as UserIcon, Download, Share, MousePointer2, Home as HomeIcon } from 'lucide-react';
+import { Menu, X, Home, MapPin, Phone, FileText, Download, Share, MousePointer2, Home as HomeIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import NotificationBell from '@/components/NotificationBell';
+import UserMenuCard from '@/components/UserMenuCard';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 const MobileHeader = () => {
@@ -14,7 +15,7 @@ const MobileHeader = () => {
   const [showIOSHint, setShowIOSHint] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isOwner, isAdmin, openAuthModal, requireAuth, signOut } = useAuth();
+  const { user, isOwner, isAdmin, requireAuth } = useAuth();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
 
   const handleInstall = async () => {

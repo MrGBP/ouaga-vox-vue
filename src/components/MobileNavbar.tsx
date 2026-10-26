@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Bell, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin, LogIn, UserPlus, LogOut, User as UserIcon, Heart } from 'lucide-react';
+import { Bell, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import logo from '@/assets/sapsap-logo.png';
 import NotificationBell from '@/components/NotificationBell';
+import UserMenuCard from '@/components/UserMenuCard';
 
 export type NavLevel = 1 | 2 | 3;
 
@@ -60,7 +61,7 @@ const MobileNavbar = ({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isOwner, isAdmin, openAuthModal, requireAuth, signOut } = useAuth();
+  const { user, isOwner, isAdmin, openAuthModal, requireAuth } = useAuth();
   const showBack = level > 1;
   const showHome = level >= 3 || (depth && depth >= 3);
   const dotDepth = depth || level;
