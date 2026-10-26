@@ -30,7 +30,7 @@ export async function listFavoriteIds(): Promise<string[]> {
   if (!user) return readLocal();
   const { data, error } = await supabase.from('favorites').select('property_id').eq('user_id', user.id);
   if (error) return readLocal();
-  return (data ?? []).map(r => r.property_id);
+  return [...new Set([...(data ?? []).map(r => r.property_id), ...readLocal().filter(id => !/^[0-9a-f-]{36}$/i.test(id))])];
 }
 
 export async function addFavorite(propertyId: string): Promise<void> {
@@ -39,7 +39,10 @@ export async function addFavorite(propertyId: string): Promise<void> {
     writeLocal([...readLocal(), propertyId]);
     return;
   }
-  await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId });
+  if (!/^[0-9a-f-]{36}$/i.test(propertyId)) { writeLocal([...readLocal(), propertyId]); return; }
+  const { error } = await supabase.from('favorites').upsert({ user_id: user.id, property_id: propertyId }, { onConflict: 'user_id,property_id', ignoreDuplicates: true });
+  if (error) throw error;
+  window.dispatchEvent(new Event('sapsap-favorites-changed'));
 }
 
 export async function removeFavorite(propertyId: string): Promise<void> {
@@ -48,7 +51,10 @@ export async function removeFavorite(propertyId: string): Promise<void> {
     writeLocal(readLocal().filter(id => id !== propertyId));
     return;
   }
-  await supabase.from('favorites').delete().eq('user_id', user.id).eq('property_id', propertyId);
+  if (!/^[0-9a-f-]{36}$/i.test(propertyId)) { writeLocal(readLocal().filter(id => id !== propertyId)); return; }
+  const { error } = await supabase.from('favorites').delete().eq('user_id', user.id).eq('property_id', propertyId);
+  if (error) throw error;
+  window.dispatchEvent(new Event('sapsap-favorites-changed'));
 }
 
 export async function toggleFavorite(propertyId: string): Promise<boolean> {
@@ -67,7 +73,10 @@ export async function syncLocalFavoritesToCloud(): Promise<void> {
   if (!user) return;
   const local = readLocal();
   if (local.length === 0) return;
-  const rows = local.map(property_id => ({ user_id: user.id, property_id }));
-  await supabase.from('favorites').upsert(rows, { onConflict: 'user_id,property_id', ignoreDuplicates: true });
-  writeLocal([]);
+  const realIds = local.filter(id => /^[0-9a-f-]{36}$/i.test(id));
+  if (!realIds.length) return;
+  const rows = realIds.map(property_id => ({ user_id: user.id, property_id }));
+  const { error } = await supabase.from('favorites').upsert(rows, { onConflict: 'user_id,property_id', ignoreDuplicates: true });
+  if (error) throw error;
+  writeLocal(local.filter(id => !realIds.includes(id)));
 }

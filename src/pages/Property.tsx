@@ -11,8 +11,8 @@ import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-
-const FAVORITES_KEY = 'sapsap_favorites';
+import { useFavorites } from '@/hooks/useFavorites';
+import { recordPropertyView } from '@/lib/propertyActivity';
 
 // Reuse the row→Property mapper logic (kept minimal & local to avoid circular deps)
 const FEATURE_KEYS = [
@@ -107,20 +107,12 @@ const PropertyPage = () => {
 
   const property = fromCache ?? remote;
 
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
-    try { const saved = localStorage.getItem(FAVORITES_KEY); return saved ? new Set(JSON.parse(saved)) : new Set<string>(); } catch { return new Set<string>(); }
-  });
+  const { isFavorite, toggle: toggleFavorite } = useFavorites();
 
   useEffect(() => {
     if (!property) return;
     addToRecentlyViewed(property);
-    try {
-      const key = `sapsap_viewed_${property.id}`;
-      if (!sessionStorage.getItem(key)) {
-        sessionStorage.setItem(key, '1');
-        supabase.rpc('increment_property_view', { _property_id: property.id });
-      }
-    } catch {}
+    void recordPropertyView(property.id);
   }, [property]);
 
   useEffect(() => {
@@ -129,15 +121,6 @@ const PropertyPage = () => {
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  const toggleFavorite = (pid: string) => {
-    setFavorites(prev => {
-      const next = new Set(prev);
-      if (next.has(pid)) { next.delete(pid); toast({ title: '💔 Retiré des favoris' }); }
-      else { next.add(pid); toast({ title: '❤️ Ajouté aux favoris' }); }
-      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next])); } catch {}
-      return next;
-    });
-  };
 
   const handleBack = () => {
     if (window.history.length > 1) navigate(-1);
@@ -201,7 +184,7 @@ const PropertyPage = () => {
     );
   }
 
-  const isFav = favorites.has(property.id);
+  const isFav = isFavorite(property.id);
 
   // Similaires : on combine mocks + remote courant
   const pool = (mockProperties as any[]);

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { addFavorite, listFavoriteIds, removeFavorite, syncLocalFavoritesToCloud } from '@/lib/favoritesService';
 import { track } from '@/lib/analytics';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function useFavorites() {
   const { user, requireAuth } = useAuth();
@@ -19,7 +21,7 @@ export function useFavorites() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (user) await syncLocalFavoritesToCloud();
+      if (user) await syncLocalFavoritesToCloud().catch(() => toast.error('Vos favoris sont conservés sur cet appareil ; la synchronisation sera réessayée.'));
       if (!cancelled) await refresh();
     })();
     return () => { cancelled = true; };
@@ -27,10 +29,12 @@ export function useFavorites() {
 
   // Synchronise les favoris invités modifiés depuis d'autres pages / onglets.
   useEffect(() => {
-    if (user) return;
     const onSync = () => { listFavoriteIds().then(setIds).catch(() => {}); };
     window.addEventListener('storage', onSync);
-    return () => window.removeEventListener('storage', onSync);
+    window.addEventListener('sapsap-favorites-changed', onSync);
+    const channel = user ? supabase.channel(`favorites-${user.id}-${crypto.randomUUID()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'favorites', filter: `user_id=eq.${user.id}` }, onSync).subscribe() : null;
+    return () => { window.removeEventListener('storage', onSync); window.removeEventListener('sapsap-favorites-changed', onSync); if (channel) void supabase.removeChannel(channel); };
   }, [user]);
 
   const isFavorite = useCallback((id: string) => ids.includes(id), [ids]);
@@ -45,6 +49,7 @@ export function useFavorites() {
     try {
       if (was) await removeFavorite(id); else await addFavorite(id);
     } catch {
+      toast.error('Impossible de mettre à jour ce favori. Réessayez.');
       // revert
       setIds(prev => was ? [...prev, id] : prev.filter(x => x !== id));
     }

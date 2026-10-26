@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCountryConfig, useAllCountryConfigs, fetchCountrySupport } from '@/hooks/useCountryConfig';
 import { getTrustBadge } from '@/lib/trustSystem';
 import { track } from '@/lib/analytics';
+import { recordPropertyView } from '@/lib/propertyActivity';
 import ReservationFlow from './ReservationFlow';
 import SharePanel from './SharePanel';
 
@@ -157,7 +158,7 @@ const PropertyDetailPanel = ({
   useEffect(() => { setMediaIdx(0); setDescExpanded(false); setShowAllPois(false); setShowAllFeatures(false); setPoiCategory('all'); }, [property?.id]);
 
   // Track property view
-  useEffect(() => { if (property?.id) track('property_viewed', { property_id: property.id, type: property.type, quartier: property.quartier }); }, [property?.id]);
+  useEffect(() => { if (property?.id) { void recordPropertyView(property.id); track('property_viewed', { property_id: property.id, type: property.type, quartier: property.quartier }); } }, [property?.id]);
 
   if (!property) return null;
 
