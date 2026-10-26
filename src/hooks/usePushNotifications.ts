@@ -4,6 +4,7 @@ import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/pushConfig";
 import { useAuth } from "@/hooks/useAuth";
 
 const PUSH_SW_PATH = "/push-sw.js";
+const PUSH_SCOPE = "/push/";
 
 type PermissionState = "default" | "granted" | "denied" | "unsupported";
 
@@ -18,9 +19,9 @@ function isSupported() {
 
 async function getOrRegisterPushSW(): Promise<ServiceWorkerRegistration | null> {
   if (!isSupported()) return null;
-  const existing = await navigator.serviceWorker.getRegistration(PUSH_SW_PATH);
+  const existing = await navigator.serviceWorker.getRegistration(PUSH_SCOPE);
   if (existing) return existing;
-  return navigator.serviceWorker.register(PUSH_SW_PATH, { scope: "/" });
+  return navigator.serviceWorker.register(PUSH_SW_PATH, { scope: PUSH_SCOPE });
 }
 
 export function usePushNotifications() {
@@ -34,10 +35,12 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!isSupported()) return;
     (async () => {
-      const reg = await navigator.serviceWorker.getRegistration(PUSH_SW_PATH);
+      const reg = await navigator.serviceWorker.getRegistration(PUSH_SCOPE);
       const sub = await reg?.pushManager.getSubscription();
-      setSubscribed(!!sub);
-    })();
+      if (!sub || !user) { setSubscribed(false); return; }
+      const { data } = await supabase.from("push_subscriptions").select("id").eq("user_id", user.id).eq("endpoint", sub.endpoint).maybeSingle();
+      setSubscribed(!!data);
+    })().catch(() => setSubscribed(false));
   }, [user?.id]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
@@ -52,6 +55,11 @@ export function usePushNotifications() {
       const reg = await getOrRegisterPushSW();
       if (!reg) return false;
 
+      if (!reg.active) await new Promise<void>((resolve, reject) => {
+        const worker = reg.installing ?? reg.waiting;
+        if (!worker) { reject(new Error("Push worker unavailable")); return; }
+        worker.addEventListener("statechange", () => { if (worker.state === "activated") resolve(); if (worker.state === "redundant") reject(new Error("Push worker failed")); });
+      });
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
         sub = await reg.pushManager.subscribe({
@@ -82,7 +90,7 @@ export function usePushNotifications() {
       }
       setSubscribed(true);
       return true;
-    } finally {
+    } catch { return false; } finally {
       setLoading(false);
     }
   }, [user]);
@@ -91,15 +99,16 @@ export function usePushNotifications() {
     if (!isSupported()) return false;
     setLoading(true);
     try {
-      const reg = await navigator.serviceWorker.getRegistration(PUSH_SW_PATH);
+      const reg = await navigator.serviceWorker.getRegistration(PUSH_SCOPE);
       const sub = await reg?.pushManager.getSubscription();
       if (sub) {
-        await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+        const { error } = await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+        if (error) return false;
         await sub.unsubscribe();
       }
       setSubscribed(false);
       return true;
-    } finally {
+    } catch { return false; } finally {
       setLoading(false);
     }
   }, []);

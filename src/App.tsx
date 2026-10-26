@@ -24,6 +24,7 @@ import { useCountryLocale } from "@/hooks/useCountryLocale";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
 import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
 import OfflineBanner from "@/components/OfflineBanner";
+import NotificationAlerts from "@/components/NotificationAlerts";
 
 const AdminLayout = lazy(() => import("@/admin/AdminLayout"));
 const OwnerLayout = lazy(() => import("@/owner/OwnerLayout"));
@@ -47,6 +48,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <OfflineBanner />
+          <NotificationAlerts />
           <PWAInstallBanner />
           <PWAUpdatePrompt />
           <BrowserRouter>

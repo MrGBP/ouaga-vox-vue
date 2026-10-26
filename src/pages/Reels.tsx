@@ -7,7 +7,7 @@ import { getTypeLabel, pricePerNight, type Property } from '@/lib/mockData';
 import { getRentMode } from '@/lib/typeHelpers';
 import { useGeoCity } from '@/hooks/useGeoCity';
 
-const FAV_KEY = 'sapsap_favorites';
+import { useFavorites } from '@/hooks/useFavorites';
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
 
 const ReelSlide = ({ p, active, fav, onFav, onOpen, muted }: { p: Property; active: boolean; fav: boolean; onFav: () => void; onOpen: () => void; muted: boolean }) => {
@@ -73,7 +73,8 @@ const ReelsPage = () => {
   const [props, setProps] = useState<Property[]>([]);
   const [active, setActive] = useState(0);
   const [muted, setMuted] = useState(true);
-  const [favs, setFavs] = useState<Set<string>>(() => { try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch { return new Set(); } });
+  const { ids: favoriteIds, toggle: toggleFav } = useFavorites();
+  const favs = useMemo(() => new Set(favoriteIds), [favoriteIds]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,11 +87,7 @@ const ReelsPage = () => {
     const el = ref.current; if (!el) return;
     setActive(Math.round(el.scrollTop / el.clientHeight));
   };
-  const toggleFav = (id: string) => setFavs(prev => {
-    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id);
-    try { localStorage.setItem(FAV_KEY, JSON.stringify([...n])); } catch { /* noop */ }
-    return n;
-  });
+
 
   return (
     <div className="fixed inset-0 bg-primary">

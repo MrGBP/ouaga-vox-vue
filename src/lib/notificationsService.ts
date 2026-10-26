@@ -23,20 +23,23 @@ export async function fetchNotifications(userId: string, limit = 30): Promise<Ap
 }
 
 export async function fetchUnreadCount(userId: string): Promise<number> {
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from('notifications')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('read', false);
+  if (error) throw error;
   return count ?? 0;
 }
 
 export async function markNotificationRead(id: string) {
-  await supabase.from('notifications').update({ read: true }).eq('id', id);
+  const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id);
+  if (error) throw error;
 }
 
 export async function markAllRead(userId: string) {
-  await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false);
+  const { error } = await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false);
+  if (error) throw error;
 }
 
 export function subscribeToNotifications(
@@ -45,7 +48,7 @@ export function subscribeToNotifications(
   onUpdate?: (n: AppNotification) => void,
 ) {
   const channel = supabase
-    .channel(`notif-${userId}`)
+    .channel(`notif-${userId}-${crypto.randomUUID()}`)
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
       (payload) => onInsert(payload.new as AppNotification)
