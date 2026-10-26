@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import NotificationBell from '@/components/NotificationBell';
+import UserMenuCard from '@/components/UserMenuCard';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -163,6 +164,7 @@ const Header = () => {
             className="md:hidden border-t border-border bg-card overflow-hidden"
           >
             <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
+              <UserMenuCard onAction={() => setMobileOpen(false)} />
               <a href="#properties" className="text-sm font-medium text-foreground py-3 px-2">Explorer</a>
               <a href="#quartiers" className="text-sm font-medium text-foreground py-3 px-2">Quartiers</a>
               <button onClick={handlePublish} className="text-left text-sm font-medium text-foreground py-3 px-2 flex items-center gap-2">
