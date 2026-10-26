@@ -3,6 +3,81 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- SapSapHouse — retire la pastille « Edit with Lovable » que l'hébergeur
+         injecte dans la page, y compris dans une copie du site déjà enregistrée
+         sur un appareil (cache de l'application installée). Aucune annonce,
+         aucun bouton et aucune vue de SapSapHouse ne porte le mot « Lovable »
+         dans son identifiant, sa classe, son libellé ou son lien : la page
+         applicative (#root) n'est jamais touchée. -->
+    <script>
+      (function () {
+        var RE = /lovable/i;
+        var LINK = /lovable\.(dev|app)/i;
+
+        var style = document.createElement("style");
+        style.id = "sapsap-no-badge";
+        style.textContent =
+          'body>[id*="lovable" i],body>[class*="lovable" i],body>[aria-label*="lovable" i],' +
+          'body>[data-testid*="lovable" i],body>a[href*="lovable.dev"],body>a[href*="lovable.app"],' +
+          'body>iframe[src*="lovable"]{display:none!important}';
+        (document.head || document.documentElement).appendChild(style);
+
+        function looksLikeBadge(el) {
+          if (!el || el.nodeType !== 1) return false;
+          if (el.closest && el.closest("#root")) return false;
+          if (el.tagName.toLowerCase().indexOf("lovable") > -1) return true;
+          if (RE.test(el.id || "")) return true;
+          if (RE.test(el.getAttribute("aria-label") || "")) return true;
+          if (RE.test(el.getAttribute("data-testid") || "")) return true;
+          if (RE.test(typeof el.className === "string" ? el.className : "")) return true;
+          if (LINK.test(el.getAttribute("href") || el.getAttribute("src") || "")) return true;
+          return false;
+        }
+
+        function sweep() {
+          var body = document.body;
+          if (!body) return;
+          var kids = Array.prototype.slice.call(body.children);
+          for (var i = 0; i < kids.length; i++) {
+            var node = kids[i];
+            if (node.id === "root") continue;
+            if (looksLikeBadge(node)) {
+              node.remove();
+              continue;
+            }
+            var inner = node.querySelectorAll("*");
+            for (var j = 0; j < inner.length; j++) {
+              if (looksLikeBadge(inner[j])) inner[j].remove();
+            }
+          }
+        }
+
+        var queued = false;
+        function queueSweep() {
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(function () {
+            queued = false;
+            sweep();
+          });
+        }
+
+        sweep();
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", sweep);
+        }
+        window.addEventListener("load", sweep);
+        [250, 1000, 3000].forEach(function (ms) {
+          setTimeout(sweep, ms);
+        });
+        new MutationObserver(queueSweep).observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+        });
+      })();
+    </script>
+
     <title>SapSapHouse — Location immobilière au Burkina Faso, au Mali et au Ghana</title>
     <meta name="description" content="Trouvez votre logement à Ouagadougou, Bamako et Accra : villas, appartements, studios meublés. Carte interactive, recherche IA, visites 360°." />
     <meta name="keywords" content="location maison Ouagadougou, villa meublée Bamako, appartement Accra, immobilier Burkina Faso, Mali, Ghana, SapSapHouse" />
