@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import NotificationBell from '@/components/NotificationBell';
 import UserMenuCard from '@/components/UserMenuCard';
+import AccountMenu from '@/components/AccountMenu';
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -120,17 +121,7 @@ const Header = () => {
             </div>
             {user && <NotificationBell />}
             {user ? (
-              <Link to="/mon-compte" aria-label="Mon compte">
-                <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/5">
-                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                    {((user.user_metadata?.full_name as string | undefined) || user.email || 'U')
-                      .split(/\s+/).map((p: string) => p[0]).slice(0, 2).join('').toUpperCase()}
-                  </span>
-                  <span className="max-w-[120px] truncate">
-                    {((user.user_metadata?.full_name as string | undefined) || user.email || '').split(' ')[0]}
-                  </span>
-                </Button>
-              </Link>
+              <AccountMenu />
             ) : (
               <Button
                 size="sm"

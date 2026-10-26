@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import HeroSearchSuggestions, { useHeroTypewriter } from '@/components/HeroSearchSuggestions';
 import NotificationBell from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
+import AccountMenu from '@/components/AccountMenu';
 import logo from '@/assets/sapsap-logo.png';
 import livingRoom from '@/assets/home/reference-living-room.jpg';
 import zoneDuBois from '@/assets/home/zone-du-bois.jpg';
@@ -32,7 +33,7 @@ type HomeProperty = { id: string; title: string; type: string; price: number; qu
 
 export default function HomeMockup({ properties = [], onOpenFilters }: { properties?: HomeProperty[]; onOpenFilters?: () => void }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isOwner, loading } = useAuth();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -63,21 +64,13 @@ export default function HomeMockup({ properties = [], onOpenFilters }: { propert
             <span><strong>SapSap<span>House</span></strong><small>Mon bien Immo en un clic</small></span>
           </Button>
           <nav aria-label="Navigation principale">
-            <Button variant="ghost" onClick={() => navigate('/publier')}>Devenir hôte</Button>
+            <Button variant="ghost" disabled={loading} onClick={() => navigate(isOwner ? '/proprietaire/biens?new=1' : '/publier')}>{isOwner ? 'Publier un bien' : 'Devenir hôte'}</Button>
             <Button variant="ghost" onClick={() => go('')}>Nos logements</Button>
             <Button variant="ghost" asChild><a href="mailto:support@sapsaphouse.com">Aide</a></Button>
             {user ? (
               <>
                 <NotificationBell />
-                <Button variant="outline" onClick={() => navigate('/mon-compte')} aria-label="Mon compte" className="gap-2">
-                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                    {((user.user_metadata?.full_name as string | undefined) || user.email || 'U')
-                      .split(/\s+/).map((p: string) => p[0]).slice(0, 2).join('').toUpperCase()}
-                  </span>
-                  <span className="max-w-[120px] truncate">
-                    {((user.user_metadata?.full_name as string | undefined) || user.email || '').split(' ')[0]}
-                  </span>
-                </Button>
+                <AccountMenu />
               </>
             ) : (
               <>
