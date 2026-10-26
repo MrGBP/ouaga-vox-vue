@@ -1,4 +1,5 @@
 # Homepage update
+- [ ] Unify owner workspace access in desktop, mobile and tablet account menus and verify authenticated navigation.
 - [x] Refine mobile homepage to match the supplied image while retaining discreet AI, no catalog carousel or reassurance badges, and unchanged desktop/detail pages.
 - [x] Simplify mobile homepage: discreet SapSap AI, remove catalog carousel and trust badges, improve featured copy and icon-only pagination.
 - [x] Connect mobile compact list and satellite price map, selection preview, discreet filters and consistent navigation.
