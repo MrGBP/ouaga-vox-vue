@@ -35,10 +35,28 @@ export default function OwnerMessages() {
     try {
       const msgs = await listPropertyMessages(c.property.id);
       setMessages(msgs);
-      await supabase.from('messages').update({ read_by_client: true })
-        .eq('property_id', c.property.id).eq('sender_role', 'admin');
+      const { error } = await supabase.rpc('mark_conversation_read', { _property_id: c.property.id });
+      if (error) throw error;
+      setConversations(prev => prev.map(item => item.property.id === c.property.id ? { ...item, unread: 0 } : item));
     } catch (e: any) { toast.error(e.message); }
   };
+
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    const refresh = async () => {
+      const list = await listMyOwnerConversations(user.id);
+      if (alive) setConversations(list);
+      if (selected) {
+        const list = await listPropertyMessages(selected.property.id);
+        if (alive) setMessages(list.filter(m => !(m as any).reservation_id));
+        if (document.visibilityState === 'visible' && list.some(m => m.sender_id !== user.id && !m.read_by_owner)) await supabase.rpc('mark_conversation_read', { _property_id: selected.property.id });
+      }
+    };
+    const channel = supabase.channel(`owner-chat-${user.id}-${crypto.randomUUID()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { void refresh().catch(() => {}); }).subscribe();
+    return () => { alive = false; void supabase.removeChannel(channel); };
+  }, [user?.id, selected?.property.id]);
 
   const send = async (content: string, replyToId: string | null) => {
     if (!selected || !user) return;

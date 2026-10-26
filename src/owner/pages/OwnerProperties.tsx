@@ -12,9 +12,11 @@ import OwnerPropertyFormModal from '../components/OwnerPropertyFormModal';
 import BlockedDatesModal from '../components/BlockedDatesModal';
 import PropertyImage from '@/components/PropertyImage';
 import { isTypeFurnished } from '@/lib/mockData';
+import { useOwnerActivity } from '@/hooks/useOwnerActivity';
 
 export default function OwnerProperties() {
   const { user } = useAuth();
+  const activity = useOwnerActivity(user?.id);
   const [items, setItems] = useState<OwnerPropertyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -31,7 +33,7 @@ export default function OwnerProperties() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(reload, [user]);
+  useEffect(reload, [user, activity]);
 
   // Auto-open the create modal when arriving with ?new=1
   useEffect(() => {
