@@ -1,6 +1,7 @@
 /** Navigation only: route guards and database policies enforce access. */
-export function accountNavigation(isOwner: boolean) {
+export function accountNavigation(isOwner: boolean, isAdmin = false) {
   return [
+    ...(isAdmin ? [{ path: '/admin', label: 'Administration', icon: 'admin' as const }] : []),
     { path: '/mon-compte', label: 'Mon compte', icon: 'account' as const },
     ...(isOwner ? [
       { path: '/proprietaire', label: 'Espace propriétaire', icon: 'dashboard' as const },

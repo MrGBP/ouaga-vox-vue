@@ -12,3 +12,9 @@ describe('account navigation', () => {
     expect(accountNavigation(false).map(item => item.path)).toEqual(['/mon-compte']);
   });
 });
+describe('admin navigation', () => {
+  it('offers the administration area first to admins only', () => {
+    expect(accountNavigation(false, true)[0].path).toBe('/admin');
+    expect(accountNavigation(true, false).some(i => i.path === '/admin')).toBe(false);
+  });
+});
