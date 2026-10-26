@@ -237,7 +237,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: em, password });
       if (error) throw error;
-      track('auth_password_login', { reason });
+      track('auth_signin_success', { reason });
       finishLogin();
     } catch (e: any) {
       toast.error(isEn ? 'Incorrect email or password' : 'Email ou mot de passe incorrect');
@@ -264,7 +264,7 @@ export default function AuthModal({ open, reason, onClose, onSuccess }: AuthModa
         },
       });
       if (error) throw error;
-      track('auth_password_signup', { reason });
+      track('auth_signup_success', { reason });
       if (data.session) {
         await finalizeSignupProfile({ fullName });
         if (!stayLoggedIn) armSessionOnly();
