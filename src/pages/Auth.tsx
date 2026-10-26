@@ -38,16 +38,17 @@ export default function Auth() {
       if (mode === 'signup') {
         const parsed = signupSchema.safeParse(form);
         if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
+        const fullName = `${parsed.data.first_name} ${parsed.data.last_name}`.trim();
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: parsed.data.email, password: parsed.data.password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
-            data: { full_name: parsed.data.full_name, phone: parsed.data.phone ?? '' },
+            data: { full_name: fullName, phone: parsed.data.phone ?? '' },
           },
         });
         if (error) throw error;
         if (signUpData.session) {
-          await finalizeSignupProfile({ fullName: parsed.data.full_name, phone: parsed.data.phone, asOwner });
+          await finalizeSignupProfile({ fullName, phone: parsed.data.phone, asOwner });
           toast.success(asOwner ? 'Compte propriétaire créé, bienvenue !' : 'Compte créé, bienvenue !');
         } else {
           if (asOwner) localStorage.setItem('sapsap_pending_owner_role', '1');
@@ -83,8 +84,12 @@ export default function Auth() {
         <form onSubmit={submit} className="space-y-3">
           {mode === 'signup' && (
             <>
-              <input className="w-full rounded-lg border px-3 py-2.5 text-sm" placeholder="Nom complet"
-                value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} />
+              <div className="flex gap-2">
+                <input className="w-full rounded-lg border px-3 py-2.5 text-sm" placeholder="Prénom" autoComplete="given-name"
+                  value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} />
+                <input className="w-full rounded-lg border px-3 py-2.5 text-sm" placeholder="Nom" autoComplete="family-name"
+                  value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} />
+              </div>
               <input className="w-full rounded-lg border px-3 py-2.5 text-sm" placeholder="Téléphone (optionnel)"
                 value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
             </>
