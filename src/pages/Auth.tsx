@@ -27,7 +27,19 @@ export default function Auth() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', password: '', phone: '' });
   const [asOwner, setAsOwner] = useState(false);
+  const [stayLoggedIn, setStayLoggedIn] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  // « Rester connecté » décoché : la session est purgée à la fermeture de l'onglet.
+  const armSessionOnly = () => {
+    window.addEventListener('pagehide', () => {
+      try {
+        Object.keys(window.localStorage)
+          .filter(k => k.startsWith('sb-') && k.endsWith('-auth-token'))
+          .forEach(k => window.localStorage.removeItem(k));
+      } catch { /* stockage indisponible */ }
+    }, { once: true });
+  };
 
   useEffect(() => { if (!loading && user) navigate(redirectTo); }, [user, loading, navigate, redirectTo]);
 
@@ -62,6 +74,7 @@ export default function Auth() {
           email: parsed.data.email, password: parsed.data.password,
         });
         if (error) throw error;
+        if (!stayLoggedIn) armSessionOnly();
         toast.success('Connecté');
         navigate(redirectTo);
       }
