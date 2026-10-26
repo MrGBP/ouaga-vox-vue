@@ -22,6 +22,7 @@ export async function listPropertyMessages(propertyId: string): Promise<Property
     .from('messages')
     .select('*')
     .eq('property_id', propertyId)
+    .is('reservation_id', null)
     .order('created_at', { ascending: true });
   if (error) throw error;
   return (data ?? []) as PropertyMessageRow[];
