@@ -61,17 +61,14 @@ const MobileNavbar = ({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isOwner, isAdmin, openAuthModal, requireAuth } = useAuth();
+  const { user, isOwner, openAuthModal } = useAuth();
   const showBack = level > 1;
   const showHome = level >= 3 || (depth && depth >= 3);
   const dotDepth = depth || level;
 
   const goPublish = () => {
     setDrawerOpen(false);
-    requireAuth('publier un bien', () => {
-      if (isOwner || isAdmin) navigate('/proprietaire');
-      else navigate('/mon-compte');
-    });
+    navigate(isOwner ? '/proprietaire/biens?new=1' : '/publier');
   };
 
   return (

@@ -15,7 +15,7 @@ const MobileHeader = () => {
   const [showIOSHint, setShowIOSHint] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isOwner, isAdmin, requireAuth } = useAuth();
+  const { user, isOwner } = useAuth();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
 
   const handleInstall = async () => {
@@ -29,10 +29,7 @@ const MobileHeader = () => {
 
   const goPublish = () => {
     setDrawerOpen(false);
-    requireAuth('publier un bien', () => {
-      if (isOwner || isAdmin) navigate('/proprietaire');
-      else navigate('/mon-compte');
-    });
+    navigate(isOwner ? '/proprietaire/biens?new=1' : '/publier');
   };
 
 
