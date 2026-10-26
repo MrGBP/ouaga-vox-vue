@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, Home, LayoutDashboard, Loader2, LogOut, MessageSquare, User } from 'lucide-react';
+import { Calendar, ChevronDown, Home, LayoutDashboard, Loader2, LogOut, MessageSquare, User, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -6,10 +6,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { accountNavigation } from '@/lib/accountNavigation';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
-const icons = { account: User, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare };
+const icons = { account: User, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck };
 
 export default function AccountMenu() {
-  const { user, loading, isOwner, signOut } = useAuth();
+  const { user, loading, isOwner, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   if (!user) return null;
   const name = (user.user_metadata?.full_name as string | undefined) || user.email || 'Utilisateur';
@@ -29,7 +29,7 @@ export default function AccountMenu() {
         {user.email && name !== user.email && <span className="block truncate text-xs text-muted-foreground">{user.email}</span>}
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
-      {accountNavigation(isOwner).map(item => {
+      {accountNavigation(isOwner, isAdmin).map(item => {
         const Icon = icons[item.icon];
         return <DropdownMenuItem key={item.path} disabled={loading} onSelect={() => navigate(item.path)} className="gap-2 min-h-10 cursor-pointer">
           <Icon className="h-4 w-4 text-primary shrink-0" />{item.label}

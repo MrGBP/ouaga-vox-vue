@@ -1,11 +1,11 @@
-import { LogIn, LogOut, User as UserIcon, ChevronRight, LayoutDashboard, Home, Calendar, MessageSquare, Loader2 } from 'lucide-react';
+import { LogIn, LogOut, User as UserIcon, ChevronRight, LayoutDashboard, Home, Calendar, MessageSquare, Loader2, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { accountNavigation } from '@/lib/accountNavigation';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
-const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare };
+const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck };
 
 /**
  * Carte utilisateur pour les menus (mobile / tablette).
@@ -13,7 +13,7 @@ const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calen
  * Non connecté : un seul bouton « Se connecter / Créer un compte ».
  */
 const UserMenuCard = ({ onAction }: { onAction?: () => void }) => {
-  const { user, loading, isOwner, openAuthModal, signOut } = useAuth();
+  const { user, loading, isOwner, isAdmin, openAuthModal, signOut } = useAuth();
   const navigate = useNavigate();
 
   if (loading && !user) return <div className="flex justify-center p-4" role="status" aria-label="Chargement du compte"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
@@ -58,7 +58,7 @@ const UserMenuCard = ({ onAction }: { onAction?: () => void }) => {
         </span>
       </div>
       <div className="border-t border-border pt-2 space-y-1">
-        {accountNavigation(isOwner).map(item => {
+        {accountNavigation(isOwner, isAdmin).map(item => {
           const Icon = icons[item.icon];
           return <Button key={item.path} variant="ghost" disabled={loading} onClick={() => { onAction?.(); navigate(item.path); }} className="w-full justify-start gap-2 h-auto min-h-10 px-2 py-2 text-xs whitespace-normal text-left">
             <Icon className="h-4 w-4 shrink-0 text-primary" />
