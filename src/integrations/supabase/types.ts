@@ -213,6 +213,7 @@ export type Database = {
           property_id: string | null
           read_by_admin: boolean
           read_by_client: boolean
+          read_by_owner: boolean
           reply_to_id: string | null
           reservation_id: string | null
           sender_id: string | null
@@ -226,6 +227,7 @@ export type Database = {
           property_id?: string | null
           read_by_admin?: boolean
           read_by_client?: boolean
+          read_by_owner?: boolean
           reply_to_id?: string | null
           reservation_id?: string | null
           sender_id?: string | null
@@ -239,6 +241,7 @@ export type Database = {
           property_id?: string | null
           read_by_admin?: boolean
           read_by_client?: boolean
+          read_by_owner?: boolean
           reply_to_id?: string | null
           reservation_id?: string | null
           sender_id?: string | null
@@ -852,6 +855,11 @@ export type Database = {
           name: string
         }[]
       }
+      mark_conversation_read: {
+        Args: { _property_id?: string; _reservation_id?: string }
+        Returns: undefined
+      }
+      owner_unread_message_count: { Args: never; Returns: number }
       sync_property_images_from_media: {
         Args: { _property_id: string }
         Returns: undefined
