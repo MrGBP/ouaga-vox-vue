@@ -1,4 +1,7 @@
 # Project rules
+- Use useFavorites for every favorite control and recordPropertyView for actual detail visits; database triggers maintain favorite counters and owner screens subscribe to property changes.
+- Use mark_conversation_read for recipient-specific message receipts and keep notification subscriptions uniquely named; the global NotificationAlerts owns foreground alerts.
+- Register the dedicated push worker under /push/ so it cannot replace the production offline worker at the root scope.
 - Use accountNavigation for account destinations in both drawer and desktop dropdown menus; owner links follow the authenticated owner role while route guards remain authoritative.
 - Keep homepage presentation in the home component and city detection/ranking in reusable geography helpers, so destination changes remain consistent without altering rental filters.
 - Use one carousel index for homepage foreground and backdrop, and a shared furnished-suggestion eligibility helper, so image navigation and suggestion scope cannot diverge.
