@@ -119,10 +119,15 @@ const Header = () => {
             </div>
             {user && <NotificationBell />}
             {user ? (
-              <Link to="/mon-compte">
+              <Link to="/mon-compte" aria-label="Mon compte">
                 <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/5">
-                  <User className="h-3.5 w-3.5" />
-                  {t('nav.mon_compte')}
+                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
+                    {((user.user_metadata?.full_name as string | undefined) || user.email || 'U')
+                      .split(/\s+/).map((p: string) => p[0]).slice(0, 2).join('').toUpperCase()}
+                  </span>
+                  <span className="max-w-[120px] truncate">
+                    {((user.user_metadata?.full_name as string | undefined) || user.email || '').split(' ')[0]}
+                  </span>
                 </Button>
               </Link>
             ) : (

@@ -130,6 +130,10 @@ const MobileHeader = () => {
                 </button>
               </div>
               <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                {/* Compte utilisateur (connecté : infos du user ; sinon : connexion) */}
+                <UserMenuCard onAction={() => setDrawerOpen(false)} />
+
+                <div className="pt-3 mt-1 space-y-1">
                 {[
                   { label: t('nav.biens'), icon: Home, onClick: () => { setDrawerOpen(false); navigate('/'); } },
                   { label: t('nav.carte'), icon: MapPin, onClick: () => { setDrawerOpen(false); navigate('/?exploreMap=1'); } },
@@ -144,44 +148,6 @@ const MobileHeader = () => {
                     {item.label}
                   </button>
                 ))}
-
-                {/* Auth section */}
-                <div className="pt-3 mt-3 border-t border-border space-y-1">
-                  {user ? (
-                    <>
-                      <button
-                        onClick={() => { setDrawerOpen(false); navigate('/mon-compte'); }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-muted text-left"
-                      >
-                        <UserIcon className="h-4 w-4 text-muted-foreground" />
-                        {user.user_metadata?.full_name || user.email}
-                      </button>
-                      <button
-                        onClick={() => { setDrawerOpen(false); signOut(); }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-muted text-left"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Se déconnecter
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => { setDrawerOpen(false); openAuthModal('se connecter'); }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-muted text-left"
-                      >
-                        <LogIn className="h-4 w-4 text-muted-foreground" />
-                        Se connecter
-                      </button>
-                      <button
-                        onClick={() => { setDrawerOpen(false); openAuthModal('créer un compte'); }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-muted text-left"
-                      >
-                        <UserPlus className="h-4 w-4 text-muted-foreground" />
-                        Créer un compte
-                      </button>
-                    </>
-                  )}
                 </div>
 
                 {/* Install PWA */}
