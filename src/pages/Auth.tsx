@@ -8,7 +8,8 @@ import { Building2, Home as HomeIcon } from 'lucide-react';
 import { finalizeSignupProfile } from '@/lib/authProfile';
 
 const signupSchema = z.object({
-  full_name: z.string().trim().min(2, 'Nom trop court').max(80),
+  first_name: z.string().trim().min(2, 'Prénom trop court').max(40),
+  last_name: z.string().trim().min(2, 'Nom trop court').max(40),
   email: z.string().trim().email('Email invalide').max(255),
   password: z.string().min(6, 'Min 6 caractères').max(72),
   phone: z.string().trim().max(30).optional(),
@@ -24,7 +25,7 @@ export default function Auth() {
   const redirectTo = searchParams.get('redirect') || '/';
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', phone: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', password: '', phone: '' });
   const [asOwner, setAsOwner] = useState(false);
   const [busy, setBusy] = useState(false);
 
