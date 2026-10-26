@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input';
 import { listMessages, sendMessage, subscribeMessages, markRead, type MessageRow } from '@/lib/messagesService';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { Check, CheckCheck } from 'lucide-react';
 
 interface Props {
   reservationId: string;
   /** 'client' (user side) or 'admin' (admin dashboard) */
-  viewerRole: 'client' | 'admin';
+  viewerRole: 'client' | 'admin' | 'owner';
   viewerName: string;
 }
 
@@ -35,10 +36,10 @@ export default function ReservationChat({ reservationId, viewerRole, viewerName 
     })();
     const unsub = subscribeMessages(reservationId, (row) => {
       setMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev, row]);
-      markRead(reservationId, viewerRole).catch(() => {});
-    });
+      if (row.sender_id !== user?.id && document.visibilityState === 'visible') markRead(reservationId, viewerRole).catch(() => {});
+    }, row => setMessages(prev => prev.map(m => m.id === row.id ? row : m)));
     return () => { mounted = false; unsub(); };
-  }, [reservationId, viewerRole]);
+  }, [reservationId, viewerRole, user?.id]);
 
   useEffect(() => {
     if (scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
@@ -75,6 +76,7 @@ export default function ReservationChat({ reservationId, viewerRole, viewerName 
                 <div className="whitespace-pre-wrap break-words">{m.content}</div>
                 <div className="text-[10px] opacity-60 mt-0.5 text-right">
                   {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  {mine && ((viewerRole === 'owner' ? m.read_by_client : viewerRole === 'client' ? m.read_by_owner : m.read_by_client) ? <CheckCheck className="inline ml-1 h-3 w-3" aria-label="Lu" /> : <Check className="inline ml-1 h-3 w-3" aria-label="Envoyé" />)}
                 </div>
               </div>
             </div>

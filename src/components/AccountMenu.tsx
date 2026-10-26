@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { accountNavigation } from '@/lib/accountNavigation';
+import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
 const icons = { account: User, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare };
 
@@ -36,6 +37,7 @@ export default function AccountMenu() {
       })}
       {loading && <div role="status" aria-label="Chargement des accès" className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>}
       <DropdownMenuSeparator />
+      <div className="px-2"><PushNotificationsToggle compact /></div>
       <DropdownMenuItem onSelect={() => { void signOut(); }} className="gap-2 min-h-10 text-destructive cursor-pointer"><LogOut className="h-4 w-4" />Se déconnecter</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>;

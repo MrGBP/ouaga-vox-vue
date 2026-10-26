@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { mockProperties, mockPois, mockQuartiers, isTypeFurnished, pricePerNight, getTypeLabel, CHAR_CHECKS, IDX_KEYWORD_MAP } from '@/lib/mockData';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useFavorites } from '@/hooks/useFavorites';
 
 import { addToRecentlyViewed } from '@/components/RecentlyViewed';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -111,7 +112,6 @@ interface Quartier {
 }
 
 
-const FAVORITES_KEY = 'sapsap_favorites';
 const FILTERS_KEY = 'sapsap_filters_v1';
 const SEARCH_KEY = 'sapsap_search_query_v1';
 const ITEMS_PER_PAGE = 25;
@@ -135,9 +135,8 @@ const Index = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailProperty, setDetailProperty] = useState<Property | null>(null);
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
-    try { const saved = localStorage.getItem(FAVORITES_KEY); return saved ? new Set(JSON.parse(saved)) : new Set<string>(); } catch { return new Set<string>(); }
-  });
+  const { ids: favoriteIds, toggle: toggleFavorite } = useFavorites();
+  const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [focusedPropertyId, setFocusedPropertyId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -163,7 +162,7 @@ const Index = () => {
   const { toast } = useToast();
   
 
-  useEffect(() => { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); }, [favorites]);
+  useEffect(() => { if (showFavoritesOnly) setFilteredProperties(prev => prev.filter(p => favorites.has(p.id))); }, [favorites, showFavoritesOnly]);
 
   const { activeCity, wasAutoSwitched, dismissAutoSwitchBanner } = useGeoCity();
   const [showGeoBanner, setShowGeoBanner] = useState(false);
@@ -488,15 +487,6 @@ const Index = () => {
     if (!isMobile) document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const toggleFavorite = (id: string) => {
-    setFavorites(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) { next.delete(id); toast({ title: '💔 Retiré des favoris' }); }
-      else { next.add(id); toast({ title: '❤️ Ajouté aux favoris' }); }
-      if (showFavoritesOnly) setTimeout(() => setFilteredProperties(applyFilters(properties, searchQuery, filters, true, next)), 0);
-      return next;
-    });
-  };
 
   const toggleFavoritesView = () => {
     const next = !showFavoritesOnly;

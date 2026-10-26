@@ -1,6 +1,7 @@
 // Messages liés à un bien (canal admin <-> propriétaire), sans réservation.
 // Utilise la table `messages` existante avec la colonne `property_id`.
 import { supabase } from '@/integrations/supabase/client';
+import { unreadIncoming } from '@/lib/messageReadState';
 
 export interface PropertyMessageRow {
   id: string;
@@ -11,6 +12,7 @@ export interface PropertyMessageRow {
   content: string;
   read_by_admin: boolean;
   read_by_client: boolean;
+  read_by_owner?: boolean;
   created_at: string;
   reply_to_id?: string | null;
 }
@@ -20,6 +22,7 @@ export async function listPropertyMessages(propertyId: string): Promise<Property
     .from('messages')
     .select('*')
     .eq('property_id', propertyId)
+    .is('reservation_id', null)
     .order('created_at', { ascending: true });
   if (error) throw error;
   return (data ?? []) as PropertyMessageRow[];
@@ -64,11 +67,11 @@ export async function listMyOwnerConversations(userId: string) {
   if (mErr) throw mErr;
 
   return props.map(p => {
-    const propMsgs = (msgs ?? []).filter((m: any) => m.property_id === p.id);
+    const propMsgs = (msgs ?? []).filter((m: any) => m.property_id === p.id && !m.reservation_id);
     return {
       property: p,
       lastMessage: propMsgs[0] ?? null,
-      unread: propMsgs.filter((m: any) => m.sender_role === 'admin' && !m.read_by_client).length,
+      unread: unreadIncoming(propMsgs, userId, 'owner').length,
       count: propMsgs.length,
     };
   }).sort((a, b) => {

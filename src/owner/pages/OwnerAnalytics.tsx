@@ -18,6 +18,7 @@ import {
   ADMIN_STATUS_LABEL, type OwnerPropertyRow,
 } from '../lib/ownerService';
 import { useCountryConfig } from '@/hooks/useCountryConfig';
+import { useOwnerActivity } from '@/hooks/useOwnerActivity';
 
 type Reservation = {
   id: string;
@@ -64,6 +65,7 @@ const dayKey = (iso: string) => iso.slice(0, 10);
 
 export default function OwnerAnalytics() {
   const { user } = useAuth();
+  const activity = useOwnerActivity(user?.id);
   const country = useCountryConfig();
   const cur = country.currency_symbol || 'FCFA';
   // Le propriétaire conserve 100 - commission % du chiffre d'affaires confirmé
@@ -89,7 +91,7 @@ export default function OwnerAnalytics() {
         toast.error(e?.message ?? 'Erreur de chargement');
       } finally { setLoading(false); }
     })();
-  }, [user]);
+  }, [user, activity]);
 
   // ─── KPI ────────────────────────────────────────────────────────────────
   const kpi = useMemo(() => {

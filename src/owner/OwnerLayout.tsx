@@ -4,6 +4,7 @@ import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, Log
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import NotificationBell from '@/components/NotificationBell';
 
 import { useOwnerNotifications } from './lib/useOwnerNotifications';
 import OwnerDashboard from './pages/OwnerDashboard';
@@ -49,12 +50,13 @@ export default function OwnerLayout() {
             <span className="h-5 w-px bg-border" />
             <h1 className="text-sm font-bold text-foreground truncate">{t('owner.espace')}</h1>
             {notif.total > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-[10px] font-bold">
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold">
                 {notif.total}
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5">
               <LogOut className="h-4 w-4" /><span className="hidden sm:inline">{t('owner.deconnexion')}</span>
             </Button>
@@ -79,7 +81,7 @@ export default function OwnerLayout() {
               >
                 <Icon className="h-3.5 w-3.5" /> {label}
                 {count > 0 && (
-                  <span className="ml-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[9px] font-bold">
+                  <span className="ml-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold">
                     {count}
                   </span>
                 )}

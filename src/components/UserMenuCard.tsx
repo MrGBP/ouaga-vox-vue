@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { accountNavigation } from '@/lib/accountNavigation';
+import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
 const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare };
 
@@ -67,6 +68,7 @@ const UserMenuCard = ({ onAction }: { onAction?: () => void }) => {
         })}
         {loading && <Loader2 className="mx-auto h-4 w-4 animate-spin text-primary" aria-label="Chargement des accès" />}
       </div>
+      <PushNotificationsToggle compact />
       <Button variant="ghost"
         onClick={() => { onAction?.(); void signOut(); }}
         className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-destructive hover:bg-destructive/10 transition"

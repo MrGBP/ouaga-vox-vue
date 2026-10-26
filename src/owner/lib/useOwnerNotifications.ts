@@ -20,17 +20,14 @@ export function useOwnerNotifications(userId: string | undefined) {
         setData({ unreadMessages: 0, pendingReservations: 0, total: 0 });
         return;
       }
-      const [{ count: msgCount }, { count: resCount }] = await Promise.all([
-        supabase.from('messages')
-          .select('id', { count: 'exact', head: true })
-          .in('property_id', ids)
-          .eq('sender_role', 'admin')
-          .eq('read_by_client', false),
+      const [{ data: msgCount, error: msgError }, { count: resCount, error: resError }] = await Promise.all([
+        supabase.rpc('owner_unread_message_count'),
         supabase.from('reservations')
           .select('id', { count: 'exact', head: true })
           .in('property_id', ids)
           .eq('status', 'pending'),
       ]);
+      if (msgError || resError) return;
       const unreadMessages = msgCount ?? 0;
       const pendingReservations = resCount ?? 0;
       setData({ unreadMessages, pendingReservations, total: unreadMessages + pendingReservations });
@@ -45,11 +42,13 @@ export function useOwnerNotifications(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
     const ch = supabase
-      .channel(`owner-notif-${userId}`)
+      .channel(`owner-notif-${userId}-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => refresh())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const poll = setInterval(refresh, 30000);
+    window.addEventListener('focus', refresh);
+    return () => { clearInterval(poll); window.removeEventListener('focus', refresh); supabase.removeChannel(ch); };
   }, [userId, refresh]);
 
   return { ...data, refresh };

@@ -2,8 +2,9 @@ import { Bell, BellOff } from "lucide-react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
-export default function PushNotificationsToggle() {
+export default function PushNotificationsToggle({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
   const { supported, permission, subscribed, loading, subscribe, unsubscribe } =
     usePushNotifications();
@@ -24,6 +25,7 @@ export default function PushNotificationsToggle() {
     if (subscribed) {
       const ok = await unsubscribe();
       if (ok) toast.success("Notifications push désactivées");
+      else toast.error("Impossible de désactiver les notifications");
     } else {
       if (permission === "denied") {
         toast.error("Notifications bloquées. Autorisez-les dans les réglages du navigateur.");
@@ -37,39 +39,15 @@ export default function PushNotificationsToggle() {
   };
 
   return (
-    <button
-      onClick={handleToggle}
-      disabled={loading}
-      className="w-full flex items-center justify-between rounded-lg border px-4 py-3 hover:bg-muted transition-colors disabled:opacity-50"
-    >
-      <div className="flex items-center gap-3">
-        {subscribed ? (
-          <Bell className="h-5 w-5 text-primary" />
-        ) : (
-          <BellOff className="h-5 w-5 text-muted-foreground" />
-        )}
-        <div className="text-left">
-          <div className="text-sm font-medium">
-            {subscribed ? "Notifications push activées" : "Activer les notifications push"}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {subscribed
-              ? "Recevez les messages et réservations même quand l'app est fermée"
-              : "Recevez une alerte pour les messages, réservations et alertes"}
-          </div>
+    <div className={`w-full flex items-center justify-between gap-3 ${compact ? 'py-2' : 'rounded-lg border px-4 py-3'}`}>
+      <div className="flex items-center gap-2 min-w-0">
+        {subscribed ? <Bell className="h-4 w-4 shrink-0 text-primary" /> : <BellOff className="h-4 w-4 shrink-0 text-muted-foreground" />}
+        <div>
+          <div className={compact ? 'text-xs font-medium' : 'text-sm font-medium'}>{subscribed ? 'Notifications push activées' : 'Activer les notifications push'}</div>
+          {!compact && <div className="text-xs text-muted-foreground">Messages, réservations et alertes, même quand l’app est fermée.</div>}
         </div>
       </div>
-      <span
-        className={`inline-block h-6 w-11 rounded-full transition-colors relative ${
-          subscribed ? "bg-primary" : "bg-muted-foreground/30"
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-            subscribed ? "translate-x-5" : "translate-x-0.5"
-          }`}
-        />
-      </span>
-    </button>
+      <Switch checked={subscribed} disabled={loading} onCheckedChange={() => { void handleToggle(); }} aria-label="Notifications push" />
+    </div>
   );
 }

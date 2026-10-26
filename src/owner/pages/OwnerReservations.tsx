@@ -9,6 +9,7 @@ import { fetchMyPropertyReservations } from '../lib/ownerService';
 import { reservationKindLabel, reservationStatusLabel, updateReservationStatus, type ReservationRow } from '@/lib/reservationsService';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import ReservationChat from '@/components/ReservationChat';
 
 type PeriodKey = 'month' | 'quarter' | 'semester' | 'year';
 const PERIODS: { key: PeriodKey; label: string; days: number }[] = [
@@ -154,6 +155,8 @@ export default function OwnerReservations() {
 }
 
 function ResaCard({ r, title, onAccept, onReject }: { r: ReservationRow; title?: string; onAccept?: () => void; onReject?: () => void }) {
+  const [chatOpen, setChatOpen] = useState(false);
+  const { user } = useAuth();
   const statusColor =
     r.status === 'confirmed' ? 'bg-green-500/10 text-green-700 border-green-500/30' :
     r.status === 'cancelled' ? 'bg-red-500/10 text-red-700 border-red-500/30' :
@@ -180,6 +183,8 @@ function ResaCard({ r, title, onAccept, onReject }: { r: ReservationRow; title?:
         {r.message && <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" /> message</span>}
       </div>
       {r.message && <p className="text-xs italic text-muted-foreground mt-1.5 bg-muted/50 rounded p-2">"{r.message}"</p>}
+      <Button variant="outline" size="sm" className="mt-2 gap-2" onClick={() => setChatOpen(v => !v)}><MessageSquare className="h-4 w-4" />{chatOpen ? 'Fermer les messages' : 'Messages'}</Button>
+      {chatOpen && <div className="mt-3"><ReservationChat reservationId={r.id} viewerRole="owner" viewerName={(user?.user_metadata?.full_name as string | undefined) || 'Propriétaire'} /></div>}
       {(onAccept || onReject) && (
         <div className="flex gap-2 mt-2">
           {onAccept && <Button size="sm" className="flex-1 gap-1.5" onClick={onAccept}><Check className="h-3.5 w-3.5" /> Confirmer</Button>}

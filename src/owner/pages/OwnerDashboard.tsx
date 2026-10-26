@@ -10,12 +10,14 @@ import {
 } from '../lib/ownerService';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { useOwnerActivity } from '@/hooks/useOwnerActivity';
 
 
 type PropPerf = OwnerPropertyRow & { reservationCount: number; pendingCount: number };
 
 export default function OwnerDashboard() {
   const { user } = useAuth();
+  const activity = useOwnerActivity(user?.id);
   const [stats, setStats] = useState<OwnerStats | null>(null);
   const [perf, setPerf] = useState<PropPerf[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function OwnerDashboard() {
         toast.error(e?.message ?? 'Erreur');
       } finally { setLoading(false); }
     })();
-  }, [user]);
+  }, [user, activity]);
 
   const topProps = useMemo(
     () => [...perf].sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0)).slice(0, 5),
