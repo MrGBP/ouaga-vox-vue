@@ -21,7 +21,7 @@ const UserMenuCard = ({ onAction }: { onAction?: () => void }) => {
     return (
       <Button variant="default"
         onClick={() => { onAction?.(); openAuthModal(); }}
-        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-primary-foreground bg-primary hover:opacity-95 transition text-left"
+        className="w-full h-auto flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-primary-foreground bg-primary hover:opacity-95 transition text-left whitespace-normal"
       >
         <span className="w-9 h-9 rounded-full bg-primary-foreground/15 flex items-center justify-center shrink-0">
           <LogIn className="h-4 w-4" />
