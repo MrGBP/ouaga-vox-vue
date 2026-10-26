@@ -1,7 +1,8 @@
 # Homepage update
-- [ ] Connect real property view/favorite counters and live owner analytics.
-- [ ] Connect per-recipient message read counts and live notification alerts.
-- [ ] Make push settings visible in account/owner menus and verify subscriptions safely.
+- [x] Connect real property view/favorite counters and live owner analytics; verify a real detail visit and favorite counter update.
+- [x] Connect per-recipient message read counts and live notification alerts; verify two temporary messages and preserve the other unread conversation, then remove test data.
+- [x] Make push settings visible in account/owner menus and isolate the push worker scope.
+- [ ] Verify background push delivery on an authorized device (requires browser notification permission and a real receiving device).
 - [x] Unify owner workspace access in desktop, mobile and tablet account menus and verify authenticated navigation.
 - [x] Refine mobile homepage to match the supplied image while retaining discreet AI, no catalog carousel or reassurance badges, and unchanged desktop/detail pages.
 - [x] Simplify mobile homepage: discreet SapSap AI, remove catalog carousel and trust badges, improve featured copy and icon-only pagination.
