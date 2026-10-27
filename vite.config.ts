@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
         name: "SapSapHouse",
         short_name: "SapSapHouse",
         description:
-          "Location immobilière au Burkina Faso, au Mali et au Ghana",
+          "Logements meublés au Burkina Faso",
         theme_color: "#1a3560",
         background_color: "#ffffff",
         display: "standalone",
@@ -56,11 +56,24 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/~oauth/, /^\/auth\/v1/],
+        // Pages are never served from an old copy: always ask the server first,
+        // fall back to the saved page only when the device is really offline.
+        globPatterns: ["**/*.{js,css,ico,png,svg,woff2}"],
+        navigateFallback: null,
+        skipWaiting: true,
+        clientsClaim: true,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            urlPattern: ({ request, url }) =>
+              request.mode === "navigate" && !url.pathname.startsWith("/~oauth") && !url.pathname.startsWith("/auth/v1"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pages-cache",
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
           {
             urlPattern: ({ url }) => url.hostname.includes("supabase.co") && !url.pathname.startsWith("/auth/") && !url.pathname.startsWith("/realtime/"),
             handler: "NetworkFirst",
