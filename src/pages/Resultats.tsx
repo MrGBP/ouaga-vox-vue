@@ -1,3 +1,4 @@
+import PageSeo from '@/components/PageSeo';
 import PropertyTypeIcon from '@/components/PropertyTypeIcon';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -141,6 +142,7 @@ const ResultatsPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <PageSeo title="Logements meublés disponibles | SapSapHouse" description="Parcourez sur liste ou sur carte les logements meublés disponibles au Burkina Faso, avec prix, quartier et filtres." path="/resultats" heading="Logements meublés disponibles au Burkina Faso" />
       {isMobile ? (
         <header
           className="sticky top-0 z-30 bg-card/95 backdrop-blur-md border-b border-border"

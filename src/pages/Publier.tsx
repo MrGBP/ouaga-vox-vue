@@ -1,3 +1,4 @@
+import PageSeo from '@/components/PageSeo';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -83,6 +84,7 @@ export default function Publier() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <PageSeo title="Publier votre logement meublé | SapSapHouse" description="Propriétaires : publiez votre logement meublé sur SapSapHouse et recevez des réservations au Burkina Faso." path="/publier" />
       <Header />
 
       {/* HERO */}

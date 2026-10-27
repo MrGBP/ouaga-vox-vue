@@ -90,7 +90,7 @@ export default function Auth() {
           <div className="w-[42px] h-[42px] rounded-lg flex items-center justify-center mb-3" style={{ background: '#1a3560' }}>
             <Building2 size={22} className="text-white" />
           </div>
-          <h1 className="text-lg font-bold">SapSapHouse</h1>
+          <h1 className="text-lg font-bold">Connexion à SapSapHouse</h1>
           <p className="text-xs text-muted-foreground mt-1">{mode === 'login' ? 'Connexion' : 'Créer un compte'}</p>
         </div>
 

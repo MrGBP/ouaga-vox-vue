@@ -1,0 +1,13 @@
+# SapSapHouse
+
+> Réservation de logements meublés au Burkina Faso (Ouagadougou en priorité) : maisons, studios, appartements et villas meublés, pour courts comme longs séjours.
+
+SapSapHouse aide à trouver et réserver un logement meublé vérifié, sur une liste ou une carte interactive, avec un assistant SapSap AI pour décrire son besoin. Les propriétaires peuvent publier leurs biens.
+
+## Pages
+
+- [Accueil](https://sapsaphouse.com/): Recherche de logements meublés et quartiers à découvrir.
+- [Résultats](https://sapsaphouse.com/resultats): Liste et carte des logements disponibles, avec filtres.
+- [Recherche](https://sapsaphouse.com/search): Recherche libre par quartier, type et budget.
+- [Reels](https://sapsaphouse.com/reels): Découverte des logements en vidéo plein écran.
+- [Publier un bien](https://sapsaphouse.com/publier): Espace pour les propriétaires qui veulent louer leur logement.
