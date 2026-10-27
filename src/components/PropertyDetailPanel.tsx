@@ -376,11 +376,11 @@ const PropertyDetailPanel = ({
         {/* Top right actions */}
         <div className="absolute top-3 right-3 flex gap-1.5">
           {onToggleFavorite && (
-            <button onClick={() => onToggleFavorite(property.id)} className={`w-8 h-8 rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${isFavorite ? 'bg-secondary text-secondary-foreground' : 'bg-card/80 text-muted-foreground hover:text-secondary'}`}>
+            <button onClick={() => onToggleFavorite(property.id)} aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} className={`w-8 h-8 rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${isFavorite ? 'bg-secondary text-secondary-foreground' : 'bg-card/80 text-muted-foreground hover:text-secondary'}`}>
               <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
             </button>
           )}
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-card/80 flex items-center justify-center shadow hover:bg-card active:scale-95 transition-all">
+          <button onClick={onClose} aria-label="Fermer" className="w-8 h-8 rounded-full bg-card/80 flex items-center justify-center shadow hover:bg-card active:scale-95 transition-all">
             <X className="h-4 w-4" />
           </button>
         </div>
