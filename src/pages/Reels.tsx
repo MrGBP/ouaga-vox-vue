@@ -1,3 +1,4 @@
+import PageSeo from '@/components/PageSeo';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -91,6 +92,7 @@ const ReelsPage = () => {
 
   return (
     <div className="fixed inset-0 bg-primary">
+      <PageSeo title="Reels des logements meublés | SapSapHouse" description="Découvrez en vidéo plein écran les logements meublés proposés sur SapSapHouse au Burkina Faso." path="/reels" heading="Reels des logements meublés" />
       <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between p-4 text-primary-foreground">
         <p className="font-display font-bold text-lg">Explorer</p>
         <div className="flex gap-2">

@@ -1,3 +1,4 @@
+import PageSeo from '@/components/PageSeo';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -229,6 +230,7 @@ const SearchPage = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      <PageSeo title="Rechercher un logement meublé | SapSapHouse" description="Recherchez un logement meublé par quartier, type de bien et budget à Ouagadougou et au Burkina Faso." path="/search" heading="Rechercher un logement meublé au Burkina Faso" />
       {/* Header */}
       <div
         className="flex items-center gap-2 px-3 border-b border-border bg-card shrink-0"

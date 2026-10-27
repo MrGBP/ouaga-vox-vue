@@ -1,3 +1,4 @@
+import PageSeo from '@/components/PageSeo';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -559,6 +560,7 @@ const Index = () => {
   if (isMobile) {
     return (
       <>
+        <PageSeo title="SapSapHouse — Logements meublés au Burkina Faso" description="Réservez maisons, studios et appartements meublés à Ouagadougou et partout au Burkina, pour une nuit comme pour plusieurs mois." path="/" />
         <MobileApp
           properties={properties}
           filteredProperties={filteredProperties}
@@ -610,6 +612,7 @@ const Index = () => {
   // ═══════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-background">
+      <PageSeo title="SapSapHouse — Logements meublés au Burkina Faso" description="Réservez maisons, studios et appartements meublés à Ouagadougou et partout au Burkina, pour une nuit comme pour plusieurs mois." path="/" />
       <HomeMockup properties={availableProperties(properties)} onOpenFilters={() => navigate('/resultats')} />
 
       {/* Accès Reels — explorer tout le catalogue */}
