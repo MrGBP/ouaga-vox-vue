@@ -54,8 +54,24 @@ export async function registerAppSW(): Promise<void> {
 
   try {
     const { registerSW } = await import("virtual:pwa-register");
+    // Reload once when a newer version takes control, so every device
+    // shows the latest published site without a manual refresh.
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    });
     const updateSW = registerSW({
       immediate: true,
+      onRegisteredSW(_url, reg) {
+        if (!reg) return;
+        const check = () => { if (navigator.onLine) reg.update().catch(() => {}); };
+        setInterval(check, 15 * 60 * 1000);
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") check();
+        });
+      },
       onNeedRefresh() {
         // Notify PWAUpdatePrompt component
         window.dispatchEvent(
