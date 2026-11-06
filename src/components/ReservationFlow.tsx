@@ -8,11 +8,15 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  createPublicReservation,
-  getReservedDates,
-  expandReservedNights,
+  createReservationHold,
+  getCalendarOccupancy,
+  occupancyByNight,
+  quoteStay,
+  OCCUPANCY_LEGEND,
   type PublicReservationRow,
+  type StayQuote,
 } from '@/lib/reservationsPublicService';
+import { useAuth } from '@/hooks/useAuth';
 import { sendConfirmationEmail } from '@/lib/emailTemplates';
 import { isTypeFurnished, pricePerNight as pricePerNightCalc } from '@/lib/mockData';
 import { getRentMode } from '@/lib/typeHelpers';
@@ -22,7 +26,6 @@ import { openWhatsApp, openEmail, openCountrySupport, buildReservationOwnerMessa
 import { useCountryConfig } from '@/hooks/useCountryConfig';
 import { MessageCircle, Mail, LifeBuoy } from 'lucide-react';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
-import { hasBlockedConflict } from '@/lib/blockedDatesService';
 
 interface Property {
   id: string;
@@ -187,6 +190,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const { toast } = useToast();
   const country = useCountryConfig();
   useLockBackdrop(true);
+  const { user: authUser, openAuthModal } = useAuth();
 
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -209,7 +213,8 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const [bookedNights, setBookedNights] = useState<Set<string>>(new Set());
   const [conflict, setConflict] = useState<{ from: Date; next: Date | null } | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState<PublicReservationRow | null>(null);
+  const [submitted, setSubmitted] = useState<(PublicReservationRow & { hold_expires_at?: string }) | null>(null);
+  const [quote, setQuote] = useState<StayQuote | null>(null);
 
   // Window viewport (responsive : 2 mois desktop, 1 mobile)
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
@@ -223,9 +228,9 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const rows = await getReservedDates(property.id);
+      const rows = await getCalendarOccupancy(property.id);
       if (cancelled) return;
-      setBookedNights(expandReservedNights(rows));
+      setBookedNights(new Set(occupancyByNight(rows).keys()));
     })();
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -301,7 +306,15 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     ? Number(property.price)
     : (isFurnished ? pricePerNightCalc(property.price) : Math.round(property.price / 30));
   const nightlyPrice = unitPrice; // alias retro-compat
-  const totalPrice = unitPrice * unitCount;
+  // Devis serveur (tarifs spéciaux, promotions) pour les séjours à la nuit
+  useEffect(() => {
+    setQuote(null);
+    if (!checkIn || !checkOut || isMonthlyMode) return;
+    let off = false;
+    quoteStay(property.id, toKey(checkIn), toKey(checkOut)).then(q => { if (!off) setQuote(q); });
+    return () => { off = true; };
+  }, [checkIn, checkOut, property.id, isMonthlyMode]);
+  const totalPrice = quote ? Number(quote.total) : unitPrice * unitCount;
   const unitLabelShort = isMonthlyMode ? (unitCount > 1 ? 'mois' : 'mois') : (unitCount > 1 ? t('reservation.nuits') : t('reservation.nuit'));
 
   const formatDate = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }) : '';
@@ -327,7 +340,8 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     // Vérif d'authentification — l'utilisateur doit être connecté pour réserver
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      toast({ title: 'Connexion requise', description: 'Connectez-vous pour confirmer votre réservation.', variant: 'destructive' });
+      toast({ title: 'Connexion requise', description: 'Un compte est nécessaire pour réserver.' });
+      openAuthModal('Connectez-vous pour réserver ce logement.');
       return;
     }
     if (!name.trim() || name.trim().length < 2) {
@@ -342,54 +356,27 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     setSubmitting(true);
 
     try {
-      // Vérif : pas de collision avec les périodes bloquées par le propriétaire
-      const blocked = await hasBlockedConflict(property.id, toKey(checkIn), toKey(checkOut)).catch(() => false);
-      if (blocked) {
-        toast({ title: 'Dates indisponibles', description: 'Le propriétaire a bloqué cette période. Choisis d\'autres dates.', variant: 'destructive' });
-        setSubmitting(false);
-        return;
-      }
-      const { row, error } = await createPublicReservation({
-        property_id: property.id,
-        property_title: property.title,
-        property_quartier: property.quartier,
-        user_name: name.trim(),
-        user_email: email.trim(),
-        user_phone: phone.trim(),
-        message: message.trim() || null,
-        check_in: toKey(checkIn),
-        check_out: toKey(checkOut),
-        nights,
-        guests_count: guestsCount,
-        price_per_night: nightlyPrice,
-        total_price: totalPrice,
-      });
-      if (error || !row) throw error || new Error('insert failed');
-      // Génère + log l'email (envoi réel à brancher plus tard)
-      sendConfirmationEmail(row, {
-        id: property.id,
-        title: property.title,
-        quartier: property.quartier,
-        address: property.address,
-        image: property.images?.[0],
-        latitude: property.latitude,
-        longitude: property.longitude,
-        agent_name: property.agent_name,
-        agent_phone: property.agent_phone,
-      });
-      // Lot 3: notifier le propriétaire (in-app + email + WhatsApp deep link).
-      // Le WhatsApp obligatoire (whatsapp_phone) est prioritaire, sinon on retombe
-      // sur le numéro secondaire (agent_phone) pour ne pas casser les anciens biens.
-      const ownerWa = (property as any).whatsapp_phone || property.agent_phone;
-      notifyOwner({
+      // Disponibilité, prix et protection temporaire vérifiés côté serveur
+      const { row, error } = await createReservationHold({
         propertyId: property.id,
-        reservationId: row.id,
-        ownerPhone: ownerWa,
-        ownerEmail: (property as any).agent_email,
-        title: `Nouvelle réservation — ${property.title}`,
-        body: `${name.trim()} a réservé du ${toKey(checkIn)} au ${toKey(checkOut)} (${nights} nuit${nights > 1 ? 's' : ''}).\nTél: ${phone.trim()}\nEmail: ${email.trim()}`,
-        senderName: 'SapSapHouse',
-      }).catch(() => { /* swallow */ });
+        checkIn: toKey(checkIn),
+        checkOut: toKey(checkOut),
+        guests: guestsCount,
+        name: name.trim(),
+        phone: phone.trim(),
+        message: message.trim() || null,
+      });
+      if (error || !row) {
+        const msg = error?.message || '';
+        if (/disponible/i.test(msg)) {
+          toast({ title: 'Dates indisponibles', description: 'Ces dates viennent d\'être prises. Choisissez d\'autres dates.', variant: 'destructive' });
+          const rows = await getCalendarOccupancy(property.id);
+          setBookedNights(new Set(occupancyByNight(rows).keys()));
+          setStep(1);
+          return;
+        }
+        throw error || new Error('Réservation impossible');
+      }
       track('reservation_submitted', { property_id: property.id, nights, total: totalPrice });
       // Confettis navy + orange — moment émotionnel fort
       import('@/lib/celebrate').then(m => m.celebrateReservation()).catch(() => {});
