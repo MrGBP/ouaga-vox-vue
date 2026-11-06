@@ -8,21 +8,21 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  createPublicReservation,
-  getReservedDates,
-  expandReservedNights,
+  createReservationHold,
+  getCalendarOccupancy,
+  occupancyByNight,
+  quoteStay,
   type PublicReservationRow,
+  type StayQuote,
 } from '@/lib/reservationsPublicService';
-import { sendConfirmationEmail } from '@/lib/emailTemplates';
+import { useAuth } from '@/hooks/useAuth';
 import { isTypeFurnished, pricePerNight as pricePerNightCalc } from '@/lib/mockData';
 import { getRentMode } from '@/lib/typeHelpers';
 import { track } from '@/lib/analytics';
-import { notifyOwner } from '@/lib/notifications';
-import { openWhatsApp, openEmail, openCountrySupport, buildReservationOwnerMessage } from '@/lib/contact';
+import { openCountrySupport } from '@/lib/contact';
 import { useCountryConfig } from '@/hooks/useCountryConfig';
-import { MessageCircle, Mail, LifeBuoy } from 'lucide-react';
+import { LifeBuoy } from 'lucide-react';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
-import { hasBlockedConflict } from '@/lib/blockedDatesService';
 
 interface Property {
   id: string;
@@ -187,6 +187,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const { toast } = useToast();
   const country = useCountryConfig();
   useLockBackdrop(true);
+  const { user: authUser, openAuthModal } = useAuth();
 
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -209,7 +210,8 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const [bookedNights, setBookedNights] = useState<Set<string>>(new Set());
   const [conflict, setConflict] = useState<{ from: Date; next: Date | null } | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState<PublicReservationRow | null>(null);
+  const [submitted, setSubmitted] = useState<(PublicReservationRow & { hold_expires_at?: string }) | null>(null);
+  const [quote, setQuote] = useState<StayQuote | null>(null);
 
   // Window viewport (responsive : 2 mois desktop, 1 mobile)
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
@@ -223,9 +225,9 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const rows = await getReservedDates(property.id);
+      const rows = await getCalendarOccupancy(property.id);
       if (cancelled) return;
-      setBookedNights(expandReservedNights(rows));
+      setBookedNights(new Set(occupancyByNight(rows).keys()));
     })();
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -301,7 +303,15 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     ? Number(property.price)
     : (isFurnished ? pricePerNightCalc(property.price) : Math.round(property.price / 30));
   const nightlyPrice = unitPrice; // alias retro-compat
-  const totalPrice = unitPrice * unitCount;
+  // Devis serveur (tarifs spéciaux, promotions) pour les séjours à la nuit
+  useEffect(() => {
+    setQuote(null);
+    if (!checkIn || !checkOut || isMonthlyMode) return;
+    let off = false;
+    quoteStay(property.id, toKey(checkIn), toKey(checkOut)).then(q => { if (!off) setQuote(q); });
+    return () => { off = true; };
+  }, [checkIn, checkOut, property.id, isMonthlyMode]);
+  const totalPrice = quote ? Number(quote.total) : unitPrice * unitCount;
   const unitLabelShort = isMonthlyMode ? (unitCount > 1 ? 'mois' : 'mois') : (unitCount > 1 ? t('reservation.nuits') : t('reservation.nuit'));
 
   const formatDate = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }) : '';
@@ -327,7 +337,8 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     // Vérif d'authentification — l'utilisateur doit être connecté pour réserver
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      toast({ title: 'Connexion requise', description: 'Connectez-vous pour confirmer votre réservation.', variant: 'destructive' });
+      toast({ title: 'Connexion requise', description: 'Un compte est nécessaire pour réserver.' });
+      openAuthModal('Connectez-vous pour réserver ce logement.');
       return;
     }
     if (!name.trim() || name.trim().length < 2) {
@@ -342,54 +353,27 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     setSubmitting(true);
 
     try {
-      // Vérif : pas de collision avec les périodes bloquées par le propriétaire
-      const blocked = await hasBlockedConflict(property.id, toKey(checkIn), toKey(checkOut)).catch(() => false);
-      if (blocked) {
-        toast({ title: 'Dates indisponibles', description: 'Le propriétaire a bloqué cette période. Choisis d\'autres dates.', variant: 'destructive' });
-        setSubmitting(false);
-        return;
-      }
-      const { row, error } = await createPublicReservation({
-        property_id: property.id,
-        property_title: property.title,
-        property_quartier: property.quartier,
-        user_name: name.trim(),
-        user_email: email.trim(),
-        user_phone: phone.trim(),
-        message: message.trim() || null,
-        check_in: toKey(checkIn),
-        check_out: toKey(checkOut),
-        nights,
-        guests_count: guestsCount,
-        price_per_night: nightlyPrice,
-        total_price: totalPrice,
-      });
-      if (error || !row) throw error || new Error('insert failed');
-      // Génère + log l'email (envoi réel à brancher plus tard)
-      sendConfirmationEmail(row, {
-        id: property.id,
-        title: property.title,
-        quartier: property.quartier,
-        address: property.address,
-        image: property.images?.[0],
-        latitude: property.latitude,
-        longitude: property.longitude,
-        agent_name: property.agent_name,
-        agent_phone: property.agent_phone,
-      });
-      // Lot 3: notifier le propriétaire (in-app + email + WhatsApp deep link).
-      // Le WhatsApp obligatoire (whatsapp_phone) est prioritaire, sinon on retombe
-      // sur le numéro secondaire (agent_phone) pour ne pas casser les anciens biens.
-      const ownerWa = (property as any).whatsapp_phone || property.agent_phone;
-      notifyOwner({
+      // Disponibilité, prix et protection temporaire vérifiés côté serveur
+      const { row, error } = await createReservationHold({
         propertyId: property.id,
-        reservationId: row.id,
-        ownerPhone: ownerWa,
-        ownerEmail: (property as any).agent_email,
-        title: `Nouvelle réservation — ${property.title}`,
-        body: `${name.trim()} a réservé du ${toKey(checkIn)} au ${toKey(checkOut)} (${nights} nuit${nights > 1 ? 's' : ''}).\nTél: ${phone.trim()}\nEmail: ${email.trim()}`,
-        senderName: 'SapSapHouse',
-      }).catch(() => { /* swallow */ });
+        checkIn: toKey(checkIn),
+        checkOut: toKey(checkOut),
+        guests: guestsCount,
+        name: name.trim(),
+        phone: phone.trim(),
+        message: message.trim() || null,
+      });
+      if (error || !row) {
+        const msg = error?.message || '';
+        if (/disponible/i.test(msg)) {
+          toast({ title: 'Dates indisponibles', description: 'Ces dates viennent d\'être prises. Choisissez d\'autres dates.', variant: 'destructive' });
+          const rows = await getCalendarOccupancy(property.id);
+          setBookedNights(new Set(occupancyByNight(rows).keys()));
+          setStep(1);
+          return;
+        }
+        throw error || new Error('Réservation impossible');
+      }
       track('reservation_submitted', { property_id: property.id, nights, total: totalPrice });
       // Confettis navy + orange — moment émotionnel fort
       import('@/lib/celebrate').then(m => m.celebrateReservation()).catch(() => {});
@@ -423,48 +407,15 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               <div className="flex justify-between pt-2 border-t border-border text-base font-bold"><span>{t('reservation.total')}</span><span className="text-primary">{fmt(totalPrice)} FCFA</span></div>
             </div>
 
-            <p className="text-xs text-muted-foreground mb-3">
-              Pour accélérer la confirmation, notifie directement le propriétaire :
-            </p>
-
-            {(() => {
-              const ownerMsg = buildReservationOwnerMessage({
-                propertyTitle: property.title,
-                clientName: name,
-                clientPhone: phone,
-                clientEmail: email,
-                checkIn: checkIn ? formatDateLong(checkIn) : undefined,
-                checkOut: checkOut ? formatDateLong(checkOut) : undefined,
-                guests: guestsCount,
-                totalPrice,
-                currencySymbol: country.currency_symbol,
-                confirmationNumber: submitted.confirmation_number,
-              });
-              return (
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <Button
-                    type="button"
-                    onClick={() => openWhatsApp((property as any).whatsapp_phone || property.agent_phone, ownerMsg)}
-                    disabled={!((property as any).whatsapp_phone || property.agent_phone)}
-                    className="h-11 bg-[#25D366] hover:bg-[#1ebd58] text-white"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-1.5" /> WhatsApp
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => openEmail({
-                      to: (property as any).agent_email || country.support_email || '',
-                      subject: `Réservation ${submitted.confirmation_number} — ${property.title}`,
-                      body: ownerMsg,
-                    })}
-                    className="h-11"
-                  >
-                    <Mail className="h-4 w-4 mr-1.5" /> Email
-                  </Button>
-                </div>
-              );
-            })()}
+            <div className="rounded-xl border border-secondary/40 bg-secondary/10 p-3 text-xs text-left text-foreground mb-3 space-y-1">
+              <p className="font-semibold">Vos dates sont protégées temporairement</p>
+              <p className="text-muted-foreground">
+                {submitted.hold_expires_at
+                  ? `Jusqu'à ${new Date(submitted.hold_expires_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. `
+                  : ''}
+                Sans paiement d'ici là, elles redeviennent disponibles. Le propriétaire confirmera ensuite la disponibilité.
+              </p>
+            </div>
 
             <button
               type="button"
@@ -611,6 +562,13 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               )}
 
               {/* Guest counter removed per simplified flow */}
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-card border border-border" />Disponible</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-muted line-through" />Indisponible</span>
+              </div>
+              {!authUser && (
+                <p className="text-[11px] text-muted-foreground">Un compte SapSapHouse est nécessaire pour réserver — la connexion vous sera demandée.</p>
+              )}
 
               <Button
                 onClick={() => setStep(2)}
@@ -680,9 +638,15 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
 
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex justify-between text-sm text-foreground">
-                  <span>{unitCount} {unitLabelShort} × {fmt(unitPrice)} {(property as any).currency || 'FCFA'}</span>
-                  <span className="font-semibold">{fmt(totalPrice)} {(property as any).currency || 'FCFA'}</span>
+                  <span>{unitCount} {unitLabelShort} × {fmt(quote ? Number(quote.base_per_night) : unitPrice)} {(property as any).currency || 'FCFA'}</span>
+                  <span className="font-semibold">{fmt(quote ? Number(quote.subtotal) : totalPrice)} {(property as any).currency || 'FCFA'}</span>
                 </div>
+                {quote && Number(quote.discount) !== 0 && (
+                  <div className="flex justify-between text-sm text-secondary mt-1">
+                    <span>{Number(quote.discount) > 0 ? 'Réduction / promotion' : 'Tarif spécial'}</span>
+                    <span>{Number(quote.discount) > 0 ? '−' : '+'}{fmt(Math.abs(Number(quote.discount)))} {(property as any).currency || 'FCFA'}</span>
+                  </div>
+                )}
                 <div className="flex justify-between pt-2 mt-2 border-t border-border text-base font-bold">
                   <span>{t('reservation.total')}</span>
                   <span className="text-primary">{fmt(totalPrice)} {(property as any).currency || 'FCFA'}</span>

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, useNavigate, Link } from 'react-router-dom';
-import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, LogOut, BarChart3 } from 'lucide-react';
+import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, LogOut, BarChart3, CalendarDays } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import OwnerProperties from './pages/OwnerProperties';
 import OwnerReservations from './pages/OwnerReservations';
 import OwnerMessages from './pages/OwnerMessages';
 import OwnerAnalytics from './pages/OwnerAnalytics';
+import OwnerCalendar from './pages/OwnerCalendar';
 
 
 export default function OwnerLayout() {
@@ -24,6 +25,7 @@ export default function OwnerLayout() {
     { to: '/proprietaire', label: t('owner.nav.vue'), icon: LayoutDashboard, end: true, badgeKey: null as null | 'total' },
     { to: '/proprietaire/biens', label: t('owner.nav.biens'), icon: Home, badgeKey: null },
     { to: '/proprietaire/reservations', label: t('owner.nav.reservations'), icon: Calendar, badgeKey: 'pendingReservations' as const },
+    { to: '/proprietaire/calendrier', label: 'Calendrier', icon: CalendarDays, badgeKey: null },
     { to: '/proprietaire/messages', label: t('owner.nav.messages'), icon: MessageSquare, badgeKey: 'unreadMessages' as const },
     { to: '/proprietaire/analyses', label: t('owner.nav.analytics'), icon: BarChart3, badgeKey: null },
   ];
@@ -96,6 +98,7 @@ export default function OwnerLayout() {
           <Route index element={<OwnerDashboard />} />
           <Route path="biens" element={<OwnerProperties />} />
           <Route path="reservations" element={<OwnerReservations />} />
+          <Route path="calendrier" element={<OwnerCalendar />} />
           <Route path="messages" element={<OwnerMessages />} />
           <Route path="analyses" element={<OwnerAnalytics />} />
           <Route path="*" element={<Navigate to="/proprietaire" replace />} />

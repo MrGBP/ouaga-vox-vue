@@ -15,6 +15,7 @@ export const BLOCK_REASONS: Array<{ value: string; label: string }> = [
   { value: 'maintenance', label: 'Maintenance' },
   { value: 'external_booking', label: 'Réservation externe' },
   { value: 'renovation', label: 'Rénovation' },
+  { value: 'cleaning', label: 'Nettoyage / transition' },
   { value: 'unavailable', label: 'Indisponible' },
 ];
 

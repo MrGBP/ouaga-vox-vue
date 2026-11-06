@@ -9,3 +9,4 @@
 - Use a shared compact mobile discovery card for homepage, results, and map previews so thumbnail information stays consistent without changing property detail views.
 - Keep the mobile homepage introduction and its scoped styles isolated from the desktop homepage, reusing the shared furnished search suggestions to preserve consistent search eligibility.- Render property-type icons only through PropertyTypeIcon/typeIconSvg and card characteristics only through cardHighlights, so filters, map pins and cards stay in sync.
 - Service worker serves pages network-first (never precached HTML) with skipWaiting/clientsClaim and auto-reload on controller change, so every device gets the latest publish.
+- Reservations are created only through server functions (create_reservation_hold, check_availability, quote_stay) so availability, price snapshot and date holds are enforced in the database, not the browser.

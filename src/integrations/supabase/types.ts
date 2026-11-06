@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json | null
+          entity: string
+          entity_id: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          entity: string
+          entity_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          entity?: string
+          entity_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       blocked_dates: {
         Row: {
           created_at: string
@@ -291,6 +321,27 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       pois: {
         Row: {
           created_at: string
@@ -500,6 +551,50 @@ export type Database = {
         }
         Relationships: []
       }
+      property_calendar_rules: {
+        Row: {
+          buffer_nights: number
+          check_in_time: string
+          check_out_time: string
+          cleaning_minutes: number
+          early_late_policy: string | null
+          property_id: string
+          same_day_turnover: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          buffer_nights?: number
+          check_in_time?: string
+          check_out_time?: string
+          cleaning_minutes?: number
+          early_late_policy?: string | null
+          property_id: string
+          same_day_turnover?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          buffer_nights?: number
+          check_in_time?: string
+          check_out_time?: string
+          cleaning_minutes?: number
+          early_late_policy?: string | null
+          property_id?: string
+          same_day_turnover?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_calendar_rules_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_media: {
         Row: {
           caption: string | null
@@ -541,6 +636,53 @@ export type Database = {
           },
         ]
       }
+      property_price_rules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date_from: string
+          date_to: string
+          discount_pct: number | null
+          id: string
+          kind: string
+          label: string | null
+          price_per_night: number | null
+          property_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date_from: string
+          date_to: string
+          discount_pct?: number | null
+          id?: string
+          kind?: string
+          label?: string | null
+          price_per_night?: number | null
+          property_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date_from?: string
+          date_to?: string
+          discount_pct?: number | null
+          id?: string
+          kind?: string
+          label?: string | null
+          price_per_night?: number | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_price_rules_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_reservations: {
         Row: {
           check_in: string
@@ -548,16 +690,21 @@ export type Database = {
           confirmation_number: string
           created_at: string
           guests_count: number
+          hold_expires_at: string | null
           id: string
           message: string | null
           nights: number
+          owner_decision_at: string | null
           price_per_night: number
+          price_snapshot: Json | null
           property_id: string
           property_quartier: string
           property_title: string
           status: string
           total_price: number
+          updated_at: string
           user_email: string
+          user_id: string | null
           user_name: string
           user_phone: string
         }
@@ -567,16 +714,21 @@ export type Database = {
           confirmation_number?: string
           created_at?: string
           guests_count?: number
+          hold_expires_at?: string | null
           id?: string
           message?: string | null
           nights: number
+          owner_decision_at?: string | null
           price_per_night: number
+          price_snapshot?: Json | null
           property_id: string
           property_quartier: string
           property_title: string
           status?: string
           total_price: number
+          updated_at?: string
           user_email: string
+          user_id?: string | null
           user_name: string
           user_phone: string
         }
@@ -586,16 +738,21 @@ export type Database = {
           confirmation_number?: string
           created_at?: string
           guests_count?: number
+          hold_expires_at?: string | null
           id?: string
           message?: string | null
           nights?: number
+          owner_decision_at?: string | null
           price_per_night?: number
+          price_snapshot?: Json | null
           property_id?: string
           property_quartier?: string
           property_title?: string
           status?: string
           total_price?: number
+          updated_at?: string
           user_email?: string
+          user_id?: string | null
           user_name?: string
           user_phone?: string
         }
@@ -792,6 +949,61 @@ export type Database = {
     }
     Functions: {
       activate_owner_role: { Args: never; Returns: undefined }
+      available_property_ids: {
+        Args: { _check_in: string; _check_out: string }
+        Returns: string[]
+      }
+      cancel_my_reservation: { Args: { _id: string }; Returns: undefined }
+      check_availability: {
+        Args: {
+          _check_in: string
+          _check_out: string
+          _ignore?: string
+          _property_id: string
+        }
+        Returns: boolean
+      }
+      create_reservation_hold: {
+        Args: {
+          _check_in: string
+          _check_out: string
+          _guests: number
+          _message?: string
+          _name: string
+          _phone: string
+          _property_id: string
+        }
+        Returns: {
+          check_in: string
+          check_out: string
+          confirmation_number: string
+          created_at: string
+          guests_count: number
+          hold_expires_at: string | null
+          id: string
+          message: string | null
+          nights: number
+          owner_decision_at: string | null
+          price_per_night: number
+          price_snapshot: Json | null
+          property_id: string
+          property_quartier: string
+          property_title: string
+          status: string
+          total_price: number
+          updated_at: string
+          user_email: string
+          user_id: string | null
+          user_name: string
+          user_phone: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "public_reservations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       ensure_user_profile: {
         Args: { _full_name?: string; _phone?: string }
         Returns: {
@@ -808,6 +1020,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_calendar_occupancy: {
+        Args: { _property_id: string }
+        Returns: {
+          date_from: string
+          date_to: string
+          source_id: string
+          state: string
+        }[]
       }
       get_country_support: {
         Args: { _code: string }
@@ -860,6 +1081,14 @@ export type Database = {
         Returns: undefined
       }
       owner_unread_message_count: { Args: never; Returns: number }
+      quote_stay: {
+        Args: { _check_in: string; _check_out: string; _property_id: string }
+        Returns: Json
+      }
+      reservation_is_active: {
+        Args: { _hold: string; _status: string }
+        Returns: boolean
+      }
       sync_property_images_from_media: {
         Args: { _property_id: string }
         Returns: undefined
