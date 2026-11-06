@@ -12,19 +12,16 @@ import {
   getCalendarOccupancy,
   occupancyByNight,
   quoteStay,
-  OCCUPANCY_LEGEND,
   type PublicReservationRow,
   type StayQuote,
 } from '@/lib/reservationsPublicService';
 import { useAuth } from '@/hooks/useAuth';
-import { sendConfirmationEmail } from '@/lib/emailTemplates';
 import { isTypeFurnished, pricePerNight as pricePerNightCalc } from '@/lib/mockData';
 import { getRentMode } from '@/lib/typeHelpers';
 import { track } from '@/lib/analytics';
-import { notifyOwner } from '@/lib/notifications';
-import { openWhatsApp, openEmail, openCountrySupport, buildReservationOwnerMessage } from '@/lib/contact';
+import { openCountrySupport } from '@/lib/contact';
 import { useCountryConfig } from '@/hooks/useCountryConfig';
-import { MessageCircle, Mail, LifeBuoy } from 'lucide-react';
+import { LifeBuoy } from 'lucide-react';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
 
 interface Property {
@@ -410,48 +407,15 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               <div className="flex justify-between pt-2 border-t border-border text-base font-bold"><span>{t('reservation.total')}</span><span className="text-primary">{fmt(totalPrice)} FCFA</span></div>
             </div>
 
-            <p className="text-xs text-muted-foreground mb-3">
-              Pour accélérer la confirmation, notifie directement le propriétaire :
-            </p>
-
-            {(() => {
-              const ownerMsg = buildReservationOwnerMessage({
-                propertyTitle: property.title,
-                clientName: name,
-                clientPhone: phone,
-                clientEmail: email,
-                checkIn: checkIn ? formatDateLong(checkIn) : undefined,
-                checkOut: checkOut ? formatDateLong(checkOut) : undefined,
-                guests: guestsCount,
-                totalPrice,
-                currencySymbol: country.currency_symbol,
-                confirmationNumber: submitted.confirmation_number,
-              });
-              return (
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <Button
-                    type="button"
-                    onClick={() => openWhatsApp((property as any).whatsapp_phone || property.agent_phone, ownerMsg)}
-                    disabled={!((property as any).whatsapp_phone || property.agent_phone)}
-                    className="h-11 bg-[#25D366] hover:bg-[#1ebd58] text-white"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-1.5" /> WhatsApp
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => openEmail({
-                      to: (property as any).agent_email || country.support_email || '',
-                      subject: `Réservation ${submitted.confirmation_number} — ${property.title}`,
-                      body: ownerMsg,
-                    })}
-                    className="h-11"
-                  >
-                    <Mail className="h-4 w-4 mr-1.5" /> Email
-                  </Button>
-                </div>
-              );
-            })()}
+            <div className="rounded-xl border border-secondary/40 bg-secondary/10 p-3 text-xs text-left text-foreground mb-3 space-y-1">
+              <p className="font-semibold">Vos dates sont protégées temporairement</p>
+              <p className="text-muted-foreground">
+                {submitted.hold_expires_at
+                  ? `Jusqu'à ${new Date(submitted.hold_expires_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. `
+                  : ''}
+                Sans paiement d'ici là, elles redeviennent disponibles. Le propriétaire confirmera ensuite la disponibilité.
+              </p>
+            </div>
 
             <button
               type="button"
@@ -598,6 +562,13 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               )}
 
               {/* Guest counter removed per simplified flow */}
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-card border border-border" />Disponible</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-muted line-through" />Indisponible</span>
+              </div>
+              {!authUser && (
+                <p className="text-[11px] text-muted-foreground">Un compte SapSapHouse est nécessaire pour réserver — la connexion vous sera demandée.</p>
+              )}
 
               <Button
                 onClick={() => setStep(2)}
@@ -667,9 +638,15 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
 
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex justify-between text-sm text-foreground">
-                  <span>{unitCount} {unitLabelShort} × {fmt(unitPrice)} {(property as any).currency || 'FCFA'}</span>
-                  <span className="font-semibold">{fmt(totalPrice)} {(property as any).currency || 'FCFA'}</span>
+                  <span>{unitCount} {unitLabelShort} × {fmt(quote ? Number(quote.base_per_night) : unitPrice)} {(property as any).currency || 'FCFA'}</span>
+                  <span className="font-semibold">{fmt(quote ? Number(quote.subtotal) : totalPrice)} {(property as any).currency || 'FCFA'}</span>
                 </div>
+                {quote && Number(quote.discount) !== 0 && (
+                  <div className="flex justify-between text-sm text-secondary mt-1">
+                    <span>{Number(quote.discount) > 0 ? 'Réduction / promotion' : 'Tarif spécial'}</span>
+                    <span>{Number(quote.discount) > 0 ? '−' : '+'}{fmt(Math.abs(Number(quote.discount)))} {(property as any).currency || 'FCFA'}</span>
+                  </div>
+                )}
                 <div className="flex justify-between pt-2 mt-2 border-t border-border text-base font-bold">
                   <span>{t('reservation.total')}</span>
                   <span className="text-primary">{fmt(totalPrice)} {(property as any).currency || 'FCFA'}</span>
