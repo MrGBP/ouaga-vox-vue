@@ -16,3 +16,11 @@
 - [x] Remove city selectors, repetitive labels, numbers and the separate neighborhood exploration section; verify the result.
 - [x] Remove the homepage filter block, rename the section to "Explorez nos demeures", and rewrite the featured-properties subtitle around furnished living; verify in the browser.
 - [ ] Replace low-resolution inspiration photos with genuine high-resolution neighborhood images (waiting for user images).
+## Calendrier / Paiements / Reçus / Notifications
+- [x] Phase 1 — Audit
+- [x] Phase 2 — Calendrier (vérif serveur, protection 10 min, règles, tarifs, blocages, vue propriétaire)
+- [ ] Phase 2b — Filtre par dates dans les résultats + alternatives
+- [ ] Phase 3 — Paiement Mobile Money simulé
+- [ ] Phase 4 — Reçus
+- [ ] Phase 5 — Centre de notifications
+- [ ] Phase 6 — Intégration + vues admin
