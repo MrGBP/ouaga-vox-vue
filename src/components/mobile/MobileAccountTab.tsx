@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { LogIn, LogOut, ChevronRight, User as UserIcon, LayoutDashboard, Home, Calendar, MessageSquare, ShieldCheck, Bell, Heart, Receipt, PlusCircle, BadgeCheck, Loader2, LifeBuoy, MessageCircle, Mail, FileText, KeyRound, ChevronDown } from 'lucide-react';
+import { LogIn, LogOut, ChevronRight, User as UserIcon, LayoutDashboard, Home, Calendar, MessageSquare, ShieldCheck, Bell, Heart, Receipt, BadgeCheck, Loader2, LifeBuoy, MessageCircle, Mail, FileText, KeyRound, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { accountNavigation } from '@/lib/accountNavigation';

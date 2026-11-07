@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowRight, CheckCircle2, Camera, MapPin, Sparkles, Shield,
-  BadgeCheck, Zap, Eye, Home, Building2, Store, Warehouse,
+  BadgeCheck, Zap, Eye, Home, Building2,
   Bed, Bath, Ruler, Star,
 } from 'lucide-react';
 import Header from '@/components/Header';
