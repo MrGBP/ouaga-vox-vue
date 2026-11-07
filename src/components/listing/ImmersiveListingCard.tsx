@@ -64,14 +64,14 @@ const ImmersiveListingCard = forwardRef<HTMLDivElement, Props>(({ property: p, f
               <button
                 onClick={(e) => { e.stopPropagation(); onShowOnMap(p.id); }}
                 aria-label="Voir sur la carte"
-                className="h-10 px-3.5 rounded-full bg-primary-foreground/15 backdrop-blur-md border border-primary-foreground/30 flex items-center gap-1.5 text-sm font-medium active:scale-95 transition-transform"
+                className="h-10 basis-1/4 shrink-0 justify-center px-2 rounded-full bg-primary-foreground/15 backdrop-blur-md border border-primary-foreground/30 flex items-center gap-1.5 text-sm font-medium active:scale-95 transition-transform"
               >
                 <MapIcon className="h-4 w-4" /> Carte
               </button>
             )}
             <button
               onClick={(e) => { e.stopPropagation(); onOpen(p.id); }}
-              className="h-10 flex-1 rounded-full bg-card text-primary font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              className="h-10 flex-1 min-w-0 rounded-full bg-card text-primary font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
               <Eye className="h-4 w-4" /> Voir le bien
             </button>
