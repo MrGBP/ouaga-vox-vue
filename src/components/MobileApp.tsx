@@ -1,3 +1,4 @@
+import MobileAccountTab from '@/components/mobile/MobileAccountTab';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -895,58 +896,9 @@ export default function MobileApp(props: MobileAppProps) {
               className="fixed top-0 left-0 right-0 z-[80] flex items-center px-3 no-select"
               style={{ height: 'calc(52px + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)', background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', borderBottom: '0.5px solid hsl(var(--border))' }}
             >
-              <span className="text-sm font-bold text-foreground">👤 {t('nav.profil')}</span>
+              <span className="text-base font-bold text-foreground">Mon compte</span>
             </nav>
-            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-104px)] px-6">
-              {user ? (
-                <div className="w-full max-w-xs space-y-6">
-                  <div className="text-center">
-                    <div className="text-5xl mb-4">👤</div>
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {user.user_metadata?.full_name || user.email}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Button className="w-full bg-primary text-primary-foreground">
-                      {t('sections.mon_compte')}
-                    </Button>
-                    <Button variant="outline" className="w-full">
-                      {t('sections.mes_favoris')}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full text-destructive hover:text-destructive gap-2"
-                      onClick={() => signOut()}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {t('sections.se_deconnecter')}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="w-full max-w-xs text-center">
-                  <div className="text-5xl mb-4">👤</div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{t('sections.connectez_vous')}</h3>
-                  <p className="text-sm text-muted-foreground text-center mb-6">
-                    {t('sections.connectez_vous_desc')}
-                  </p>
-                  <Button 
-                    className="w-full bg-primary text-primary-foreground mb-3"
-                    onClick={() => openAuthModal('se connecter')}
-                  >
-                    {t('sections.se_connecter')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => openAuthModal('créer un compte')}
-                  >
-                    {t('sections.creer_compte')}
-                  </Button>
-                </div>
-              )}
-            </div>
+            <MobileAccountTab favoritesCount={favoritesCount} onOpenFavorites={() => handleMobileTabChange('favorites')} />
           </motion.div>
         )}
       </AnimatePresence>

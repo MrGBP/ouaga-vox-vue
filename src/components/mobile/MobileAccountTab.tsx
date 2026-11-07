@@ -52,7 +52,7 @@ export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }
           <Button variant="outline" className="w-full h-12 rounded-xl text-base" onClick={() => openAuthModal('créer un compte')}>Créer un compte</Button>
         </div>
         <Group title="Vous avez un logement meublé ?">
-          <Row icon={PlusCircle} label="Proposer mon bien" hint="SapSapHouse s'occupe de tout" onClick={() => navigate('/proposer-bien')} />
+          <Row icon={PlusCircle} label="Proposer mon bien" hint="SapSapHouse s'occupe de tout" onClick={() => navigate('/publier')} />
         </Group>
       </div>
     );
