@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import NotificationBell from '@/components/NotificationBell';
 import UserMenuCard from '@/components/UserMenuCard';
+import PublishPropertyCTA from '@/components/mobile/PublishPropertyCTA';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 const MobileHeader = () => {
@@ -131,11 +132,15 @@ const MobileHeader = () => {
                 {/* Compte utilisateur (connecté : infos du user ; sinon : connexion) */}
                 <UserMenuCard onAction={() => setDrawerOpen(false)} />
 
+                {/* Mise en avant : publier un logement */}
+                <div className="pt-3">
+                  <PublishPropertyCTA isOwner={isOwner} onClick={goPublish} />
+                </div>
+
                 <div className="pt-3 mt-1 space-y-1">
                 {[
                   { label: t('nav.biens'), icon: Home, onClick: () => { setDrawerOpen(false); navigate('/'); } },
                   { label: t('nav.carte'), icon: MapPin, onClick: () => { setDrawerOpen(false); navigate('/?exploreMap=1'); } },
-                  { label: t('nav.publier_bien'), icon: FileText, onClick: goPublish },
                 ].map(item => (
                   <button
                     key={item.label}
