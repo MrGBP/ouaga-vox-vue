@@ -312,13 +312,15 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   // Devis serveur (tarifs spéciaux, promotions) pour les séjours à la nuit
   useEffect(() => {
     setQuote(null);
-    if (!checkIn || !checkOut || isMonthlyMode) return;
+    if (!checkIn || !checkOut) return;
     let off = false;
     quoteStay(property.id, toKey(checkIn), toKey(checkOut)).then(q => { if (!off) setQuote(q); });
     return () => { off = true; };
-  }, [checkIn, checkOut, property.id, isMonthlyMode]);
+  }, [checkIn, checkOut, property.id]);
+  // Le devis serveur (à la nuit) fait foi : c'est exactement le montant réservé et payé.
   const totalPrice = quote ? Number(quote.total) : unitPrice * unitCount;
-  const unitLabelShort = isMonthlyMode ? (unitCount > 1 ? 'mois' : 'mois') : (unitCount > 1 ? t('reservation.nuits') : t('reservation.nuit'));
+  const displayUnits = quote ? Number(quote.nights) : unitCount;
+  const unitLabelShort = quote || !isMonthlyMode ? (displayUnits > 1 ? t('reservation.nuits') : t('reservation.nuit')) : 'mois';
 
   const formatDate = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }) : '';
   const formatDateLong = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
@@ -404,7 +406,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               <div className="flex justify-between"><span className="text-muted-foreground">Bien</span><span className="font-semibold">{property.title}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{unitCount} {unitLabelShort}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{displayUnits} {unitLabelShort}</span></div>
             </div>
             <SimulatedPaymentPanel
               stay={{
@@ -571,7 +573,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                   {unitCount > 0 && (
                     <div className="text-right">
                       <p className="text-[10px] text-muted-foreground uppercase font-bold">Durée</p>
-                      <p className="font-semibold">{unitCount} {unitLabelShort}</p>
+                      <p className="font-semibold">{displayUnits} {unitLabelShort}</p>
                     </div>
                   )}
                 </div>
@@ -648,13 +650,13 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               <div className="bg-muted/50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{unitCount} {unitLabelShort}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{displayUnits} {unitLabelShort}</span></div>
                 
               </div>
 
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex justify-between text-sm text-foreground">
-                  <span>{unitCount} {unitLabelShort} × {fmt(quote ? Number(quote.base_per_night) : unitPrice)} {(property as any).currency || 'FCFA'}</span>
+                  <span>{displayUnits} {unitLabelShort} × {fmt(quote ? Number(quote.base_per_night) : unitPrice)} {(property as any).currency || 'FCFA'}</span>
                   <span className="font-semibold">{fmt(quote ? Number(quote.subtotal) : totalPrice)} {(property as any).currency || 'FCFA'}</span>
                 </div>
                 {quote && Number(quote.discount) !== 0 && (
