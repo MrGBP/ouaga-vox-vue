@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { accountNavigation } from '@/lib/accountNavigation';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
+import { rememberReturnTab } from '@/lib/returnTo';
 
 const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck, bell: Bell };
 
@@ -27,7 +28,8 @@ const Group = ({ title, children }: { title: string; children: React.ReactNode }
 
 export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }: { favoritesCount?: number; onOpenFavorites: () => void }) {
   const { user, loading, isOwner, isAdmin, openAuthModal, signOut } = useAuth();
-  const navigate = useNavigate();
+  const rawNavigate = useNavigate();
+  const navigate = (path: string) => { rememberReturnTab('profile'); rawNavigate(path); };
 
   if (loading && !user) return <div className="flex justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
@@ -61,7 +63,6 @@ export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }
   const name = (user.user_metadata?.full_name as string | undefined) || user.email || 'Mon compte';
   const initials = name.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
   const nav = accountNavigation(isOwner, isAdmin);
-  const personal = nav.filter(i => !i.path.startsWith('/proprietaire') && i.path !== '/admin');
   const pro = nav.filter(i => i.path.startsWith('/proprietaire') || i.path === '/admin');
 
   return (
@@ -75,9 +76,22 @@ export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }
         </div>
       </div>
 
-      <Group title="Mes activités">
-        {personal.map(i => <Row key={i.path} icon={i.path.includes('sejours') ? Receipt : icons[i.icon]} label={i.label} onClick={() => navigate(i.path)} />)}
-        <Row icon={Heart} label="Mes favoris" hint={favoritesCount ? `${favoritesCount} logement${favoritesCount > 1 ? 's' : ''} enregistré${favoritesCount > 1 ? 's' : ''}` : undefined} onClick={onOpenFavorites} />
+      <div className="grid grid-cols-3 gap-2.5">
+        {[
+          { icon: Receipt, label: 'Séjours', on: () => navigate('/mon-compte?tab=sejours') },
+          { icon: Heart, label: favoritesCount ? `Favoris · ${favoritesCount}` : 'Favoris', on: onOpenFavorites },
+          { icon: Bell, label: 'Alertes', on: () => navigate('/notifications') },
+        ].map(t => (
+          <button key={t.label} type="button" onClick={t.on} className="rounded-2xl bg-card border border-border py-4 flex flex-col items-center gap-2 active:scale-[0.97] transition-transform shadow-sm">
+            <span className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center"><t.icon className="h-5 w-5" strokeWidth={1.8} /></span>
+            <span className="text-xs font-semibold text-foreground">{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <Group title="Paramètres du compte">
+        <Row icon={UserIcon} label="Informations personnelles" hint="Nom, téléphone, e-mail" onClick={() => navigate('/mon-compte?tab=profile')} />
+        <div className="px-4 py-2"><PushNotificationsToggle compact /></div>
       </Group>
 
       {pro.length > 0 && (
@@ -86,8 +100,8 @@ export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }
         </Group>
       )}
 
-      <Group title="Préférences">
-        <div className="px-4 py-2"><PushNotificationsToggle compact /></div>
+      <Group title="Assistance">
+        <Row icon={PlusCircle} label="Proposer mon bien" hint="SapSapHouse s'occupe de tout" onClick={() => navigate('/publier')} />
       </Group>
 
       <Button variant="ghost" onClick={() => void signOut()} className="w-full h-12 rounded-xl gap-2 text-destructive hover:text-destructive hover:bg-destructive/10">
