@@ -56,37 +56,10 @@ const StickyReservationCard = ({ property }: Props) => {
           {furnished ? 'Réserver' : 'Faire une demande'}
         </Button>
 
-        {/* Contacts rapides */}
-        <div className="grid grid-cols-2 gap-2 mt-3">
-          {phone && (
-            <a href={`tel:${phone}`}>
-              <Button variant="outline" className="w-full h-11 rounded-xl gap-2">
-                <Phone className="h-4 w-4" />
-                Appeler
-              </Button>
-            </a>
-          )}
-          {waPhone && (
-            <a
-              href={`https://wa.me/${waPhone}?text=${encodeURIComponent(`Bonjour, je suis intéressé par "${property.title}" sur SapSapHouse.`)}`}
-              target="_blank" rel="noopener noreferrer"
-            >
-              <Button variant="outline" className="w-full h-11 rounded-xl gap-2 border-accent/40 text-accent hover:bg-accent/5">
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp
-              </Button>
-            </a>
-          )}
-        </div>
-
         <div className="mt-5 pt-5 border-t border-border space-y-2.5">
           <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
             <Shield className="h-4 w-4 text-accent shrink-0 mt-0.5" />
             <span><span className="font-semibold text-foreground">Bien vérifié</span> — annonce contrôlée par SapSapHouse.</span>
-          </div>
-          <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
-            <Clock className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-            <span><span className="font-semibold text-foreground">Réponse rapide</span> — SapSapHouse vous répond souvent en moins d'1h.</span>
           </div>
           <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
             <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
