@@ -898,7 +898,7 @@ export default function MobileApp(props: MobileAppProps) {
             >
               <span className="text-base font-bold text-foreground">Mon compte</span>
             </nav>
-            <MobileAccountTab favoritesCount={favoritesCount} onOpenFavorites={() => handleMobileTabChange('favorites')} />
+            <MobileAccountTab favoritesCount={props.favorites.size} onOpenFavorites={() => handleMobileTabChange('favorites')} />
           </motion.div>
         )}
       </AnimatePresence>
