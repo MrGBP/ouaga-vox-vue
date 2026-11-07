@@ -1,3 +1,4 @@
+import MediaLightbox from '@/components/media/MediaLightbox';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -144,6 +145,7 @@ const PropertyDetailPanel = ({
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [show360Overlay, setShow360Overlay] = useState(false);
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [poiCategory, setPoiCategory] = useState<string>('all');
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -338,14 +340,15 @@ const PropertyDetailPanel = ({
           <video
             ref={videoRef}
             src={currentMedia.url}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover cursor-zoom-in"
+            onClick={() => setLightboxOpen(true)}
             autoPlay
             muted
             loop
             playsInline
           />
         ) : (
-          <img src={currentMedia?.url || imagesForLegacy[0]} alt={property.title} className="w-full h-full object-cover" />
+          <img src={currentMedia?.url || imagesForLegacy[0]} alt={property.title} className="w-full h-full object-cover cursor-zoom-in" onClick={() => setLightboxOpen(true)} />
         )}
 
         {/* Desktop arrows (hidden on mobile) */}
@@ -853,6 +856,10 @@ const PropertyDetailPanel = ({
       <AnimatePresence>
         {showReservation && <ReservationFlow property={property} onClose={() => setShowReservation(false)} />}
       </AnimatePresence>
+
+      {lightboxOpen && (
+        <MediaLightbox items={mediaItems} index={mediaIdx} title={property.title} onIndexChange={setMediaIdx} onClose={() => setLightboxOpen(false)} />
+      )}
 
       {/* ── Fullscreen 360° Overlay ── */}
       <AnimatePresence>
