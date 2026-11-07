@@ -26,9 +26,11 @@ const ImmersiveListingCard = forwardRef<HTMLDivElement, Props>(({ property: p, f
       onMouseEnter={() => onHover?.(p.id)}
       onMouseLeave={() => onHover?.(null)}
       onClick={() => onOpen(p.id)}
-      className={`group relative w-full aspect-[4/3] sm:aspect-[16/9] overflow-hidden rounded-2xl bg-muted cursor-pointer shadow-elevation-1 transition-all ${active ? 'ring-2 ring-secondary shadow-elevation-3' : 'hover:shadow-elevation-2'}`}
+      className={`group relative w-full flex flex-col overflow-hidden rounded-2xl bg-muted cursor-pointer shadow-elevation-1 transition-all ${active ? 'ring-2 ring-secondary shadow-elevation-3' : 'hover:shadow-elevation-2'}`}
     >
-      <img src={p.images?.[0] || '/placeholder-property.svg'} alt={p.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] overflow-hidden">
+        <img src={p.images?.[0] || '/placeholder-property.svg'} alt={p.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      </div>
 
       <span className="absolute top-3 left-3 rounded-full bg-foreground/35 backdrop-blur-md border border-primary-foreground/20 px-3.5 py-1.5 text-sm font-bold text-primary-foreground">
         {new Intl.NumberFormat('fr-FR').format(value)} {p.currency || 'FCFA'}<span className="font-medium opacity-80"> / {mode}</span>
@@ -42,9 +44,11 @@ const ImmersiveListingCard = forwardRef<HTMLDivElement, Props>(({ property: p, f
       </button>
 
       {/* Bandeau dépoli pleine largeur */}
-      <div className="absolute inset-x-0 bottom-0 pt-10 text-primary-foreground">
-        <div className="absolute inset-0 backdrop-blur-[2px] bg-gradient-to-t from-primary/85 via-primary/45 to-transparent [mask-image:linear-gradient(to_top,black_55%,transparent)]" />
-        <div className="relative px-4 pb-3.5 sm:px-5 sm:pb-4 [text-shadow:0_1px_3px_rgb(0_0_0/0.45)]">
+      {/* Bandeau dépoli « tiré » sous la photo : chevauche seulement ~5 % du bas de l'image */}
+      <div className="relative -mt-[3%] overflow-hidden text-primary-foreground [mask-image:linear-gradient(to_bottom,transparent,black_20px)]">
+        <img src={p.images?.[0] || '/placeholder-property.svg'} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-bottom scale-125 blur-2xl" />
+        <div className="absolute inset-0 bg-primary/55" />
+        <div className="relative px-4 pt-5 pb-3.5 sm:px-5 sm:pb-4 [text-shadow:0_1px_3px_rgb(0_0_0/0.35)]">
           <div className="flex items-baseline justify-between gap-3">
             <h3 className="text-base sm:text-lg font-semibold leading-tight line-clamp-1">{p.title}</h3>
             <span className="shrink-0 text-[11px] uppercase tracking-wide opacity-80">{getTypeLabel(p.type)}</span>
