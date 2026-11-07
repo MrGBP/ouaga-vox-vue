@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { accountNavigation } from '@/lib/accountNavigation';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
-const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck };
+const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck, bell: Bell };
 
 /**
  * Carte utilisateur pour les menus (mobile / tablette).

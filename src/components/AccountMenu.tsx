@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { accountNavigation } from '@/lib/accountNavigation';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
-const icons = { account: User, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck };
+const icons = { account: User, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck, bell: Bell };
 
 export default function AccountMenu() {
   const { user, loading, isOwner, isAdmin, signOut } = useAuth();
