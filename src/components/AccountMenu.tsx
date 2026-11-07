@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, Home, LayoutDashboard, Loader2, LogOut, MessageSquare, User, ShieldCheck } from 'lucide-react';
+import { Calendar, ChevronDown, Home, LayoutDashboard, Loader2, LogOut, MessageSquare, User, ShieldCheck, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { accountNavigation } from '@/lib/accountNavigation';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
-const icons = { account: User, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck };
+const icons = { account: User, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck, bell: Bell };
 
 export default function AccountMenu() {
   const { user, loading, isOwner, isAdmin, signOut } = useAuth();

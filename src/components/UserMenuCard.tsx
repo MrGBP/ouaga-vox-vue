@@ -1,11 +1,11 @@
-import { LogIn, LogOut, User as UserIcon, ChevronRight, LayoutDashboard, Home, Calendar, MessageSquare, Loader2, ShieldCheck } from 'lucide-react';
+import { LogIn, LogOut, User as UserIcon, ChevronRight, LayoutDashboard, Home, Calendar, MessageSquare, Loader2, ShieldCheck, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { accountNavigation } from '@/lib/accountNavigation';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 
-const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck };
+const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck, bell: Bell };
 
 /**
  * Carte utilisateur pour les menus (mobile / tablette).

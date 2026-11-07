@@ -10,6 +10,7 @@ import { reservationKindLabel, reservationStatusLabel, updateReservationStatus, 
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ReservationChat from '@/components/ReservationChat';
+import OwnerStaysPanel from '../components/OwnerStaysPanel';
 
 type PeriodKey = 'month' | 'quarter' | 'semester' | 'year';
 const PERIODS: { key: PeriodKey; label: string; days: number }[] = [
@@ -78,6 +79,8 @@ export default function OwnerReservations() {
         <p className="text-sm text-muted-foreground">Toutes les demandes reçues sur tes biens.</p>
       </div>
 
+      <OwnerStaysPanel />
+
       {!loading && reservations.length > 0 && <SynthesisCard reservations={reservations} />}
 
 
@@ -138,7 +141,7 @@ export default function OwnerReservations() {
 
             {/* All reservations */}
             <section>
-              <h3 className="text-sm font-semibold mb-2">Toutes les demandes ({reservations.length})</h3>
+              <h3 className="text-sm font-semibold mb-2">Demandes de visite et contacts ({reservations.length})</h3>
               {reservations.length === 0 ? (
                 <Card className="p-6 text-center text-xs text-muted-foreground">Pas encore de demande.</Card>
               ) : (

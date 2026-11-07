@@ -10,3 +10,5 @@
 - Keep the mobile homepage introduction and its scoped styles isolated from the desktop homepage, reusing the shared furnished search suggestions to preserve consistent search eligibility.- Render property-type icons only through PropertyTypeIcon/typeIconSvg and card characteristics only through cardHighlights, so filters, map pins and cards stay in sync.
 - Service worker serves pages network-first (never precached HTML) with skipWaiting/clientsClaim and auto-reload on controller change, so every device gets the latest publish.
 - Reservations are created only through server functions (create_reservation_hold, check_availability, quote_stay) so availability, price snapshot and date holds are enforced in the database, not the browser.
+- Payments, receipts and owner decisions go only through server functions (initiate/confirm_simulated_payment, owner_decide_reservation, issue/reissue_receipt); receipts are immutable and corrected by new versions, and payment status stays separate from stay status.
+- Operator numbers, demo code and booking delays live in platform_settings and are read through paymentsService/payment_operators, never hardcoded in screens.

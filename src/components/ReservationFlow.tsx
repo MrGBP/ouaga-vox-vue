@@ -23,6 +23,8 @@ import { openCountrySupport } from '@/lib/contact';
 import { useCountryConfig } from '@/hooks/useCountryConfig';
 import { LifeBuoy } from 'lucide-react';
 import { useLockBackdrop } from '@/hooks/useLockBackdrop';
+import SimulatedPaymentPanel from '@/components/payment/SimulatedPaymentPanel';
+import { Link } from 'react-router-dom';
 
 interface Property {
   id: string;
@@ -212,6 +214,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<(PublicReservationRow & { hold_expires_at?: string }) | null>(null);
   const [quote, setQuote] = useState<StayQuote | null>(null);
+  const [alternatives, setAlternatives] = useState<Array<{ id: string; title: string; quartier: string; price: number; image: string | null }>>([]);
 
   // Window viewport (responsive : 2 mois desktop, 1 mobile)
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
@@ -280,6 +283,9 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
     const conflictDate = rangeHasBooked(checkIn, d);
     if (conflictDate) {
       setConflict({ from: conflictDate, next: nextFreeNight(conflictDate) });
+      setAlternatives([]);
+      (supabase as any).rpc('suggest_alternatives', { _property_id: property.id, _check_in: toKey(checkIn), _check_out: toKey(d), _limit: 3 })
+        .then(({ data }: any) => setAlternatives(Array.isArray(data) ? data : []));
       return;
     }
     setCheckOut(d);
@@ -306,13 +312,15 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
   // Devis serveur (tarifs spéciaux, promotions) pour les séjours à la nuit
   useEffect(() => {
     setQuote(null);
-    if (!checkIn || !checkOut || isMonthlyMode) return;
+    if (!checkIn || !checkOut) return;
     let off = false;
     quoteStay(property.id, toKey(checkIn), toKey(checkOut)).then(q => { if (!off) setQuote(q); });
     return () => { off = true; };
-  }, [checkIn, checkOut, property.id, isMonthlyMode]);
+  }, [checkIn, checkOut, property.id]);
+  // Le devis serveur (à la nuit) fait foi : c'est exactement le montant réservé et payé.
   const totalPrice = quote ? Number(quote.total) : unitPrice * unitCount;
-  const unitLabelShort = isMonthlyMode ? (unitCount > 1 ? 'mois' : 'mois') : (unitCount > 1 ? t('reservation.nuits') : t('reservation.nuit'));
+  const displayUnits = quote ? Number(quote.nights) : unitCount;
+  const unitLabelShort = quote || !isMonthlyMode ? (displayUnits > 1 ? t('reservation.nuits') : t('reservation.nuit')) : 'mois';
 
   const formatDate = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }) : '';
   const formatDateLong = (d: Date | null) => d ? d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '';
@@ -375,8 +383,6 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
         throw error || new Error('Réservation impossible');
       }
       track('reservation_submitted', { property_id: property.id, nights, total: totalPrice });
-      // Confettis navy + orange — moment émotionnel fort
-      import('@/lib/celebrate').then(m => m.celebrateReservation()).catch(() => {});
       setSubmitted(row);
     } catch (err: any) {
       console.error('Reservation error', err);
@@ -392,30 +398,30 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-foreground/40 z-[800] flex items-center justify-center p-4">
         <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-card rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-border">
           <div className="p-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-              <Check className="h-8 w-8 text-green-600" />
-            </div>
-            <h3 className="text-xl font-bold text-foreground mb-1">{t('reservation.succes_titre')}</h3>
-            <p className="text-sm text-muted-foreground mb-4">{t('reservation.succes_numero')}</p>
-            <p className="text-2xl font-bold text-primary tracking-wider mb-6">{submitted.confirmation_number}</p>
-
-            <div className="bg-muted/50 rounded-xl p-4 space-y-2 text-sm text-left mb-4">
+            <h3 className="text-lg font-bold text-foreground mb-1">Paiement Mobile Money</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Vos dates sont protégées temporairement. Finalisez le paiement simulé avant la fin du compte à rebours.
+            </p>
+            <div className="bg-muted/50 rounded-xl p-3 space-y-1.5 text-xs text-left mb-4">
               <div className="flex justify-between"><span className="text-muted-foreground">Bien</span><span className="font-semibold">{property.title}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{unitCount} {unitLabelShort}</span></div>
-              <div className="flex justify-between pt-2 border-t border-border text-base font-bold"><span>{t('reservation.total')}</span><span className="text-primary">{fmt(totalPrice)} FCFA</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{displayUnits} {unitLabelShort}</span></div>
             </div>
-
-            <div className="rounded-xl border border-secondary/40 bg-secondary/10 p-3 text-xs text-left text-foreground mb-3 space-y-1">
-              <p className="font-semibold">Vos dates sont protégées temporairement</p>
-              <p className="text-muted-foreground">
-                {submitted.hold_expires_at
-                  ? `Jusqu'à ${new Date(submitted.hold_expires_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. `
-                  : ''}
-                Sans paiement d'ici là, elles redeviennent disponibles. Le propriétaire confirmera ensuite la disponibilité.
-              </p>
-            </div>
+            <SimulatedPaymentPanel
+              stay={{
+                id: submitted.id,
+                confirmation_number: submitted.confirmation_number,
+                total_price: Number(submitted.total_price),
+                hold_expires_at: submitted.hold_expires_at ?? null,
+                property_title: property.title,
+              }}
+              defaultPhone={phone}
+              onRestartBooking={() => { setSubmitted(null); setStep(1); setCheckIn(null); setCheckOut(null); }}
+            />
+            <Link to="/mon-compte?tab=sejours" onClick={onClose} className="mt-4 block text-xs font-semibold text-primary hover:underline">
+              Suivre mes séjours et reçus
+            </Link>
 
             <button
               type="button"
@@ -534,6 +540,18 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                           {t('reservation.prochaines_dispos')} : <strong>{formatDateLong(conflict.next)}</strong>
                         </p>
                       )}
+                      {alternatives.length > 0 && (
+                        <div className="mt-2 space-y-1.5">
+                          <p className="font-semibold text-foreground">Libres sur ces dates :</p>
+                          {alternatives.map(a => (
+                            <Link key={a.id} to={`/property/${a.id}`} onClick={onClose} className="flex items-center gap-2 rounded-lg bg-card border border-border p-1.5 hover:bg-muted">
+                              {a.image && <img src={a.image} alt="" className="h-9 w-12 rounded object-cover" />}
+                              <span className="min-w-0 flex-1 truncate font-medium text-foreground">{a.title}</span>
+                              <span className="text-muted-foreground shrink-0">{a.quartier}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                       <button onClick={() => setConflict(null)} className="mt-2 text-primary font-semibold hover:underline">Choisir d'autres dates</button>
                     </div>
                   </motion.div>
@@ -555,7 +573,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                   {unitCount > 0 && (
                     <div className="text-right">
                       <p className="text-[10px] text-muted-foreground uppercase font-bold">Durée</p>
-                      <p className="font-semibold">{unitCount} {unitLabelShort}</p>
+                      <p className="font-semibold">{displayUnits} {unitLabelShort}</p>
                     </div>
                   )}
                 </div>
@@ -632,13 +650,13 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
               <div className="bg-muted/50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.arrivee')}</span><span className="font-semibold">{formatDateLong(checkIn)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('reservation.depart')}</span><span className="font-semibold">{formatDateLong(checkOut)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{unitCount} {unitLabelShort}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Durée</span><span className="font-semibold">{displayUnits} {unitLabelShort}</span></div>
                 
               </div>
 
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex justify-between text-sm text-foreground">
-                  <span>{unitCount} {unitLabelShort} × {fmt(quote ? Number(quote.base_per_night) : unitPrice)} {(property as any).currency || 'FCFA'}</span>
+                  <span>{displayUnits} {unitLabelShort} × {fmt(quote ? Number(quote.base_per_night) : unitPrice)} {(property as any).currency || 'FCFA'}</span>
                   <span className="font-semibold">{fmt(quote ? Number(quote.subtotal) : totalPrice)} {(property as any).currency || 'FCFA'}</span>
                 </div>
                 {quote && Number(quote.discount) !== 0 && (
@@ -658,15 +676,11 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                   onClick={handleConfirm} disabled={submitting}
                   className="w-full bg-primary text-primary-foreground h-12 text-sm font-semibold"
                 >
-                  {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Envoi…</> : t('reservation.confirmer')}
+                  {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Envoi…</> : 'Réserver et passer au paiement'}
                 </Button>
-                <button
-                  disabled
-                  className="w-full h-11 rounded-lg bg-muted/60 text-muted-foreground text-xs font-medium cursor-not-allowed"
-                  title="Bientôt disponible"
-                >
-                  💳 Paiement mobile — {t('reservation.paiement_bientot')}
-                </button>
+                <p className="text-[11px] text-center text-muted-foreground">
+                  Étape suivante : paiement Orange Money ou Moov Money (mode simulation, aucun argent réel).
+                </p>
                 <Button variant="outline" onClick={() => setStep(2)} className="w-full h-9 text-xs">
                   <ChevronLeft className="h-3 w-3 mr-1" /> {t('reservation.retour')}
                 </Button>

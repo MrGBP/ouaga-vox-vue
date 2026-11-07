@@ -21,6 +21,10 @@ import Header from '@/components/Header';
 import { filterProperties } from '@/lib/filterProperties';
 import { computeFilterOptions } from '@/lib/filterOptions';
 import { prioritizeCity } from '@/lib/cityDiscovery';
+import StayDatesPicker, { shortStayDate } from '@/components/listing/StayDatesPicker';
+import { availablePropertyIds } from '@/lib/reservationsPublicService';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const FAV_KEY = 'sapsap_favorites';
 const FILTERS_KEY = 'sapsap_filters_v1';
@@ -28,8 +32,23 @@ const FILTERS_KEY = 'sapsap_filters_v1';
 const ResultatsPage = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const appliedQuery = searchParams.get('q') || '';
+  const stayIn = searchParams.get('arrivee') || '';
+  const stayOut = searchParams.get('depart') || '';
+  const datesActive = !!stayIn && !!stayOut && stayOut > stayIn;
+  const [freeIds, setFreeIds] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    if (!datesActive) { setFreeIds(null); return; }
+    let alive = true;
+    availablePropertyIds(stayIn, stayOut).then(ids => { if (alive) setFreeIds(ids ?? new Set()); });
+    return () => { alive = false; };
+  }, [datesActive, stayIn, stayOut]);
+  const applyDates = useCallback((a: string, b: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (a && b) { next.set('arrivee', a); next.set('depart', b); } else { next.delete('arrivee'); next.delete('depart'); }
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const loadFilters = (): FilterState => {
     try {
@@ -63,15 +82,20 @@ const ResultatsPage = () => {
     return () => { alive = false; };
   }, [activeCity?.country]);
 
-  const results = useMemo(
+  const baseResults = useMemo(
     () => filterProperties(allProps, appliedQuery, filters, false, favorites, activeCity?.name),
     [allProps, appliedQuery, filters, favorites, activeCity?.name]
+  );
+  // Dates choisies : uniquement les logements libres sur toute la période (vérifié par le serveur)
+  const results = useMemo(
+    () => (datesActive && freeIds ? baseResults.filter(p => UUID_RE.test(p.id) && freeIds.has(p.id)) : baseResults),
+    [baseResults, datesActive, freeIds]
   );
 
   const filterOpts = useMemo(() => computeFilterOptions(allProps as any), [allProps]);
 
   // Desktop/tablette : focus meublés + biens phares si aucun filtre
-  const hasUserFilter = !!appliedQuery || JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS);
+  const hasUserFilter = !!appliedQuery || datesActive || JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS);
   const desktopResults = useMemo(() => {
     const furnishedOnly = results.filter(p => (isTypeFurnished(p.type) || !!p.furnished) && p.status !== 'rented');
     if (hasUserFilter) return furnishedOnly;
@@ -133,6 +157,7 @@ const ResultatsPage = () => {
   if (filters.type !== 'all') activeChips.push({ key: 'type', label: getTypeLabel(filters.type), onRemove: () => persistFilters({ ...filters, type: 'all' }) });
   if (filters.quartier !== 'all') activeChips.push({ key: 'q', label: filters.quartier, onRemove: () => persistFilters({ ...filters, quartier: 'all' }) });
   if (filters.minBedrooms > 0) activeChips.push({ key: 'br', label: `${filters.minBedrooms}+ ch.`, onRemove: () => persistFilters({ ...filters, minBedrooms: 0 }) });
+  if (datesActive) activeChips.push({ key: 'dates', label: `${shortStayDate(stayIn)} → ${shortStayDate(stayOut)}`, onRemove: () => applyDates('', '') });
   if (filters.hasVirtualTour) activeChips.push({ key: 'vt', label: 'Visite 360°', onRemove: () => persistFilters({ ...filters, hasVirtualTour: false }) });
 
   const persistFilters = (f: FilterState) => {
@@ -152,6 +177,7 @@ const ResultatsPage = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate('/')} aria-label="Retour à l’accueil" className="shrink-0 rounded-full"><ArrowLeft className="h-5 w-5" /></Button>
             <Button variant="ghost" onClick={() => navigate('/search')} className="min-w-0 flex-1 justify-start text-left px-2"><span className="truncate">{appliedQuery || 'Explorer les logements'}</span></Button>
             <Button variant="ghost" size="icon" aria-label="SapSap AI" title="SapSap AI" onClick={() => { setFiltersOpen(false); setAiOpen(true); }} className="shrink-0 text-muted-foreground"><Sparkles className="h-4 w-4" /></Button>
+            <StayDatesPicker compact checkIn={stayIn} checkOut={stayOut} onApply={applyDates} />
             <Button variant="ghost" size="icon" aria-label="Filtres" title="Filtres" onClick={() => { setAiOpen(false); setFiltersOpen(true); }} className="shrink-0"><SlidersHorizontal className="h-4 w-4" /></Button>
           </div>
           <div className="flex gap-4 px-4 overflow-x-auto scrollable border-t border-border/50" role="tablist" aria-label="Type de logement">
@@ -176,6 +202,7 @@ const ResultatsPage = () => {
                   <p className="font-display text-lg font-bold text-foreground">Résultats pour « {appliedQuery} »</p>
                 )}
               </div>
+              <StayDatesPicker checkIn={stayIn} checkOut={stayOut} onApply={applyDates} />
             </div>
 
             <FilterBar
@@ -223,7 +250,7 @@ const ResultatsPage = () => {
               <ListingMap properties={results} activeId={focusedId} favorites={favorites} onHover={noHover} onOpen={openProperty} onToggleFavorite={toggleFavorite} mobile visible={mobileView === 'map'} onSelect={setFocusedId} />
             </div>
             <div className={`px-4 pt-1 pb-20 ${mobileView === 'map' ? 'hidden' : ''}`}>
-              {results.length === 0 ? <div className="py-20 text-center"><p className="font-semibold">Aucun logement ne correspond</p><Button variant="ghost" onClick={() => setFiltersOpen(true)} className="mt-2 text-muted-foreground">Ajuster mes critères</Button></div> : results.map(p => <MobileDiscoveryCard key={p.id} property={p} favorite={favorites.has(p.id)} onOpen={openProperty} onToggleFavorite={toggleFavorite} />)}
+              {results.length === 0 ? <div className="py-20 text-center"><p className="font-semibold">{datesActive ? 'Aucun logement libre sur ces dates' : 'Aucun logement ne correspond'}</p>{datesActive ? <Button variant="ghost" onClick={() => applyDates('', '')} className="mt-2 text-muted-foreground">Voir toutes les dates</Button> : <Button variant="ghost" onClick={() => setFiltersOpen(true)} className="mt-2 text-muted-foreground">Ajuster mes critères</Button>}</div> : results.map(p => <MobileDiscoveryCard key={p.id} property={p} favorite={favorites.has(p.id)} onOpen={openProperty} onToggleFavorite={toggleFavorite} />)}
             </div>
             <AnimatePresence>{mobileView === 'map' && selected && <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }} className="fixed left-3 right-3 z-40 bg-card rounded-lg px-3 shadow-elevation-3 border border-border" style={{ bottom: 'calc(120px + env(safe-area-inset-bottom))' }}>
               <Button variant="ghost" size="icon" aria-label="Fermer l’aperçu" onClick={() => setFocusedId(null)} className="absolute -top-10 right-0 h-8 w-8 rounded-full bg-card shadow-elevation-1"><X className="h-4 w-4" /></Button>
@@ -246,8 +273,9 @@ const ResultatsPage = () => {
               )}
               {desktopResults.length === 0 ? (
                 <div className="text-center py-20 bg-card border border-border rounded-xl">
-                  <p className="text-base font-semibold text-foreground">Aucun bien ne correspond</p>
-                  <p className="text-sm text-muted-foreground mt-1">Essayez d'élargir vos critères.</p>
+                  <p className="text-base font-semibold text-foreground">{datesActive ? 'Aucun logement libre sur ces dates' : 'Aucun bien ne correspond'}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{datesActive ? 'Essayez des dates proches ou retirez le filtre de dates.' : "Essayez d'élargir vos critères."}</p>
+                  {datesActive && <Button variant="outline" size="sm" className="mt-3" onClick={() => applyDates('', '')}>Voir toutes les dates</Button>}
                 </div>
               ) : desktopResults.map((p) => (
                 <ListingCard

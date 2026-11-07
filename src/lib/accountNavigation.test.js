@@ -4,12 +4,12 @@ import { accountNavigation } from './accountNavigation.ts';
 describe('account navigation', () => {
   it('keeps the personal account alongside the owner workspace', () => {
     expect(accountNavigation(true).map(item => item.path)).toEqual([
-      '/mon-compte', '/proprietaire', '/proprietaire/biens',
+      '/mon-compte', '/mon-compte?tab=sejours', '/notifications', '/proprietaire', '/proprietaire/biens',
       '/proprietaire/reservations', '/proprietaire/messages',
     ]);
   });
   it('does not offer owner-only destinations to a regular account', () => {
-    expect(accountNavigation(false).map(item => item.path)).toEqual(['/mon-compte']);
+    expect(accountNavigation(false).map(item => item.path)).toEqual(['/mon-compte', '/mon-compte?tab=sejours', '/notifications']);
   });
 });
 describe('admin navigation', () => {

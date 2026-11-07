@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "public reads blocks for availability" ON public.blocked_dates;
