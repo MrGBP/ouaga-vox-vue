@@ -737,12 +737,12 @@ const PropertyDetailPanel = ({
         {/* Agent : affiche soit le propriétaire, soit SapSapHouse (bien officiel) */}
         {isOfficialListing && (
           <div className="bg-muted/50 rounded-xl p-3">
-            {isOfficialListing && (
+            {property.is_official === true && (
               <div className="flex items-center gap-1.5 mb-2">
                 <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
                   <svg viewBox="0 0 12 12" className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-6"/></svg>
                 </div>
-                <span className="text-xs font-semibold text-primary">{property.is_official ? 'Bien SapSapHouse Officiel' : 'Géré par SapSapHouse'}</span>
+                <span className="text-xs font-semibold text-primary">Bien SapSapHouse Officiel</span>
               </div>
             )}
             <div className="flex items-center gap-3">
