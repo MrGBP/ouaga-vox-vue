@@ -192,8 +192,8 @@ const Index = () => {
           setActiveQuartier(found.quartier);
           setMapQuartierTrigger(found.quartier);
           if (isMobile) {
-            sessionStorage.setItem('sapsap_force_tab', 'map');
-            sessionStorage.setItem('sapsap_focus_property', found.id);
+            // Même système que « Carte » depuis l'accueil (focus + retour)
+            handleFocusOnMap(found.id, { fromPropertyPage: true });
           } else {
             // Desktop : afficher aussi la fiche détaillée à côté de la carte
             setDetailProperty(found);
@@ -411,7 +411,7 @@ const Index = () => {
     if (prop) handleViewDetails(prop);
   }, [properties, handleViewDetails]);
 
-  const handleFocusOnMap = useCallback((id: string) => {
+  const handleFocusOnMap = useCallback((id: string, opts?: { fromPropertyPage?: boolean }) => {
     const prop = properties.find(p => p.id === id);
     if (!prop) return;
     // Save the previous context so the user can return to it (the card view
@@ -428,7 +428,8 @@ const Index = () => {
       // Mobile : fermer la fiche pour voir la carte plein écran
       setDetailProperty(null);
       setForceMapTabTrigger(t => t + 1);
-      nav.push({
+      // Depuis la fiche : l'historique navigateur ramène déjà à la fiche
+      if (!opts?.fromPropertyPage) nav.push({
         screen: 'carte-niveau3',
         propertyId: id,
         propertyTitle: prop.title,
