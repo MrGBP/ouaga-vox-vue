@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Map as MapIcon, List as ListIcon, SlidersHorizontal, Sparkles, X } from 'lucide-react';
 import { type Property, PROPERTY_TYPES, getTypeLabel, isTypeFurnished } from '@/lib/mockData';
 import ListingMap from '@/components/listing/ListingMap';
-import ListingCard from '@/components/listing/ListingCard';
+import ImmersiveListingCard from '@/components/listing/ImmersiveListingCard';
 import { fetchMergedProperties } from '@/lib/propertiesService';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -250,7 +250,7 @@ const ResultatsPage = () => {
               <ListingMap properties={results} activeId={focusedId} favorites={favorites} onHover={noHover} onOpen={openProperty} onToggleFavorite={toggleFavorite} mobile visible={mobileView === 'map'} onSelect={setFocusedId} />
             </div>
             <div className={`px-4 pt-1 pb-20 ${mobileView === 'map' ? 'hidden' : ''}`}>
-              {results.length === 0 ? <div className="py-20 text-center"><p className="font-semibold">{datesActive ? 'Aucun logement libre sur ces dates' : 'Aucun logement ne correspond'}</p>{datesActive ? <Button variant="ghost" onClick={() => applyDates('', '')} className="mt-2 text-muted-foreground">Voir toutes les dates</Button> : <Button variant="ghost" onClick={() => setFiltersOpen(true)} className="mt-2 text-muted-foreground">Ajuster mes critères</Button>}</div> : results.map(p => <MobileDiscoveryCard key={p.id} property={p} favorite={favorites.has(p.id)} onOpen={openProperty} onToggleFavorite={toggleFavorite} />)}
+              {results.length === 0 ? <div className="py-20 text-center"><p className="font-semibold">{datesActive ? 'Aucun logement libre sur ces dates' : 'Aucun logement ne correspond'}</p>{datesActive ? <Button variant="ghost" onClick={() => applyDates('', '')} className="mt-2 text-muted-foreground">Voir toutes les dates</Button> : <Button variant="ghost" onClick={() => setFiltersOpen(true)} className="mt-2 text-muted-foreground">Ajuster mes critères</Button>}</div> : <div className="space-y-4 py-3">{results.map(p => <ImmersiveListingCard key={p.id} property={p} favorite={favorites.has(p.id)} onOpen={openProperty} onToggleFavorite={toggleFavorite} onShowOnMap={(id) => { setFocusedId(id); setMobileView('map'); }} />)}</div>}
             </div>
             <AnimatePresence>{mobileView === 'map' && selected && <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }} className="fixed left-3 right-3 z-40 bg-card rounded-lg px-3 shadow-elevation-3 border border-border" style={{ bottom: 'calc(120px + env(safe-area-inset-bottom))' }}>
               <Button variant="ghost" size="icon" aria-label="Fermer l’aperçu" onClick={() => setFocusedId(null)} className="absolute -top-10 right-0 h-8 w-8 rounded-full bg-card shadow-elevation-1"><X className="h-4 w-4" /></Button>
@@ -278,7 +278,7 @@ const ResultatsPage = () => {
                   {datesActive && <Button variant="outline" size="sm" className="mt-3" onClick={() => applyDates('', '')}>Voir toutes les dates</Button>}
                 </div>
               ) : desktopResults.map((p) => (
-                <ListingCard
+                <ImmersiveListingCard
                   key={p.id}
                   ref={(el) => { cardRefs.current[p.id] = el; }}
                   property={p}
@@ -287,6 +287,7 @@ const ResultatsPage = () => {
                   onHover={setHoveredId}
                   onOpen={(id) => handleViewDetails({ id })}
                   onToggleFavorite={toggleFavorite}
+                  onShowOnMap={setFocusedId}
                 />
               ))}
             </div>
