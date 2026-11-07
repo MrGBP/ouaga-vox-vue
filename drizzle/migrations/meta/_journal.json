@@ -36,6 +36,13 @@
       "when": 1794067767483,
       "tag": "0004_fix_booking_maintenance_alias",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794067875058,
+      "tag": "0005_restrict_blocked_dates_reads",
+      "breakpoints": true
     }
   ]
 }
