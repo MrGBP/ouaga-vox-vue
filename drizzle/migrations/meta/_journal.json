@@ -43,6 +43,13 @@
       "when": 1794067875058,
       "tag": "0005_restrict_blocked_dates_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794072978550,
+      "tag": "0006_tighten_public_read_policies",
+      "breakpoints": true
     }
   ]
 }
