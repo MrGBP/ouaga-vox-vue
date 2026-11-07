@@ -212,7 +212,7 @@ export default function MonCompte() {
         </div>
 
 
-        <Tabs defaultValue={searchParams.get('tab') === 'sejours' ? 'sejours' : 'sejours'} className="w-full">
+        <Tabs defaultValue={searchParams.get('tab') || 'sejours'} className="w-full">
           <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="sejours" className="gap-1.5"><BedDouble className="h-4 w-4" /><span className="hidden sm:inline">Séjours & reçus</span></TabsTrigger>
             <TabsTrigger value="reservations" className="gap-1.5"><Calendar className="h-4 w-4" /><span className="hidden sm:inline">Visites</span></TabsTrigger>
