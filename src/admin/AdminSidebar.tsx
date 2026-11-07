@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Building2, LayoutDashboard, Home, Users, CalendarDays, Zap, MessageSquare, BarChart3, Settings, LogOut, ExternalLink, X, Database, ShieldCheck, UserCog, Globe } from 'lucide-react';
+import { Building2, LayoutDashboard, Home, Users, CalendarDays, Zap, MessageSquare, BarChart3, Settings, LogOut, ExternalLink, X, Database, ShieldCheck, UserCog, Globe, BedDouble, Wallet, Bell } from 'lucide-react';
 import { useAdminNotifications } from '@/admin/lib/useAdminNotifications';
 
 interface AdminSidebarProps {
@@ -16,11 +16,14 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
     { label: 'Modération', icon: ShieldCheck, path: '/admin/moderation', badge: notif.pendingProperties },
     { label: 'Biens', icon: Database, path: '/admin/biens-live', badge: 0 },
     { label: 'Utilisateurs', icon: UserCog, path: '/admin/users-live', badge: 0 },
-    { label: 'Réservations', icon: CalendarDays, path: '/admin/reservations', badge: notif.pendingReservations },
+    { label: 'Séjours & reçus', icon: BedDouble, path: '/admin/sejours', badge: 0 },
+    { label: 'Notifications', icon: Bell, path: '/admin/notifications', badge: 0 },
+    { label: 'Demandes de visite', icon: CalendarDays, path: '/admin/reservations', badge: notif.pendingReservations },
     { label: 'Boosts', icon: Zap, path: '/admin/boosts', badge: 0 },
     { label: 'Messages', icon: MessageSquare, path: '/admin/messages', badge: notif.unreadMessages },
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics', badge: 0 },
     { label: 'Pays', icon: Globe, path: '/admin/pays', badge: 0 },
+    { label: 'Paiements', icon: Wallet, path: '/admin/paiements', badge: 0 },
     { label: 'Paramètres', icon: Settings, path: '/admin/settings', badge: 0 },
   ];
 

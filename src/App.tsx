@@ -20,6 +20,8 @@ import MonCompte from "./pages/MonCompte";
 import Publier from "./pages/Publier";
 import ReelsPage from "./pages/Reels";
 import NotFound from "./pages/NotFound";
+import ReceiptPage from "./pages/Receipt";
+import NotificationsPage from "./pages/Notifications";
 import { useCountryLocale } from "@/hooks/useCountryLocale";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
 import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
@@ -66,6 +68,8 @@ const App = () => {
               <Route path="/mon-compte" element={<MonCompte />} />
               <Route path="/publier" element={<Publier />} />
               <Route path="/reels" element={<ReelsPage />} />
+              <Route path="/recu/:id" element={<ReceiptPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route
                 path="/admin/*"
                 element={

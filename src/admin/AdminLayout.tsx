@@ -17,6 +17,9 @@ import AdminMessages from '@/admin/pages/AdminMessages';
 import AdminAnalytics from '@/admin/pages/AdminAnalytics';
 import AdminSettings from '@/admin/pages/AdminSettings';
 import AdminCountries from '@/admin/pages/AdminCountries';
+import AdminStays from '@/admin/pages/AdminStays';
+import AdminPayments from '@/admin/pages/AdminPayments';
+import AdminNotifications from '@/admin/pages/AdminNotifications';
 import { useAuth } from '@/hooks/useAuth';
 
 function AdminProtected() {
@@ -50,6 +53,9 @@ function AdminProtected() {
             <Route path="users-live" element={<AdminUsersLive />} />
             <Route path="reservations" element={<AdminReservationsLive />} />
             <Route path="reservations-demo" element={<AdminReservations />} />
+            <Route path="sejours" element={<AdminStays />} />
+            <Route path="paiements" element={<AdminPayments />} />
+            <Route path="notifications" element={<AdminNotifications />} />
             <Route path="boosts" element={<AdminBoosts />} />
             <Route path="messages" element={<AdminMessages />} />
             <Route path="analytics" element={<AdminAnalytics />} />
