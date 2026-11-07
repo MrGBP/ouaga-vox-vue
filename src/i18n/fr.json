@@ -227,7 +227,7 @@
       "pin_centered": "Pin centré sur le quartier",
       "no_quartier_coords": "Aucune coordonnée pour ce quartier",
       "map_hint": "Astuce : si tu ne déplaces pas le pin, on le placera automatiquement sur le quartier choisi.",
-      "contacts_label": "Contacter SapSapHouse",
+      "contacts_label": "Vos coordonnées (privées, visibles uniquement par SapSapHouse)",
       "contacts_intro": "L'indicatif {{prefix}} est ajouté automatiquement selon le pays du bien. Saisis uniquement les chiffres locaux.",
       "whatsapp_label": "WhatsApp (obligatoire)",
       "whatsapp_ph": "70 00 00 00",
