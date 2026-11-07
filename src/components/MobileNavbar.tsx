@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Menu, X, ChevronLeft, Home as HomeIcon, Phone, FileText, MapPin, Heart } from 'lucide-react';
+import { Bell, Menu, X, ChevronLeft, Home as HomeIcon, Phone, MapPin, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';

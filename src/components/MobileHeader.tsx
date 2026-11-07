@@ -1,4 +1,4 @@
-import { Menu, X, Home, MapPin, Phone, FileText, Download, Share, MousePointer2, Home as HomeIcon } from 'lucide-react';
+import { Menu, X, Home, MapPin, Phone, Download, Share, MousePointer2, Home as HomeIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
