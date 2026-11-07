@@ -771,7 +771,7 @@ export default function MobileApp(props: MobileAppProps) {
                   <div className="text-5xl mb-4">❤️</div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">{t('sections.aucun_favori')}</h3>
                   <p className="text-sm text-muted-foreground mb-6">{t('sections.swipe_hint')}</p>
-                  <Button onClick={() => handleMobileTabChange('map')} className="bg-primary text-primary-foreground gap-2">
+                  <Button onClick={() => handleMobileTabChange('search')} className="bg-primary text-primary-foreground gap-2">
                     {t('sections.explorer')} →
                   </Button>
                 </div>
