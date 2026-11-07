@@ -28,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/ouaga-hero.jpg';
 import AIDescribeSheet from '@/components/AIDescribeSheet';
 import { Headphones } from 'lucide-react';
-import MobileDiscoveryCard from '@/components/listing/MobileDiscoveryCard';
+import ImmersiveListingCard from '@/components/listing/ImmersiveListingCard';
 import MobileHomeIntro from '@/components/home/MobileHomeIntro';
 import MapFeatureTour from '@/components/tours/MapFeatureTour';
 import { type Property as CatalogProperty } from '@/lib/mockData';
@@ -700,7 +700,7 @@ export default function MobileApp(props: MobileAppProps) {
               {displayProperties.length > 0 ? (
                 <>
                   <div className="bg-card">
-                    {homeProperties.map(p => <MobileDiscoveryCard key={p.id} property={p as CatalogProperty} favorite={props.favorites.has(p.id)} onOpen={openPropertyPage} onToggleFavorite={props.onToggleFavorite} />)}
+                    {homeProperties.map(p => <div key={p.id} className="py-2"><ImmersiveListingCard property={p as CatalogProperty} favorite={props.favorites.has(p.id)} onOpen={openPropertyPage} onToggleFavorite={props.onToggleFavorite} onShowOnMap={props.onFocusOnMap} /></div>)}
                   </div>
                   {homePageCount > 1 && <nav aria-label="Autres logements" className="flex justify-center gap-4 mt-5">
                     <Button variant="outline" size="icon" aria-label="Logements précédents" title="Précédent" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}><ChevronLeft className="h-4 w-4" /></Button>
