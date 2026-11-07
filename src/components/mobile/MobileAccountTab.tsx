@@ -70,7 +70,7 @@ export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }
         <span className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold ring-4 ring-primary/15 shrink-0">{initials}</span>
         <div className="min-w-0">
           <h3 className="text-lg font-bold text-foreground truncate">{name}</h3>
-          {user.email && <p className="text-xs text-muted-foreground truncate">{user.email}</p>}
+          {user.email && name !== user.email && <p className="text-xs text-muted-foreground truncate">{user.email}</p>}
           <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 rounded-full px-2 py-0.5"><BadgeCheck className="h-3 w-3" />Compte actif</span>
         </div>
       </div>
