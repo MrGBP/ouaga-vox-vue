@@ -43,8 +43,8 @@ const ImmersiveListingCard = forwardRef<HTMLDivElement, Props>(({ property: p, f
 
       {/* Bandeau dépoli pleine largeur */}
       <div className="absolute inset-x-0 bottom-0 pt-10 text-primary-foreground">
-        <div className="absolute inset-0 backdrop-blur-md bg-gradient-to-t from-primary/95 via-primary/70 to-transparent [mask-image:linear-gradient(to_top,black_65%,transparent)]" />
-        <div className="relative px-4 pb-3.5 sm:px-5 sm:pb-4">
+        <div className="absolute inset-0 backdrop-blur-[2px] bg-gradient-to-t from-primary/85 via-primary/45 to-transparent [mask-image:linear-gradient(to_top,black_55%,transparent)]" />
+        <div className="relative px-4 pb-3.5 sm:px-5 sm:pb-4 [text-shadow:0_1px_3px_rgb(0_0_0/0.45)]">
           <div className="flex items-baseline justify-between gap-3">
             <h3 className="text-base sm:text-lg font-semibold leading-tight line-clamp-1">{p.title}</h3>
             <span className="shrink-0 text-[11px] uppercase tracking-wide opacity-80">{getTypeLabel(p.type)}</span>
