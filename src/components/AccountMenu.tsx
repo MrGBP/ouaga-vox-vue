@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, Home, LayoutDashboard, Loader2, LogOut, MessageSquare, User, ShieldCheck } from 'lucide-react';
+import { Calendar, ChevronDown, Home, LayoutDashboard, Loader2, LogOut, MessageSquare, User, ShieldCheck, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';

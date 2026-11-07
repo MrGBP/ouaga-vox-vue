@@ -1,4 +1,4 @@
-import { LogIn, LogOut, User as UserIcon, ChevronRight, LayoutDashboard, Home, Calendar, MessageSquare, Loader2, ShieldCheck } from 'lucide-react';
+import { LogIn, LogOut, User as UserIcon, ChevronRight, LayoutDashboard, Home, Calendar, MessageSquare, Loader2, ShieldCheck, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
