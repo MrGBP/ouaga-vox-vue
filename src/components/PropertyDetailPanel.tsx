@@ -114,6 +114,7 @@ interface PropertyDetailPanelProps {
   onExploreOnMap?: (id: string) => void;
   isMobileOverride?: boolean;
   hideHero?: boolean;
+  fullPage?: boolean;
 }
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
@@ -134,7 +135,7 @@ type MediaItem = { type: 'photo'; url: string } | { type: 'video'; url: string }
 
 const PropertyDetailPanel = ({
   property, onClose, pois, isFavorite = false, onToggleFavorite, onViewTour,
-  similarProperties = [], onSelectProperty, onHighlightPoi, onExploreOnMap, isMobileOverride, hideHero = false,
+  similarProperties = [], onSelectProperty, onHighlightPoi, onExploreOnMap, isMobileOverride, hideHero = false, fullPage = false,
 }: PropertyDetailPanelProps) => {
   const [mediaIdx, setMediaIdx] = useState(0);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -304,7 +305,7 @@ const PropertyDetailPanel = ({
 
   const panelContent = (
     <>
-      {isMobile && (
+      {isMobile && !fullPage && (
         <div className="flex justify-center pt-2 pb-1">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
@@ -314,7 +315,7 @@ const PropertyDetailPanel = ({
       {!hideHero && (<>
 
       <div
-        className="relative h-56 bg-muted overflow-hidden touch-pan-y"
+        className={`relative bg-muted overflow-hidden touch-pan-y ${fullPage ? 'h-[46vh] min-h-[300px]' : 'h-56'}`}
         onTouchStart={(e) => {
           (e.currentTarget as any)._touchStartX = e.touches[0].clientX;
           (e.currentTarget as any)._touchStartY = e.touches[0].clientY;
@@ -374,7 +375,7 @@ const PropertyDetailPanel = ({
         )}
 
         {/* Top right actions */}
-        <div className="absolute top-3 right-3 flex gap-1.5">
+        {!fullPage && <div className="absolute top-3 right-3 flex gap-1.5">
           {onToggleFavorite && (
             <button onClick={() => onToggleFavorite(property.id)} aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} className={`w-8 h-8 rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${isFavorite ? 'bg-secondary text-secondary-foreground' : 'bg-card/80 text-muted-foreground hover:text-secondary'}`}>
               <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
@@ -383,7 +384,7 @@ const PropertyDetailPanel = ({
           <button onClick={onClose} aria-label="Fermer" className="w-8 h-8 rounded-full bg-card/80 flex items-center justify-center shadow hover:bg-card active:scale-95 transition-all">
             <X className="h-4 w-4" />
           </button>
-        </div>
+        </div>}
       </div>
 
       {/* Media type buttons */}
@@ -908,6 +909,8 @@ const PropertyDetailPanel = ({
       </AnimatePresence>
     </>
   );
+
+  if (isMobile && fullPage) return <div className="bg-card min-h-full">{panelContent}</div>;
 
   if (isMobile) {
     return (

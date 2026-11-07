@@ -233,28 +233,28 @@ const PropertyPage = () => {
         })}</script>
       </Helmet>
       <header
-        className="shrink-0 flex items-center justify-between px-3 border-b border-border bg-card/95 backdrop-blur-md"
-        style={{ paddingTop: 'env(safe-area-inset-top)', height: 'calc(52px + env(safe-area-inset-top))' }}
+        className={isMobile ? "absolute top-0 inset-x-0 z-20 flex items-center justify-between px-3 pointer-events-none [&>*]:pointer-events-auto" : "shrink-0 flex items-center justify-between px-3 border-b border-border bg-card/95 backdrop-blur-md"}
+        style={{ paddingTop: isMobile ? 'calc(env(safe-area-inset-top) + 8px)' : 'env(safe-area-inset-top)', height: isMobile ? undefined : 'calc(52px + env(safe-area-inset-top))' }}
       >
         <button
           onClick={handleBack}
-          className="inline-flex items-center gap-1 h-10 pl-2 pr-3 rounded-full text-foreground active:scale-[0.97] transition-transform"
+          className={`inline-flex items-center gap-1 h-10 rounded-full text-foreground active:scale-[0.97] transition-transform ${isMobile ? 'w-10 justify-center bg-card/80 backdrop-blur-md shadow' : 'pl-2 pr-3'}`}
           aria-label="Retour"
         >
           <ChevronLeft className="h-5 w-5" />
-          <span className="text-sm font-medium">Retour</span>
+          {!isMobile && <span className="text-sm font-medium">Retour</span>}
         </button>
         <div className="flex items-center gap-1">
           <button
             onClick={() => toggleFavorite(property.id)}
-            className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-[0.95] transition-all ${isFav ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground'}`}
+            className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-[0.95] transition-all ${isFav ? 'bg-secondary text-secondary-foreground' : isMobile ? 'bg-card/80 backdrop-blur-md shadow text-foreground' : 'bg-muted text-muted-foreground'}`}
             aria-label={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           >
             <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
           </button>
           <button
             onClick={handleShare}
-            className="w-10 h-10 rounded-full bg-muted text-muted-foreground flex items-center justify-center active:scale-[0.95] transition-all"
+            className={`w-10 h-10 rounded-full ${isMobile ? 'bg-card/80 backdrop-blur-md shadow text-foreground' : 'bg-muted text-muted-foreground'} flex items-center justify-center active:scale-[0.95] transition-all`}
             aria-label="Partager"
           >
             <Share2 className="h-4 w-4" />
@@ -274,6 +274,7 @@ const PropertyPage = () => {
             onSelectProperty={(pid) => navigate(`/property/${pid}`)}
             onExploreOnMap={(pid) => goToMapWithFocus(pid)}
             isMobileOverride={true}
+            fullPage
           />
         ) : (
           <div className="container mx-auto px-4 lg:px-8 py-6 max-w-7xl">
