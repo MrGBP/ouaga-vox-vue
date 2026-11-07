@@ -35,7 +35,7 @@ const PublishPropertyCTA = ({ isOwner, onClick }: Props) => (
           {isOwner ? 'Ajouter un logement' : 'Publier mon logement'}
         </span>
         <span className="block text-[11px] leading-snug text-muted-foreground">
-          Gratuit · vous fixez vos prix et vos dates
+          Vous fixez vos prix et vos dates
         </span>
       </span>
       <ChevronRight className="h-5 w-5 shrink-0 text-secondary transition-transform group-active:translate-x-0.5" />
