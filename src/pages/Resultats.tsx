@@ -137,7 +137,19 @@ const ResultatsPage = () => {
     if (focusedId && !results.some(property => property.id === focusedId)) setFocusedId(null);
   }, [results, focusedId]);
   const selected = results.find(p => p.id === focusedId);
-  const openProperty = useCallback((id: string) => navigate(`/property/${encodeURIComponent(id)}`), [navigate]);
+  const openProperty = useCallback((id: string) => {
+    try { sessionStorage.setItem('sapsap_results_scroll', String(window.scrollY)); } catch { /* noop */ }
+    navigate(`/property/${encodeURIComponent(id)}`);
+  }, [navigate]);
+  // Retour depuis une fiche : reprendre exactement là où l'utilisateur était
+  useEffect(() => {
+    if (!results.length) return;
+    let y: string | null = null;
+    try { y = sessionStorage.getItem('sapsap_results_scroll'); } catch { /* noop */ }
+    if (y === null) return;
+    try { sessionStorage.removeItem('sapsap_results_scroll'); } catch { /* noop */ }
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: Number(y) || 0 })));
+  }, [results.length]);
   const noHover = useCallback((_id: string | null) => {}, []);
 
   const handleBottomNav = (tab: string) => {
@@ -150,7 +162,11 @@ const ResultatsPage = () => {
     }
   };
 
-  useEffect(() => { window.scrollTo({ top: 0 }); }, [appliedQuery]);
+  const firstQueryRun = useRef(true);
+  useEffect(() => {
+    if (firstQueryRun.current) { firstQueryRun.current = false; return; }
+    window.scrollTo({ top: 0 });
+  }, [appliedQuery]);
 
   // Chips filtres actifs (Recognition over recall)
   const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
@@ -285,7 +301,7 @@ const ResultatsPage = () => {
                   active={(hoveredId || focusedId) === p.id}
                   favorite={favorites.has(p.id)}
                   onHover={setHoveredId}
-                  onOpen={(id) => handleViewDetails({ id })}
+                  onOpen={openProperty}
                   onToggleFavorite={toggleFavorite}
                   onShowOnMap={setFocusedId}
                 />
@@ -303,7 +319,7 @@ const ResultatsPage = () => {
                     setHoveredId(id);
                     if (id) cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                   }}
-                  onOpen={(id) => handleViewDetails({ id })}
+                  onOpen={openProperty}
                   onToggleFavorite={toggleFavorite}
                 />
               </div>
