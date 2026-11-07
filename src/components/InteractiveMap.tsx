@@ -202,10 +202,48 @@ const propertyPinHTML = (p: Property, focused: boolean, isFav?: boolean) => {
 };
 
 // Coordonnées à afficher publiquement : display_lat/lng pour precise, sinon vraies coords (legacy)
+const isValidLatLng = (lat: unknown, lng: unknown): boolean => {
+  if (lat == null || lng == null || lat === '' || lng === '') return false;
+  const a = Number(lat), b = Number(lng);
+  return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a) <= 90 && Math.abs(b) <= 180;
+};
+
 const getDisplayCoords = (p: Property): [number, number] | null => {
-  if (p.display_lat != null && p.display_lng != null) return [p.display_lat, p.display_lng];
-  if (p.latitude != null && p.longitude != null) return [p.latitude, p.longitude];
+  if (isValidLatLng(p.display_lat, p.display_lng)) return [Number(p.display_lat), Number(p.display_lng)];
+  if (isValidLatLng(p.latitude, p.longitude)) return [Number(p.latitude), Number(p.longitude)];
   return null;
+};
+
+// Leaflet's fly animations divide by the map size: on a hidden/0-size container
+// they produce NaN and throw "Invalid LatLng object: (NaN, NaN)". These helpers
+// re-measure the map and fall back to an instant move when animating is unsafe.
+const mapHasSize = (map: L.Map): boolean => {
+  try { map.invalidateSize({ animate: false }); } catch { /* ignore */ }
+  const s = map.getSize();
+  return s.x > 0 && s.y > 0;
+};
+
+const safeFlyTo = (map: L.Map, center: L.LatLngExpression, zoom: number, opts?: L.ZoomPanOptions) => {
+  const ll = Array.isArray(center) ? center : L.latLng(center as L.LatLng);
+  const [lat, lng] = Array.isArray(ll) ? ll : [ll.lat, ll.lng];
+  if (!isValidLatLng(lat, lng) || !Number.isFinite(zoom)) return;
+  const target = L.latLng(Number(lat), Number(lng));
+  try {
+    if (!mapHasSize(map)) { map.setView(target, zoom, { animate: false }); return; }
+    map.flyTo(target, zoom, opts);
+  } catch {
+    try { map.setView(target, zoom, { animate: false }); } catch { /* ignore */ }
+  }
+};
+
+const safeFlyToBounds = (map: L.Map, bounds: L.LatLngBounds, opts?: L.FitBoundsOptions) => {
+  if (!bounds || !bounds.isValid()) return;
+  try {
+    if (!mapHasSize(map)) { map.setView(bounds.getCenter(), opts?.maxZoom ?? map.getZoom(), { animate: false }); return; }
+    map.flyToBounds(bounds, opts);
+  } catch {
+    try { map.fitBounds(bounds, { ...opts, animate: false }); } catch { /* ignore */ }
+  }
 };
 
 const offsetProperties = (props: Property[]): { prop: Property; lat: number; lng: number }[] => {
@@ -266,7 +304,7 @@ const InteractiveMap = ({
     if (!mapInst.current || !activeCity) return;
     const b = L.latLngBounds(L.latLng(activeCity.bounds[0][0], activeCity.bounds[0][1]), L.latLng(activeCity.bounds[1][0], activeCity.bounds[1][1]));
     mapInst.current.setMaxBounds(b);
-    mapInst.current.flyTo(activeCity.center, activeCity.zoom, { animate: true, duration: 0.8 });
+    safeFlyTo(mapInst.current, activeCity.center, activeCity.zoom, { animate: true, duration: 0.8 });
     // Reset any quartier focus when switching countries
     setSelectedQuartier(null);
     setActiveRadius(null);
@@ -295,7 +333,7 @@ const InteractiveMap = ({
     setActiveRadius(null);
     mapInst.current.setMinZoom(10);
     mapInst.current.setMaxBounds(getCityBounds());
-    mapInst.current.flyTo(getCityCenter(), activeCityRef.current?.zoom ?? 13, { duration: 0.7 });
+    safeFlyTo(mapInst.current, getCityCenter(), activeCityRef.current?.zoom ?? 13, { duration: 0.7 });
   }, [resetTrigger]);
 
   // Init map
@@ -430,7 +468,7 @@ const InteractiveMap = ({
         L.latLng(qData.bounds[0][0], qData.bounds[0][1]),
         L.latLng(qData.bounds[1][0], qData.bounds[1][1])
       );
-      map.flyToBounds(qBounds, { duration: 0.8, padding: [48, 48], maxZoom: 17 });
+      safeFlyToBounds(map, qBounds, { duration: 0.8, padding: [48, 48], maxZoom: 17 });
       setTimeout(() => {
         if (!mapInst.current) return;
         // Enlarged max bounds (+35%) so properties near quartier borders stay
@@ -441,10 +479,12 @@ const InteractiveMap = ({
       }, 900);
     } else {
       // Fallback
-      const boundsSource = allQProps.length > 0 ? allQProps : qProps;
+      const boundsSource = (allQProps.length > 0 ? allQProps : qProps)
+        .map(p => getDisplayCoords(p))
+        .filter((c): c is [number, number] => !!c);
       if (boundsSource.length === 0) return;
-      const lats = boundsSource.map(p => p.latitude);
-      const lngs = boundsSource.map(p => p.longitude);
+      const lats = boundsSource.map(c => c[0]);
+      const lngs = boundsSource.map(c => c[1]);
       const latCenter = (Math.min(...lats) + Math.max(...lats)) / 2;
       const lngCenter = (Math.min(...lngs) + Math.max(...lngs)) / 2;
       const latSpread = Math.max(Math.max(...lats) - Math.min(...lats), 0.008);
@@ -454,7 +494,7 @@ const InteractiveMap = ({
         L.latLng(latCenter - latSpread * (0.5 + pad), lngCenter - lngSpread * (0.5 + pad)),
         L.latLng(latCenter + latSpread * (0.5 + pad), lngCenter + lngSpread * (0.5 + pad))
       );
-      map.flyToBounds(qBounds, { duration: 0.8, padding: [40, 40], maxZoom: 17 });
+      safeFlyToBounds(map, qBounds, { duration: 0.8, padding: [40, 40], maxZoom: 17 });
       setTimeout(() => { if (!mapInst.current) return; mapInst.current.setMaxBounds(qBounds); mapInst.current.setMinZoom(mapInst.current.getZoom() - 1); }, 900);
     }
 
@@ -488,7 +528,7 @@ const InteractiveMap = ({
           m.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
             const cBounds = L.latLngBounds(cluster.map(c => L.latLng(c.lat, c.lng)));
-            mapInst.current?.flyToBounds(cBounds.pad(0.3), { duration: 0.5, maxZoom: 18 });
+            if (mapInst.current) safeFlyToBounds(mapInst.current, cBounds.pad(0.3), { duration: 0.5, maxZoom: 18 });
           });
           propertyLayer.current!.addLayer(m);
         }
@@ -552,7 +592,7 @@ const InteractiveMap = ({
           .setLatLng(center);
         focusLayer.current.addLayer(zoneLabel as any);
 
-        map.flyToBounds(polygon.getBounds(), {
+        safeFlyToBounds(map, polygon.getBounds(), {
           padding: [40, 40],
           animate: true,
           duration: 0.6,
@@ -565,7 +605,7 @@ const InteractiveMap = ({
     const [dispLat, dispLng] = getDisplayCoords(prop)!;
     const displayRadius = prop.display_radius || 400;
 
-    map.flyTo([dispLat, dispLng], 15, { duration: 0.8 });
+    safeFlyTo(map, [dispLat, dispLng], 15, { duration: 0.8 });
     setTimeout(() => {
       if (!mapInst.current) return;
       mapInst.current.invalidateSize({ animate: false });
@@ -779,7 +819,7 @@ const InteractiveMap = ({
     if (mapInst.current) {
       mapInst.current.setMinZoom(10);
       mapInst.current.setMaxBounds(getCityBounds());
-      mapInst.current.flyTo(getCityCenter(), activeCityRef.current?.zoom ?? 13, { duration: 0.7 });
+      safeFlyTo(mapInst.current, getCityCenter(), activeCityRef.current?.zoom ?? 13, { duration: 0.7 });
     }
   };
 
