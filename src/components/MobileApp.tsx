@@ -238,6 +238,32 @@ export default function MobileApp(props: MobileAppProps) {
   const [stayMode, setStayMode] = useState<'court' | 'long'>('long');
   const [aiPlaceholderIdx, setAiPlaceholderIdx] = useState(0);
   const sheetRef = useRef<UniversalSheetHandle>(null);
+  const homeScrollRef = useRef<HTMLDivElement>(null);
+  const homeReturnRef = useRef<number | null>(null);
+  const focusFromHome = useCallback((id: string) => {
+    homeReturnRef.current = homeScrollRef.current?.scrollTop ?? 0;
+    props.onFocusOnMap(id);
+    const p = props.properties.find(pr => pr.id === id);
+    if (p) setTimeout(() => setPinPreview(p), 300);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.onFocusOnMap, props.properties]);
+  const returnFromFocus = useCallback(() => {
+    setPinPreview(null);
+    props.onFocusReturn?.();
+    if (nav.canGoBack) nav.pop();
+    const y = homeReturnRef.current;
+    if (y !== null) {
+      homeReturnRef.current = null;
+      setMobileTab('home');
+      props.onMobileTabChange('home');
+      const restore = (n: number) => {
+        const el = homeScrollRef.current;
+        if (el) el.scrollTop = y; else if (n < 20) requestAnimationFrame(() => restore(n + 1));
+      };
+      requestAnimationFrame(() => restore(0));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.onFocusReturn, props.onMobileTabChange, nav]);
 
   // AI placeholder cycling (change every 3.5s per stayMode)
   useEffect(() => {
@@ -445,8 +471,7 @@ export default function MobileApp(props: MobileAppProps) {
     // If user came from "Voir sur la carte" on a card, restore the previous
     // context (detail panel + scroll) instead of just popping the stack.
     if (props.hasFocusReturn && props.onFocusReturn) {
-      props.onFocusReturn();
-      if (nav.canGoBack) nav.pop();
+      returnFromFocus();
       return;
     }
     if (nav.canGoBack) {
@@ -635,8 +660,9 @@ export default function MobileApp(props: MobileAppProps) {
         {mobileTab === 'map' && props.hasFocusReturn && props.focusedPropertyId && !props.detailProperty && (
           <motion.button
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            onClick={() => { props.onFocusReturn?.(); if (nav.canGoBack) nav.pop(); }}
-            className="absolute z-[1000] inline-flex items-center gap-2 rounded-full bg-card/95 backdrop-blur-sm border border-border shadow-lg px-4 py-2 text-sm font-medium text-foreground active:scale-[0.98]"
+            onClick={returnFromFocus}
+            aria-label="Revenir à la liste"
+            className="absolute z-[1000] inline-flex items-center gap-2 rounded-full bg-card/70 backdrop-blur-md border border-border/60 shadow-lg px-4 py-2 text-sm font-medium text-foreground active:scale-[0.98]"
             style={{ top: 'calc(52px + env(safe-area-inset-top) + 8px)', left: 12 }}
           >
             <ChevronLeft className="h-4 w-4" /> Retour
@@ -674,6 +700,7 @@ export default function MobileApp(props: MobileAppProps) {
         {mobileTab === 'home' && (
           <motion.div
             key="home-tab"
+            ref={homeScrollRef}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-10 bg-background overflow-y-auto scrollable"
@@ -700,7 +727,7 @@ export default function MobileApp(props: MobileAppProps) {
               {displayProperties.length > 0 ? (
                 <>
                   <div className="bg-card">
-                    {homeProperties.map(p => <div key={p.id} className="py-2"><ImmersiveListingCard property={p as CatalogProperty} favorite={props.favorites.has(p.id)} onOpen={openPropertyPage} onToggleFavorite={props.onToggleFavorite} onShowOnMap={props.onFocusOnMap} /></div>)}
+                    {homeProperties.map(p => <div key={p.id} className="py-2"><ImmersiveListingCard property={p as CatalogProperty} favorite={props.favorites.has(p.id)} onOpen={openPropertyPage} onToggleFavorite={props.onToggleFavorite} onShowOnMap={focusFromHome} /></div>)}
                   </div>
                   {homePageCount > 1 && <nav aria-label="Autres logements" className="flex justify-center gap-4 mt-5">
                     <Button variant="outline" size="icon" aria-label="Logements précédents" title="Précédent" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}><ChevronLeft className="h-4 w-4" /></Button>
