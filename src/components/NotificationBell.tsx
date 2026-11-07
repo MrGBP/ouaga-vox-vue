@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 function timeAgo(iso: string) {
   const d = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -23,6 +24,7 @@ export default function NotificationBell({ className = '' }: { className?: strin
   const [count, setCount] = useState(0);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) { setCount(0); setItems([]); return; }
@@ -69,7 +71,10 @@ export default function NotificationBell({ className = '' }: { className?: strin
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] p-0 z-[220]">
         <div className="p-3 border-b">
-          <h3 className="text-sm font-semibold">Notifications</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Notifications</h3>
+            <button type="button" onClick={() => { setOpen(false); navigate('/notifications'); }} className="text-xs font-semibold text-primary hover:underline">Tout voir</button>
+          </div>
           <PushNotificationsToggle compact />
         </div>
         <div className="max-h-96 overflow-y-auto">
@@ -86,6 +91,7 @@ export default function NotificationBell({ className = '' }: { className?: strin
                     setCount(await fetchUnreadCount(user.id));
                   } catch { toast.error('Impossible de marquer la notification comme lue.'); }
                 }
+                if (n.link) { setOpen(false); navigate(n.link); }
               }}
               className={`w-full h-auto rounded-none flex-col items-start whitespace-normal text-left px-3 py-2.5 border-b last:border-b-0 hover:bg-muted ${!n.read ? 'bg-primary/5' : ''}`}
             >
