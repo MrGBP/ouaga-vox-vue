@@ -180,6 +180,7 @@ const Index = () => {
     const q = params.get('q');
     const propId = params.get('property');
     const exploreMap = params.get('exploreMap') === '1';
+    console.log('DBG sync', params.toString(), properties.length, !!properties.find(p => p.id === params.get('property')));
     if (q && q.trim()) {
       handleSearch(q.trim());
     }
