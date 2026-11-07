@@ -14,7 +14,7 @@ export const EngagementsSection = () => {
     {
       icon: ShieldCheck,
       title: 'Biens vérifiés',
-      desc: "Chaque annonce est contrôlée par notre équipe avant publication. Photos, adresse, propriétaire — tout est authentifié.",
+      desc: "Chaque annonce est contrôlée par notre équipe avant publication. Photos, adresse, logement — tout est authentifié.",
     },
     {
       icon: MapPinned,
@@ -24,7 +24,7 @@ export const EngagementsSection = () => {
     {
       icon: Handshake,
       title: 'Sans intermédiaire',
-      desc: "Contactez directement le propriétaire. Zéro commission cachée, zéro démarcheur.",
+      desc: "SapSapHouse est votre unique interlocuteur. Zéro commission cachée, zéro démarcheur.",
     },
   ];
 
@@ -85,7 +85,7 @@ export const CommentCaMarcheSection = () => {
       icon: KeyRound,
       num: '03',
       title: 'Réservez',
-      desc: 'Contactez le propriétaire, réservez en ligne, emménagez sereinement.',
+      desc: 'Contactez SapSapHouse, réservez en ligne, emménagez sereinement.',
     },
   ];
 

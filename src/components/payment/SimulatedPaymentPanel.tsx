@@ -206,8 +206,8 @@ export default function SimulatedPaymentPanel({
           </div>
           <p className="text-base font-bold text-foreground">Paiement simulé validé</p>
           <p className="text-xs text-muted-foreground">
-            Aucun argent réel n'a été reçu. Le propriétaire doit maintenant confirmer la disponibilité ;
-            vous recevrez une notification dès sa réponse.
+            Aucun argent réel n'a été reçu. SapSapHouse vérifie maintenant la disponibilité ;
+            vous recevrez une notification dès la confirmation.
           </p>
           {receiptId && (
             <Link to={`/recu/${receiptId}`} className="inline-flex w-full">
