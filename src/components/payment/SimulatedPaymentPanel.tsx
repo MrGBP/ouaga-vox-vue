@@ -23,8 +23,10 @@ export interface PayableStay {
 type Step = 'choose' | 'transfer' | 'otp' | 'done' | 'failed' | 'expired';
 
 export default function SimulatedPaymentPanel({
-  stay, defaultPhone = '', onValidated, onRestartBooking,
+  stay, defaultPhone = '', onValidated, onRestartBooking, receiptFromAccount = false,
 }: {
+  /** True when the panel is shown inside "Mes séjours", so the receipt's back button returns there. */
+  receiptFromAccount?: boolean;
   stay: PayableStay;
   defaultPhone?: string;
   onValidated?: (receiptId: string | null) => void;
@@ -210,7 +212,7 @@ export default function SimulatedPaymentPanel({
             vous recevrez une notification dès la confirmation.
           </p>
           {receiptId && (
-            <Link to={`/recu/${receiptId}`} className="inline-flex w-full">
+            <Link to={`/recu/${receiptId}`} state={receiptFromAccount ? { fromAccount: true } : undefined} className="inline-flex w-full">
               <Button variant="outline" className="w-full gap-2"><FileText className="h-4 w-4" /> Voir l'accusé de paiement</Button>
             </Link>
           )}

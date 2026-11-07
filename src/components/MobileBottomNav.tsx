@@ -1,5 +1,7 @@
 import { Home, Search, Heart, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/lib/notificationsStore';
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -8,6 +10,8 @@ interface MobileBottomNavProps {
 }
 
 const MobileBottomNav = ({ activeTab, onTabChange, favoritesCount = 0 }: MobileBottomNavProps) => {
+  const { user } = useAuth();
+  const { unread } = useNotifications(user?.id);
   // 4 onglets (Hick's Law) — search fusionné dans Explorer/home
   const tabs = [
     { id: 'home', label: 'Accueil', icon: Home },
@@ -48,6 +52,11 @@ const MobileBottomNav = ({ activeTab, onTabChange, favoritesCount = 0 }: MobileB
             >
               {tab.label}
             </span>
+            {tab.id === 'profile' && unread > 0 && (
+              <span aria-label={`${unread} notifications non lues`} className="absolute top-1 right-[22%] min-w-[16px] h-4 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold flex items-center justify-center px-1">
+                {unread > 99 ? '99+' : unread}
+              </span>
+            )}
             {tab.id === 'favorites' && favoritesCount > 0 && (
               <span className="absolute top-1 right-[22%] min-w-[16px] h-4 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold flex items-center justify-center px-1">
                 {favoritesCount}
