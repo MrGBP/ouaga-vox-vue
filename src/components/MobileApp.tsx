@@ -206,6 +206,8 @@ const CarouselWithSwipeHint = ({ properties, activeQuartier, favorites, formatDi
   );
 };
 
+const HOME_RETURN_KEY = 'sapsap_home_return';
+
 export default function MobileApp(props: MobileAppProps) {
   const nav = useNav();
   const navigate = useNavigate();
@@ -230,7 +232,20 @@ export default function MobileApp(props: MobileAppProps) {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [isExploring, setIsExploring] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  // Retour depuis une fiche : position (scroll + page) mémorisée avant d'ouvrir le bien
+  const homeRestoreRef = useRef<{ y: number; page: number } | null>((() => {
+    try {
+      const raw = sessionStorage.getItem(HOME_RETURN_KEY);
+      if (!raw) return null;
+      const v = JSON.parse(raw);
+      return { y: Number(v?.y) || 0, page: Math.max(1, Number(v?.page) || 1) };
+    } catch { return null; }
+  })());
+  const [currentPage, setCurrentPage] = useState(() => homeRestoreRef.current?.page ?? 1);
+  const currentPageRef = useRef(currentPage);
+  currentPageRef.current = currentPage;
+  const mobileTabRef = useRef(mobileTab);
+  mobileTabRef.current = mobileTab;
   const [pageTransition, setPageTransition] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [pinPreview, setPinPreview] = useState<Property | null>(null);
@@ -399,7 +414,26 @@ export default function MobileApp(props: MobileAppProps) {
   const homePageSize = 6;
   const homePageCount = Math.max(1, Math.ceil(displayProperties.length / homePageSize));
   const homeProperties = displayProperties.slice((currentPage - 1) * homePageSize, currentPage * homePageSize);
-  useEffect(() => { setCurrentPage(1); }, [props.filteredProperties]);
+  useEffect(() => { if (!homeRestoreRef.current) setCurrentPage(1); }, [props.filteredProperties]);
+  // Restaure la position de l'accueil une fois la liste affichée
+  useEffect(() => {
+    const target = homeRestoreRef.current;
+    if (!target || mobileTab !== 'home' || displayProperties.length === 0) return;
+    homeRestoreRef.current = null;
+    try { sessionStorage.removeItem(HOME_RETURN_KEY); } catch { /* noop */ }
+    const maxPage = Math.max(1, Math.ceil(displayProperties.length / homePageSize));
+    setCurrentPage(Math.min(target.page, maxPage));
+    let frames = 0;
+    const restore = () => {
+      const el = homeScrollRef.current;
+      if (el) {
+        el.scrollTop = target.y;
+        if (Math.abs(el.scrollTop - target.y) < 2) return;
+      }
+      if (++frames < 90) requestAnimationFrame(restore);
+    };
+    requestAnimationFrame(restore);
+  }, [displayProperties.length, mobileTab]);
   const totalPages = Math.ceil(displayProperties.length / ITEMS_PER_PAGE);
   const paginatedProperties = displayProperties.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
@@ -439,6 +473,10 @@ export default function MobileApp(props: MobileAppProps) {
 
   // Open the full property page (real route, fullscreen)
   const openPropertyPage = useCallback((id: string) => {
+    // Mémorise la position sur l'accueil pour y revenir exactement au retour de la fiche
+    if (mobileTabRef.current === 'home') {
+      try { sessionStorage.setItem(HOME_RETURN_KEY, JSON.stringify({ y: homeScrollRef.current?.scrollTop ?? 0, page: currentPageRef.current })); } catch { /* noop */ }
+    }
     navigate(`/property/${id}`);
   }, [navigate]);
 
