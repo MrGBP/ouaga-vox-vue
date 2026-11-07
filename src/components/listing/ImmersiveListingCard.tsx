@@ -47,7 +47,7 @@ const ImmersiveListingCard = forwardRef<HTMLDivElement, Props>(({ property: p, f
       {/* Bandeau dépoli « tiré » sous la photo : chevauche seulement ~5 % du bas de l'image */}
       <div className="relative -mt-[3%] overflow-hidden text-primary-foreground [mask-image:linear-gradient(to_bottom,transparent,black_20px)]">
         <img src={p.images?.[0] || '/placeholder-property.svg'} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-bottom scale-125 blur-2xl" />
-        <div className="absolute inset-0 bg-primary/55" />
+        <div className="absolute inset-0 bg-gradient-to-b from-foreground/15 to-foreground/40" />
         <div className="relative px-4 pt-5 pb-3.5 sm:px-5 sm:pb-4 [text-shadow:0_1px_3px_rgb(0_0_0/0.35)]">
           <div className="flex items-baseline justify-between gap-3">
             <h3 className="text-base sm:text-lg font-semibold leading-tight line-clamp-1">{p.title}</h3>
