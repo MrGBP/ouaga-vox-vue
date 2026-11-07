@@ -15,6 +15,13 @@
       "when": 1793923624472,
       "tag": "0001_calendar_availability_holds",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794012642271,
+      "tag": "0002_payments_receipts_notifications",
+      "breakpoints": true
     }
   ]
 }
