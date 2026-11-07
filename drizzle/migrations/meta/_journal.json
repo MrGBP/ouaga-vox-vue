@@ -29,6 +29,13 @@
       "when": 1794067097386,
       "tag": "0003_schedule_booking_maintenance",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794067767483,
+      "tag": "0004_fix_booking_maintenance_alias",
+      "breakpoints": true
     }
   ]
 }
