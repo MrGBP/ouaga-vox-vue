@@ -191,7 +191,8 @@ const Index = () => {
           setFocusedPropertyId(found.id);
           setActiveQuartier(found.quartier);
           setMapQuartierTrigger(found.quartier);
-          if (isMobile) {
+          const mobileNow = isMobile || (typeof window !== 'undefined' && window.innerWidth < 768);
+          if (mobileNow) {
             // Même système que « Carte » depuis l'accueil (focus + retour)
             handleFocusOnMap(found.id, { fromPropertyPage: true });
           } else {
