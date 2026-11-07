@@ -17,6 +17,8 @@ import ReservationChat from '@/components/ReservationChat';
 import { toast } from 'sonner';
 import { activateOwnerRole, finalizePendingOwnerRole } from '@/lib/authProfile';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
+import MyStaysList from '@/components/payment/MyStaysList';
+import { BedDouble } from 'lucide-react';
 
 export default function MonCompte() {
   const { user, loading, signOut, isOwner, refreshRoles } = useAuth();
@@ -210,13 +212,19 @@ export default function MonCompte() {
         </div>
 
 
-        <Tabs defaultValue="reservations" className="w-full">
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="reservations" className="gap-1.5"><Calendar className="h-4 w-4" /><span className="hidden sm:inline">Demandes</span></TabsTrigger>
+        <Tabs defaultValue={searchParams.get('tab') === 'sejours' ? 'sejours' : 'sejours'} className="w-full">
+          <TabsList className="grid grid-cols-5 w-full">
+            <TabsTrigger value="sejours" className="gap-1.5"><BedDouble className="h-4 w-4" /><span className="hidden sm:inline">Séjours & reçus</span></TabsTrigger>
+            <TabsTrigger value="reservations" className="gap-1.5"><Calendar className="h-4 w-4" /><span className="hidden sm:inline">Visites</span></TabsTrigger>
             <TabsTrigger value="favorites" className="gap-1.5"><Heart className="h-4 w-4" /><span className="hidden sm:inline">Favoris</span></TabsTrigger>
             <TabsTrigger value="searches" className="gap-1.5"><SearchIcon className="h-4 w-4" /><span className="hidden sm:inline">Recherches</span></TabsTrigger>
             <TabsTrigger value="profile" className="gap-1.5"><UserIcon className="h-4 w-4" /><span className="hidden sm:inline">Profil</span></TabsTrigger>
           </TabsList>
+
+          {/* SÉJOURS & REÇUS */}
+          <TabsContent value="sejours" className="mt-6">
+            <MyStaysList userId={user.id} defaultPhone={profile.phone} />
+          </TabsContent>
 
           {/* RESERVATIONS */}
           <TabsContent value="reservations" className="mt-6 space-y-3">
