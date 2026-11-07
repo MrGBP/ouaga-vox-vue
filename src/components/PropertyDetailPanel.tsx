@@ -318,7 +318,7 @@ const PropertyDetailPanel = ({
       {!hideHero && (<>
 
       <div
-        className={`relative bg-muted overflow-hidden touch-pan-y ${fullPage ? 'h-[46vh] min-h-[300px]' : 'h-56'}`}
+        className={`relative bg-muted overflow-hidden touch-pan-y ${fullPage ? 'h-[58vh] min-h-[360px]' : 'h-56'}`}
         onTouchStart={(e) => {
           (e.currentTarget as any)._touchStartX = e.touches[0].clientX;
           (e.currentTarget as any)._touchStartY = e.touches[0].clientY;
