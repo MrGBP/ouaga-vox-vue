@@ -425,7 +425,7 @@ const Index = () => {
     addToRecentlyViewed(prop);
     setActiveQuartier(prop.quartier);
     setFocusedPropertyId(id);
-    if (isMobile) {
+    if (isMobile || opts?.fromPropertyPage) {
       // Mobile : fermer la fiche pour voir la carte plein écran
       setDetailProperty(null);
       setForceMapTabTrigger(t => t + 1);
