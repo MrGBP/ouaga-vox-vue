@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { goBack } from '@/lib/returnTo';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -21,6 +23,7 @@ import MyStaysList from '@/components/payment/MyStaysList';
 import { BedDouble } from 'lucide-react';
 
 export default function MonCompte() {
+  const navigate = useNavigate();
   const { user, loading, signOut, isOwner, refreshRoles } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [becomingOwner, setBecomingOwner] = useState(false);
@@ -125,9 +128,7 @@ export default function MonCompte() {
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-30">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Accueil
-          </Link>
+<button type="button" aria-label="Retour" onClick={() => goBack(navigate)} className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-foreground hover:bg-muted active:bg-muted"><ArrowLeft className="h-5 w-5" /></button>
           <h1 className="text-base font-bold text-foreground">Mon compte</h1>
           <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5">
             <LogOut className="h-4 w-4" /> Déconnexion

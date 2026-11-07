@@ -1,3 +1,4 @@
+import { rememberReturnTab } from '@/lib/returnTo';
 import { useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, useNavigate, Link } from 'react-router-dom';
 import { Loader2, LayoutDashboard, Home, Calendar, MessageSquare, ArrowLeft, LogOut, BarChart3, CalendarDays } from 'lucide-react';
@@ -46,9 +47,9 @@ export default function OwnerLayout() {
       <header className="bg-card border-b sticky top-0 z-30">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Link to="/" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+            <button type="button" aria-label="Retour" onClick={() => { rememberReturnTab('profile'); navigate('/'); }} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" /> {t('owner.site')}
-            </Link>
+            </button>
             <span className="h-5 w-px bg-border" />
             <h1 className="text-sm font-bold text-foreground truncate">{t('owner.espace')}</h1>
             {notif.total > 0 && (
