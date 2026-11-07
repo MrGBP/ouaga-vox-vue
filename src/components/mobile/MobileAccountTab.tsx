@@ -90,7 +90,7 @@ export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }
       </div>
 
       <Group title="Paramètres du compte">
-        <Row icon={UserIcon} label="Informations personnelles" hint="Nom, téléphone, e-mail" onClick={() => navigate('/mon-compte?tab=profil')} />
+        <Row icon={UserIcon} label="Informations personnelles" hint="Nom, téléphone, e-mail" onClick={() => navigate('/mon-compte?tab=profile')} />
         <div className="px-4 py-2"><PushNotificationsToggle compact /></div>
       </Group>
 
