@@ -272,9 +272,13 @@ const ResultatsPage = () => {
               <Button variant="ghost" size="icon" aria-label="Fermer l’aperçu" onClick={() => setFocusedId(null)} className="absolute -top-10 right-0 h-8 w-8 rounded-full bg-card shadow-elevation-1"><X className="h-4 w-4" /></Button>
               <MobileDiscoveryCard property={selected} favorite={favorites.has(selected.id)} onOpen={openProperty} onToggleFavorite={toggleFavorite} />
             </motion.div>}</AnimatePresence>
-            <Button onClick={() => setMobileView(v => v === 'list' ? 'map' : 'list')} className="fixed left-1/2 -translate-x-1/2 z-40 rounded-full h-11 px-5 shadow-elevation-3 gap-2" style={{ bottom: 'calc(68px + env(safe-area-inset-bottom))' }}>
-              {mobileView === 'list' ? <><MapIcon className="h-4 w-4" /> Carte</> : <><ListIcon className="h-4 w-4" /> Liste</>}
-            </Button>
+            <div className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 rounded-full bg-card/60 backdrop-blur-md border border-border/50 shadow-elevation-2 p-1" style={{ bottom: 'calc(72px + env(safe-area-inset-bottom))' }}>
+              <Button variant="ghost" onClick={() => setMobileView(v => v === 'list' ? 'map' : 'list')} className="rounded-full h-9 px-4 gap-2 text-foreground hover:bg-card/70">
+                {mobileView === 'list' ? <><MapIcon className="h-4 w-4" /> Carte</> : <><ListIcon className="h-4 w-4" /> Liste</>}
+              </Button>
+              <span className="h-5 w-px bg-border" aria-hidden />
+              <Button variant="ghost" size="icon" aria-label="Décrire mon logement idéal avec SapSap AI" title="SapSap AI" onClick={() => { setFiltersOpen(false); setAiOpen(true); }} className="rounded-full h-9 w-9 text-secondary hover:bg-card/70"><Sparkles className="h-4 w-4" /></Button>
+            </div>
             <MobileDraggableDrawer open={filtersOpen} onClose={() => setFiltersOpen(false)} maxHeightVh={90} initialHeightVh={75} snapPoints={[0, 75, 90]} overlayZIndex={210} drawerZIndex={211}>
               <FilterBar forceOpen externalFilters={filters} quartiers={filterOpts.quartiers} totalCount={allProps.length} filteredCount={results.length} priceBounds={{ min: filterOpts.priceMin, max: filterOpts.priceMax }} availableTypeValues={filterOpts.typeValues} onFilterChange={f => { persistFilters(f); setFiltersOpen(false); }} onReset={() => { persistFilters(DEFAULT_FILTERS); setFiltersOpen(false); }} />
             </MobileDraggableDrawer>
