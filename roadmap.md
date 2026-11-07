@@ -19,8 +19,9 @@
 ## Calendrier / Paiements / Reçus / Notifications
 - [x] Phase 1 — Audit
 - [x] Phase 2 — Calendrier (vérif serveur, protection 10 min, règles, tarifs, blocages, vue propriétaire)
-- [ ] Phase 2b — Filtre par dates dans les résultats + alternatives
-- [ ] Phase 3 — Paiement Mobile Money simulé
-- [ ] Phase 4 — Reçus
-- [ ] Phase 5 — Centre de notifications
-- [ ] Phase 6 — Intégration + vues admin
+- [x] Phase 2b — Filtre par dates dans les résultats + alternatives
+- [x] Phase 3 — Paiement Mobile Money simulé
+- [x] Phase 4 — Reçus
+- [x] Phase 5 — Centre de notifications
+- [x] Phase 6 — Intégration + vues admin
+- [ ] Envoi réel WhatsApp / SMS / email (en attente d'un service d'envoi et du domaine email)
