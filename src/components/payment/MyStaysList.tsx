@@ -98,6 +98,7 @@ export default function MyStaysList({ userId, defaultPhone }: { userId: string; 
             <SimulatedPaymentPanel
               stay={paying}
               defaultPhone={defaultPhone || paying.user_phone}
+              receiptFromAccount
               onValidated={() => load()}
               onRestartBooking={() => { setPaying(null); load(); }}
             />
