@@ -173,7 +173,6 @@ const Index = () => {
 
   // Sync depuis l'URL (?q=, ?property=, ?openFilters=, ?exploreMap=) — venant ex. de la page /search ou /property/:id
   const urlSyncDoneRef = useRef(false);
-  const urlSyncAttemptsRef = useRef(0);
   useEffect(() => {
     if (urlSyncDoneRef.current || properties.length === 0) return;
     urlSyncDoneRef.current = true;
@@ -181,12 +180,6 @@ const Index = () => {
     const q = params.get('q');
     const propId = params.get('property');
     const exploreMap = params.get('exploreMap') === '1';
-    console.log('DBG sync', params.toString(), properties.length, !!properties.find(p => p.id === params.get('property')));
-    // Le bien peut arriver dans un second chargement : on réessaie au prochain lot
-    if (params.get('property') && !properties.some(p => p.id === params.get('property')) && urlSyncAttemptsRef.current++ < 5) {
-      urlSyncDoneRef.current = false;
-      return;
-    }
     if (q && q.trim()) {
       handleSearch(q.trim());
     }
@@ -195,14 +188,14 @@ const Index = () => {
       if (found) {
         if (exploreMap) {
           // Ouvrir la CARTE avec ce bien focus + radius + POI
-          setFocusedPropertyId(found.id);
-          setActiveQuartier(found.quartier);
-          setMapQuartierTrigger(found.quartier);
           const mobileNow = isMobile || (typeof window !== 'undefined' && window.innerWidth < 768);
           if (mobileNow) {
-            // Même système que « Carte » depuis l'accueil (focus + retour)
+            // Même système que « Carte » depuis l'accueil (focus + aperçu + retour)
             handleFocusOnMap(found.id, { fromPropertyPage: true });
           } else {
+            setFocusedPropertyId(found.id);
+            setActiveQuartier(found.quartier);
+            setMapQuartierTrigger(found.quartier);
             // Desktop : afficher aussi la fiche détaillée à côté de la carte
             setDetailProperty(found);
           }
