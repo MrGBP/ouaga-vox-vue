@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, Loader2, Printer, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PageSeo from '@/components/PageSeo';
@@ -14,6 +14,15 @@ const dt = (iso?: string | null) => iso ? new Date(iso).toLocaleString('fr-FR', 
 
 export default function ReceiptPage() {
   const { id = '' } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const fromAccount = !!(location.state as { fromAccount?: boolean } | null)?.fromAccount;
+  // Opened from "Mes séjours": step back to it. Otherwise replace this page with
+  // "Mes séjours" so the account's own back button never returns to the receipt.
+  const backToStays = () => {
+    if (fromAccount && ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0) navigate(-1);
+    else navigate('/mon-compte?tab=sejours', { replace: true });
+  };
   const { user, loading } = useAuth();
   const [receipt, setReceipt] = useState<ReceiptRow | null>(null);
   const [versions, setVersions] = useState<ReceiptRow[]>([]);
@@ -55,9 +64,9 @@ export default function ReceiptPage() {
       <PageSeo title="Reçu | SapSapHouse" description="Justificatif SapSapHouse de votre réservation." path={`/recu/${id}`} heading="Reçu SapSapHouse" />
       <header className="print:hidden sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border">
         <div className="container mx-auto max-w-3xl px-4 h-14 flex items-center gap-2">
-          <Link to="/mon-compte?tab=sejours" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={backToStays} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Mes séjours
-          </Link>
+          </button>
           <div className="flex-1" />
           {receipt && <>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={download}><Download className="h-4 w-4" /><span className="hidden sm:inline">Télécharger</span></Button>
@@ -81,7 +90,7 @@ export default function ReceiptPage() {
               <div className="print:hidden mb-3 rounded-xl border border-secondary/40 bg-secondary/10 p-3 text-xs text-foreground flex items-center gap-2">
                 <History className="h-4 w-4 text-secondary" />
                 Une version plus récente existe.
-                <Link to={`/recu/${latest.id}`} className="font-semibold text-primary underline">Voir la version {latest.version}</Link>
+                <Link to={`/recu/${latest.id}`} replace state={location.state} className="font-semibold text-primary underline">Voir la version {latest.version}</Link>
               </div>
             )}
             <article id="receipt-doc" className="rounded-2xl bg-card border border-border shadow-elevation-1 overflow-hidden print:shadow-none print:border-0 print:rounded-none">

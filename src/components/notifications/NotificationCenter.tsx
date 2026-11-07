@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCheck, Loader2, Search, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  fetchNotifications, fetchNotificationDeliveries, markAllRead, markNotificationRead, subscribeToNotifications,
+  fetchNotificationDeliveries,
   NOTIFICATION_CATEGORIES, NOTIFICATION_PRIORITY_LABEL, DELIVERY_STATUS_LABEL, type AppNotification,
 } from '@/lib/notificationsService';
+import { useNotifications } from '@/lib/notificationsStore';
 
 const PERIODS = [
   { value: 'all', label: 'Toutes les dates', ms: 0 },
@@ -23,31 +24,26 @@ const catLabel = (v?: string) => NOTIFICATION_CATEGORIES.find(c => c.value === v
 
 export default function NotificationCenter({ userId, linkPrefixMap }: { userId: string; linkPrefixMap?: (link: string) => string }) {
   const navigate = useNavigate();
-  const [items, setItems] = useState<AppNotification[]>([]);
+  const { items, unread, loading, markRead, markAllRead } = useNotifications(userId);
   const [deliveries, setDeliveries] = useState<Record<string, Array<{ channel: string; status: string; simulated: boolean }>>>({});
-  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('all');
   const [period, setPeriod] = useState('all');
   const [readState, setReadState] = useState('all');
   const [priority, setPriority] = useState('all');
 
-  const load = useCallback(async () => {
-    try {
-      const list = await fetchNotifications(userId, 300);
-      setItems(list);
-      const del = await fetchNotificationDeliveries(list.slice(0, 100).map(n => n.id));
+  const deliveryKey = items.slice(0, 100).map(n => n.id).join(',');
+  useEffect(() => {
+    if (!deliveryKey) { setDeliveries({}); return; }
+    let alive = true;
+    fetchNotificationDeliveries(deliveryKey.split(',')).then(del => {
+      if (!alive) return;
       const map: Record<string, any[]> = {};
       del.forEach(d => { (map[d.notification_id] ||= []).push(d); });
       setDeliveries(map);
-    } catch (e: any) { toast.error(e.message ?? 'Chargement impossible'); }
-    finally { setLoading(false); }
-  }, [userId]);
-
-  useEffect(() => {
-    load();
-    return subscribeToNotifications(userId, () => load(), n => setItems(prev => prev.map(i => i.id === n.id ? { ...i, ...n } : i)));
-  }, [userId, load]);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [deliveryKey]);
 
   const filtered = useMemo(() => {
     const p = PERIODS.find(x => x.value === period)!;
@@ -62,20 +58,14 @@ export default function NotificationCenter({ userId, linkPrefixMap }: { userId: 
     );
   }, [items, q, category, period, readState, priority]);
 
-  const unread = items.filter(n => !n.read).length;
-
   const open = async (n: AppNotification) => {
-    if (!n.read) {
-      setItems(prev => prev.map(i => i.id === n.id ? { ...i, read: true } : i));
-      markNotificationRead(n.id).catch(() => {});
-    }
+    if (!n.read) markRead(n.id).catch(() => {});
     if (n.link) navigate(linkPrefixMap ? linkPrefixMap(n.link) : n.link);
   };
 
   const toggleRead = async (n: AppNotification) => {
     if (n.read) return;
-    setItems(prev => prev.map(i => i.id === n.id ? { ...i, read: true } : i));
-    markNotificationRead(n.id).catch(() => toast.error('Action impossible'));
+    markRead(n.id).catch(() => toast.error('Action impossible'));
   };
 
   return (
@@ -86,7 +76,7 @@ export default function NotificationCenter({ userId, linkPrefixMap }: { userId: 
           <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher une notification" className="pl-9" />
         </div>
         <Button variant="outline" size="sm" className="gap-1.5" disabled={unread === 0}
-          onClick={async () => { try { await markAllRead(userId); setItems(prev => prev.map(i => ({ ...i, read: true }))); toast.success('Tout est marqué comme lu'); } catch { toast.error('Action impossible'); } }}>
+          onClick={async () => { try { await markAllRead(); toast.success('Tout est marqué comme lu'); } catch { toast.error('Action impossible'); } }}>
           <CheckCheck className="h-4 w-4" /> Tout marquer comme lu {unread > 0 && `(${unread})`}
         </Button>
       </div>

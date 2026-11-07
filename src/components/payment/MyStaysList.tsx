@@ -78,7 +78,7 @@ export default function MyStaysList({ userId, defaultPhone }: { userId: string; 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {payable && <Button size="sm" className="gap-1.5" onClick={() => setPaying(s)}><CreditCard className="h-3.5 w-3.5" /> Payer (simulation)</Button>}
               {s.receipts.map(r => (
-                <Link key={r.id} to={`/recu/${r.id}`}>
+                <Link key={r.id} to={`/recu/${r.id}`} state={{ fromAccount: true }}>
                   <Button size="sm" variant="outline" className="gap-1.5"><FileText className="h-3.5 w-3.5" /> {RECEIPT_KIND_LABEL[r.kind]}{r.version > 1 ? ` v${r.version}` : ''}</Button>
                 </Link>
               ))}
@@ -98,6 +98,7 @@ export default function MyStaysList({ userId, defaultPhone }: { userId: string; 
             <SimulatedPaymentPanel
               stay={paying}
               defaultPhone={defaultPhone || paying.user_phone}
+              receiptFromAccount
               onValidated={() => load()}
               onRestartBooking={() => { setPaying(null); load(); }}
             />

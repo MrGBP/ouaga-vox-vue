@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { accountNavigation } from '@/lib/accountNavigation';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
 import { rememberReturnTab } from '@/lib/returnTo';
+import { useNotifications } from '@/lib/notificationsStore';
 import { useState } from 'react';
 import { useCountryConfig, fetchCountrySupport } from '@/hooks/useCountryConfig';
 import { openWhatsApp, openEmail } from '@/lib/contact';
@@ -88,6 +89,7 @@ const Group = ({ title, children }: { title: string; children: React.ReactNode }
 
 export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }: { favoritesCount?: number; onOpenFavorites: () => void }) {
   const { user, loading, isOwner, isAdmin, openAuthModal, signOut } = useAuth();
+  const { unread } = useNotifications(user?.id);
   const rawNavigate = useNavigate();
   const navigate = (path: string) => { rememberReturnTab('profile'); rawNavigate(path); };
 
@@ -142,10 +144,12 @@ export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }
         {[
           { icon: Receipt, label: 'Séjours', on: () => navigate('/mon-compte?tab=sejours') },
           { icon: Heart, label: favoritesCount ? `Favoris · ${favoritesCount}` : 'Favoris', on: onOpenFavorites },
-          { icon: Bell, label: 'Alertes', on: () => navigate('/notifications') },
+          { icon: Bell, label: 'Alertes', on: () => navigate('/notifications'), badge: unread },
         ].map(t => (
-          <button key={t.label} type="button" onClick={t.on} className="rounded-2xl bg-card border border-border py-4 flex flex-col items-center gap-2 active:scale-[0.97] transition-transform shadow-sm">
-            <span className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center"><t.icon className="h-5 w-5" strokeWidth={1.8} /></span>
+          <button key={t.label} type="button" onClick={t.on} aria-label={t.badge ? `${t.label}, ${t.badge} non lues` : t.label} className="rounded-2xl bg-card border border-border py-4 flex flex-col items-center gap-2 active:scale-[0.97] transition-transform shadow-sm">
+            <span className="relative w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center"><t.icon className="h-5 w-5" strokeWidth={1.8} />
+              {!!t.badge && <span className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-card">{t.badge > 99 ? '99+' : t.badge}</span>}
+            </span>
             <span className="text-xs font-semibold text-foreground">{t.label}</span>
           </button>
         ))}

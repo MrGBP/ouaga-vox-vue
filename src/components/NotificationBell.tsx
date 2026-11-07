@@ -1,10 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  fetchNotifications, fetchUnreadCount, markNotificationRead,
-  subscribeToNotifications, type AppNotification,
-} from '@/lib/notificationsService';
+import { useNotifications } from '@/lib/notificationsStore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import PushNotificationsToggle from '@/components/PushNotificationsToggle';
@@ -21,34 +18,10 @@ function timeAgo(iso: string) {
 
 export default function NotificationBell({ className = '' }: { className?: string }) {
   const { user } = useAuth();
-  const [count, setCount] = useState(0);
-  const [items, setItems] = useState<AppNotification[]>([]);
+  const { items: all, unread: count, markRead } = useNotifications(user?.id);
+  const items = all.slice(0, 30);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!user) { setCount(0); setItems([]); return; }
-    let mounted = true;
-    const refresh = () => {
-      fetchUnreadCount(user.id).then(c => mounted && setCount(c)).catch(() => {});
-      fetchNotifications(user.id).then(list => mounted && setItems(list)).catch(() => {});
-    };
-    refresh();
-    const unsub = subscribeToNotifications(
-      user.id,
-      (n) => {
-        if (mounted) refresh();
-      },
-      (n) => {
-        // read state changed elsewhere → re-sync
-        setItems(prev => prev.map(i => i.id === n.id ? { ...i, ...n } : i));
-        fetchUnreadCount(user.id).then(c => mounted && setCount(c)).catch(() => {});
-      },
-    );
-    const poll = setInterval(refresh, 30000);
-    window.addEventListener('focus', refresh);
-    return () => { mounted = false; clearInterval(poll); window.removeEventListener('focus', refresh); unsub(); };
-  }, [user]);
 
   if (!user) return null;
 
@@ -84,13 +57,7 @@ export default function NotificationBell({ className = '' }: { className?: strin
             <Button variant="ghost"
               key={n.id}
               onClick={async () => {
-                if (!n.read) {
-                  try {
-                    await markNotificationRead(n.id);
-                    setItems(prev => prev.map(i => i.id === n.id ? { ...i, read: true } : i));
-                    setCount(await fetchUnreadCount(user.id));
-                  } catch { toast.error('Impossible de marquer la notification comme lue.'); }
-                }
+                if (!n.read) markRead(n.id).catch(() => toast.error('Impossible de marquer la notification comme lue.'));
                 if (n.link) { setOpen(false); navigate(n.link); }
               }}
               className={`w-full h-auto rounded-none flex-col items-start whitespace-normal text-left px-3 py-2.5 border-b last:border-b-0 hover:bg-muted ${!n.read ? 'bg-primary/5' : ''}`}
