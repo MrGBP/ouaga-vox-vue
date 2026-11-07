@@ -47,10 +47,10 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
 
 export const STAY_STATUS_LABEL: Record<StayStatus, string> = {
   awaiting_payment: 'En attente de paiement',
-  paid_awaiting_owner: 'Payé · attente propriétaire',
+  paid_awaiting_owner: 'Payé · confirmation en cours',
   pending: 'En attente',
   confirmed: 'Confirmée',
-  refused: 'Refusée par le propriétaire',
+  refused: 'Non disponible',
   expired: 'Expirée',
   cancelled: 'Annulée',
 };

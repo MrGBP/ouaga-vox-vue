@@ -28,7 +28,7 @@ const FEATURES = [
     emoji: '📅',
     title: 'Réservez en 3 étapes',
     description:
-      'Calendrier, vos coordonnées, confirmation — rapide et sécurisé. Le propriétaire est notifié immédiatement.',
+      'Calendrier, vos coordonnées, confirmation — rapide et sécurisé. SapSapHouse s'occupe de tout.',
     accent: '#1A3560',
     bg: 'from-[#1A3560]/5 to-[#1A3560]/0',
   },

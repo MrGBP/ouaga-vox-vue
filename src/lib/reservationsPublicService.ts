@@ -72,7 +72,7 @@ export interface OccupancyRange {
 export const OCCUPANCY_LEGEND: Array<{ state: OccupancyState | 'available'; label: string; className: string }> = [
   { state: 'available', label: 'Disponible', className: 'bg-card border border-border' },
   { state: 'awaiting_payment', label: 'En attente de paiement', className: 'bg-secondary/25 border border-secondary/50' },
-  { state: 'awaiting_owner', label: 'Payé · attente propriétaire', className: 'bg-secondary/60' },
+  { state: 'awaiting_owner', label: 'Payé · confirmation en cours', className: 'bg-secondary/60' },
   { state: 'confirmed', label: 'Réservation confirmée', className: 'bg-primary' },
   { state: 'external', label: 'Indisponibilité externe', className: 'bg-muted-foreground/40' },
   { state: 'maintenance', label: 'Maintenance / entretien', className: 'bg-destructive/40' },

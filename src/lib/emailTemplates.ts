@@ -83,7 +83,7 @@ export function generateConfirmationEmail(
           <tr><td style="padding:8px 0;color:#64748b;">Arrivée</td><td style="padding:8px 0;text-align:right;"><strong>${fmtDate(reservation.check_in)}</strong><br/><span style="color:#64748b;font-size:12px;">à partir de 14h00</span></td></tr>
           <tr><td style="padding:8px 0;color:#64748b;">Départ</td><td style="padding:8px 0;text-align:right;"><strong>${fmtDate(reservation.check_out)}</strong><br/><span style="color:#64748b;font-size:12px;">avant 11h00</span></td></tr>
           <tr><td style="padding:8px 0;color:#64748b;">Durée</td><td style="padding:8px 0;text-align:right;"><strong>${reservation.nights} nuit${reservation.nights > 1 ? 's' : ''}</strong></td></tr>
-          <tr><td style="padding:8px 0;color:#64748b;">Voyageurs</td><td style="padding:8px 0;text-align:right;"><strong>${reservation.guests_count}</strong></td></tr>
+          <tr><td style="padding:8px 0;color:#64748b;">Personnes</td><td style="padding:8px 0;text-align:right;"><strong>${reservation.guests_count}</strong></td></tr>
         </table>
       </td></tr>
 

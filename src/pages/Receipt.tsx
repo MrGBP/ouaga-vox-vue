@@ -155,14 +155,14 @@ export default function ReceiptPage() {
                     <Field label="Référence de transaction" value={c.transaction_ref || '—'} mono />
                     <Field label="Statut" value={PAYMENT_STATUS_LABEL[c.payment_status as PaymentStatus] || c.payment_status || '—'} />
                     <Field label="Simulation validée le" value={dt(c.payment_validated_at)} />
-                    {receipt.kind === 'booking_confirmation' && <Field label="Confirmé par le propriétaire" value={dt(c.owner_confirmed_at)} />}
+                    {receipt.kind === 'booking_confirmation' && <Field label="Confirmé par SapSapHouse" value={dt(c.owner_confirmed_at)} />}
                   </div>
                 </Section>
 
                 {receipt.kind === 'payment_ack' && (
                   <p className="rounded-lg border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
                     Cet accusé confirme uniquement la validation du parcours de paiement fictif. La disponibilité du logement
-                    reste soumise à la confirmation du propriétaire.
+                    reste soumise à la confirmation de SapSapHouse.
                   </p>
                 )}
               </div>

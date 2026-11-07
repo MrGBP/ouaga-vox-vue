@@ -86,7 +86,7 @@ const StickyReservationCard = ({ property }: Props) => {
           </div>
           <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
             <Clock className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-            <span><span className="font-semibold text-foreground">Réponse rapide</span> — le propriétaire répond souvent en moins d'1h.</span>
+            <span><span className="font-semibold text-foreground">Réponse rapide</span> — SapSapHouse vous répond souvent en moins d'1h.</span>
           </div>
           <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
             <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />

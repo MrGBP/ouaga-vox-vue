@@ -67,7 +67,7 @@ export default function MyStaysList({ userId, defaultPhone }: { userId: string; 
               <span className="font-bold text-primary">{fmt(s.total_price)} FCFA</span>
             </div>
             {s.status === 'paid_awaiting_owner' && (
-              <p className="mt-2 text-xs text-muted-foreground">Le propriétaire confirme la disponibilité. Vous serez notifié dès sa réponse.</p>
+              <p className="mt-2 text-xs text-muted-foreground">SapSapHouse vérifie la disponibilité. Vous serez notifié dès la confirmation.</p>
             )}
             {s.status === 'refused' && s.refusal_reason && <p className="mt-2 text-xs text-destructive">Motif : {s.refusal_reason}</p>}
             {payable && s.hold_expires_at && (
