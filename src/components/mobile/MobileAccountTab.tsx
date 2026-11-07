@@ -1,0 +1,98 @@
+import { useNavigate } from 'react-router-dom';
+import { LogIn, LogOut, ChevronRight, User as UserIcon, LayoutDashboard, Home, Calendar, MessageSquare, ShieldCheck, Bell, Heart, Receipt, PlusCircle, BadgeCheck, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { accountNavigation } from '@/lib/accountNavigation';
+import PushNotificationsToggle from '@/components/PushNotificationsToggle';
+
+const icons = { account: UserIcon, dashboard: LayoutDashboard, home: Home, calendar: Calendar, messages: MessageSquare, admin: ShieldCheck, bell: Bell };
+
+const Row = ({ icon: Icon, label, hint, onClick }: { icon: typeof UserIcon; label: string; hint?: string; onClick: () => void }) => (
+  <button type="button" onClick={onClick} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-muted/60 transition-colors">
+    <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0"><Icon className="h-[18px] w-[18px]" strokeWidth={1.8} /></span>
+    <span className="flex-1 min-w-0">
+      <span className="block text-sm font-medium text-foreground">{label}</span>
+      {hint && <span className="block text-xs text-muted-foreground truncate">{hint}</span>}
+    </span>
+    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+  </button>
+);
+
+const Group = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <section>
+    <h4 className="px-1 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</h4>
+    <div className="rounded-2xl bg-card border border-border divide-y divide-border overflow-hidden">{children}</div>
+  </section>
+);
+
+export default function MobileAccountTab({ favoritesCount = 0, onOpenFavorites }: { favoritesCount?: number; onOpenFavorites: () => void }) {
+  const { user, loading, isOwner, isAdmin, openAuthModal, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  if (loading && !user) return <div className="flex justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
+  if (!user) {
+    const perks = [
+      { icon: Receipt, text: 'Suivez vos réservations et reçus de paiement' },
+      { icon: Heart, text: 'Retrouvez vos favoris sur tous vos appareils' },
+      { icon: Bell, text: 'Recevez les alertes de disponibilité' },
+    ];
+    return (
+      <div className="px-4 py-6 space-y-6">
+        <div className="rounded-3xl bg-primary text-primary-foreground p-6">
+          <span className="w-12 h-12 rounded-2xl bg-primary-foreground/15 flex items-center justify-center mb-4"><UserIcon className="h-6 w-6" /></span>
+          <h3 className="text-xl font-bold leading-tight">Votre espace SapSapHouse</h3>
+          <p className="text-sm opacity-80 mt-1">Connectez-vous pour réserver et gérer vos séjours.</p>
+          <ul className="mt-5 space-y-3">
+            {perks.map(p => <li key={p.text} className="flex items-center gap-3 text-sm"><p.icon className="h-4 w-4 shrink-0 opacity-90" />{p.text}</li>)}
+          </ul>
+        </div>
+        <div className="space-y-3">
+          <Button className="w-full h-12 rounded-xl text-base gap-2" onClick={() => openAuthModal('se connecter')}><LogIn className="h-4 w-4" />Se connecter</Button>
+          <Button variant="outline" className="w-full h-12 rounded-xl text-base" onClick={() => openAuthModal('créer un compte')}>Créer un compte</Button>
+        </div>
+        <Group title="Vous avez un logement meublé ?">
+          <Row icon={PlusCircle} label="Proposer mon bien" hint="SapSapHouse s'occupe de tout" onClick={() => navigate('/proposer-bien')} />
+        </Group>
+      </div>
+    );
+  }
+
+  const name = (user.user_metadata?.full_name as string | undefined) || user.email || 'Mon compte';
+  const initials = name.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
+  const nav = accountNavigation(isOwner, isAdmin);
+  const personal = nav.filter(i => !i.path.startsWith('/proprietaire') && i.path !== '/admin');
+  const pro = nav.filter(i => i.path.startsWith('/proprietaire') || i.path === '/admin');
+
+  return (
+    <div className="px-4 py-5 space-y-6">
+      <div className="rounded-3xl bg-card border border-border p-5 flex items-center gap-4 shadow-sm">
+        <span className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold ring-4 ring-primary/15 shrink-0">{initials}</span>
+        <div className="min-w-0">
+          <h3 className="text-lg font-bold text-foreground truncate">{name}</h3>
+          {user.email && <p className="text-xs text-muted-foreground truncate">{user.email}</p>}
+          <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 rounded-full px-2 py-0.5"><BadgeCheck className="h-3 w-3" />Compte actif</span>
+        </div>
+      </div>
+
+      <Group title="Mes activités">
+        {personal.map(i => <Row key={i.path} icon={i.path.includes('sejours') ? Receipt : icons[i.icon]} label={i.label} onClick={() => navigate(i.path)} />)}
+        <Row icon={Heart} label="Mes favoris" hint={favoritesCount ? `${favoritesCount} logement${favoritesCount > 1 ? 's' : ''} enregistré${favoritesCount > 1 ? 's' : ''}` : undefined} onClick={onOpenFavorites} />
+      </Group>
+
+      {pro.length > 0 && (
+        <Group title="Gestion">
+          {pro.map(i => <Row key={i.path} icon={icons[i.icon]} label={i.label} onClick={() => navigate(i.path)} />)}
+        </Group>
+      )}
+
+      <Group title="Préférences">
+        <div className="px-4 py-2"><PushNotificationsToggle compact /></div>
+      </Group>
+
+      <Button variant="ghost" onClick={() => void signOut()} className="w-full h-12 rounded-xl gap-2 text-destructive hover:text-destructive hover:bg-destructive/10">
+        <LogOut className="h-4 w-4" />Se déconnecter
+      </Button>
+    </div>
+  );
+}
