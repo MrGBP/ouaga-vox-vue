@@ -288,38 +288,186 @@ export type Database = {
           },
         ]
       }
+      notification_deliveries: {
+        Row: {
+          attempts: number
+          channel: string
+          created_at: string
+          detail: string | null
+          id: string
+          notification_id: string
+          simulated: boolean
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          channel: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          notification_id: string
+          simulated?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          notification_id?: string
+          simulated?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string
+          category: string
+          channel: string
           created_at: string
           data: Json | null
+          delivery_status: string
+          entity_id: string | null
+          entity_type: string | null
           id: string
+          link: string | null
+          priority: string
           read: boolean
+          read_at: string | null
           title: string
           type: string
           user_id: string
         }
         Insert: {
           body: string
+          category?: string
+          channel?: string
           created_at?: string
           data?: Json | null
+          delivery_status?: string
+          entity_id?: string | null
+          entity_type?: string | null
           id?: string
+          link?: string | null
+          priority?: string
           read?: boolean
+          read_at?: string | null
           title: string
           type: string
           user_id: string
         }
         Update: {
           body?: string
+          category?: string
+          channel?: string
           created_at?: string
           data?: Json | null
+          delivery_status?: string
+          entity_id?: string | null
+          entity_type?: string | null
           id?: string
+          link?: string | null
+          priority?: string
           read?: boolean
+          read_at?: string | null
           title?: string
           type?: string
           user_id?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          authorized_at: string | null
+          created_at: string
+          currency: string
+          funds_received_at: string | null
+          id: string
+          mode: string
+          operator: string
+          otp_attempts: number
+          payer_phone: string
+          property_id: string
+          receiver_number: string
+          refunded_at: string | null
+          reservation_id: string
+          status: string
+          transaction_ref: string
+          unit_id: string | null
+          updated_at: string
+          user_id: string
+          validated_at: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          amount: number
+          authorized_at?: string | null
+          created_at?: string
+          currency?: string
+          funds_received_at?: string | null
+          id?: string
+          mode?: string
+          operator: string
+          otp_attempts?: number
+          payer_phone: string
+          property_id: string
+          receiver_number: string
+          refunded_at?: string | null
+          reservation_id: string
+          status?: string
+          transaction_ref: string
+          unit_id?: string | null
+          updated_at?: string
+          user_id: string
+          validated_at?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          amount?: number
+          authorized_at?: string | null
+          created_at?: string
+          currency?: string
+          funds_received_at?: string | null
+          id?: string
+          mode?: string
+          operator?: string
+          otp_attempts?: number
+          payer_phone?: string
+          property_id?: string
+          receiver_number?: string
+          refunded_at?: string | null
+          reservation_id?: string
+          status?: string
+          transaction_ref?: string
+          unit_id?: string | null
+          updated_at?: string
+          user_id?: string
+          validated_at?: string | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "public_reservations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platform_settings: {
         Row: {
@@ -685,6 +833,7 @@ export type Database = {
       }
       public_reservations: {
         Row: {
+          arrival_reminder_at: string | null
           check_in: string
           check_out: string
           confirmation_number: string
@@ -695,11 +844,14 @@ export type Database = {
           message: string | null
           nights: number
           owner_decision_at: string | null
+          owner_reminder_at: string | null
+          owner_respond_by: string | null
           price_per_night: number
           price_snapshot: Json | null
           property_id: string
           property_quartier: string
           property_title: string
+          refusal_reason: string | null
           status: string
           total_price: number
           updated_at: string
@@ -709,6 +861,7 @@ export type Database = {
           user_phone: string
         }
         Insert: {
+          arrival_reminder_at?: string | null
           check_in: string
           check_out: string
           confirmation_number?: string
@@ -719,11 +872,14 @@ export type Database = {
           message?: string | null
           nights: number
           owner_decision_at?: string | null
+          owner_reminder_at?: string | null
+          owner_respond_by?: string | null
           price_per_night: number
           price_snapshot?: Json | null
           property_id: string
           property_quartier: string
           property_title: string
+          refusal_reason?: string | null
           status?: string
           total_price: number
           updated_at?: string
@@ -733,6 +889,7 @@ export type Database = {
           user_phone: string
         }
         Update: {
+          arrival_reminder_at?: string | null
           check_in?: string
           check_out?: string
           confirmation_number?: string
@@ -743,11 +900,14 @@ export type Database = {
           message?: string | null
           nights?: number
           owner_decision_at?: string | null
+          owner_reminder_at?: string | null
+          owner_respond_by?: string | null
           price_per_night?: number
           price_snapshot?: Json | null
           property_id?: string
           property_quartier?: string
           property_title?: string
+          refusal_reason?: string | null
           status?: string
           total_price?: number
           updated_at?: string
@@ -820,6 +980,79 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      receipts: {
+        Row: {
+          content: Json
+          correction_reason: string | null
+          id: string
+          issued_at: string
+          issued_by: string | null
+          kind: string
+          mode: string
+          payment_id: string | null
+          property_id: string
+          receipt_number: string
+          reservation_id: string
+          supersedes_id: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          content: Json
+          correction_reason?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          kind: string
+          mode?: string
+          payment_id?: string | null
+          property_id: string
+          receipt_number: string
+          reservation_id: string
+          supersedes_id?: string | null
+          user_id: string
+          version?: number
+        }
+        Update: {
+          content?: Json
+          correction_reason?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          kind?: string
+          mode?: string
+          payment_id?: string | null
+          property_id?: string
+          receipt_number?: string
+          reservation_id?: string
+          supersedes_id?: string | null
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "public_reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservations: {
         Row: {
@@ -963,6 +1196,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      confirm_simulated_payment: {
+        Args: { _otp: string; _payment_id: string }
+        Returns: Json
+      }
       create_reservation_hold: {
         Args: {
           _check_in: string
@@ -974,6 +1211,7 @@ export type Database = {
           _property_id: string
         }
         Returns: {
+          arrival_reminder_at: string | null
           check_in: string
           check_out: string
           confirmation_number: string
@@ -984,11 +1222,14 @@ export type Database = {
           message: string | null
           nights: number
           owner_decision_at: string | null
+          owner_reminder_at: string | null
+          owner_respond_by: string | null
           price_per_night: number
           price_snapshot: Json | null
           property_id: string
           property_quartier: string
           property_title: string
+          refusal_reason: string | null
           status: string
           total_price: number
           updated_at: string
@@ -1003,6 +1244,22 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      emit_notification: {
+        Args: {
+          _body: string
+          _category: string
+          _channels?: string[]
+          _data?: Json
+          _entity_id?: string
+          _entity_type?: string
+          _link?: string
+          _priority?: string
+          _title: string
+          _type: string
+          _user: string
+        }
+        Returns: string
       }
       ensure_user_profile: {
         Args: { _full_name?: string; _phone?: string }
@@ -1021,6 +1278,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      expire_stale_reservations: { Args: never; Returns: number }
       get_calendar_occupancy: {
         Args: { _property_id: string }
         Returns: {
@@ -1056,12 +1314,53 @@ export type Database = {
         Args: { _property_id: string }
         Returns: undefined
       }
+      initiate_simulated_payment: {
+        Args: { _operator: string; _phone: string; _reservation_id: string }
+        Returns: {
+          amount: number
+          authorized_at: string | null
+          created_at: string
+          currency: string
+          funds_received_at: string | null
+          id: string
+          mode: string
+          operator: string
+          otp_attempts: number
+          payer_phone: string
+          property_id: string
+          receiver_number: string
+          refunded_at: string | null
+          reservation_id: string
+          status: string
+          transaction_ref: string
+          unit_id: string | null
+          updated_at: string
+          user_id: string
+          validated_at: string | null
+          verified_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       is_any_admin: { Args: { _user_id: string }; Returns: boolean }
       is_property_owner: {
         Args: { _property_id: string; _user_id: string }
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      issue_receipt: {
+        Args: {
+          _kind: string
+          _reason?: string
+          _reservation_id: string
+          _supersedes?: string
+        }
+        Returns: string
+      }
       list_country_configs_public: {
         Args: never
         Returns: {
@@ -1076,18 +1375,92 @@ export type Database = {
           name: string
         }[]
       }
+      mark_all_notifications_read: { Args: never; Returns: undefined }
       mark_conversation_read: {
         Args: { _property_id?: string; _reservation_id?: string }
         Returns: undefined
       }
+      notify_admins: {
+        Args: {
+          _body: string
+          _category: string
+          _data?: Json
+          _entity_id?: string
+          _entity_type?: string
+          _link?: string
+          _priority?: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
+      owner_decide_reservation: {
+        Args: { _accept: boolean; _id: string; _reason?: string }
+        Returns: {
+          arrival_reminder_at: string | null
+          check_in: string
+          check_out: string
+          confirmation_number: string
+          created_at: string
+          guests_count: number
+          hold_expires_at: string | null
+          id: string
+          message: string | null
+          nights: number
+          owner_decision_at: string | null
+          owner_reminder_at: string | null
+          owner_respond_by: string | null
+          price_per_night: number
+          price_snapshot: Json | null
+          property_id: string
+          property_quartier: string
+          property_title: string
+          refusal_reason: string | null
+          status: string
+          total_price: number
+          updated_at: string
+          user_email: string
+          user_id: string | null
+          user_name: string
+          user_phone: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "public_reservations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       owner_unread_message_count: { Args: never; Returns: number }
+      payment_operators: { Args: never; Returns: Json }
       quote_stay: {
         Args: { _check_in: string; _check_out: string; _property_id: string }
         Returns: Json
       }
+      reissue_receipt: {
+        Args: { _reason: string; _receipt_id: string }
+        Returns: string
+      }
       reservation_is_active: {
         Args: { _hold: string; _status: string }
         Returns: boolean
+      }
+      setting_value: { Args: { _default: Json; _key: string }; Returns: Json }
+      suggest_alternatives: {
+        Args: {
+          _check_in: string
+          _check_out: string
+          _limit?: number
+          _property_id: string
+        }
+        Returns: {
+          city: string
+          id: string
+          image: string
+          price: number
+          quartier: string
+          title: string
+        }[]
       }
       sync_property_images_from_media: {
         Args: { _property_id: string }
