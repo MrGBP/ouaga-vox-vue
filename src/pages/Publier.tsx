@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowRight, CheckCircle2, Camera, MapPin, Sparkles, Shield,
-  BadgeCheck, Zap, Eye, Home, Building2, Store, Warehouse,
+  BadgeCheck, Zap, Eye, Home, Building2,
   Bed, Bath, Ruler, Star,
 } from 'lucide-react';
 import Header from '@/components/Header';
@@ -38,7 +38,7 @@ const STEPS = [
     n: 4,
     icon: Sparkles,
     title: 'Publiez & recevez',
-    desc: 'Validation rapide par notre équipe, puis les demandes arrivent.',
+    desc: 'Après vérification, acceptez ou refusez chaque réservation.',
     time: '< 24 h',
   },
 ];
@@ -46,14 +46,14 @@ const STEPS = [
 const TYPES = [
   { icon: Home, label: 'Maison / Villa' },
   { icon: Building2, label: 'Appartement' },
-  { icon: Store, label: 'Commerce' },
-  { icon: Warehouse, label: 'Entrepôt' },
+  { icon: Bed, label: 'Studio meublé' },
+  { icon: Star, label: 'Chambre d’hôtel' },
 ];
 
 const TRUST = [
-  { icon: Shield, title: 'Sans intermédiaire', desc: 'Vous parlez directement aux locataires.' },
+  { icon: Shield, title: 'Vous gardez la main', desc: 'Vos prix, vos dates, vos décisions de réservation.' },
   { icon: BadgeCheck, title: 'Bien vérifié', desc: 'Un badge de confiance après validation.' },
-  { icon: Zap, title: 'Diffusion immédiate', desc: 'Web + app mobile, dès la mise en ligne.' },
+  { icon: Zap, title: 'Paiement sécurisé', desc: 'Les clients paient par Mobile Money via SapSapHouse.' },
   { icon: Eye, title: 'Visibilité locale', desc: 'Ciblage par ville et quartier.' },
 ];
 
@@ -78,7 +78,7 @@ export default function Publier() {
       case 2:
         return { title: 'Villa moderne', sub: 'Ouaga 2000, Ouagadougou', img: 2 };
       default:
-        return { title: 'Villa moderne — Publié', sub: '3 demandes reçues', img: 3 };
+        return { title: 'Villa moderne — Publié', sub: '3 réservations reçues', img: 3 };
     }
   }, [activeStep]);
 
@@ -108,18 +108,18 @@ export default function Publier() {
                 <Sparkles className="h-3.5 w-3.5" /> Gratuit · Sans commission
               </span>
               <h1 className="mt-4 text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[1.05] tracking-tight">
-                Publiez votre bien<br />
+                Accueillez sur SapSapHouse<br />
                 <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   en 4 étapes simples.
                 </span>
               </h1>
               <p className="mt-5 text-lg text-muted-foreground max-w-xl">
-                Location courte ou longue durée, vente, commerce — mettez en avant votre bien et
-                recevez des demandes qualifiées, sans intermédiaire.
+                Logement meublé à la nuit ou au mois : publiez-le, fixez vos prix, gérez votre
+                calendrier et recevez des réservations payées en toute autonomie.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button size="lg" onClick={cta} className="gap-2 h-12 px-6 text-base shadow-lg shadow-primary/20">
-                  Publier mon bien <ArrowRight className="h-4 w-4" />
+                  Mettre mon logement en ligne <ArrowRight className="h-4 w-4" />
                 </Button>
                 <Button size="lg" variant="outline" asChild className="h-12 px-6 text-base">
                   <Link to="/resultats">Voir un exemple</Link>
@@ -135,7 +135,7 @@ export default function Publier() {
                   <CheckCircle2 className="h-4 w-4 text-primary" /> Vérification humaine
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-primary" /> Contact direct
+                  <CheckCircle2 className="h-4 w-4 text-primary" /> Paiement Mobile Money
                 </div>
               </div>
             </motion.div>
@@ -181,8 +181,8 @@ export default function Publier() {
                     </div>
                     <div className="mt-4 pt-4 border-t border-border flex items-end justify-between">
                       <div>
-                        <span className="text-2xl font-bold text-foreground">250 000</span>
-                        <span className="text-sm text-muted-foreground"> FCFA/mois</span>
+                        <span className="text-2xl font-bold text-foreground">25 000</span>
+                        <span className="text-sm text-muted-foreground"> FCFA/nuit</span>
                       </div>
                       <span className="text-xs text-primary font-semibold">Aperçu</span>
                     </div>
@@ -258,8 +258,8 @@ export default function Publier() {
       <section className="border-y border-border/60 bg-muted/30">
         <div className="container mx-auto px-4 py-12">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Tous types de biens acceptés</h2>
-            <span className="text-sm text-muted-foreground">Résidentiel, commercial, professionnel</span>
+            <h2 className="text-2xl font-bold text-foreground">Logements meublés acceptés</h2>
+            <span className="text-sm text-muted-foreground">Courte et longue durée</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {TYPES.map(({ icon: Icon, label }) => (
