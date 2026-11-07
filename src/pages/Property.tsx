@@ -133,7 +133,7 @@ const PropertyPage = () => {
     // l'utilisateur voit brièvement l'accueil avant la carte).
     try {
       sessionStorage.setItem('sapsap_force_tab', 'map');
-      sessionStorage.setItem('sapsap_focus_property', pid);
+      sessionStorage.setItem('sapsap_focus_from_property', pid);
     } catch { /* noop */ }
     navigate(`/?property=${encodeURIComponent(pid)}&exploreMap=1`);
   };

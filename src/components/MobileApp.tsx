@@ -262,9 +262,27 @@ export default function MobileApp(props: MobileAppProps) {
     if (p) setTimeout(() => setPinPreview(p), 300);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.onFocusOnMap, props.properties]);
+  const fromPropertyRef = useRef<string | null>(null);
+  // Arrivée depuis « Voir sur la carte » d'une fiche : même aperçu que depuis l'accueil
+  useEffect(() => {
+    let pid: string | null = null;
+    try { pid = sessionStorage.getItem('sapsap_focus_from_property'); } catch { /* noop */ }
+    if (!pid || props.focusedPropertyId !== pid) return;
+    const p = props.properties.find(pr => pr.id === pid);
+    if (!p) return;
+    try { sessionStorage.removeItem('sapsap_focus_from_property'); } catch { /* noop */ }
+    fromPropertyRef.current = pid;
+    const t = setTimeout(() => setPinPreview(p), 300);
+    return () => clearTimeout(t);
+  }, [props.focusedPropertyId, props.properties]);
   const returnFromFocus = useCallback(() => {
     setPinPreview(null);
     props.onFocusReturn?.();
+    if (fromPropertyRef.current) {
+      fromPropertyRef.current = null;
+      navigate(-1);
+      return;
+    }
     if (nav.canGoBack) nav.pop();
     const y = homeReturnRef.current;
     if (y !== null) {
@@ -278,7 +296,7 @@ export default function MobileApp(props: MobileAppProps) {
       requestAnimationFrame(() => restore(0));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.onFocusReturn, props.onMobileTabChange, nav]);
+  }, [props.onFocusReturn, props.onMobileTabChange, nav, navigate]);
 
   // AI placeholder cycling (change every 3.5s per stayMode)
   useEffect(() => {

@@ -188,13 +188,14 @@ const Index = () => {
       if (found) {
         if (exploreMap) {
           // Ouvrir la CARTE avec ce bien focus + radius + POI
-          setFocusedPropertyId(found.id);
-          setActiveQuartier(found.quartier);
-          setMapQuartierTrigger(found.quartier);
-          if (isMobile) {
-            sessionStorage.setItem('sapsap_force_tab', 'map');
-            sessionStorage.setItem('sapsap_focus_property', found.id);
+          const mobileNow = isMobile || (typeof window !== 'undefined' && window.innerWidth < 768);
+          if (mobileNow) {
+            // Même système que « Carte » depuis l'accueil (focus + aperçu + retour)
+            handleFocusOnMap(found.id, { fromPropertyPage: true });
           } else {
+            setFocusedPropertyId(found.id);
+            setActiveQuartier(found.quartier);
+            setMapQuartierTrigger(found.quartier);
             // Desktop : afficher aussi la fiche détaillée à côté de la carte
             setDetailProperty(found);
           }
@@ -411,7 +412,7 @@ const Index = () => {
     if (prop) handleViewDetails(prop);
   }, [properties, handleViewDetails]);
 
-  const handleFocusOnMap = useCallback((id: string) => {
+  const handleFocusOnMap = useCallback((id: string, opts?: { fromPropertyPage?: boolean }) => {
     const prop = properties.find(p => p.id === id);
     if (!prop) return;
     // Save the previous context so the user can return to it (the card view
@@ -424,11 +425,12 @@ const Index = () => {
     addToRecentlyViewed(prop);
     setActiveQuartier(prop.quartier);
     setFocusedPropertyId(id);
-    if (isMobile) {
+    if (isMobile || opts?.fromPropertyPage) {
       // Mobile : fermer la fiche pour voir la carte plein écran
       setDetailProperty(null);
       setForceMapTabTrigger(t => t + 1);
-      nav.push({
+      // Depuis la fiche : l'historique navigateur ramène déjà à la fiche
+      if (!opts?.fromPropertyPage) nav.push({
         screen: 'carte-niveau3',
         propertyId: id,
         propertyTitle: prop.title,
