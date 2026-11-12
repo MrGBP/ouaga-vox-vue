@@ -614,6 +614,14 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         createdPropertyId = propertyId;
       }
 
+      if (isFurn && applyDiscountAll) {
+        const { error: bulkErr } = await supabase.from('properties')
+          .update({ monthly_discount_pct: monthlyDiscount } as any)
+          .eq('owner_id', ownerId).eq('furnished', true).neq('id', propertyId);
+        if (bulkErr) toast.error('La réduction n’a pas pu être appliquée à vos autres logements');
+        else toast.success(`Réduction de ${monthlyDiscount} % appliquée à tous vos logements meublés`);
+      }
+
       // Upload médias
       if (pendingMedia.length) {
         const failures: string[] = [];
