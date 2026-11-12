@@ -661,7 +661,7 @@ const ReservationFlow = ({ property, onClose }: ReservationFlowProps) => {
                 </div>
                 {quote && Number(quote.discount) !== 0 && (
                   <div className="flex justify-between text-sm text-secondary mt-1">
-                    <span>{Number(quote.discount) > 0 ? 'Réduction / promotion' : 'Tarif spécial'}</span>
+                    <span>{Number((quote as any).monthly_discount_pct) > 0 ? `Réduction séjour d’un mois (−${(quote as any).monthly_discount_pct} %)` : Number(quote.discount) > 0 ? 'Réduction / promotion' : 'Tarif spécial'}</span>
                     <span>{Number(quote.discount) > 0 ? '−' : '+'}{fmt(Math.abs(Number(quote.discount)))} {(property as any).currency || 'FCFA'}</span>
                   </div>
                 )}

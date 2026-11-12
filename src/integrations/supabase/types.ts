@@ -588,6 +588,7 @@ export type Database = {
           last_correction_note: string | null
           latitude: number
           longitude: number
+          monthly_discount_pct: number
           owner_id: string | null
           owner_updated_at: string | null
           price: number
@@ -633,6 +634,7 @@ export type Database = {
           last_correction_note?: string | null
           latitude: number
           longitude: number
+          monthly_discount_pct?: number
           owner_id?: string | null
           owner_updated_at?: string | null
           price: number
@@ -678,6 +680,7 @@ export type Database = {
           last_correction_note?: string | null
           latitude?: number
           longitude?: number
+          monthly_discount_pct?: number
           owner_id?: string | null
           owner_updated_at?: string | null
           price?: number

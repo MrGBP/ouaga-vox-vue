@@ -14,3 +14,5 @@
 - Operator numbers, demo code and booking delays live in platform_settings and are read through paymentsService/payment_operators, never hardcoded in screens.
 - Read notification lists and unread counts only through useNotifications (one shared live store per user), so every bell, badge and list updates together.
 - Receipt pages return to "Mes séjours" by popping history when opened from it and by replacing otherwise, so account back buttons never loop through a receipt.
+- Monthly discounts live in properties.monthly_discount_pct and are applied only inside quote_stay (≥28 nights); the owner form uses monthlyDiscount helpers for its live breakdown so displayed and billed amounts match.
+- Furnished-room amenities are stored in features (__room_private, __room_shared, __room_bathroom) via roomAmenities helpers, kept separate from whole-house features.

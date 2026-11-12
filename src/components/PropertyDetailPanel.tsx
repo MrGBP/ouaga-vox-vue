@@ -1,3 +1,4 @@
+import RoomAmenitiesDisplay from '@/components/RoomAmenitiesDisplay';
 import MediaLightbox from '@/components/media/MediaLightbox';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -447,6 +448,8 @@ const PropertyDetailPanel = ({
             </div>
           </div>
         )}
+
+        {property.type === 'chambre_meublee' && <RoomAmenitiesDisplay features={(property as any).features} />}
 
         {/* Section: Caractéristiques (grille de chips compacte, style Airbnb) */}
         {allFeatures.length > 0 && (

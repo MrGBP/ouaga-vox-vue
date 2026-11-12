@@ -23,6 +23,9 @@ import {
 } from '@/lib/propertyPoisService';
 import { useAuth } from '@/hooks/useAuth';
 import { useOverpassPOI } from '@/hooks/useOverpassPOI';
+import MonthlyDiscountField from './MonthlyDiscountField';
+import RoomAmenitiesField from './RoomAmenitiesField';
+import { isRoomType, readRoomAmenities, type RoomBathroom } from '@/lib/roomAmenities';
 
 // Mapping OSM type → préréglage POI (emoji + libellé FR/EN)
 const OSM_TYPE_TO_PRESET: Record<string, { type: string; emoji: string; label: string; labelEn: string }> = {
@@ -116,6 +119,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
   const [type, setType] = useState<string>(PROPERTY_TYPES[0].value);
   const [price, setPrice] = useState<number | ''>('');
   const [rentMode, setRentMode] = useState<'nuit' | 'mois'>('nuit');
+  const [monthlyDiscount, setMonthlyDiscount] = useState(0);
+  const [applyDiscountAll, setApplyDiscountAll] = useState(false);
+  const [roomPrivate, setRoomPrivate] = useState<string[]>([]);
+  const [roomShared, setRoomShared] = useState<string[]>([]);
+  const [roomBathroom, setRoomBathroom] = useState<RoomBathroom | null>(null);
 
   // Étape 2 — Détails + caractéristiques + POI + médias
   const [bedrooms, setBedrooms] = useState<number | ''>(1);
@@ -321,6 +329,9 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
           const storedMode = f.__rent_mode === 'mois' || f.__rent_mode === 'nuit' ? f.__rent_mode : null;
           setRentMode(storedMode ?? (((data as any).country_code === 'GH') ? 'mois' : 'nuit'));
           setSavedId(initial.id);
+          setMonthlyDiscount(Number((data as any).monthly_discount_pct ?? 0));
+          const ra = readRoomAmenities(f);
+          setRoomPrivate(ra.privateKeys); setRoomShared(ra.sharedKeys); setRoomBathroom(ra.bathroom);
 
           const pref = PHONE_PREFIX[(data as any).country_code as string] || phonePrefix;
           const stripPrefix = (raw: string | null) => {
@@ -557,6 +568,11 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
       if (rooms !== '') featuresObj.__rooms = Number(rooms);
       if (capacity !== '') featuresObj.__capacity = Number(capacity);
       if (isFurn) featuresObj.__rent_mode = rentMode;
+      if (isRoomType(type)) {
+        featuresObj.__room_private = roomPrivate;
+        featuresObj.__room_shared = roomShared;
+        if (roomBathroom) featuresObj.__room_bathroom = roomBathroom;
+      }
 
       const defaultCity = CITIES[COUNTRY_TO_CITY[selectedCountry] ?? '']?.name ?? null;
 
@@ -568,6 +584,7 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         bathrooms: commercial ? null : (Number(bathrooms) || null),
         surface_area: Number(surface) || null,
         furnished: isFurn,
+        monthly_discount_pct: isFurn ? monthlyDiscount : 0,
         features: featuresObj,
         owner_id: ownerId, country_code: selectedCountry, city: defaultCity,
         whatsapp_phone: whatsappE164, agent_phone: phoneE164,
@@ -595,6 +612,14 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
         if (error) throw error;
         propertyId = data.id;
         createdPropertyId = propertyId;
+      }
+
+      if (isFurn && applyDiscountAll) {
+        const { error: bulkErr } = await supabase.from('properties')
+          .update({ monthly_discount_pct: monthlyDiscount } as any)
+          .eq('owner_id', ownerId).eq('furnished', true).neq('id', propertyId);
+        if (bulkErr) toast.error('La réduction n’a pas pu être appliquée à vos autres logements');
+        else toast.success(`Réduction de ${monthlyDiscount} % appliquée à tous vos logements meublés`);
       }
 
       // Upload médias
@@ -808,6 +833,18 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                 </div>
               </Field>
             )}
+
+            {isFurn && !commercial && (
+              <MonthlyDiscountField
+                monthlyPrice={Number(price || 0) * (rentMode === 'nuit' ? 30 : 1)}
+                value={monthlyDiscount}
+                onChange={setMonthlyDiscount}
+                commissionRate={Number((country as any).commission_rate ?? 6)}
+                currency={cur || 'FCFA'}
+                applyAll={applyDiscountAll}
+                onApplyAllChange={setApplyDiscountAll}
+              />
+            )}
           </div>)}
 
           {/* ÉTAPE 2 — Détails du bien + médias + caractéristiques + POI */}
@@ -878,6 +915,13 @@ export default function OwnerPropertyFormModal({ open, initial, ownerId, onClose
                   </div>
                 )}
               </>
+            )}
+
+            {isRoomType(type) && (
+              <RoomAmenitiesField
+                privateKeys={roomPrivate} sharedKeys={roomShared} bathroom={roomBathroom}
+                onPrivate={setRoomPrivate} onShared={setRoomShared} onBathroom={setRoomBathroom}
+              />
             )}
 
             {/* Caractéristiques (déplacées ici) */}
